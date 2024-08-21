@@ -1,17 +1,22 @@
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, StyleSheet, Text, View,Platform } from "react-native";
 import StackNavigator from "./components/StackNavigator";
 import { NavigationContainer, ThemeProvider } from "@react-navigation/native";
 import {useTheme} from "@react-navigation/native";
+import { SermonProvider } from "./Logic/globalState";
 
 export default function App() {
   const {theme} = useTheme();
   return (
     <ThemeProvider>
-      <NavigationContainer>
+     <SermonProvider>
+     <NavigationContainer>
+       {/* <KeyboardAvoidingView style={{flex:1,} }  behavior={Platform.OS === 'ios' ? 'padding' : 'height'} > */}
         <StackNavigator />
-        <StatusBar barStyle="light-content"  />
+        <StatusBar style="auto" />
+       {/* </KeyboardAvoidingView> */}
       </NavigationContainer>
+     </SermonProvider>
     </ThemeProvider>
   );
 }

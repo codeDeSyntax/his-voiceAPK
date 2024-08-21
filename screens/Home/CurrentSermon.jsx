@@ -1,11 +1,13 @@
 // HomeScreen.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-
+import { SermonContext } from '../../Logic/globalState';
 function Home() {
+
+    const {selectedSermon} = React.useContext(SermonContext);
   return (
     <View style={styles.container}>
-      <Text>Home Screen</Text>
+      <Text>{selectedSermon.sermon}</Text>
     </View>
   );
 }
