@@ -1,21 +1,17 @@
-import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from "expo-status-bar";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import StackNavigator from "./components/StackNavigator";
+import { NavigationContainer, ThemeProvider } from "@react-navigation/native";
+import {useTheme} from "@react-navigation/native";
 
 export default function App() {
+  const {theme} = useTheme();
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <ActivityIndicator size="large" color="red" />
-      <StatusBar style="auto" />
-    </View>
+    <ThemeProvider>
+      <NavigationContainer>
+        <StackNavigator />
+        <StatusBar barStyle="light-content"  />
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
