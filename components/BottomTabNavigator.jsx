@@ -22,6 +22,7 @@ function TabNavigator() {
   return (
    <KeyboardAvoidingView style={{flex:1,} }  behavior={Platform.OS === 'ios' ? 'padding' : 'height'} >
      <Tab.Navigator
+     initialRouteName="Home"
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let icon;
@@ -36,14 +37,14 @@ function TabNavigator() {
               );
               break;
             case "All Sermons":
-              icon = <Ionicons name="list-outline" size={size} color={color} />;
+              icon = <Ionicons name="list-outline" size={size} color='#fafafa' />;
               break;
             case "Recent":
-              icon = <Ionicons name="time-outline" size={size} color={color} />;
+              icon = <Ionicons name="time-outline" size={size} color='#fafafa' />;
               break;
             case "Settings":
               icon = (
-                <Ionicons name="settings-outline" size={size} color={color} />
+                <Ionicons name="settings-outline" size={size} color='#fafafa' />
               );
               break;
             case "About":
@@ -51,7 +52,7 @@ function TabNavigator() {
                 <Ionicons
                   name="information-circle-outline"
                   size={size}
-                  color={color}
+                  color='#fafafa'
                 />
               );
               break;
@@ -60,13 +61,15 @@ function TabNavigator() {
 
           return icon;
         },
-        tabBarActiveTintColor: "#9183f9",
-        tabBarInactiveTintColor: "gray",
+        tabBarActiveTintColor: "#007AFF",
+        tabBarInactiveTintColor: "white",
         tabBarShowLabel: true,
-        // tabBarHideOnKeyboard: true,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          backgroundColor: "#f8f8f8",
+          backgroundColor: "#2d2d2d",
           position: "absolute",
+          borderTopRightRadius:10,
+          borderTopLeftRadius:10,
           bottom: 0,
           paddingBottom: 10,
           paddingTop: 10,
@@ -75,16 +78,19 @@ function TabNavigator() {
           right: 0,
           left: 0,
           elevation: 0,
+
         },
         headerShown: false,
+        
       })}
     >
       <Tab.Screen name="All Sermons" component={SermonList} />
-      <Tab.Screen name="Home" component={Home} />
+      <Tab.Screen name="Settings" component={Settings} />
+      {/* <Tab.Screen name="Home" component={Home} /> */}
 
       <Tab.Screen
-        name="Saved"
-        component={About}
+        name="Home"
+        component={Home}
         options={{
           tabBarIcon: ({ focused,color, size }) => {
             return (
@@ -92,12 +98,12 @@ function TabNavigator() {
                 style={{
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "white",
+                  backgroundColor: "#2d2d2d",
                   height: Platform.OS == "ios" ? 50 : 60,
                   width: Platform.OS == "ios" ? 50 : 60,
                   top: Platform.OS == "ios" ? -10 : -20,
                   borderRadius: Platform.OS == "ios" ? 25 : 30,
-                  shadowColor: "#000",
+                  shadowColor: "#fafafa",
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.8,
                   shadowRadius: 2,
@@ -107,7 +113,7 @@ function TabNavigator() {
               >
                 <Image
                   source={homeImage}
-                  style={[styles.icon, { tintColor: color }]}
+                  style={[styles.icon, { tintColor: 'white' }]}
                 />
               </View>
             );
@@ -115,8 +121,7 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen name="Recent" component={RecentOpenedSermons} />
-      <Tab.Screen name="Settings" component={Settings} />
-      {/* <Tab.Screen name="About" component={About} /> */}
+      <Tab.Screen name="About" component={About} />
     </Tab.Navigator>
     </KeyboardAvoidingView>
   );

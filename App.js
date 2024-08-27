@@ -5,6 +5,7 @@ import { NavigationContainer, ThemeProvider } from "@react-navigation/native";
 import {useTheme} from "@react-navigation/native";
 import { SermonProvider } from "./Logic/globalState";
 
+
 export default function App() {
   const {theme} = useTheme();
   return (
@@ -13,7 +14,7 @@ export default function App() {
      <NavigationContainer>
        {/* <KeyboardAvoidingView style={{flex:1,} }  behavior={Platform.OS === 'ios' ? 'padding' : 'height'} > */}
         <StackNavigator />
-        <StatusBar style="auto" />
+        <StatusBar style="light" backgroundColor="#22272a"/>
        {/* </KeyboardAvoidingView> */}
       </NavigationContainer>
      </SermonProvider>
