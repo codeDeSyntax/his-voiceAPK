@@ -57,7 +57,7 @@ const SermonProvider = ({ children }) => {
 
   // load recently opened sermons from local storage
   useEffect(() => {
-    (async () => {
+    const loadRecents = async () => {
       try {
         const value = await AsyncStorage.getItem("recentlyOpenedSermons");
         if (value !== null) {
@@ -65,20 +65,30 @@ const SermonProvider = ({ children }) => {
           // console.log(recentlyOpened.length);
         }
       } catch (e) {
-        // error reading valuea
+        console.log(e);
+        
       }
-    })();
+    }
+
+    loadRecents();
   }, []);
 
   useEffect(() => {
-    (async () => {
-      const oldSettings = await AsyncStorage.getItem("sermonSettings");
-      if (oldSettings) {
-        setSettings(JSON.parse(oldSettings));
+    const loadSettings = async () => {
+      try {
+        const oldSettings = await AsyncStorage.getItem("sermonSettings");
+        // console.log("Loaded settings from storage:", oldSettings);
+        if (oldSettings) {
+          setSettings(JSON.parse(oldSettings));
+        }
+      } catch (error) {
+        console.error("Failed to load settings:", error);
       }
-    });
+    };
+  
+    loadSettings();
   }, []);
-
+  
   return (
     <SermonContext.Provider
       value={{

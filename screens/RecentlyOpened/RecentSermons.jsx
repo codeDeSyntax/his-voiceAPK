@@ -193,7 +193,7 @@ function RecentlyOpenedSermons({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.searchContainer}>
-        <Text style={styles.label}>Recently Opened{recentlyOpened.length}</Text>
+        <Text style={styles.label}>Recently Opened</Text>
        {
         recentlyOpened.length > 0 &&
         <View style={styles.searchInputContainer}>

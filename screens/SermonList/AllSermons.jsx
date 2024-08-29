@@ -55,45 +55,67 @@ function SermonList({ navigation }) {
   const [isYearModalVisible, setIsYearModalVisible] = useState(false);
   const [isLetterModalVisible, setIsLetterModalVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
+  const [sermonsToRender ,setSermonsToRender] = useState([]);
+  const [filteredSermons, setFilteredSermons] = useState(allSermons);
 
-  const filteredSermons = allSermons.filter((sermon) => {
-    const matchesSearch = sermon.title
-      .toLowerCase()
-      .includes(searchText.toLowerCase());
-    const matchesYear =
-      selectedYear === "All Years" || sermon.year === selectedYear;
-    const matchesLetter =
-      selectedLetter === "All Letters" ||
-      sermon.title.toLowerCase().startsWith(selectedLetter.toLowerCase());
-    return matchesSearch && matchesYear && matchesLetter;
-  });
+  const applyFilters = () => {
+    const newFilteredSermons = allSermons.filter((sermon) => {
+      const matchesSearch = sermon.title
+        .toLowerCase()
+        .includes(searchText.toLowerCase());
+      const matchesYear =
+        selectedYear === "All Years" || sermon.year === selectedYear;
+      const matchesLetter =
+        selectedLetter === "All Letters" ||
+        sermon.title.toLowerCase().startsWith(selectedLetter.toLowerCase());
+      return matchesSearch && matchesYear && matchesLetter;
+    });
 
-  const sortedSermons = [...filteredSermons].sort((a, b) => {
-    if (sortOrder === "asc") {
-      return a.title.trim().localeCompare(b.title.trim());
-    } else {
-      return b.title.trim().localeCompare(a.title.trim());
-    }
-  });
+    const sortedSermons = [...newFilteredSermons].sort((a, b) => {
+      if (sortOrder === "asc") {
+        return a.title.trim().localeCompare(b.title.trim());
+      } else {
+        return b.title.trim().localeCompare(a.title.trim());
+      }
+    });
+
+    setFilteredSermons(sortedSermons);
+  };
+
+  useEffect(() => {
+    applyFilters();
+  }, [searchText, selectedYear, selectedLetter, sortOrder]);
+
+  const filterOnlyText = () => {
+    setFilteredSermons((prevSermons) =>
+      prevSermons.filter((sermon) => sermon.type === "text")
+    );
+  };
+
+  const filterOnlyAudio = () => {
+    setFilteredSermons((prevSermons) =>
+      prevSermons.filter((sermon) => sermon.type === "mp3")
+    );
+  };
 
   const handleSermonClick = async (sermon) => {
-    const alreadyInRecents = recentlyOpened.some((item) => item.id === sermon.id)
     setSelectedSermon(sermon);
     
-    if (!alreadyInRecents) {
-      const updatedRecentlyOpenedSermons = [...recentlyOpened, sermon];
-      setRecentlyOpened(updatedRecentlyOpenedSermons);
-      
-      try {
-        await AsyncStorage.setItem("recentlyOpenedSermons", JSON.stringify(updatedRecentlyOpenedSermons));
-      } catch (error) {
-        console.error("Failed to update recents in AsyncStorage", error);
-      }
+    const updatedRecentlyOpenedSermons = [
+      sermon,
+      ...recentlyOpened.filter(item => item.id !== sermon.id)
+    ].slice(0, 10);  // Limit to 10 most recent sermons
+  
+    setRecentlyOpened(updatedRecentlyOpenedSermons);
+    
+    try {
+      await AsyncStorage.setItem("recentlyOpenedSermons", JSON.stringify(updatedRecentlyOpenedSermons));
+    } catch (error) {
+      console.error("Failed to update recents in AsyncStorage", error);
     }
     
     navigation.navigate("Home");
   };
-  
   const LocationNotFound = useCallback(
     () => (
       <Text style={{ fontSize: 9, color: "#427092" }}>Location not found</Text>
@@ -232,6 +254,17 @@ function SermonList({ navigation }) {
           {/* <Text style={styles.filterText}>{selectedYear}</Text> */}
           <FontAwesome5 name="calendar-alt" color='#fafafa'/>
         </TouchableOpacity>
+       
+        <TouchableOpacity style={[styles.sortButton, {flexDirection:'row', alignItems:'center',gap:3}]} onPress={filterOnlyText}>
+        <Ionicons name= 'text' color='#fafafa'/>
+        <Ionicons name='filter' color='#fafafa'/>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.sortButton, {flexDirection:'row', alignItems:'center',gap:3}]} onPress={filterOnlyAudio}>
+          <Text>🔊</Text>
+          <Ionicons name='filter' color='#fafafa'/>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.sortButton} onPress={toggleSortOrder}>
           <FontAwesome
             name='sort'
@@ -242,7 +275,7 @@ function SermonList({ navigation }) {
       </View>
 
       <FlatList
-        data={sortedSermons}
+        data={filteredSermons}
         renderItem={renderSermonItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
@@ -412,6 +445,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   listContent: {
     paddingHorizontal: 16,
