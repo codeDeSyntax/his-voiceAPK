@@ -24,7 +24,9 @@ const SermonProvider = ({ children }) => {
   const [searchTerm, setSearchTerm] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const [settings, setSettings] = useState({
+    themeMode:true,
     backgroundColor: "#2d2d2d",
     fontSize: 12,
     fontFamily: "monospace",
@@ -62,7 +64,7 @@ const SermonProvider = ({ children }) => {
         const value = await AsyncStorage.getItem("recentlyOpenedSermons");
         if (value !== null) {
           setRecentlyOpened(JSON.parse(value));
-          // console.log(recentlyOpened.length);
+          // console.log(valu);
         }
       } catch (e) {
         console.log(e);

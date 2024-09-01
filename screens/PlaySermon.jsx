@@ -1,85 +1,32 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import { Audio } from 'expo-av';
 import { SermonContext } from '../Logic/globalState';
+import { useAppTheme } from '../Logic/theme';
 
 const DownloadSermon = () => {
   const { selectedSermon } = React.useContext(SermonContext);
+  const { theme } = useAppTheme();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [sound, setSound] = useState(null);
 
-  const audioUrl = selectedSermon.type === 'mp3' && selectedSermon.audioUrl;
+  const audioUrl = selectedSermon.type === 'mp3' ? selectedSermon.audioUrl : null;
 
-  const handleDownload = async () => {
-    setIsLoading(true);
-    try {
-      const uri = await FileSystem.downloadAsync(
-        audioUrl,
-        FileSystem.documentDirectory + `${selectedSermon.title}.mp3`
-      );
-      setIsLoading(false);
-      alert('Sermon downloaded successfully!');
-    } catch (error) {
-      console.log('Error downloading audio', error);
-      setIsLoading(false);
-      alert('Failed to download sermon. Please try again.');
-    }
-  };
-
-  const playSound = async () => {
-    if (audioUrl) {
-      setIsLoading(true);
-      try {
-        if (sound) {
-          if (isPlaying) {
-            await sound.pauseAsync();
-            setIsPlaying(false);
-          } else {
-            await sound.playAsync();
-            setIsPlaying(true);
-          }
-        } else {
-          const { sound: newSound } = await Audio.Sound.createAsync(
-            { uri: audioUrl },
-            { shouldPlay: true },
-            onPlaybackStatusUpdate
-          );
-          setSound(newSound);
-          setIsPlaying(true);
-        }
-      } catch (error) {
-        console.log('Error playing audio', error);
-        alert('Failed to play sermon. Please try again.');
-      }
-      setIsLoading(false);
-    }
-  };
-
-  const onPlaybackStatusUpdate = (status) => {
-    if (status.didJustFinish) {
-      setIsPlaying(false);
-    }
-  };
-
-  React.useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
+  // Here, we disable all buttons by setting the disabled prop to true
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Sermon Audio</Text>
       <Text style={styles.subtitle}>{selectedSermon.title}</Text>
 
-      <TouchableOpacity onPress={playSound} style={styles.playButton} disabled={isLoading}>
-        {isLoading ? (
+      <TouchableOpacity 
+       onPress={() => alert('Not availble yet')}
+        style={[styles.playButton, styles.disabledButton]} 
+        // disabled={true} // Disable the play button
+      >
+        {isLoadingAudio ? (
           <ActivityIndicator size="large" color="white" />
         ) : (
           <>
@@ -89,8 +36,12 @@ const DownloadSermon = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={handleDownload} style={styles.downloadButton} disabled={isLoading}>
-        {isLoading ? (
+      <TouchableOpacity 
+      onPress={() => alert('Not availble yet')}
+        style={[styles.downloadButton, styles.disabledButton]} 
+        // disabled={true} // Disable the download button
+      >
+        {isDownloading ? (
           <ActivityIndicator size="large" color="white" />
         ) : (
           <>
@@ -99,11 +50,15 @@ const DownloadSermon = () => {
           </>
         )}
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.linkButton}>
+        <Text style={styles.linkText}>{audioUrl}</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -115,6 +70,7 @@ const styles = {
     color: 'white',
     fontSize: 24,
     marginBottom: 10,
+    fontWeight: 'bold',
   },
   subtitle: {
     color: '#B0B0B0',
@@ -141,11 +97,24 @@ const styles = {
     minWidth: 200,
     justifyContent: 'center',
   },
+  disabledButton: {
+    opacity: 4, // This visually indicates that the button is disabled
+  },
   buttonText: {
     color: 'white',
     fontSize: 18,
     marginLeft: 10,
+    fontWeight: '500',
   },
-};
+  linkButton: {
+    paddingVertical: 10,
+    marginTop: 20,
+  },
+  linkText: {
+    textDecorationLine: 'underline',
+    color: '#5eb7ee',
+    fontStyle: 'italic',
+  },
+});
 
 export default DownloadSermon;

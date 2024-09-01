@@ -1,31 +1,48 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 
-const ThemeContext = createContext();
+const AppThemeContext = createContext();
 
-export const ThemeProvider = ({ children }) => {
-  const systemTheme = useColorScheme(); // Detect system theme
+export const AppThemeProvider = ({ children }) => {
+  const systemTheme = useColorScheme();
   const [isDarkMode, setIsDarkMode] = useState(systemTheme === 'dark');
 
-  const toggleTheme = () => {
-    setIsDarkMode(prev => !prev);
-  };
+  
 
   const theme = {
     dark: isDarkMode,
     colors: {
-      primary: isDarkMode ? '#bb86fc' : '#6200ee',
-      background: isDarkMode ? '#121212' : '#ffffff',
+      primary: isDarkMode ? '#2d2d2d' : '#fafefe',
+      background: isDarkMode ? '#2d2d2d' : '#fafefe',
       surface: isDarkMode ? '#1f1f1f' : '#ffffff',
-      text: isDarkMode ? '#ffffff' : '#000000',
+      text: isDarkMode ? '#e9fcf9' : '#031412',
     },
   };
 
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const value = await AsyncStorage.getItem('sermonSettings');
+        if (value !== null) {
+          const settings = JSON.parse(value);
+          if (settings.themeMode !== undefined) {
+            setIsDarkMode(settings.themeMode);
+          }
+        }
+      } catch (e) {
+        console.log('Failed to load theme:', e);
+      }
+    };
+
+    loadTheme();
+  }, []);
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <AppThemeContext.Provider value={{ theme,setIsDarkMode,isDarkMode }}>
       {children}
-    </ThemeContext.Provider>
+    </AppThemeContext.Provider>
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useAppTheme = () => useContext(AppThemeContext);

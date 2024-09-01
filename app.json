@@ -1,30 +1,39 @@
 {
   "expo": {
     "name": "His voice",
-    "slug": "His voice",
+    "slug": "his-voice",
     "version": "1.0.0",
+    "permissions": [
+      "INTERNET"
+    ],
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/cloud.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/cloud.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#2d2d2d"
+      "backgroundColor": "#2d2d2d",
+      "image": "./assets/cloud.png"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/hisvoice.png",
         "backgroundColor": "#2d2d2d"
-      }
+      },
+      "package": "com.josiahok.hisvoice"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
+      }
+    },
+    "owner": "josiah-ok"
   }
 }

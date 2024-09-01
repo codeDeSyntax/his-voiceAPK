@@ -13,9 +13,11 @@ import { SermonContext } from "../../Logic/globalState";
 import Slider from "@react-native-community/slider";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAppTheme } from "../../Logic/theme";
 
-function Settings() {
+function Settings({navigation}) {
   const { settings, setSettings } = useContext(SermonContext);
+  const { theme,setIsDarkMode,isDarkMode } = useAppTheme();
   const [fontSize, setFontSize] = useState(settings.fontSize);
   const [fontFamily, setFontFamily] = useState(settings.fontFamily);
   const [textColor, setTextColor] = useState(settings.textColor);
@@ -25,14 +27,15 @@ function Settings() {
   const [showTextColorPicker, setShowTextColorPicker] = useState(false);
   const [showBgColorPicker, setShowBgColorPicker] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false); // State for the warning modal
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   const fontFamilies = ["System", "Roboto", "monospace"];
 
   const togglePreview = () => setShowPreview(!showPreview);
-  const toggleWarningModal = () => setShowWarningModal(!showWarningModal); // Function to toggle the warning modal
+  const toggleWarningModal = () => setShowWarningModal(!showWarningModal);
 
   const newSettings = {
+    themeMode: isDarkMode,
     backgroundColor: backgroundColor,
     fontSize: fontSize,
     fontFamily: fontFamily,
@@ -40,11 +43,17 @@ function Settings() {
   };
 
   const defaultSettings = {
+    themeMode: true,
     backgroundColor: "#2d2d2d",
     fontSize: 12,
     fontFamily: "monospace",
     textColor: "#fafafa",
   };
+
+  const toggleTheme = async () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    };
 
   const saveSettings = async () => {
     const updatedSettings = { ...settings, ...newSettings };
@@ -54,7 +63,7 @@ function Settings() {
         "sermonSettings",
         JSON.stringify(updatedSettings)
       );
-      console.log("Settings saved:");
+      console.log("Settings saved:", settings);
     } catch (error) {
       console.log("Error saving settings:", error);
     }
@@ -73,44 +82,66 @@ function Settings() {
     }
   };
 
+  const setThemeTextColor = () => {
+    setTextColor(theme.colors.text);
+  };
+
+  const setThemeBackgroundColor = () => {
+    setBackgroundColor(theme.colors.background);
+  };
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: "#2D2D2D" }]}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <View style={styles.header}>
-        <Text style={[styles.title, { fontFamily, fontSize: fontSize + 4 }]}>
+        <Text
+          style={[
+            styles.title,
+            {  fontSize: 20, color: theme.colors.text },
+          ]}
+        >
           Settings
         </Text>
-        <View style={{ flexDirection: "row" }}>
-          <TouchableOpacity
-            onPress={togglePreview}
-            style={styles.previewButton}
-          >
+        <View style={styles.headerButtons}>
+          <TouchableOpacity onPress={togglePreview} style={styles.iconButton}>
             <Icon
               name={showPreview ? "eye-off" : "eye"}
               size={24}
-              color="#fafafa"
+              color={theme.colors.text}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={restoreDefault} style={styles.iconButton}>
+            <Icon name="refresh" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={toggleTheme} style={styles.iconButton}>
+            <Icon
+              name={theme.dark ? "sunny" : "moon"}
+              size={24}
+              color={theme.colors.text}
             />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => restoreDefault()}
-            style={styles.previewButton}
+            onPress={toggleWarningModal}
+            style={styles.iconButton}
           >
-            <Icon name="refresh" size={24} color="#fafafa" />
+            <Icon name="warning-outline" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={toggleWarningModal}
-            style={styles.previewButton}
+            onPress={() => navigation.navigate('About')}
+            style={styles.iconButton}
           >
-            <Icon name="warning-outline" size={24} color="#fafafa" />
+            <Icon name="help-circle" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       {showPreview && (
-        <View style={[styles.previewBox, { backgroundColor: backgroundColor }]}>
+        <View style={[styles.previewBox, { backgroundColor: settings.backgroundColor }]}>
           <Text
             style={[
               styles.previewText,
-              { fontFamily, fontSize, color: textColor },
+              { fontFamily, fontSize, color: settings.textColor},
             ]}
           >
             Preview Text
@@ -119,100 +150,127 @@ function Settings() {
       )}
 
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { fontFamily }]}>Font Size</Text>
+        <Text
+          style={[
+            styles.sectionTitle,
+            {  color: theme.colors.text,fontSize:16 },
+          ]}
+        >
+          Font Size
+        </Text>
         <Slider
           style={styles.slider}
           minimumValue={12}
           maximumValue={24}
-          thumbTintColor={settings.textColor}
-          minimumTrackTintColor="#FFFFFF"
-          maximumTrackTintColor="#3d4043"
+          thumbTintColor={theme.colors.text}
+          minimumTrackTintColor={theme.colors.text}
+          maximumTrackTintColor={theme.colors.border}
           step={1}
           value={fontSize}
           onValueChange={setFontSize}
         />
-        <Text style={[styles.value, { fontFamily, color: "#fafafa" }]}>
+        <Text style={[styles.value, { fontFamily, color: theme.colors.text }]}>
           {fontSize}px
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { fontFamily }]}>Font Family</Text>
-        <Picker
-          selectedValue={fontFamily}
-          onValueChange={(itemValue) => setFontFamily(itemValue)}
-          style={[styles.picker, { fontFamily, color: "#fafafa" }]}
+        <Text
+          style={[
+            styles.sectionTitle,
+            {  color: theme.colors.text },
+          ]}
         >
-          {fontFamilies.map((family) => (
-            <Picker.Item key={family} label={family} value={family} />
-          ))}
-        </Picker>
+          Font Family
+        </Text>
+        <View
+          style={[
+            styles.pickerContainer,
+            {
+              backgroundColor: theme.dark === true ? "#22272a" : "white",
+              borderWidth: theme.dark === false ? 1 :0,
+              borderColor: "silver",
+            },
+          ]}
+        >
+          <Picker
+            selectedValue={fontFamily}
+            onValueChange={(itemValue) => setFontFamily(itemValue)}
+            style={[styles.picker, { color: theme.colors.text,fontFamily,backgroundColor:theme.dark === true ? '#22272a' :'white' }]}
+            dropdownIconColor={theme.colors.text}
+            
+          >
+            {fontFamilies.map((family) => (
+              <Picker.Item key={family} label={family} value={family} />
+            ))}
+          </Picker>
+        </View>
       </View>
 
-      <View style={[styles.section, {width:'50%'}]}>
-        <TouchableOpacity
-          onPress={() => setShowTextColorPicker(!showTextColorPicker)}
-        >
-          <View
+      <View style={styles.colorSection}>
+        <View style={styles.colorSelectorContainer}>
+          <TouchableOpacity
+            onPress={() => setShowTextColorPicker(!showTextColorPicker)}
             style={[
-              styles.sectionTitle,
-              {
-                flexDirection:'row',
-                gap:4,
-                justifyContent:'center',
-                alignItems:'center',
-                padding: 10,
-                backgroundColor: "#3d4043",
-                // width: "50%",
-                borderRadius: 10,
-              },
+              styles.colorButton,
+              { backgroundColor: theme.dark === true ? "#22272a" : "white" },
             ]}
           >
-          <Icon name="text" size={24} color={settings.textColor} />
-           <Text style={{color:'#fafafa',padding:5, backgroundColor:settings.textColor,borderRadius:20}}>{settings.textColor}</Text>
-          </View>
-        </TouchableOpacity>
+            <Icon name="text" size={24} color={theme.colors.text} />
+            <View
+              style={[styles.colorPreview, { backgroundColor: settings.textColor }]}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={setThemeTextColor}
+            style={styles.themeColorButton}
+          >
+            <Icon name="color-palette" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
         {showTextColorPicker && (
           <ColorPicker
             color={textColor}
             onColorChange={setTextColor}
-            thumbSize={50}
-            sliderSize={10}
+            thumbSize={40}
+            sliderSize={20}
             noSnap={true}
-            swatches={false}
             row={false}
             style={styles.colorPicker}
           />
         )}
       </View>
 
-      <View style={[styles.section, {width:'50%'}]}>
-        <TouchableOpacity
-          onPress={() => setShowBgColorPicker(!showBgColorPicker)}
-        >
-          <View
+      <View style={styles.colorSection}>
+        <View style={styles.colorSelectorContainer}>
+          <TouchableOpacity
+            onPress={() => setShowBgColorPicker(!showBgColorPicker)}
             style={[
-              styles.sectionTitle,
-              {
-                padding: 10,
-                backgroundColor: "#3d4043",
-                // width: "50%",
-                borderRadius: 10,
-                flexDirection:'row',
-                gap:4
-              },
+              styles.colorButton,
+              { backgroundColor: theme.dark === true ? "#22272a" : "white" },
             ]}
           >
-            <View style={{padding:10,backgroundColor:settings.backgroundColor,width:70,borderRadius:10}}></View>
-            <Text style={{color:'#fafafa'}}>{settings.backgroundColor}</Text>
-          </View>
-        </TouchableOpacity>
+            <Icon name="color-fill" size={24} color={theme.colors.text} />
+            <View
+              style={[
+                styles.colorPreview,
+                { backgroundColor: settings.backgroundColor },
+              ]}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={setThemeBackgroundColor}
+            style={styles.themeColorButton}
+          >
+            <Icon name="color-palette" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
         {showBgColorPicker && (
           <ColorPicker
             color={backgroundColor}
             onColorChange={setBackgroundColor}
             thumbSize={40}
-            sliderSize={10}
+            sliderSize={20}
             noSnap={true}
             row={false}
             style={styles.colorPicker}
@@ -220,27 +278,30 @@ function Settings() {
         )}
       </View>
 
-      <TouchableOpacity style={[styles.button, {backgroundColor:'#427092'}]} onPress={() => saveSettings()}>
-        <Text style={[styles.buttonText]}>Save Settings</Text>
+      <TouchableOpacity style={styles.saveButton} onPress={saveSettings}>
+        <Text style={styles.saveButtonText}>Save Settings</Text>
       </TouchableOpacity>
 
-      {/* Modal for the warning message */}
       <Modal
         transparent={true}
         visible={showWarningModal}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={toggleWarningModal}
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalText}>
-              Settings do not apply across the whole application.
+              Settings applies across the whole application.
             </Text>
             <TouchableOpacity
               onPress={toggleWarningModal}
-              style={[styles.modalButton, {backgroundColor:settings.textColor}]}
+              style={[styles.modalButton, { backgroundColor: textColor }]}
             >
-              <Text style={[styles.modalButtonText ]}>Close</Text>
+              <Text
+                style={[styles.modalButtonText, { color: backgroundColor }]}
+              >
+                Close
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -262,52 +323,99 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#fafafa",
   },
-  previewButton: {
-    padding: 5,
+  headerButtons: {
+    flexDirection: "row",
+  },
+  iconButton: {
+    padding: 8,
   },
   previewBox: {
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 15,
     marginBottom: 20,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   previewText: {
     textAlign: "center",
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 25,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#fafafa",
+  },
+  slider: {
+    width: "100%",
+    height: 40,
   },
   value: {
     textAlign: "center",
     marginTop: 5,
+    fontSize: 16,
+  },
+  pickerContainer: {
+    // backgroundColor: "white",
+    borderRadius: 10,
+    overflow: "hidden",
+    // shadowColor:'#000',
+    // elevation:5,
   },
   picker: {
+    backgroundColor: "white",
+    shadowColor: "#000",
     width: "100%",
-    backgroundColor: "#3d4043",
-    borderRadius: 20,
-    color: "#fafafa",
+    elevation: 5,
+  },
+  colorSection: {
+    marginBottom: 25,
+  },
+  colorSelectorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  colorButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    // backgroundColor: "rgba(61, 64, 67, 0.1)",
+    padding: 10,
+    borderRadius: 10,
+    flex: 1,
+    elevation: 3,
+  },
+  colorPreview: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginLeft: 10,
+  },
+  themeColorButton: {
+    padding: 10,
+    backgroundColor: "rgba(61, 64, 67, 0.1)",
+    borderRadius: 10,
+    marginLeft: 10,
   },
   colorPicker: {
-    marginTop: 10,
+    marginTop: 15,
   },
-  button: {
-    padding: 10,
-    borderRadius: 5,
+  saveButton: {
+    backgroundColor: "#427092",
+    padding: 15,
+    borderRadius: 10,
     alignItems: "center",
     marginTop: 20,
   },
-  buttonText: {
+  saveButtonText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
@@ -322,20 +430,24 @@ const styles = StyleSheet.create({
     width: 300,
     padding: 20,
     backgroundColor: "#3d4043",
-    borderRadius: 10,
+    borderRadius: 15,
     alignItems: "center",
   },
   modalText: {
     color: "#fafafa",
     marginBottom: 20,
+    textAlign: "center",
+    fontSize: 16,
   },
   modalButton: {
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: "center",
   },
   modalButtonText: {
-    color: "white",
     fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

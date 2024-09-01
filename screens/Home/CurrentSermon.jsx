@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   StyleSheet,
@@ -9,45 +10,82 @@ import {
   Dimensions,
 } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
+import { useAppTheme } from "../../Logic/theme";
+import { useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
 
 function Home() {
   const { selectedSermon, settings } = React.useContext(SermonContext);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const {theme} = useAppTheme();
+  const route = useRoute();
+  const searchPhrase = route.params?.searchPhrase || "";
+
   const [searchResults, setSearchResults] = useState([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const scrollViewRef = useRef(null);
   const [contentHeight, setContentHeight] = useState(0);
 
   useEffect(() => {
-    if (searchResults.length > 0) {
-      scrollToMatch(searchResults[currentResultIndex].index);
+    if (selectedSermon && searchPhrase) {
+      const regex = new RegExp(`(${searchPhrase})`, "gi");
+      const matches = [];
+      let match;
+
+      while ((match = regex.exec(selectedSermon.sermon)) !== null) {
+        matches.push({
+          match: match[0],
+          index: match.index,
+        });
+      }
+
+      setSearchResults(matches);
     }
-  }, [currentResultIndex, searchResults]);
+  }, [selectedSermon, searchPhrase]);
 
-  if (!selectedSermon) {
-    return (
-      <View style={styles.container}>
-        <Text style={{color:'red'}}>No sermon content available</Text>
-      </View>
-    );
-  }
+  useFocusEffect(
+    useCallback(() => {
+      const scrollToMatch = () => {
+        if (selectedSermon && selectedSermon.sermon && searchResults.length > 0) {
+          const { height: windowHeight } = Dimensions.get("window");
+          const matchIndex = searchResults[currentResultIndex].index;
+          const position = matchIndex / selectedSermon.sermon.length * contentHeight;
+          const offset = Math.max(position - windowHeight / 2, 0);
+          scrollViewRef.current?.scrollTo({ y: offset, animated: true });
+        }
+      };
+      
+      // Delay scrolling to ensure layout is updated
+      setTimeout(scrollToMatch, 100);
 
-  
+    }, [searchResults, currentResultIndex, contentHeight, selectedSermon])
+  );
+
+  const scrollToMatch = (index) => {
+    const { height: windowHeight } = Dimensions.get("window");
+    const position = (index / selectedSermon.sermon.length) * contentHeight;
+    const offset = Math.max(position - windowHeight / 2, 0);
+    scrollViewRef.current?.scrollTo({ y: offset, animated: true });
+  };
 
   const renderSermonText = () => {
     if (searchResults.length === 0) {
       return (
         <Text
+        
           style={[
             styles.sermonText,
             {
+              textAlign:'center',
               color: settings.textColor,
               fontFamily: settings.fontFamily,
               fontSize: settings.fontSize,
               lineHeight: 30,
+              // includeFontPadding:false,
+              writingDirection: "rtl",
+              textAlignVertical: "center",
+              
+            
             },
           ]}
         >
@@ -56,8 +94,9 @@ function Home() {
       );
     }
 
-  
-
+    const parts = selectedSermon.sermon.split(
+      new RegExp(`(${searchPhrase})`, "gi")
+    );
     return (
       <Text
         style={[
@@ -70,13 +109,21 @@ function Home() {
           },
         ]}
       >
-        {parts}
+        {parts.map((part, index) =>
+          part.toLowerCase() === searchPhrase.toLowerCase() ? (
+            <Text key={index} style={styles.highlightedText}>
+              {part}
+            </Text>
+          ) : (
+            part
+          )
+        )}
       </Text>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {}]}>
       {selectedSermon.type === "mp3" ? (
         <PlaySermon sermon={selectedSermon} />
       ) : (
@@ -89,8 +136,8 @@ function Home() {
           onContentSizeChange={(width, height) => setContentHeight(height)}
         >
           <View>
-            <Text style={styles.titleText}>{selectedSermon.title}</Text>
-            <Text style={styles.locationText}>{selectedSermon.location}</Text>
+            <Text style={[styles.titleText, {color: settings.textColor}]}>{selectedSermon.title}</Text>
+            <Text style={[styles.locationText,{color: settings.textColor}]}>{selectedSermon.location}</Text>
             {renderSermonText()}
           </View>
         </ScrollView>
@@ -98,24 +145,56 @@ function Home() {
 
       {selectedSermon.type === "text" && (
         <>
-
-          <TouchableOpacity 
-            style={styles.topButton} 
-            onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+          <TouchableOpacity
+            style={styles.topButton}
+            onPress={() =>
+              scrollViewRef.current?.scrollTo({ y: 0, animated: true })
+            }
           >
             <Feather name="arrow-up" size={24} color="white" />
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.bottomButton} 
-            onPress={() => scrollViewRef.current?.scrollTo({ y: contentHeight, animated: true })}
+          <TouchableOpacity
+            style={styles.bottomButton}
+            onPress={() =>
+              scrollViewRef.current?.scrollTo({
+                y: contentHeight,
+                animated: true,
+              })
+            }
           >
             <Feather name="arrow-down" size={24} color="white" />
           </TouchableOpacity>
+
+          {searchResults.length > 0 && (
+            <View style={styles.navigationContainer}>
+              <TouchableOpacity
+                style={styles.prevButton}
+                onPress={() =>
+                  setCurrentResultIndex((current) => Math.max(0, current - 1))
+                }
+              >
+                <Text style={styles.prevButtonText}>Previous</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.matchesText}>
+                {currentResultIndex + 1} / {searchResults.length}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.nextButton}
+                onPress={() =>
+                  setCurrentResultIndex((current) =>
+                    Math.min(searchResults.length - 1, current + 1)
+                  )
+                }
+              >
+                <Text style={styles.nextButtonText}>Next</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </>
       )}
-
-      
     </View>
   );
 }
@@ -137,8 +216,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   highlightedText: {
-    backgroundColor: "yellow",
-    fontWeight: "bold",
+    backgroundColor:'green',
+    color: '#14f39d', // Match text color with the border
+    fontWeight: 'bold',
+    
   },
   titleText: {
     color: "#cdc4d6",
@@ -157,26 +238,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 20,
   },
-  searchIcon: {
-    position: "absolute",
-    right: 20,
-    bottom: 140,
-    backgroundColor: "#2d2d2d",
-    borderRadius: 30,
-    width: 50,
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#fafafa",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    elevation: 5,
-  },
   topButton: {
     position: "absolute",
     right: 20,
-    bottom: 200,
+    bottom: 150,
     backgroundColor: "#2d2d2d",
     borderRadius: 30,
     width: 50,
@@ -205,66 +270,23 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 5,
   },
-  searchContainer: {
-    position: "absolute",
-    top: 60,
-    left: 10,
-    right: 10,
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 8,
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  searchHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  searchTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  searchInput: {
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-    height: 40,
-  },
-  searchButton: {
-    backgroundColor: "#2d2d2d",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  searchButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
   navigationContainer: {
+    position: "absolute",
+    bottom: 30,
+    left: 15,
+    right: 15,
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 10,
+    alignItems: "center",
   },
   matchesText: {
     fontSize: 14,
     color: "#555",
   },
-  prevButton: {
-    marginRight: 20,
-  },
   prevButtonText: {
     fontSize: 18,
     color: "#2d2d2d",
   },
-  nextButton: {},
   nextButtonText: {
     fontSize: 18,
     color: "#2d2d2d",

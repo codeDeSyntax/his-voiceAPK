@@ -5,7 +5,7 @@ import React, {
   useRef,
   useEffect,
 } from "react";
-import { SermonContext } from "../../Logic/globalState";
+
 import {
   Image,
   View,
@@ -30,6 +30,8 @@ import fourthSet from "../../sermons/1972/1972";
 import lastSet from "../../sermons/1973/1973";
 import audioSermons from "../../sermons/audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SermonContext } from "../../Logic/globalState";
+import { useAppTheme } from "../../Logic/theme";
 
 const allSermons = [
   ...earlySermons,
@@ -46,9 +48,9 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 );
 
 function SermonList({ navigation }) {
-  const { setSelectedSermon, recentlyOpened, setRecentlyOpened } =
+  const { setSelectedSermon, recentlyOpened, setRecentlyOpened, settings} =
     React.useContext(SermonContext);
-
+    const {theme}  = useAppTheme();
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
   const [selectedLetter, setSelectedLetter] = useState("All Letters");
@@ -118,7 +120,7 @@ function SermonList({ navigation }) {
   };
   const LocationNotFound = useCallback(
     () => (
-      <Text style={{ fontSize: 9, color: "#427092" }}>Location not found</Text>
+      <Text style={{ fontSize: 9, color: "#427092",fontFamily:'monospace' }}>Location not found</Text>
     ),
     []
   );
@@ -156,17 +158,17 @@ function SermonList({ navigation }) {
         style={[
           styles.sermonItem,
           {
-            backgroundColor: parseInt(index) % 2 === 0 ? "#3d4043" : "#303336",
+            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? "#3d4043" : "#303336") : 'white',
           },
         ]}
         onPress={() => handleSermonClick(item)}
       >
-        <Text style={styles.sermonTitle}>{item.title}</Text>
-        <Text style={{ fontSize: 9, color: "#427092", paddingBottom: 4 }}>
+        <Text style={[styles.sermonTitle, {color:theme.colors.text}]}>{item.title}</Text>
+        <Text style={{ fontSize: 9, color: "#427092", paddingBottom: 4,fontFamily:'monospace' }}>
           {item.location ? item.location : <LocationNotFound />}
         </Text>
         <View
-          style={{
+          style={[{
             flexDirection: "row",
             justifyContent: "space-between",
             padding: 5,
@@ -174,13 +176,10 @@ function SermonList({ navigation }) {
             fontSize: 12,
             width: 250,
             borderRadius: 10,
-          }}
+          }]}
         >
           <Text
-            style={{
-              color: "white",
-              fontSize: 12,
-            }}
+            style={[{color:'#fafafa',fontSize:12}]}
           >
             {item.date}
           </Text>
@@ -210,18 +209,19 @@ function SermonList({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container , {backgroundColor:theme.colors.background} ]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.searchContainer}>
-        <Text style={styles.label}>Sermon List</Text>
-        <View style={styles.searchInputContainer}>
+      <View style={[styles.searchContainer,]}>
+        <Text style={[styles.label,{color:theme.colors.text}]}>Sermon List</Text>
+        <View style={[styles.searchInputContainer, {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:!theme.dark ? 1 : 0, borderColor:'silver'}]}>
           <TextInput
             style={styles.searchInput}
             placeholder="Search Sermons"
             value={searchText}
             onChangeText={setSearchText}
-            placeholderTextColor="#fafafa"
+            placeholderTextColor={theme.colors.text}
+            
           />
           <TouchableOpacity
             style={styles.searchButton}
@@ -237,22 +237,22 @@ function SermonList({ navigation }) {
       <View style={styles.filtersContainer}>
         <TouchableOpacity
           onPress={() => setIsLetterModalVisible(true)}
-          style={styles.filterButton}
+          style={[styles.filterButton, {backgroundColor:theme.dark === true ? '#22272a': 'white',shadowColor:theme.colors.text}]}
         >
           {/* <Text style={styles.filterText}>{selectedLetter}</Text> */}
           <Ionicons
             name="text-outline"
             size={16}
-            color="#fff"
+            color={theme.colors.text}
             style={styles.dropdownIcon}
           />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setIsYearModalVisible(true)}
-          style={styles.filterButton}
+          style={[styles.filterButton, {backgroundColor:theme.dark === true ? '#22272a': 'white',shadowColor:theme.colors.text}]}
         >
           {/* <Text style={styles.filterText}>{selectedYear}</Text> */}
-          <FontAwesome5 name="calendar-alt" color='#fafafa'/>
+          <FontAwesome5 name="calendar-alt"  color={theme.colors.text}/>
         </TouchableOpacity>
        
         <TouchableOpacity style={[styles.sortButton, {flexDirection:'row', alignItems:'center',gap:3}]} onPress={filterOnlyText}>
@@ -364,8 +364,8 @@ const styles = StyleSheet.create({
   // ... (styles remain unchanged)
   container: {
     flex: 1,
-    backgroundColor: "#2d2d2d",
     paddingTop: 40,
+    // backgroundColor:'#2d2d2d'
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -378,24 +378,27 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 8,
     marginTop: 10,
-    color:'#fafafa'
+    // color:'#fafafa'
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#3d4043",
+
+    // backgroundColor: "#3d4043",
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.2,
+    // shadowRadius: 4,
+    // elevation: 1,
+
+
   },
   searchInput: {
     flex: 1,
     height: 40,
     paddingHorizontal: 12,
-    backgroundColor: "#3d4043",
+    // backgroundColor: "#3d4043",
     fontSize: 16,
     color: "#fafafa",
     borderRadius:8
@@ -412,7 +415,9 @@ const styles = StyleSheet.create({
   filtersContainer: {
     flexDirection: "row",
     gap:10,
-    // justifyContent: "space-between",
+    display:'flex',
+    justifyContent: "flex-start",
+    alignItems:'center',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
@@ -420,24 +425,21 @@ const styles = StyleSheet.create({
   filterButton: {
     flexDirection: "row",
     alignItems: "center",
-    // backgroundColor: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    justifyContent:'center',
+    flex:1,
+    backgroundColor: "white",
+   height:30,
+   width:30,
+    borderRadius: 100,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    elevation:5,
   },
   filterText: {
     marginRight: 8,
     fontSize: 16,
     color: "#333",
   },
-  dropdownIcon: {
-    marginLeft: 8,
-  },
+ 
   sortButton: {
     justifyContent: "center",
     alignItems: "center",
@@ -458,18 +460,17 @@ const styles = StyleSheet.create({
   },
   sermonItem: {
     paddingHorizontal: 10,
-    paddingVertical:5,
+    paddingVertical:7,
     marginBottom: 12,
     borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    elevation:5,
+    shadowColor:'#000',
+  //  borderWidth:1,
+   borderColor:'silver',
   },
   sermonTitle: {
     fontSize: 13,
-    fontWeight: "400",
+    fontWeight: "500",
     // fontFamily:'monospace',
     marginBottom: 4,
     color: "#bfc7ca",

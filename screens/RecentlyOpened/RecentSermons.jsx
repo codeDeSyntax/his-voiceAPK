@@ -4,8 +4,10 @@ import React, {
   useMemo,
   useRef,
   useEffect,
+  useContext,
 } from "react";
 import { SermonContext } from "../../Logic/globalState";
+import { useAppTheme } from "../../Logic/theme";
 import {
   Image,
   View,
@@ -48,6 +50,7 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 function RecentlyOpenedSermons({ navigation }) {
   const { setSelectedSermon, recentlyOpened,setRecentlyOpened } =
     React.useContext(SermonContext);
+    const {theme} = useAppTheme()
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
   const [selectedLetter, setSelectedLetter] = useState("All Letters");
@@ -124,6 +127,13 @@ function RecentlyOpenedSermons({ navigation }) {
     return () => pulseAnimation.stop();
   }, [scaleValue]);
 
+  const LocationNotFound = useCallback(
+    () => (
+      <Text style={{ fontSize: 9, color: "#427092",fontFamily:'monospace' }}>Location not found</Text>
+    ),
+    []
+  );
+
   const renderSermonItem = (
     ({ item, index }) => (
       <TouchableOpacity
@@ -131,16 +141,17 @@ function RecentlyOpenedSermons({ navigation }) {
         style={[
           styles.sermonItem,
           {
-            backgroundColor: parseInt(index) % 2 === 0 ? "#3d4043" : "#303336",
-            flexDirection:'row',
-            justifyContent:'space-between',
-            alignItems:'center'
+            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? "#3d4043" : "#303336") : 'white',
           },
         ]}
         
       >
+
       <Pressable onPress={() => handleSermonClick(item)} >
-      <Text style={styles.sermonTitle}>{item.title}</Text>
+      <Text style={[styles.sermonTitle, {color:theme.colors.text}]}>{item.title}</Text>
+      <Text style={{ fontSize: 9, color: "#427092", paddingBottom: 4,fontFamily:'monospace' }}>
+          {item.location ? item.location : <LocationNotFound />}
+        </Text>
         <View
           style={{
             flexDirection: "row",
@@ -171,7 +182,7 @@ function RecentlyOpenedSermons({ navigation }) {
           </Animated.View>
         </View>
       </Pressable>
-     <TouchableOpacity style={{alignSelf:'flex-end'}} onPress={() => removeFromRecents(item)}>
+     <TouchableOpacity style={{alignSelf:''}} onPress={() => removeFromRecents(item)}>
      <FontAwesome name="trash" size={25} color='#427092' />
      </TouchableOpacity>
       </TouchableOpacity>
@@ -189,20 +200,21 @@ function RecentlyOpenedSermons({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container,  {backgroundColor:theme.colors.background}]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.searchContainer}>
-        <Text style={styles.label}>Recently Opened</Text>
+        <Text style={[styles.label, {color:theme.colors.text}]}>Recently Opened</Text>
        {
         recentlyOpened.length > 0 &&
-        <View style={styles.searchInputContainer}>
+        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#3d4043' : '', borderWidth:!theme.dark ? 1 : 0, borderColor:'silver'}]}>
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, {color:'gray', }]}
           placeholder="Search Sermons"
           value={searchText}
           onChangeText={setSearchText}
-          placeholderTextColor="#fafafa"
+          placeholderTextColor={theme.colors.text}
+          
         />
         <TouchableOpacity
           style={styles.searchButton}
@@ -221,28 +233,28 @@ function RecentlyOpenedSermons({ navigation }) {
       <View style={styles.filtersContainer}>
       <TouchableOpacity
         onPress={() => setIsLetterModalVisible(true)}
-        style={styles.filterButton}
+        style={[styles.filterButton ,{backgroundColor:theme.dark === true ? '#22272a': 'white',shadowColor:theme.colors.text}]}
       >
         {/* <Text style={styles.filterText}>{selectedLetter}</Text> */}
         <Ionicons
           name="text-outline"
           size={16}
-          color="#fff"
+          color={theme.colors.text}
           style={styles.dropdownIcon}
         />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => setIsYearModalVisible(true)}
-        style={styles.filterButton}
+        style={[styles.filterButton ,{backgroundColor:theme.colors.background,shadowColor:theme.colors.text}]}
       >
         {/* <Text style={styles.filterText}>{selectedYear}</Text> */}
-        <FontAwesome5 name="calendar-alt" color='#fff'/>
+        <FontAwesome5 name="calendar-alt" color={theme.colors.text}/>
       </TouchableOpacity>
       <TouchableOpacity style={styles.sortButton} onPress={toggleSortOrder}>
         <FontAwesome
           name='sort'
           size={20}
-          color="#fff"
+          color='#fafafa'
         />
       </TouchableOpacity>
     </View>
@@ -358,27 +370,22 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 8,
     marginTop: 10,
-    color:'#fafafa'
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#3d4043",
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor:'white',
   },
   searchInput: {
     flex: 1,
     height: 40,
     paddingHorizontal: 12,
-    backgroundColor: "#3d4043",
     fontSize: 16,
     color: "#fafafa",
     borderRadius:8
+    
+    
   },
   searchButton: {
     height: 40,
@@ -400,24 +407,17 @@ const styles = StyleSheet.create({
   filterButton: {
     flexDirection: "row",
     alignItems: "center",
-    // backgroundColor: "#fff",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    elevation: 5,
   },
   filterText: {
     marginRight: 8,
     fontSize: 16,
     color: "#333",
   },
-  dropdownIcon: {
-    marginLeft: 8,
-  },
+  
   sortButton: {
     justifyContent: "center",
     alignItems: "center",
@@ -435,6 +435,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical:5,
     marginBottom: 12,
+    flexDirection:'row',
+    justifyContent:'space-between',
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -444,7 +446,7 @@ const styles = StyleSheet.create({
   },
   sermonTitle: {
     fontSize: 13,
-    fontWeight: "400",
+    fontWeight: "500",
     // fontFamily:'monospace',
     marginBottom: 4,
     color: "#bfc7ca",
