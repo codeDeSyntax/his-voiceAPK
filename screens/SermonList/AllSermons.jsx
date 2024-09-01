@@ -151,14 +151,14 @@ function SermonList({ navigation }) {
     return () => pulseAnimation.stop();
   }, [scaleValue]);
 
-  const renderSermonItem = useCallback(
+  const renderSermonItem = (
     ({ item, index }) => (
       <TouchableOpacity
       key={item.id}
         style={[
           styles.sermonItem,
           {
-            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? "#3d4043" : "#303336") : 'white',
+            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? "#3d4043" : "#303336") : 'white'
           },
         ]}
         onPress={() => handleSermonClick(item)}
@@ -194,8 +194,8 @@ function SermonList({ navigation }) {
           </Animated.View>
         </View>
       </TouchableOpacity>
-    ),
-    []
+    )
+  
   );
 
   const closeDropdown = useCallback(() => {

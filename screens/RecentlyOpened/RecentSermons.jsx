@@ -141,7 +141,7 @@ function RecentlyOpenedSermons({ navigation }) {
         style={[
           styles.sermonItem,
           {
-            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? "#3d4043" : "#303336") : 'white',
+            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? "#3d4043" : "#303336") : 'white'
           },
         ]}
         
@@ -207,9 +207,9 @@ function RecentlyOpenedSermons({ navigation }) {
         <Text style={[styles.label, {color:theme.colors.text}]}>Recently Opened</Text>
        {
         recentlyOpened.length > 0 &&
-        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#3d4043' : '', borderWidth:!theme.dark ? 1 : 0, borderColor:'silver'}]}>
+        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:!theme.dark ? 1 : 0, borderColor:'silver'}]}>
         <TextInput
-          style={[styles.searchInput, {color:'gray', }]}
+          style={[styles.searchInput, {color:'gray',border:theme.dark === true ? 0 : 1, backgroundColor:theme.dark === true ? '#3d4043' : 'white'   }]}
           placeholder="Search Sermons"
           value={searchText}
           onChangeText={setSearchText}

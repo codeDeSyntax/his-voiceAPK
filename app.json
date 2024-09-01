@@ -3,15 +3,13 @@
     "name": "His voice",
     "slug": "his-voice",
     "version": "1.0.0",
-    "permissions": [
-      "INTERNET"
-    ],
     "orientation": "portrait",
     "icon": "./assets/cloud.png",
     "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#2d2d2d",
-      "image": "./assets/cloud.png"
+      "image": "./assets/cloud.png",
+      "resizeMode": "cover"
     },
     "ios": {
       "supportsTablet": true
@@ -20,6 +18,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/hisvoice.png",
         "backgroundColor": "#2d2d2d"
+        
       },
       "package": "com.josiahok.hisvoice"
     },
