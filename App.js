@@ -12,7 +12,7 @@ export default function App() {
       <SermonProvider>
         <NavigationContainer>
           <KeyboardAvoidingView
-            style={{ flex: 1 }}
+            style={{ flex: 1, backgroundColor: '#22272a' }} // Ensure background color is set here
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
             <StackNavigator />

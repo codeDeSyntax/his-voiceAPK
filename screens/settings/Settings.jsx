@@ -291,8 +291,9 @@ function Settings({navigation}) {
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalText}>
-              Settings applies across the whole application.
+              1. Theme switch applies across the whole application.
             </Text>
+            <Text style={styles.modalText}>2. Color picker and fonts are used to edit the looks on only the currently displaying sermon</Text>
             <TouchableOpacity
               onPress={toggleWarningModal}
               style={[styles.modalButton, { backgroundColor: textColor }]}
