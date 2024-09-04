@@ -18,10 +18,18 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/hisvoice.png",
         "backgroundColor": "#2d2d2d"
-        
       },
       "package": "com.boblambert.hisvoice"
     },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -33,6 +41,9 @@
         "projectId": "8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
       }
     },
-    "owner": "josiah-ok"
+    "owner": "josiah-ok",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }
