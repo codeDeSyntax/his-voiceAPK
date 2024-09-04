@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useContext } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Image, StyleSheet, Platform, KeyboardAvoidingView, View,Text } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Platform,
+  KeyboardAvoidingView,
+  View,
+  Text,
+} from "react-native";
 import { SermonContext } from "../Logic/globalState";
 import Home from "../screens/Home/CurrentSermon";
 import Settings from "../screens/settings/Settings";
@@ -15,8 +22,7 @@ import SermonList from "../screens/SermonList/AllSermons";
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
-const {recentlyOpened} = useContext(SermonContext)
- 
+  const { recentlyOpened } = useContext(SermonContext);
 
   return (
     <KeyboardAvoidingView
@@ -39,7 +45,9 @@ const {recentlyOpened} = useContext(SermonContext)
                 );
                 break;
               case "All Sermons":
-                icon = <Ionicons name="list-outline" size={size} color="#fafafa" />;
+                icon = (
+                  <Ionicons name="list-outline" size={size} color="#fafafa" />
+                );
                 break;
               case "Recent":
                 icon = (
@@ -47,23 +55,25 @@ const {recentlyOpened} = useContext(SermonContext)
                     <Ionicons name="time-outline" size={size} color="#fafafa" />
                     {recentlyOpened.length > 0 && (
                       <View style={styles.badgeContainer}>
-                        <Text style={styles.badgeText}>{recentlyOpened.length}</Text>
+                        <Text style={styles.badgeText}>
+                          {recentlyOpened.length}
+                        </Text>
                       </View>
                     )}
                   </View>
                 );
                 break;
               case "Settings":
-                icon = <Ionicons name="settings-outline" size={size} color="#fafafa" />;
-                break;
-              case "Search":
                 icon = (
                   <Ionicons
-                    name="search"
+                    name="settings-outline"
                     size={size}
                     color="#fafafa"
                   />
                 );
+                break;
+              case "Search":
+                icon = <Ionicons name="search" size={size} color="#fafafa" />;
                 break;
               default:
             }
@@ -80,7 +90,7 @@ const {recentlyOpened} = useContext(SermonContext)
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10,
             bottom: 0,
-            borderTopWidth:0,
+            borderTopWidth: 0,
             paddingBottom: 10,
             paddingTop: 10,
             height: 70,
