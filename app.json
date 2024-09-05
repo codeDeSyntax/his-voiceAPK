@@ -16,14 +16,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/cloud.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#2d2d2d"
       },
       "package": "com.boblambert.hisvoice"
     },
    
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-font"

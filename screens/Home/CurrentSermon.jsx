@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import {useFonts} from 'expo-font';
 import {
   View,
   StyleSheet,
@@ -16,6 +17,10 @@ import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
 
 function Home() {
+  const [fontsLoaded] = useFonts({
+    'Merienda-VariableFont': require('../../assets/fonts/Merienda-VariableFont_wght.ttf'),
+    'Philosopher-Regular': require('../../assets/fonts/Philosopher-Regular.ttf'),
+  });
   const { selectedSermon, settings } = React.useContext(SermonContext);
   const {theme} = useAppTheme();
   const route = useRoute();

@@ -1,4 +1,5 @@
 import React, { useContext, useState } from "react";
+import {useFonts} from 'expo-font';
 import {
   View,
   Text,
@@ -16,6 +17,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "../../Logic/theme";
 
 function Settings({navigation}) {
+
+  const [fontsLoaded] = useFonts({
+    'Merienda-VariableFont': require('../../assets/fonts/Merienda-VariableFont_wght.ttf'),
+    'Philosopher-Regular': require('../../assets/fonts/Philosopher-Regular.ttf'),
+    'GrenzeGotisch-VariableFont': require('../../assets/fonts/GrenzeGotisch-VariableFont_wght.ttf'),
+    'NerkoOne-Regular': require('../../assets/fonts/NerkoOne-Regular.ttf'),
+    'Teko-VariableFont': require('../../assets/fonts/Teko-VariableFont_wght.ttf'),
+  });
   const { settings, setSettings } = useContext(SermonContext);
   const { theme,setIsDarkMode,isDarkMode } = useAppTheme();
   const [fontSize, setFontSize] = useState(settings.fontSize);
@@ -29,7 +38,7 @@ function Settings({navigation}) {
   const [showPreview, setShowPreview] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
-  const fontFamilies = ["System", "Roboto", "monospace"];
+  const fontFamilies = ["System", "Roboto", "monospace","Philosopher-Regular","Merienda-VariableFont","GrenzeGotisch-VariableFont"];
 
   const togglePreview = () => setShowPreview(!showPreview);
   const toggleWarningModal = () => setShowWarningModal(!showWarningModal);
@@ -70,25 +79,19 @@ function Settings({navigation}) {
   };
 
   const restoreDefault = async () => {
-    setSettings(defaultSettings);
+    const updatedSettings = { ...settings, ...defaultSettings };
+    setSettings(updatedSettings);
     try {
       await AsyncStorage.setItem(
         "sermonSettings",
-        JSON.stringify(defaultSettings)
+        JSON.stringify(updatedSettings)
       );
-      console.log("Settings restored to default:", defaultSettings);
+      console.log("Settings restored to default:", updatedSettings);
     } catch (error) {
       console.log("Error restoring settings:", error);
     }
   };
 
-  const setThemeTextColor = () => {
-    setTextColor(theme.colors.text);
-  };
-
-  const setThemeBackgroundColor = () => {
-    setBackgroundColor(theme.colors.background);
-  };
 
   return (
     <ScrollView
