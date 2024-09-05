@@ -222,7 +222,7 @@ function Settings({navigation}) {
             />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={setThemeTextColor}
+            onPress={() => setShowTextColorPicker(!showTextColorPicker)}
             style={styles.themeColorButton}
           >
             <Icon name="color-palette" size={24} color={theme.colors.text} />
@@ -259,7 +259,7 @@ function Settings({navigation}) {
             />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={setThemeBackgroundColor}
+            onPress={() => setShowBgColorPicker(!showBgColorPicker)}
             style={styles.themeColorButton}
           >
             <Icon name="color-palette" size={24} color={theme.colors.text} />

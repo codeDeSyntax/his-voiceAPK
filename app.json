@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/hisvoice.png",
+        "foregroundImage": "./assets/cloud.png",
         "backgroundColor": "#2d2d2d"
       },
       "package": "com.boblambert.hisvoice"

@@ -136,7 +136,7 @@ function RecentlyOpenedSermons({ navigation }) {
 
   const renderSermonItem = (
     ({ item, index }) => (
-      <TouchableOpacity
+      <Pressable
       key={item.id}
         style={[
           styles.sermonItem,
@@ -147,7 +147,7 @@ function RecentlyOpenedSermons({ navigation }) {
         
       >
 
-      <Pressable onPress={() => handleSermonClick(item)} >
+      <TouchableOpacity onPress={() => handleSermonClick(item)} >
       <Text style={[styles.sermonTitle, {color:theme.colors.text}]}>{item.title}</Text>
       <Text style={{ fontSize: 9, color: "#427092", paddingBottom: 4,fontFamily:'monospace' }}>
           {item.location ? item.location : <LocationNotFound />}
@@ -181,11 +181,11 @@ function RecentlyOpenedSermons({ navigation }) {
             )}
           </Animated.View>
         </View>
-      </Pressable>
+      </TouchableOpacity>
      <TouchableOpacity style={{alignSelf:''}} onPress={() => removeFromRecents(item)}>
      <FontAwesome name="trash" size={25} color='#427092' />
      </TouchableOpacity>
-      </TouchableOpacity>
+      </Pressable>
     )
   );
 
