@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Linking, StyleSheet } from 'react-native';
+import  { useState,useContext } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, Linking, StyleSheet,ImageBackground } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Modal from 'react-native-modal';
 import { Ionicons } from '@expo/vector-icons';
 import { SermonContext } from '../Logic/globalState';
 import { useAppTheme } from '../Logic/theme';
 
 const DownloadSermon = () => {
-  const { selectedSermon } = React.useContext(SermonContext);
+  const { selectedSermon } = useContext(SermonContext);
   const { theme } = useAppTheme();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
-  const audioUrl = selectedSermon.type === 'mp3' && selectedSermon.audioUrl;
+  const audioUrl =  selectedSermon?.audioUrl;
 
   const handleLinkPress = (url) => {
     Linking.openURL(url);
@@ -28,8 +29,17 @@ const DownloadSermon = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Sermon Audio</Text>
+   <ImageBackground
+   source={require('../assets/pic3.jpg')} // Make sure to add your background image
+      style={styles.backgroundImage}
+   >
+    <LinearGradient 
+     colors={['rgba(0,0,0,0.1)', '#2f2f2f', '#2f2f2f']}
+     locations={[0, 0.5, 1]}
+     style={styles.gradient}
+    >
+    <View style={[styles.container,]}>
+      <Text style={[styles.title, { color: theme.colors.text, textAlign:'center' }]}>Sermon Audio{audioUrl}</Text>
       <Text style={styles.subtitle}>{selectedSermon.title}</Text>
 
       <TouchableOpacity onPress={() => showModal('Play functionality not available yet')} style={styles.playButton} disabled={isLoading}>
@@ -55,7 +65,7 @@ const DownloadSermon = () => {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => handleLinkPress(audioUrl)} style={{ paddingVertical: 10 }}>
-        <Text style={[{ textDecorationLine: 'underline', color: '#5eb7ee', fontStyle: 'italic' }]}>{audioUrl}</Text>
+        <Text style={[{ textDecorationLine: 'underline', color: '#5eb7ee', fontStyle: 'italic' }]}>{audioUrl || selectedSermon?.audioUrl}</Text>
       </TouchableOpacity>
 
       <Modal
@@ -68,6 +78,8 @@ const DownloadSermon = () => {
         </View>
       </Modal>
     </View>
+    </LinearGradient>
+   </ImageBackground>
   );
 };
 
@@ -76,8 +88,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#2D2D2D',
     padding: 20,
+  },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  gradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     color: 'white',

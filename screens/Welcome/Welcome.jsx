@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import { useFonts } from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const Welcome = ({ navigation }) => {
   const [fontsLoaded] = useFonts({
@@ -17,33 +18,52 @@ const Welcome = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>
-          Transcribed and audio versions of Robert Lambert Lee sermons
-        </Text>
-        <Text style={styles.subtitle}>1964 - 1973</Text>
-        <TouchableOpacity style={styles.button} onPress={handleGoToSermons}>
-          <Text style={styles.buttonText}>Go to Sermons</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <ImageBackground
+      source={require('../../assets/pic3.jpg')} // Make sure to add your background image
+      style={styles.backgroundImage}
+    >
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        style={styles.gradient}
+      >
+        <View style={styles.container}>
+          <View style={styles.content}>
+            <Text style={styles.title}>
+              Transcribed and audio versions of Robert Lambert Lee sermons
+            </Text>
+            <Text style={styles.subtitle}>1964 - 1973</Text>
+            <TouchableOpacity style={styles.button} onPress={handleGoToSermons}>
+              <Text style={styles.buttonText}>Go to Sermons</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  gradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#2d2d2d', // Light gray background
   },
   content: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     padding: 30,
     borderRadius: 10,
-    shadowColor: "#fAFAFA",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,

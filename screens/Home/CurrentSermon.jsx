@@ -10,11 +10,13 @@ import {
   TextInput,
   Dimensions,
 } from "react-native";
+import { ImageBackground } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
 import { useAppTheme } from "../../Logic/theme";
 import { useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
+import { LinearGradient } from "expo-linear-gradient";
 
 function Home() {
   const [fontsLoaded] = useFonts({
@@ -128,7 +130,16 @@ function Home() {
   };
 
   return (
-    <View style={[styles.container, {}]}>
+    <ImageBackground 
+    source={require('../../assets/pic11.jpeg')} // Make sure to add your background image
+      style={styles.backgroundImage}
+    >
+      <LinearGradient 
+       colors={['rgba(0,0,0,0.1)', '#2f2f2f', '#2f2f2f']}
+       locations={[0, 0.7, 1]}
+       style={styles.gradient}
+      >
+      <View style={[styles.container, {}]}>
       {selectedSermon.type === "mp3" ? (
         <PlaySermon sermon={selectedSermon} />
       ) : (
@@ -136,7 +147,7 @@ function Home() {
           ref={scrollViewRef}
           contentContainerStyle={[
             styles.scrollViewContainer,
-            { backgroundColor: settings.backgroundColor },
+            // { backgroundColor: settings.backgroundColor },
           ]}
           onContentSizeChange={(width, height) => setContentHeight(height)}
         >
@@ -201,11 +212,21 @@ function Home() {
         </>
       )}
     </View>
+      </LinearGradient>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  gradient: {
     flex: 1,
   },
   scrollViewContainer: {

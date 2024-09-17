@@ -4,7 +4,7 @@
     "slug": "his-voice",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/cloud.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#2d2d2d",
@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2d2d2d"
       },
       "package": "com.boblambert.hisvoice"

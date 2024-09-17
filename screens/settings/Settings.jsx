@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import {useFonts} from 'expo-font';
+import { useFonts } from "expo-font";
 import {
   View,
   Text,
@@ -16,17 +16,16 @@ import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "../../Logic/theme";
 
-function Settings({navigation}) {
-
+function Settings({ navigation }) {
   const [fontsLoaded] = useFonts({
-    'Merienda-VariableFont': require('../../assets/fonts/Merienda-VariableFont_wght.ttf'),
-    'Philosopher-Regular': require('../../assets/fonts/Philosopher-Regular.ttf'),
-    'GrenzeGotisch-VariableFont': require('../../assets/fonts/GrenzeGotisch-VariableFont_wght.ttf'),
-    'NerkoOne-Regular': require('../../assets/fonts/NerkoOne-Regular.ttf'),
-    'Teko-VariableFont': require('../../assets/fonts/Teko-VariableFont_wght.ttf'),
+    "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
+    "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
+    "GrenzeGotisch-VariableFont": require("../../assets/fonts/GrenzeGotisch-VariableFont_wght.ttf"),
+    "NerkoOne-Regular": require("../../assets/fonts/NerkoOne-Regular.ttf"),
+    "Teko-VariableFont": require("../../assets/fonts/Teko-VariableFont_wght.ttf"),
   });
   const { settings, setSettings } = useContext(SermonContext);
-  const { theme,setIsDarkMode,isDarkMode } = useAppTheme();
+  const { theme, setIsDarkMode, isDarkMode } = useAppTheme();
   const [fontSize, setFontSize] = useState(settings.fontSize);
   const [fontFamily, setFontFamily] = useState(settings.fontFamily);
   const [textColor, setTextColor] = useState(settings.textColor);
@@ -38,7 +37,17 @@ function Settings({navigation}) {
   const [showPreview, setShowPreview] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
-  const fontFamilies = ["System", "Roboto", "monospace","Philosopher-Regular","Merienda-VariableFont","GrenzeGotisch-VariableFont"];
+  const fontFamilies = [
+    "System",
+    "Cursive",
+    "sans-serif",
+    "serif",
+    "Roboto",
+    "monospace",
+    "Philosopher-Regular",
+    "Merienda-VariableFont",
+    "GrenzeGotisch-VariableFont",
+  ];
 
   const togglePreview = () => setShowPreview(!showPreview);
   const toggleWarningModal = () => setShowWarningModal(!showWarningModal);
@@ -62,7 +71,7 @@ function Settings({navigation}) {
   const toggleTheme = async () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
-    };
+  };
 
   const saveSettings = async () => {
     const updatedSettings = { ...settings, ...newSettings };
@@ -78,20 +87,19 @@ function Settings({navigation}) {
     }
   };
 
-  const restoreDefault = async () => {
-    const updatedSettings = { ...settings, ...defaultSettings };
-    setSettings(updatedSettings);
-    try {
-      await AsyncStorage.setItem(
-        "sermonSettings",
-        JSON.stringify(updatedSettings)
-      );
-      console.log("Settings restored to default:", updatedSettings);
-    } catch (error) {
-      console.log("Error restoring settings:", error);
-    }
-  };
-
+  // const restoreDefault = async () => {
+  //   const updatedSettings = { ...settings, ...defaultSettings };
+  //   setSettings(updatedSettings);
+  //   try {
+  //     await AsyncStorage.setItem(
+  //       "sermonSettings",
+  //       JSON.stringify(updatedSettings)
+  //     );
+  //     console.log("Settings restored to default:", updatedSettings);
+  //   } catch (error) {
+  //     console.log("Error restoring settings:", error);
+  //   }
+  // };
 
   return (
     <ScrollView
@@ -99,10 +107,7 @@ function Settings({navigation}) {
     >
       <View style={styles.header}>
         <Text
-          style={[
-            styles.title,
-            {  fontSize: 20, color: theme.colors.text },
-          ]}
+          style={[styles.title, { fontSize: 20, color: theme.colors.text }]}
         >
           Settings
         </Text>
@@ -114,9 +119,9 @@ function Settings({navigation}) {
               color={theme.colors.text}
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={restoreDefault} style={styles.iconButton}>
+          {/* <TouchableOpacity onPress={restoreDefault} style={styles.iconButton}>
             <Icon name="refresh" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity onPress={toggleTheme} style={styles.iconButton}>
             <Icon
               name={theme.dark ? "sunny" : "moon"}
@@ -131,7 +136,7 @@ function Settings({navigation}) {
             <Icon name="warning-outline" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => navigation.navigate('About')}
+            onPress={() => navigation.navigate("About")}
             style={styles.iconButton}
           >
             <Icon name="help-circle" size={24} color={theme.colors.text} />
@@ -140,11 +145,16 @@ function Settings({navigation}) {
       </View>
 
       {showPreview && (
-        <View style={[styles.previewBox, { backgroundColor: settings.backgroundColor }]}>
+        <View
+          style={[
+            styles.previewBox,
+            { backgroundColor: settings.backgroundColor },
+          ]}
+        >
           <Text
             style={[
               styles.previewText,
-              { fontFamily, fontSize, color: settings.textColor},
+              { fontFamily, fontSize, color: settings.textColor },
             ]}
           >
             Preview Text
@@ -156,7 +166,7 @@ function Settings({navigation}) {
         <Text
           style={[
             styles.sectionTitle,
-            {  color: theme.colors.text,fontSize:16 },
+            { color: theme.colors.text, fontSize: 16 },
           ]}
         >
           Font Size
@@ -178,12 +188,7 @@ function Settings({navigation}) {
       </View>
 
       <View style={styles.section}>
-        <Text
-          style={[
-            styles.sectionTitle,
-            {  color: theme.colors.text },
-          ]}
-        >
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
           Font Family
         </Text>
         <View
@@ -191,7 +196,7 @@ function Settings({navigation}) {
             styles.pickerContainer,
             {
               backgroundColor: theme.dark === true ? "#22272a" : "white",
-              borderWidth: theme.dark === false ? 1 :0,
+              borderWidth: theme.dark === false ? 1 : 0,
               borderColor: "silver",
             },
           ]}
@@ -199,9 +204,15 @@ function Settings({navigation}) {
           <Picker
             selectedValue={fontFamily}
             onValueChange={(itemValue) => setFontFamily(itemValue)}
-            style={[styles.picker, { color: theme.colors.text,fontFamily,backgroundColor:theme.dark === true ? '#22272a' :'white' }]}
+            style={[
+              styles.picker,
+              {
+                color: theme.colors.text,
+                fontFamily,
+                backgroundColor: theme.dark === true ? "#22272a" : "white",
+              },
+            ]}
             dropdownIconColor={theme.colors.text}
-            
           >
             {fontFamilies.map((family) => (
               <Picker.Item key={family} label={family} value={family} />
@@ -221,7 +232,10 @@ function Settings({navigation}) {
           >
             <Icon name="text" size={24} color={theme.colors.text} />
             <View
-              style={[styles.colorPreview, { backgroundColor: settings.textColor }]}
+              style={[
+                styles.colorPreview,
+                { backgroundColor: settings.textColor },
+              ]}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -294,9 +308,8 @@ function Settings({navigation}) {
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalText}>
-              1. Theme switch applies across the whole application.
+              1. Theme switch does not apply across the entire application.
             </Text>
-            <Text style={styles.modalText}>2. Color picker and fonts are used to edit the looks on only the currently displaying sermon</Text>
             <TouchableOpacity
               onPress={toggleWarningModal}
               style={[styles.modalButton, { backgroundColor: textColor }]}

@@ -1,19 +1,20 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   TextInput,
   Text,
   ScrollView,
   StyleSheet,
-  Pressable,
   TouchableOpacity,
   Animated,
+  ImageBackground,
 } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
 import { useAppTheme } from "../../Logic/theme";
 import { ActivityIndicator } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AntDesign } from "@expo/vector-icons";
+import { LinearGradient } from 'expo-linear-gradient';
 
 import earlySermons from "../../sermons/1964-1969/firstset";
 import secondSet from "../../sermons/1970/1970";
@@ -38,21 +39,12 @@ const SermonSearch = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
-  // Debounce search input
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      if (searchText.trim() === "") {
-        setFilteredSermons([]);
-        setLoading(false);
-      } else {
-        handleSearch(searchText);
-      }
-    }, 300); // 300ms debounce time
+  const handleSearch = async () => {
+    if (searchText.trim() === "") {
+      setFilteredSermons([]);
+      return;
+    }
 
-    return () => clearTimeout(delayDebounce);
-  }, [searchText]);
-
-  const handleSearch = async (text) => {
     setLoading(true);
 
     try {
@@ -60,7 +52,7 @@ const SermonSearch = ({ navigation }) => {
 
       const filtered = sermons
         .map((sermon) => {
-          const regex = new RegExp(`(${text})`, "i");
+          const regex = new RegExp(`(${searchText})`, "i");
           const match = sermon.sermon.match(regex);
           if (match) {
             const sentence = sermon.sermon.slice(
@@ -108,111 +100,118 @@ const SermonSearch = ({ navigation }) => {
   };
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    <ImageBackground
+      source={require('../../assets/pic13.jpeg')} // Make sure to add your background image
+      style={styles.backgroundImage}
     >
-      <View style={styles.searchContainer}>
-        <View style={styles.inputWrapper}>
-          <Ionicons
-            name="search"
-            size={24}
-            color="gray"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={[styles.searchInput, { color: theme.colors.text }]}
-            placeholder="Search qoutes from sermons..."
-            value={searchText}
-            onChangeText={setSearchText}
-            placeholderTextColor={theme.colors.text}
-          />
-          {searchText.length > 0 && (
-            <TouchableOpacity onPress={handleClearSearch}>
-              <AntDesign
-                name="closecircle"
+      <LinearGradient
+        colors={['#2f2f2f', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
+        locations={[0, 0.6, 1]}
+        style={styles.gradient}
+      >
+        <View style={styles.container}>
+          <View style={styles.searchContainer}>
+            <View style={styles.inputWrapper}>
+              <Ionicons
+                name="search"
                 size={24}
                 color="gray"
-                style={styles.clearIcon}
+                style={styles.searchIcon}
               />
+              <TextInput
+                style={[styles.searchInput, { color: '#fafafa' }]}
+                placeholder="Search quotes "
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholderTextColor='#fafafa'
+              />
+              {searchText.length > 0 && (
+                <TouchableOpacity onPress={handleClearSearch}>
+                  <AntDesign
+                    name="closecircle"
+                    size={24}
+                    color="gray"
+                    style={styles.clearIcon}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+              <Text style={styles.searchButtonText}>Search</Text>
             </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      <ScrollView>
-        {loading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="blue" />
-            <Text style={[styles.loaderText, { color: theme.colors.text }]}>
-              Searching sermons...
-            </Text>
           </View>
-        ) : filteredSermons.length > 0 ? (
-          filteredSermons.map((sermon, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.sermonContainer}
-              onPress={() => handleSermonClick(sermon)}
-            >
-              <Text style={[styles.sermonTitle, { color: theme.colors.text }]}>
-                {sermon.title}
-              </Text>
-              <Text
-                style={[styles.sermonContent, { color: theme.colors.text }]}
-              >
-                {sermon.sentence
-                  .split(/(<highlight>.*?<\/highlight>)/g)
-                  .map((part, i) => (
-                    <Text
-                      key={i}
-                      style={
-                        part.startsWith("<highlight>") &&
-                        part.endsWith("</highlight>")
-                          ? styles.highlightedText
-                          : undefined
-                      }
-                    >
-                      {part.replace(/<\/?highlight>/g, "")}
-                    </Text>
-                  ))}
-              </Text>
-              {/* <Text
-                style={{
-                  color: theme.colors.text,
-                  padding: 2,
-                  borderRadius: 10,
-                  backgroundColor: "rgba(0,0,0,0.5)",
-                  width: "70%",
-                  paddingHorzontal: 4,
-                  marginTop: 2,
-                }}
-              >
-                {sermon.location ? sermon.location : "not found"}
-              </Text> */}
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Animated.View style={{ opacity: fadeAnim }}>
-            <Text style={[styles.noResultsText, { color: theme.colors.text }]}>
-              {searchText.trim() !== ""
-                ? "No sermons found"
-                : "Search quotes from all sermons"}
-            </Text>
-          </Animated.View>
-        )}
-      </ScrollView>
-    </View>
+
+          <ScrollView>
+            {loading ? (
+              <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="blue" />
+                <Text style={[styles.loaderText, { color: theme.colors.text }]}>
+                  Searching sermons...
+                </Text>
+              </View>
+            ) : filteredSermons.length > 0 ? (
+              filteredSermons.map((sermon, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.sermonContainer}
+                  onPress={() => handleSermonClick(sermon)}
+                >
+                  <Text style={[styles.sermonTitle, { color: '#fafafa' }]}>
+                    {sermon.title}
+                  </Text>
+                  <Text
+                    style={[styles.sermonContent, { color: '#fafafa' }]}
+                  >
+                    {sermon.sentence
+                      .split(/(<highlight>.*?<\/highlight>)/g)
+                      .map((part, i) => (
+                        <Text
+                          key={i}
+                          style={
+                            part.startsWith("<highlight>") &&
+                            part.endsWith("</highlight>")
+                              ? styles.highlightedText
+                              : undefined
+                          }
+                        >
+                          {part.replace(/<\/?highlight>/g, "")}
+                        </Text>
+                      ))}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Animated.View style={{ opacity: fadeAnim }}>
+                <Text style={[styles.noResultsText, { color: 'silver' }]}>
+                  {searchText.trim() !== ""
+                    ? "No sermons found"
+                    : "Search quotes from all sermons"}
+                </Text>
+              </Animated.View>
+            )}
+          </ScrollView>
+        </View>
+      </LinearGradient>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
     marginTop: 60,
     paddingHorizontal: 10,
   },
@@ -223,7 +222,9 @@ const styles = StyleSheet.create({
     borderColor: "gray",
     borderRadius: 10,
     padding: 10,
-    width: "90%",
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   searchInput: {
     flex: 1,
@@ -235,13 +236,23 @@ const styles = StyleSheet.create({
   clearIcon: {
     marginLeft: 10,
   },
+  searchButton: {
+    backgroundColor: '#2f2f2f',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  searchButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
   sermonContainer: {
     padding: 10,
-    borderBottomColor: "lightgray",
+    borderBottomColor: "rgba(211, 211, 211, 0.3)",
     borderBottomWidth: 1,
   },
   sermonTitle: {
-    fontWeight: "bold",
+    fontWeight: "normal",
     fontSize: 16,
     marginBottom: 5,
   },
