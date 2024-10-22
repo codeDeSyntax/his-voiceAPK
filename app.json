@@ -11,6 +11,12 @@
       "image": "./assets/cloud.png",
       "resizeMode": "contain"
     },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+  
     "ios": {
       "supportsTablet": true
     },
@@ -37,5 +43,6 @@
     "runtimeVersion": {
       "policy": "appVersion"
     }
+    
   }
 }

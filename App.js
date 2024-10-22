@@ -6,9 +6,28 @@ import StackNavigator from './components/StackNavigator';
 import { NavigationContainer } from '@react-navigation/native';
 import { SermonProvider } from './Logic/globalState';
 import { AppThemeProvider } from './Logic/theme';
+import { Alert } from 'react-native';
+import * as Updates from 'expo-updates';
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
+
+  useEffect(() => {
+    async function checkForUpdates() {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          Alert.alert('Update available', 'Restarting to apply the update...');
+          await Updates.reloadAsync(); // Will reload the app with the new update
+        }
+      } catch (e) {
+        console.log('Error checking for updates', e);
+      }
+    }
+
+    checkForUpdates();
+  }, []);
 
   useEffect(() => {
     async function prepareApp() {
