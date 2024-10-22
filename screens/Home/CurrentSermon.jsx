@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import {useFonts} from 'expo-font';
+import { useFonts } from "expo-font";
+import { Text } from "react-native-paper";
 import {
   View,
   StyleSheet,
   ScrollView,
-  Text,
+  // Text,
   TouchableOpacity,
   TextInput,
   Dimensions,
@@ -20,11 +21,11 @@ import { LinearGradient } from "expo-linear-gradient";
 
 function Home() {
   const [fontsLoaded] = useFonts({
-    'Merienda-VariableFont': require('../../assets/fonts/Merienda-VariableFont_wght.ttf'),
-    'Philosopher-Regular': require('../../assets/fonts/Philosopher-Regular.ttf'),
+    "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
+    "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
   });
   const { selectedSermon, settings } = React.useContext(SermonContext);
-  const {theme} = useAppTheme();
+  const { theme } = useAppTheme();
   const route = useRoute();
   const searchPhrase = route.params?.searchPhrase || "";
 
@@ -53,18 +54,22 @@ function Home() {
   useFocusEffect(
     useCallback(() => {
       const scrollToMatch = () => {
-        if (selectedSermon && selectedSermon.sermon && searchResults.length > 0) {
+        if (
+          selectedSermon &&
+          selectedSermon.sermon &&
+          searchResults.length > 0
+        ) {
           const { height: windowHeight } = Dimensions.get("window");
           const matchIndex = searchResults[currentResultIndex].index;
-          const position = matchIndex / selectedSermon.sermon.length * contentHeight;
+          const position =
+            (matchIndex / selectedSermon.sermon.length) * contentHeight;
           const offset = Math.max(position - windowHeight / 2, 0);
           scrollViewRef.current?.scrollTo({ y: offset, animated: true });
         }
       };
-      
+
       // Delay scrolling to ensure layout is updated
       setTimeout(scrollToMatch, 100);
-
     }, [searchResults, currentResultIndex, contentHeight, selectedSermon])
   );
 
@@ -79,20 +84,19 @@ function Home() {
     if (searchResults.length === 0) {
       return (
         <Text
-        
+        variant="bodyLarge"
           style={[
             styles.sermonText,
             {
-              textAlign:'center',
+              // textAlign:'center',
               color: settings.textColor,
               fontFamily: settings.fontFamily,
               fontSize: settings.fontSize,
-              lineHeight: 30,
+             
+              // lineHeight: 30,
               // includeFontPadding:false,
-              writingDirection: "rtl",
-              textAlignVertical: "center",
-              
-            
+              // writingDirection: "rtl",
+              // textAlignVertical: "center",
             },
           ]}
         >
@@ -130,16 +134,16 @@ function Home() {
   };
 
   return (
-    <ImageBackground 
-    source={require('../../assets/pic11.jpeg')} // Make sure to add your background image
-      style={styles.backgroundImage}
-    >
-      <LinearGradient 
-       colors={['rgba(0,0,0,0.1)', '#2f2f2f', '#2f2f2f']}
-       locations={[0, 0.7, 1]}
-       style={styles.gradient}
-      >
-      <View style={[styles.container, {}]}>
+    // <ImageBackground
+    // source={require('../../assets/pic11.jpeg')} // Make sure to add your background image
+    //   style={styles.backgroundImage}
+    // >
+    // <LinearGradient
+    //  colors={['rgba(0,0,0,0.1)', '#2f2f2f', '#2f2f2f']}
+    //  locations={[0, 0.7, 1]}
+    //  style={styles.gradient}
+    // >
+    <View style={[styles.container, { backgroundColor:settings.backgroundColor }]}>
       {selectedSermon.type === "mp3" ? (
         <PlaySermon sermon={selectedSermon} />
       ) : (
@@ -152,8 +156,12 @@ function Home() {
           onContentSizeChange={(width, height) => setContentHeight(height)}
         >
           <View>
-            <Text style={[styles.titleText, {color: settings.textColor}]}>{selectedSermon.title}</Text>
-            <Text style={[styles.locationText,{color: settings.textColor}]}>{selectedSermon.location}</Text>
+            <Text style={[styles.titleText, { color: settings.textColor }]}>
+              {selectedSermon.title}
+            </Text>
+            <Text style={[styles.locationText, { color: settings.textColor }]}>
+              {selectedSermon.location}
+            </Text>
             {renderSermonText()}
           </View>
         </ScrollView>
@@ -212,8 +220,7 @@ function Home() {
         </>
       )}
     </View>
-      </LinearGradient>
-    </ImageBackground>
+    // </LinearGradient>
   );
 }
 
@@ -223,8 +230,8 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   gradient: {
     flex: 1,
@@ -237,15 +244,14 @@ const styles = StyleSheet.create({
   sermonText: {
     lineHeight: 25,
     marginBottom: 15,
-    marginLeft: 0,
-    paddingLeft: 0,
-    textAlign: "center",
+    // marginLeft: 0,
+    // paddingLeft: 0,
+    // textAlign: "center",
   },
   highlightedText: {
-    backgroundColor:'green',
-    color: '#14f39d', // Match text color with the border
-    fontWeight: 'bold',
-    
+    backgroundColor: "green",
+    color: "#14f39d", // Match text color with the border
+    fontWeight: "bold",
   },
   titleText: {
     color: "#cdc4d6",

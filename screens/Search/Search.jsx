@@ -76,6 +76,7 @@ const SermonSearch = ({ navigation }) => {
         .filter(Boolean);
 
       setFilteredSermons(filtered);
+     
     } catch (error) {
       console.log("Could not fetch sermons", error);
     } finally {
@@ -100,16 +101,16 @@ const SermonSearch = ({ navigation }) => {
   };
 
   return (
-    <ImageBackground
-      source={require('../../assets/pic13.jpeg')} // Make sure to add your background image
-      style={styles.backgroundImage}
-    >
-      <LinearGradient
-        colors={['#2f2f2f', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
-        locations={[0, 0.6, 1]}
-        style={styles.gradient}
-      >
-        <View style={styles.container}>
+    // <ImageBackground
+    //   source={require('../../assets/pic13.jpeg')} // Make sure to add your background image
+    //   style={styles.backgroundImage}
+    // >
+    //   <LinearGradient
+    //     colors={['#2f2f2f', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
+    //     locations={[0, 0.6, 1]}
+    //     style={styles.gradient}
+    //   >
+        <View style={[styles.container,{backgroundColor:theme.colors.primary}]}>
           <View style={styles.searchContainer}>
             <View style={styles.inputWrapper}>
               <Ionicons
@@ -181,18 +182,18 @@ const SermonSearch = ({ navigation }) => {
                 </TouchableOpacity>
               ))
             ) : (
-              <Animated.View style={{ opacity: fadeAnim }}>
+              <View >
                 <Text style={[styles.noResultsText, { color: 'silver' }]}>
                   {searchText.trim() !== ""
                     ? "No sermons found"
                     : "Search quotes from all sermons"}
                 </Text>
-              </Animated.View>
+              </View>
             )}
           </ScrollView>
         </View>
-      </LinearGradient>
-    </ImageBackground>
+    //   </LinearGradient>
+    // </ImageBackground>
   );
 };
 
@@ -207,6 +208,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    paddingVertical:10
   },
   searchContainer: {
     flexDirection: "row",

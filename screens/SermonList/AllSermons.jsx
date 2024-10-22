@@ -120,7 +120,7 @@ function SermonList({ navigation }) {
   };
   const LocationNotFound = useCallback(
     () => (
-      <Text style={{ fontSize: 9, color: "#427092",fontFamily:'monospace' }}>Location not found</Text>
+      <Text style={{ fontSize: 9, color: theme.colors.ltext,fontFamily:'monospace' }}>Location not found</Text>
     ),
     []
   );
@@ -158,28 +158,26 @@ function SermonList({ navigation }) {
         style={[
           styles.sermonItem,
           {
-            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? "#3d4043" : "#303336") : 'white'
+            borderWidth:1,
+            borderColor:theme.colors.secondary,
+            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? theme.colors.primary : theme.colors.primary) : 'white'
           },
         ]}
         onPress={() => handleSermonClick(item)}
       >
-        <Text style={[styles.sermonTitle, {color:theme.colors.text}]}>{item.title}</Text>
-        <Text style={{ fontSize: 9, color: "#427092", paddingBottom: 4,fontFamily:'monospace' }}>
-          {item.location ? item.location : <LocationNotFound />}
-        </Text>
         <View
           style={[{
             flexDirection: "row",
             justifyContent: "space-between",
             padding: 5,
-            backgroundColor: "#22272a",
+            // backgroundColor: theme.colors.secondary,
             fontSize: 12,
-            width: 250,
+            // width: 250,
             borderRadius: 10,
           }]}
         >
           <Text
-            style={[{color:'#fafafa',fontSize:12}]}
+            style={[{color:'#8e969c',fontSize:12}]}
           >
             {item.date}
           </Text>
@@ -193,6 +191,15 @@ function SermonList({ navigation }) {
             )}
           </Animated.View>
         </View>
+        <View style={{display:"flex", flexDirection:'row',justifyContent:"space-between"}}>
+        <Text style={[styles.sermonTitle, {color:theme.colors.text},]}>
+          {item.title + "   "} <FontAwesome5 name="caret-right"  color={theme.colors.ltext}/>
+          </Text>
+        </View>
+        <Text style={{ fontSize: 9, color: theme.colors.ltext, paddingBottom: 4,fontFamily:'monospace' }}>
+          {item.location ? item.location : <LocationNotFound />}
+        </Text>
+        
       </TouchableOpacity>
     )
   
@@ -209,14 +216,14 @@ function SermonList({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container , {backgroundColor:theme.colors.background} ]}
+      style={[styles.container , {backgroundColor:theme.colors.primary} ]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={[styles.searchContainer,]}>
         <Text style={[styles.label,{color:theme.colors.text}]}>Sermon List</Text>
-        <View style={[styles.searchInputContainer, {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:!theme.dark ? 1 : 0, borderColor:'silver'}]}>
+        <View style={[styles.searchInputContainer, {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:!theme.dark ? 1 : 0, borderColor:'gray'}]}>
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, {backgroundColor:theme.colors.secondary}]}
             placeholder="Search Sermons"
             value={searchText}
             onChangeText={setSearchText}
@@ -224,7 +231,7 @@ function SermonList({ navigation }) {
             
           />
           <TouchableOpacity
-            style={styles.searchButton}
+            style={[styles.searchButton,{backgroundColor:theme.colors.secondary}]}
             onPress={() => {
               /* Implement search action */
             }}
@@ -372,6 +379,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
+    borderRadius: 8,
   },
   label: {
     fontSize: 20,
@@ -383,16 +391,7 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-
-    // backgroundColor: "#3d4043",
     borderRadius: 8,
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.2,
-    // shadowRadius: 4,
-    // elevation: 1,
-
-
   },
   searchInput: {
     flex: 1,
@@ -401,12 +400,15 @@ const styles = StyleSheet.create({
     // backgroundColor: "#3d4043",
     fontSize: 16,
     color: "#fafafa",
-    borderRadius:8
+    borderTopLeftRadius:8,
+    borderBottomLeftRadius:8
+  },
+  dropdownIcon: {
   },
   searchButton: {
     height: 40,
     width: 40,
-    backgroundColor: "#427092",
+    // backgroundColor: "#427092",
     justifyContent: "center",
     alignItems: "center",
     borderTopRightRadius: 8,
@@ -443,7 +445,7 @@ const styles = StyleSheet.create({
   sortButton: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#427092",
+    backgroundColor: "#202425",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -454,13 +456,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 16,
     paddingTop:10
   },
   sermonItem: {
-    paddingHorizontal: 10,
-    paddingVertical:7,
+    paddingHorizontal: 12,
+    paddingVertical:10,
     marginBottom: 12,
     borderRadius: 10,
     elevation:5,

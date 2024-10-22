@@ -129,7 +129,7 @@ function RecentlyOpenedSermons({ navigation }) {
 
   const LocationNotFound = useCallback(
     () => (
-      <Text style={{ fontSize: 9, color: "#427092",fontFamily:'monospace' }}>Location not found</Text>
+      <Text style={{ fontSize: 9, color: theme.colors.ltext,fontFamily:'monospace' }}>Location not found</Text>
     ),
     []
   );
@@ -141,31 +141,30 @@ function RecentlyOpenedSermons({ navigation }) {
         style={[
           styles.sermonItem,
           {
-            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? "#3d4043" : "#303336") : 'white'
+            borderWidth:1,
+            borderColor:theme.colors.secondary,
+            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? theme.colors.primary : theme.colors.primary) : 'white'
           },
         ]}
         
       >
 
       <TouchableOpacity onPress={() => handleSermonClick(item)} >
-      <Text style={[styles.sermonTitle, {color:theme.colors.text}]}>{item.title}</Text>
-      <Text style={{ fontSize: 9, color: "#427092", paddingBottom: 4,fontFamily:'monospace' }}>
-          {item.location ? item.location : <LocationNotFound />}
-        </Text>
-        <View
+      <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
             padding: 5,
-            backgroundColor: "#22272a",
             fontSize: 12,
             width: 250,
             borderRadius: 10,
+            backgroundColor:theme.colors.background,
+            marginBottom:2
           }}
         >
           <Text
             style={{
-              color: "white",
+              color: "#8e969c",
               fontSize: 12,
             }}
           >
@@ -181,9 +180,14 @@ function RecentlyOpenedSermons({ navigation }) {
             )}
           </Animated.View>
         </View>
+      <Text style={[styles.sermonTitle, {color:theme.colors.text}]}>{item.title}</Text>
+      <Text style={{ fontSize: 9, color: theme.colors.ltext, paddingBottom: 4,fontFamily:'monospace' }}>
+          {item.location ? item.location : <LocationNotFound />}
+        </Text>
+       
       </TouchableOpacity>
      <TouchableOpacity style={{alignSelf:''}} onPress={() => removeFromRecents(item)}>
-     <FontAwesome name="trash" size={25} color='#427092' />
+     <FontAwesome name="trash" size={25} color='#fafafa' />
      </TouchableOpacity>
       </Pressable>
     )
@@ -200,11 +204,18 @@ function RecentlyOpenedSermons({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container,  {backgroundColor:theme.colors.background}]}
+      style={[styles.container,  {backgroundColor:theme.colors.primary}]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.searchContainer}>
-        <Text style={[styles.label, {color:theme.colors.text}]}>Recently Opened</Text>
+        <Text style={[styles.label, {color:theme.colors.text}]}>
+        <FontAwesome
+          name='file'
+          size={12}
+          color='#427092'
+          style={{ paddingRight: 5 }}
+        />
+          You recently opened these sermons</Text>
        {
         recentlyOpened.length > 0 &&
         <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:!theme.dark ? 1 : 0, borderColor:'silver'}]}>
@@ -360,13 +371,13 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   searchContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderBottomColor: "gray",
   },
   label: {
-    fontSize: 20,
+    fontSize: 12,
     fontWeight: "bold",
     marginBottom: 8,
     marginTop: 10,
@@ -390,7 +401,7 @@ const styles = StyleSheet.create({
   searchButton: {
     height: 40,
     width: 40,
-    backgroundColor: "#427092",
+    // backgroundColor: "#427092",
     justifyContent: "center",
     alignItems: "center",
     borderTopRightRadius: 8,
@@ -421,19 +432,19 @@ const styles = StyleSheet.create({
   sortButton: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#427092",
+    // backgroundColor: "#427092",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 16,
     paddingTop:10
   },
   sermonItem: {
-    paddingHorizontal: 10,
-    paddingVertical:5,
+    paddingHorizontal: 12,
+    paddingVertical:10,
     marginBottom: 12,
     flexDirection:'row',
     justifyContent:'space-between',

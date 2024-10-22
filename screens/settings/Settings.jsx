@@ -39,7 +39,7 @@ function Settings({ navigation }) {
 
   const fontFamilies = [
     "System",
-    "Cursive",
+    "cursive",
     "sans-serif",
     "serif",
     "Roboto",
@@ -62,9 +62,9 @@ function Settings({ navigation }) {
 
   const defaultSettings = {
     themeMode: true,
-    backgroundColor: "#2d2d2d",
+    backgroundColor: theme.colors.primary,
     fontSize: 12,
-    fontFamily: "monospace",
+    fontFamily: "serif",
     textColor: "#fafafa",
   };
 
@@ -87,19 +87,19 @@ function Settings({ navigation }) {
     }
   };
 
-  // const restoreDefault = async () => {
-  //   const updatedSettings = { ...settings, ...defaultSettings };
-  //   setSettings(updatedSettings);
-  //   try {
-  //     await AsyncStorage.setItem(
-  //       "sermonSettings",
-  //       JSON.stringify(updatedSettings)
-  //     );
-  //     console.log("Settings restored to default:", updatedSettings);
-  //   } catch (error) {
-  //     console.log("Error restoring settings:", error);
-  //   }
-  // };
+  const restoreDefault = async () => {
+    const updatedSettings = { ...settings, ...defaultSettings };
+    setSettings(updatedSettings);
+    try {
+      await AsyncStorage.setItem(
+        "sermonSettings",
+        JSON.stringify(updatedSettings)
+      );
+      console.log("Settings restored to default:", updatedSettings);
+    } catch (error) {
+      console.log("Error restoring settings:", error);
+    }
+  };
 
   return (
     <ScrollView
@@ -119,9 +119,9 @@ function Settings({ navigation }) {
               color={theme.colors.text}
             />
           </TouchableOpacity>
-          {/* <TouchableOpacity onPress={restoreDefault} style={styles.iconButton}>
+          <TouchableOpacity onPress={restoreDefault} style={styles.iconButton}>
             <Icon name="refresh" size={24} color={theme.colors.text} />
-          </TouchableOpacity> */}
+          </TouchableOpacity>
           <TouchableOpacity onPress={toggleTheme} style={styles.iconButton}>
             <Icon
               name={theme.dark ? "sunny" : "moon"}
@@ -177,7 +177,7 @@ function Settings({ navigation }) {
           maximumValue={24}
           thumbTintColor={theme.colors.text}
           minimumTrackTintColor={theme.colors.text}
-          maximumTrackTintColor={theme.colors.border}
+          maximumTrackTintColor={theme.colors.text}
           step={1}
           value={fontSize}
           onValueChange={setFontSize}

@@ -39,7 +39,7 @@ export default function App() {
       <SermonProvider>
         <NavigationContainer>
           <KeyboardAvoidingView
-            style={{ flex: 1, backgroundColor: '#22272a' }}
+            style={{ flex: 1, }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
             <StackNavigator />

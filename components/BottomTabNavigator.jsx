@@ -30,7 +30,7 @@ function TabNavigator() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <Tab.Navigator
-        initialRouteName="Home"
+        initialRouteName="All Sermons"
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
             let icon;
@@ -80,12 +80,12 @@ function TabNavigator() {
 
             return icon;
           },
-          tabBarActiveTintColor: "#007AFF",
+          tabBarActiveTintColor: "#427092",
           tabBarInactiveTintColor: "white",
           tabBarShowLabel: true,
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
-            backgroundColor: "#22272a",
+            backgroundColor: "#202425",
             position: "absolute",
             borderTopRightRadius: 10,
             borderTopLeftRadius: 10,

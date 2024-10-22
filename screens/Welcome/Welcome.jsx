@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground,Image } from 'react-native';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -19,7 +19,7 @@ const Welcome = ({ navigation }) => {
 
   return (
     <ImageBackground
-      source={require('../../assets/pic3.jpg')} // Make sure to add your background image
+      source={require('../../assets/icon.png')} // Make sure to add your background image
       style={styles.backgroundImage}
     >
       <LinearGradient
@@ -28,6 +28,7 @@ const Welcome = ({ navigation }) => {
       >
         <View style={styles.container}>
           <View style={styles.content}>
+          <Image source={require("../../assets/roundedLam.jpg")} style={{height:50, width:50,alignSelf:"center"}}/>
             <Text style={styles.title}>
               Transcribed and audio versions of Robert Lambert Lee sermons
             </Text>
