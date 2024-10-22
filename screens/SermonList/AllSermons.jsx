@@ -20,7 +20,9 @@ import {
   KeyboardAvoidingView,
   Animated,
   Easing,
+  
 } from "react-native";
+import { useFonts } from "expo-font";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import earlySermons from "../../sermons/1964-1969/firstset";
@@ -84,6 +86,7 @@ function SermonList({ navigation }) {
     setFilteredSermons(sortedSermons);
   };
 
+
   useEffect(() => {
     applyFilters();
   }, [searchText, selectedYear, selectedLetter, sortOrder]);
@@ -99,6 +102,7 @@ function SermonList({ navigation }) {
       prevSermons.filter((sermon) => sermon.type === "mp3")
     );
   };
+
 
   const handleSermonClick = async (sermon) => {
     setSelectedSermon(sermon);
@@ -184,10 +188,10 @@ function SermonList({ navigation }) {
           <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
             {item.type === "mp3" ? (
               <Text style={styles.animatedMicrophone}>
-                {item.type === "mp3" && "🔊"}
+                {item.type === "mp3" && <FontAwesome5 name="microphone"  color={theme.dark === true  ? theme.colors.text : "gray"}/>}
               </Text>
             ) : (
-             <Ionicons name= 'text' color='#fafafa'/>
+             <Ionicons name= 'text'  color={theme.dark === true  ? theme.colors.text : "gray"}/>
             )}
           </Animated.View>
         </View>
@@ -220,14 +224,19 @@ function SermonList({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={[styles.searchContainer,]}>
-        <Text style={[styles.label,{color:theme.colors.text}]}>Sermon List</Text>
-        <View style={[styles.searchInputContainer, {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:!theme.dark ? 1 : 0, borderColor:'gray'}]}>
+        <View style={{flexDirection:"row",alignItems:'center'}}>
+        <Text style={[styles.label,{color:theme.colors.text,fontFamily: "serif"}]}>Sermon List
+        </Text>
+        <Ionicons name="book" size={20} color={theme.dark === true  ? theme.colors.text : "gray"} />
+        </View>
+        <View style={[styles.searchInputContainer, {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:theme.dark ? 1 : 0, borderColor:theme.colors.secondary}]}>
           <TextInput
-            style={[styles.searchInput, {backgroundColor:theme.colors.secondary}]}
+            style={[styles.searchInput, {backgroundColor:theme.colors.secondary, color:theme.dark === true  ? theme.colors.text : "gray",}]}
             placeholder="Search Sermons"
             value={searchText}
             onChangeText={setSearchText}
-            placeholderTextColor={theme.colors.text}
+            placeholderTextColor={theme.dark === true  ? theme.colors.text : "gray"}
+            selectionColor={theme.dark === true  ? theme.colors.text : "gray"}
             
           />
           <TouchableOpacity
@@ -377,21 +386,23 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    borderRadius: 8,
+    // borderBottomWidth: 1,
+    // borderBottomColor: "#ddd",
+    // borderRadius: 20,
   },
   label: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     marginBottom: 8,
     marginTop: 10,
+    // fontFamily:"",
     // color:'#fafafa'
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: 10,
+    elevation:5
   },
   searchInput: {
     flex: 1,
@@ -401,7 +412,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#fafafa",
     borderTopLeftRadius:8,
-    borderBottomLeftRadius:8
+    borderBottomLeftRadius:8,
+    
+    
   },
   dropdownIcon: {
   },

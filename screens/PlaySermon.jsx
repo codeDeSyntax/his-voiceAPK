@@ -30,7 +30,7 @@ const DownloadSermon = () => {
 
   return (
    <ImageBackground
-   source={require('../assets/pic3.jpg')} // Make sure to add your background image
+   source={require('../assets/icon.png')} // Make sure to add your background image
       style={styles.backgroundImage}
    >
     <LinearGradient 
@@ -42,7 +42,7 @@ const DownloadSermon = () => {
       <Text style={[styles.title, { color: theme.colors.text, textAlign:'center' }]}>Sermon Audio{audioUrl}</Text>
       <Text style={styles.subtitle}>{selectedSermon.title}</Text>
 
-      <TouchableOpacity onPress={() => showModal('Play functionality not available yet')} style={styles.playButton} disabled={isLoading}>
+      <TouchableOpacity onPress={() => showModal('upcomming in newer versions')} style={[styles.playButton, {backgroundColor:theme.colors.secondary}]} disabled={isLoading}>
         {isLoading ? (
           <ActivityIndicator size="large" color="white" />
         ) : (
@@ -53,7 +53,7 @@ const DownloadSermon = () => {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => showModal('Download functionality not available yet')} style={styles.downloadButton} disabled={isLoading}>
+      <TouchableOpacity onPress={() => showModal('upcoming in newer versions')} style={[styles.downloadButton, {backgroundColor:theme.colors.secondary}]} disabled={isLoading}>
         {isLoading ? (
           <ActivityIndicator size="large" color="white" />
         ) : (
@@ -93,7 +93,8 @@ const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
     width: '100%',
-    height: '100%',
+    height: '50%',
+    // paddingTop:20
   },
   gradient: {
     flex: 1,
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   playButton: {
-    backgroundColor: '#4CAF50',
+    // backgroundColor: '#4CAF50',
     padding: 20,
     borderRadius: 50,
     flexDirection: 'row',
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   downloadButton: {
-    backgroundColor: '#007AFF',
+    // backgroundColor: '#007AFF',
     padding: 20,
     borderRadius: 50,
     flexDirection: 'row',

@@ -74,7 +74,7 @@ function Settings({ navigation }) {
   };
 
   const saveSettings = async () => {
-    const updatedSettings = { ...settings, ...newSettings };
+    const updatedSettings = { ...settings,...newSettings };
     setSettings(updatedSettings);
     try {
       await AsyncStorage.setItem(
@@ -88,14 +88,17 @@ function Settings({ navigation }) {
   };
 
   const restoreDefault = async () => {
-    const updatedSettings = { ...settings, ...defaultSettings };
+    setBackgroundColor(theme.colors.primary);
+    setTextColor("#fafafa")
+    const updatedSettings = {themeMode:true, backgroundColor:"#151718", fontSize: 12, fontFamily: "serif", textColor: "#fafafa" };
     setSettings(updatedSettings);
+    // console.log("Settings restored to default:", updatedSettings);
     try {
       await AsyncStorage.setItem(
         "sermonSettings",
         JSON.stringify(updatedSettings)
       );
-      console.log("Settings restored to default:", updatedSettings);
+      console.log("Settings restored to default:", settings);
     } catch (error) {
       console.log("Error restoring settings:", error);
     }
@@ -103,7 +106,7 @@ function Settings({ navigation }) {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[styles.container, { backgroundColor: theme.colors. primary }]}
     >
       <View style={styles.header}>
         <Text
@@ -195,7 +198,7 @@ function Settings({ navigation }) {
           style={[
             styles.pickerContainer,
             {
-              backgroundColor: theme.dark === true ? "#22272a" : "white",
+              backgroundColor: theme.dark === true ? theme.colors.secondary : "white",
               borderWidth: theme.dark === false ? 1 : 0,
               borderColor: "silver",
             },
@@ -209,7 +212,7 @@ function Settings({ navigation }) {
               {
                 color: theme.colors.text,
                 fontFamily,
-                backgroundColor: theme.dark === true ? "#22272a" : "white",
+                backgroundColor: theme.dark === true ? theme.colors.secondary : "white",
               },
             ]}
             dropdownIconColor={theme.colors.text}
@@ -227,7 +230,7 @@ function Settings({ navigation }) {
             onPress={() => setShowTextColorPicker(!showTextColorPicker)}
             style={[
               styles.colorButton,
-              { backgroundColor: theme.dark === true ? "#22272a" : "white" },
+              { backgroundColor: theme.dark === true ? theme.colors.secondary : "white" },
             ]}
           >
             <Icon name="text" size={24} color={theme.colors.text} />
@@ -242,6 +245,7 @@ function Settings({ navigation }) {
             onPress={() => setShowTextColorPicker(!showTextColorPicker)}
             style={styles.themeColorButton}
           >
+            {/* <Text>{textColor + "" + backgroundColor}</Text> */}
             <Icon name="color-palette" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -264,7 +268,7 @@ function Settings({ navigation }) {
             onPress={() => setShowBgColorPicker(!showBgColorPicker)}
             style={[
               styles.colorButton,
-              { backgroundColor: theme.dark === true ? "#22272a" : "white" },
+              { backgroundColor: theme.dark === true ? theme.colors.secondary : "white" },
             ]}
           >
             <Icon name="color-fill" size={24} color={theme.colors.text} />
@@ -295,8 +299,8 @@ function Settings({ navigation }) {
         )}
       </View>
 
-      <TouchableOpacity style={styles.saveButton} onPress={saveSettings}>
-        <Text style={styles.saveButtonText}>Save Settings</Text>
+      <TouchableOpacity style={[styles.saveButton,{backgroundColor:theme.dark === true ? theme.colors.background : "gray"}]} onPress={saveSettings}>
+        <Text style={[styles.saveButtonText, ]}>Save Settings</Text>
       </TouchableOpacity>
 
       <Modal
@@ -426,7 +430,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   saveButton: {
-    backgroundColor: "#427092",
+    // backgroundColor: "#427092",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",

@@ -18,7 +18,8 @@ const Welcome = ({ navigation }) => {
   }
 
   return (
-    <ImageBackground
+   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center'  }}>
+     <ImageBackground
       source={require('../../assets/icon.png')} // Make sure to add your background image
       style={styles.backgroundImage}
     >
@@ -40,6 +41,7 @@ const Welcome = ({ navigation }) => {
         </View>
       </LinearGradient>
     </ImageBackground>
+   </View>
   );
 };
 

@@ -173,7 +173,7 @@ function RecentlyOpenedSermons({ navigation }) {
           <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
             {item.type === "mp3" ? (
               <Text style={styles.animatedMicrophone}>
-                {item.type === "mp3" && "🔊"}
+                {item.type === "mp3" && <FontAwesome5 name="microphone"  color={theme.dark === true  ? theme.colors.text : "gray"}/>}
               </Text>
             ) : (
              <Ionicons name= 'text' color='#fafafa'/>
@@ -225,7 +225,7 @@ function RecentlyOpenedSermons({ navigation }) {
           value={searchText}
           onChangeText={setSearchText}
           placeholderTextColor={theme.colors.text}
-          
+          selectionColor={theme.dark === true  ? theme.colors.text : "gray"}
         />
         <TouchableOpacity
           style={styles.searchButton}
@@ -373,8 +373,8 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 12,
     paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "gray",
+    // borderBottomWidth: 1,
+    // borderBottomColor: "gray",
   },
   label: {
     fontSize: 12,

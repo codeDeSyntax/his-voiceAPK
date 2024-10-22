@@ -120,11 +120,12 @@ const SermonSearch = ({ navigation }) => {
                 style={styles.searchIcon}
               />
               <TextInput
-                style={[styles.searchInput, { color: '#fafafa' }]}
+                style={[styles.searchInput, { color: theme.dark === true  ? theme.colors.text : "black" }]}
                 placeholder="Search quotes "
                 value={searchText}
                 onChangeText={setSearchText}
-                placeholderTextColor='#fafafa'
+                placeholderTextColor={theme.dark === true  ? theme.colors.text : "black"}
+                selectionColor={theme.dark === true  ? theme.colors.text : "gray"}  
               />
               {searchText.length > 0 && (
                 <TouchableOpacity onPress={handleClearSearch}>
@@ -157,11 +158,11 @@ const SermonSearch = ({ navigation }) => {
                   style={styles.sermonContainer}
                   onPress={() => handleSermonClick(sermon)}
                 >
-                  <Text style={[styles.sermonTitle, { color: '#fafafa' }]}>
+                  <Text style={[styles.sermonTitle, { color: theme.dark === true  ? theme.colors.text : "black" }]}>
                     {sermon.title}
                   </Text>
                   <Text
-                    style={[styles.sermonContent, { color: '#fafafa' }]}
+                    style={[styles.sermonContent, { color: theme.dark === true  ? theme.colors.text : "black" }]}
                   >
                     {sermon.sentence
                       .split(/(<highlight>.*?<\/highlight>)/g)
@@ -175,7 +176,7 @@ const SermonSearch = ({ navigation }) => {
                               : undefined
                           }
                         >
-                          {part.replace(/<\/?highlight>/g, "")}
+                          {part.trim().replace(/<\/?highlight>/g, "").trim()}
                         </Text>
                       ))}
                   </Text>
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   sermonTitle: {
-    fontWeight: "normal",
+    fontWeight: "bold",
     fontSize: 16,
     marginBottom: 5,
   },

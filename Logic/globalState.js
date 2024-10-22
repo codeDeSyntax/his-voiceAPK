@@ -29,7 +29,7 @@ const SermonProvider = ({ children }) => {
     themeMode:true,
     backgroundColor: "#2d2d2d",
     fontSize: 12,
-    fontFamily: "monospace",
+    fontFamily: "serif",
     textColor: "#fafafa",
   });
 
