@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { Suspense, useContext, useState } from "react";
 import { useFonts } from "expo-font";
 import {
   View,
@@ -15,6 +15,7 @@ import Slider from "@react-native-community/slider";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "../../Logic/theme";
+import LoadingScreen from "../../components/Loader";
 
 function Settings({ navigation }) {
   const [fontsLoaded] = useFonts({
@@ -105,7 +106,8 @@ function Settings({ navigation }) {
   };
 
   return (
-    <ScrollView
+    <Suspense fallback={<LoadingScreen/>}>
+      <ScrollView
       style={[styles.container, { backgroundColor: theme.colors. primary }]}
     >
       <View style={styles.header}>
@@ -328,6 +330,7 @@ function Settings({ navigation }) {
         </View>
       </Modal>
     </ScrollView>
+    </Suspense>
   );
 }
 

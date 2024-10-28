@@ -5,6 +5,7 @@ import React, {
   useRef,
   useEffect,
   useContext,
+  Suspense,
 } from "react";
 import { SermonContext } from "../../Logic/globalState";
 import { useAppTheme } from "../../Logic/theme";
@@ -32,6 +33,7 @@ import fourthSet from "../../sermons/1972/1972";
 import lastSet from "../../sermons/1973/1973";
 import audioSermons from "../../sermons/audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import LoadingScreen from "../../components/Loader";
 
 const allSermons = [
   ...earlySermons,
@@ -203,7 +205,8 @@ function RecentlyOpenedSermons({ navigation }) {
   }, []);
 
   return (
-    <KeyboardAvoidingView
+   <Suspense fallback={LoadingScreen}>
+     <KeyboardAvoidingView
       style={[styles.container,  {backgroundColor:theme.colors.primary}]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
@@ -279,8 +282,8 @@ function RecentlyOpenedSermons({ navigation }) {
         contentContainerStyle={styles.listContent}
       />
       :
-      <View style={{padding:20,justifyContent:'center',alignItems:'center'}}>
-        <Text>No sermons in recents</Text>
+      <View style={{padding:20,justifyContent:'center',alignItems:'center',}}>
+        <Text style={{color:theme.dark === true  ? theme.colors.text : "gray"}}>No sermons in recents</Text>
       </View>
       }
 
@@ -360,6 +363,7 @@ function RecentlyOpenedSermons({ navigation }) {
         </Pressable>
       </Modal>
     </KeyboardAvoidingView>
+   </Suspense>
   );
 }
 

@@ -9,15 +9,15 @@ import {
   Text,
 } from "react-native";
 import { SermonContext } from "../Logic/globalState";
-import Home from "../screens/Home/CurrentSermon";
 import Settings from "../screens/settings/Settings";
-import About from "../screens/About/About";
-import RecentOpenedSermons from "../screens/RecentlyOpened/RecentSermons";
-import SermonSearch from "../screens/Search/Search";
-import { useTheme } from "../Logic/theme";
 import homeImage from "../assets/cloud.png";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import SermonList from "../screens/SermonList/AllSermons";
+
+
+const SermonList = React.lazy(() => import("../screens/SermonList/AllSermons"))
+const RecentOpenedSermons  = React.lazy(() => import("../screens/RecentlyOpened/RecentSermons"))
+const SermonSearch = React.lazy(() => import("../screens/Search/Search"))
+const Home = React.lazy(() => import("../screens/Home/CurrentSermon"))
 
 const Tab = createBottomTabNavigator();
 

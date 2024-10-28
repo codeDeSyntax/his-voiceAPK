@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Text } from "react-native-paper";
@@ -18,6 +18,7 @@ import { useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
 import { LinearGradient } from "expo-linear-gradient";
+import LoadingScreen from "../../components/Loader";
 
 function Home() {
   const [fontsLoaded] = useFonts({
@@ -143,7 +144,8 @@ function Home() {
     //  locations={[0, 0.7, 1]}
     //  style={styles.gradient}
     // >
-    <View style={[styles.container, { backgroundColor:settings.backgroundColor }]}>
+    <Suspense fallback={LoadingScreen}>
+      <View style={[styles.container, { backgroundColor:settings.backgroundColor }]}>
       {selectedSermon.type === "mp3" ? (
         <PlaySermon sermon={selectedSermon} />
       ) : (
@@ -220,6 +222,7 @@ function Home() {
         </>
       )}
     </View>
+    </Suspense>
     // </LinearGradient>
   );
 }

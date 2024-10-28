@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useRef,
   useEffect,
+  Suspense,
 } from "react";
 
 import {
@@ -34,6 +35,7 @@ import audioSermons from "../../sermons/audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SermonContext } from "../../Logic/globalState";
 import { useAppTheme } from "../../Logic/theme";
+import LoadingScreen from "../../components/Loader";
 
 const allSermons = [
   ...earlySermons,
@@ -219,7 +221,8 @@ function SermonList({ navigation }) {
   }, []);
 
   return (
-    <KeyboardAvoidingView
+   <Suspense fallback={LoadingScreen}>
+     <KeyboardAvoidingView
       style={[styles.container , {backgroundColor:theme.colors.primary} ]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
@@ -373,6 +376,7 @@ function SermonList({ navigation }) {
         </Pressable>
       </Modal>
     </KeyboardAvoidingView>
+   </Suspense>
   );
 }
 
