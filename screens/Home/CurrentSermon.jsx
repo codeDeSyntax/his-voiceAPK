@@ -144,7 +144,7 @@ function Home() {
     //  locations={[0, 0.7, 1]}
     //  style={styles.gradient}
     // >
-    <Suspense fallback={LoadingScreen}>
+    
       <View style={[styles.container, { backgroundColor:settings.backgroundColor }]}>
       {selectedSermon.type === "mp3" ? (
         <PlaySermon sermon={selectedSermon} />
@@ -222,7 +222,7 @@ function Home() {
         </>
       )}
     </View>
-    </Suspense>
+    
     // </LinearGradient>
   );
 }

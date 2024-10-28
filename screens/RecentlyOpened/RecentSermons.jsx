@@ -205,7 +205,6 @@ function RecentlyOpenedSermons({ navigation }) {
   }, []);
 
   return (
-   <Suspense fallback={LoadingScreen}>
      <KeyboardAvoidingView
       style={[styles.container,  {backgroundColor:theme.colors.primary}]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -363,7 +362,7 @@ function RecentlyOpenedSermons({ navigation }) {
         </Pressable>
       </Modal>
     </KeyboardAvoidingView>
-   </Suspense>
+
   );
 }
 
@@ -462,7 +461,7 @@ const styles = StyleSheet.create({
   sermonTitle: {
     fontSize: 13,
     fontWeight: "500",
-    // fontFamily:'monospace',
+    fontFamily:'serif',
     marginBottom: 4,
     color: "#bfc7ca",
   },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useContext, Suspense } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
   Image,
@@ -12,12 +12,15 @@ import { SermonContext } from "../Logic/globalState";
 import Settings from "../screens/settings/Settings";
 import homeImage from "../assets/cloud.png";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import LoadingScreen from "./Loader";
 
-
-const SermonList = React.lazy(() => import("../screens/SermonList/AllSermons"))
-const RecentOpenedSermons  = React.lazy(() => import("../screens/RecentlyOpened/RecentSermons"))
-const SermonSearch = React.lazy(() => import("../screens/Search/Search"))
-const Home = React.lazy(() => import("../screens/Home/CurrentSermon"))
+// Lazy load components
+const SermonList = React.lazy(() => import("../screens/SermonList/AllSermons"));
+const RecentlyOpenedSermons = React.lazy(() =>
+  import("../screens/RecentlyOpened/RecentSermons")
+);
+const SermonSearch = React.lazy(() => import("../screens/Search/Search"));
+const Home = React.lazy(() => import("../screens/Home/CurrentSermon"));
 
 const Tab = createBottomTabNavigator();
 
@@ -46,13 +49,23 @@ function TabNavigator() {
                 break;
               case "All Sermons":
                 icon = (
-                  <Ionicons name="list-outline" size={size} color="#fafafa" />
+                  <Ionicons 
+                    name={focused ? "library" : "library-outline"} 
+                    size={size} 
+                    color={color}
+                    style={styles.tabIcon} 
+                  />
                 );
                 break;
               case "Recent":
                 icon = (
                   <View>
-                    <Ionicons name="time-outline" size={size} color="#fafafa" />
+                    <Ionicons 
+                      name={focused ? "time" : "time-outline"} 
+                      size={size} 
+                      color={color}
+                      style={styles.tabIcon} 
+                    />
                     {recentlyOpened.length > 0 && (
                       <View style={styles.badgeContainer}>
                         <Text style={styles.badgeText}>
@@ -66,66 +79,83 @@ function TabNavigator() {
               case "Settings":
                 icon = (
                   <Ionicons
-                    name="settings-outline"
+                    name={focused ? "settings" : "settings-outline"}
                     size={size}
-                    color="#fafafa"
+                    color={color}
+                    style={styles.tabIcon}
                   />
                 );
                 break;
               case "Search":
-                icon = <Ionicons name="search" size={size} color="#fafafa" />;
+                icon = (
+                  <Ionicons 
+                    name={focused ? "search" : "search-outline"} 
+                    size={size} 
+                    color={color}
+                    style={styles.tabIcon}
+                  />
+                );
                 break;
               default:
             }
 
             return icon;
           },
-          tabBarActiveTintColor: "#427092",
-          tabBarInactiveTintColor: "white",
+          tabBarActiveTintColor: "#60A5FA",
+          tabBarInactiveTintColor: "#94A3B8",
           tabBarShowLabel: true,
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
             backgroundColor: "#202425",
             position: "absolute",
-            borderTopRightRadius: 10,
-            borderTopLeftRadius: 10,
+            borderTopRightRadius: 20,
+            borderTopLeftRadius: 20,
             bottom: 0,
             borderTopWidth: 0,
             paddingBottom: 10,
             paddingTop: 10,
-            height: 70,
+            height: 75,
             bottom: 0,
             right: 0,
             left: 0,
             elevation: 0,
+            shadowColor: "#000",
+            shadowOffset: {
+              width: 0,
+              height: -4,
+            },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: "500",
+            marginTop: 4,
           },
           headerShown: false,
         })}
       >
-        <Tab.Screen name="All Sermons" component={SermonList} />
-        <Tab.Screen name="Recent" component={RecentOpenedSermons} />
+        {/* Wrap each screen with Suspense for lazy loading */}
+        <Tab.Screen name="All Sermons">
+          {() => (
+            <Suspense fallback={<LoadingScreen />}>
+              <SermonList />
+            </Suspense>
+          )}
+        </Tab.Screen>
+        <Tab.Screen name="Recent">
+          {() => (
+            <Suspense fallback={<LoadingScreen />}>
+              <RecentlyOpenedSermons />
+            </Suspense>
+          )}
+        </Tab.Screen>
         <Tab.Screen
           name="Home"
-          component={Home}
           options={{
             tabBarIcon: ({ focused, color, size }) => {
               return (
-                <View
-                  style={{
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "#2d2d2d",
-                    height: Platform.OS == "ios" ? 50 : 60,
-                    width: Platform.OS == "ios" ? 50 : 60,
-                    top: Platform.OS == "ios" ? -10 : -20,
-                    borderRadius: Platform.OS == "ios" ? 25 : 30,
-                    shadowColor: "#fafafa",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.8,
-                    shadowRadius: 2,
-                    elevation: 5,
-                  }}
-                >
+                <View style={styles.homeIconContainer}>
                   <Image
                     source={homeImage}
                     style={[styles.icon, { tintColor: "white" }]}
@@ -134,9 +164,21 @@ function TabNavigator() {
               );
             },
           }}
-        />
+        >
+          {() => (
+            <Suspense fallback={<LoadingScreen />}>
+              <Home />
+            </Suspense>
+          )}
+        </Tab.Screen>
         <Tab.Screen name="Settings" component={Settings} />
-        <Tab.Screen name="Search" component={SermonSearch} />
+        <Tab.Screen name="Search">
+          {() => (
+            <Suspense fallback={<LoadingScreen />}>
+              <SermonSearch />
+            </Suspense>
+          )}
+        </Tab.Screen>
       </Tab.Navigator>
     </KeyboardAvoidingView>
   );
@@ -147,19 +189,39 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
   },
+  tabIcon: {
+    marginTop: 4,
+  },
   badgeContainer: {
-    backgroundColor: "#427092",
-    borderRadius: 10,
+    backgroundColor: "#494d50",
+    borderRadius: 12,
     position: "absolute",
-    top: -5,
-    right: -5,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    top: -4,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   badgeText: {
     color: "white",
-    fontWeight: "bold",
+    fontWeight: "600",
     fontSize: 10,
+    textAlign: 'center',
+  },
+  homeIconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#202425",
+    height: Platform.OS == "ios" ? 54 : 64,
+    width: Platform.OS == "ios" ? 54 : 64,
+    top: Platform.OS == "ios" ? -12 : -22,
+    borderRadius: Platform.OS == "ios" ? 27 : 32,
+    shadowColor: "#60A5FA",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });
 

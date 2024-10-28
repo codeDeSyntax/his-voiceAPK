@@ -106,7 +106,7 @@ function Settings({ navigation }) {
   };
 
   return (
-    <Suspense fallback={<LoadingScreen/>}>
+    
       <ScrollView
       style={[styles.container, { backgroundColor: theme.colors. primary }]}
     >
@@ -330,7 +330,7 @@ function Settings({ navigation }) {
         </View>
       </Modal>
     </ScrollView>
-    </Suspense>
+    
   );
 }
 
