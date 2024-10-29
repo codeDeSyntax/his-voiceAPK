@@ -229,7 +229,7 @@ const SermonSearch = () => {
                 <LinearGradient
                   colors={theme.dark ? 
                     ['#202425', '#202425'] : 
-                    ['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+                    ["#fcf7e4", '#fcf7e4']}
                   style={styles.sermonGradient}
                 >
                   <View style={styles.sermonHeader}>
@@ -240,7 +240,7 @@ const SermonSearch = () => {
                       <Text style={styles.sermonYear}>{sermon.year}</Text>
                     </View>
                   </View>
-                  <Text style={[styles.sermonLocation, { color:theme.dark === true? "#494d50" : "gray"}]}>
+                  <Text style={[styles.sermonLrgbaocation, { color:theme.dark === true? "#494d50" : "gray"}]}>
                     {sermon.location}
                   </Text>
                   {renderSermonText(sermon, index)}
@@ -326,6 +326,7 @@ const styles = StyleSheet.create({
   sermonGradient: {
     padding: 16,
     borderRadius: 16,
+    elevation:5
   },
   sermonHeader: {
     flexDirection: 'row',

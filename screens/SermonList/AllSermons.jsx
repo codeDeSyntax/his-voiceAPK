@@ -178,7 +178,7 @@ function SermonList({ navigation }) {
               ? parseInt(index) % 2 === 0
                 ? theme.colors.primary
                 : theme.colors.primary
-              : "white",
+              : "#fdfaee",
         },
       ]}
       onPress={() => handleSermonClick(item)}

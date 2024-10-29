@@ -39,7 +39,7 @@ const DownloadSermon = () => {
      style={styles.gradient}
     >
     <View style={[styles.container,]}>
-      <Text style={[styles.title, { color: theme.colors.text, textAlign:'center' }]}>Sermon Audio{audioUrl}</Text>
+      <Text style={[styles.title, { color: "#fafafa", textAlign:'center' }]}>Sermon Audio{audioUrl}</Text>
       <Text style={styles.subtitle}>{selectedSermon.title}</Text>
 
       <TouchableOpacity onPress={() => showModal('upcomming in newer versions')} style={[styles.playButton, {backgroundColor:theme.colors.secondary}]} disabled={isLoading}>

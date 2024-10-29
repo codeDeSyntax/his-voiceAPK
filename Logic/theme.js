@@ -13,9 +13,9 @@ export const AppThemeProvider = ({ children }) => {
   const theme = {
     dark: isDarkMode,
     colors: {
-      primary: isDarkMode ? '#151718' : '#fafefe',
-      background: isDarkMode ? '#0c0d0e' : '#fafefe',
-      secondary: isDarkMode ? '#202425' : '#ffffff',
+      primary: isDarkMode ? '#151718' : '#fdfaee',
+      background: isDarkMode ? '#0c0d0e' : '#fdfaee',
+      secondary: isDarkMode ? '#202425' : '#fdfaee',
       text: isDarkMode ? '#e5e5e5' : '#031412',
       ltext: isDarkMode ? '#494d50' : '#031412',
     },
