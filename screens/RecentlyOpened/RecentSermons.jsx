@@ -34,6 +34,7 @@ import lastSet from "../../sermons/1973/1973";
 import audioSermons from "../../sermons/audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoadingScreen from "../../components/Loader";
+import { useNavigation } from "@react-navigation/native";
 
 const allSermons = [
   ...earlySermons,
@@ -49,7 +50,7 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
   String.fromCharCode(65 + i)
 );
 
-function RecentlyOpenedSermons({ navigation }) {
+function RecentlyOpenedSermons() {
   const { setSelectedSermon, recentlyOpened,setRecentlyOpened } =
     React.useContext(SermonContext);
     const {theme} = useAppTheme()
@@ -59,6 +60,7 @@ function RecentlyOpenedSermons({ navigation }) {
   const [isYearModalVisible, setIsYearModalVisible] = useState(false);
   const [isLetterModalVisible, setIsLetterModalVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
+  const navigation = useNavigation()
 
   const filteredSermons = recentlyOpened.filter((sermon) => {
     const matchesSearch = sermon.title

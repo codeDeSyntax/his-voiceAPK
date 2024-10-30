@@ -35,6 +35,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SermonContext } from "../../Logic/globalState";
 import { useAppTheme } from "../../Logic/theme";
 import LoadingScreen from "../../components/Loader";
+import { useNavigation } from "@react-navigation/native";
 
 const allSermons = [
   ...earlySermons,
@@ -50,7 +51,7 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
   String.fromCharCode(65 + i)
 );
 
-function SermonList({ navigation }) {
+function SermonList() {
   const { setSelectedSermon, recentlyOpened, setRecentlyOpened, settings } =
     React.useContext(SermonContext);
   const { theme } = useAppTheme();
@@ -62,6 +63,7 @@ function SermonList({ navigation }) {
   const [sortOrder, setSortOrder] = useState("asc");
   const [sermonsToRender, setSermonsToRender] = useState([]);
   const [filteredSermons, setFilteredSermons] = useState(allSermons);
+  const navigation = useNavigation()
 
   const applyFilters = () => {
     const newFilteredSermons = allSermons.filter((sermon) => {

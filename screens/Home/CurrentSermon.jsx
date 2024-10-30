@@ -20,11 +20,8 @@ import PlaySermon from "../PlaySermon";
 import { LinearGradient } from "expo-linear-gradient";
 import LoadingScreen from "../../components/Loader";
 
-function Home() {
-  const [fontsLoaded] = useFonts({
-    "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
-    "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
-  });
+export default function Home() {
+  
   const { selectedSermon, settings } = React.useContext(SermonContext);
   const { theme } = useAppTheme();
   const route = useRoute();
@@ -85,7 +82,8 @@ function Home() {
     if (searchResults.length === 0) {
       return (
         <Text
-        variant="bodyLarge"
+        // variant="bodyLarge"
+        selectable={true}
           style={[
             styles.sermonText,
             {
@@ -328,4 +326,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Home;
+// export default Home;
