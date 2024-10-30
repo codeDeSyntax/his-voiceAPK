@@ -86,7 +86,7 @@ function RecentlyOpenedSermons() {
   const handleSermonClick = async (sermon) => {
 
     setSelectedSermon(sermon);
-    navigation.navigate("Home");
+    navigation?.navigate("Home");
 
   };
 

@@ -165,11 +165,13 @@ function TabNavigator() {
             },
           }}
         >
-          {() => (
+          {
+          () => (
             <Suspense fallback={<LoadingScreen />}>
               <Home />
             </Suspense>
-          )}
+          )
+          }
         </Tab.Screen>
         <Tab.Screen name="Settings" component={Settings} />
         <Tab.Screen name="Search">

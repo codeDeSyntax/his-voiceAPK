@@ -52,6 +52,7 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 );
 
 function SermonList() {
+  const navigation = useNavigation()
   const { setSelectedSermon, recentlyOpened, setRecentlyOpened, settings } =
     React.useContext(SermonContext);
   const { theme } = useAppTheme();
@@ -63,7 +64,6 @@ function SermonList() {
   const [sortOrder, setSortOrder] = useState("asc");
   const [sermonsToRender, setSermonsToRender] = useState([]);
   const [filteredSermons, setFilteredSermons] = useState(allSermons);
-  const navigation = useNavigation()
 
   const applyFilters = () => {
     const newFilteredSermons = allSermons.filter((sermon) => {
@@ -124,7 +124,7 @@ function SermonList() {
       console.error("Failed to update recents in AsyncStorage", error);
     }
 
-    navigation.navigate("Home");
+    navigation?.navigate("Home");
   };
   const LocationNotFound = useCallback(
     () => (
