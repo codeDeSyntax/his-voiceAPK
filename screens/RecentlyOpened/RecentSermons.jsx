@@ -51,9 +51,9 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 );
 
 function RecentlyOpenedSermons() {
-  const { setSelectedSermon, recentlyOpened,setRecentlyOpened } =
+  const { setSelectedSermon, recentlyOpened,setRecentlyOpened,theme } =
     React.useContext(SermonContext);
-    const {theme} = useAppTheme()
+    // const {theme} = useAppTheme()
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
   const [selectedLetter, setSelectedLetter] = useState("All Letters");
@@ -212,14 +212,11 @@ function RecentlyOpenedSermons() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.searchContainer}>
+        <View style={{flexDirection:"row",alignItems:"center",gap:10}}>
         <Text style={[styles.label, {color:theme.colors.text}]}>
-        <FontAwesome
-          name='file'
-          size={12}
-          color='#427092'
-          style={{ paddingRight: 5 }}
-        />
-          You recently opened these sermons</Text>
+          Recents</Text>
+        <Image source={require("../../assets/notebook.gif")}  style={{height:30,width:30,marginVertical:20,borderRadius:100}}/>
+        </View>
        {
         recentlyOpened.length > 0 &&
         <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:!theme.dark ? 1 : 0, borderColor:'silver'}]}>
@@ -382,7 +379,8 @@ const styles = StyleSheet.create({
     // borderBottomColor: "gray",
   },
   label: {
-    fontSize: 12,
+    fontSize: 24,
+    fontFamily:"serif",
     fontWeight: "bold",
     marginBottom: 8,
     marginTop: 10,
@@ -444,7 +442,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 12,
-    paddingBottom: 16,
+    paddingBottom: 120,
     paddingTop:10
   },
   sermonItem: {

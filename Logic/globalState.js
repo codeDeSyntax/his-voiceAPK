@@ -25,14 +25,29 @@ const SermonProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Initialize dark mode state and settings
+  const [isDarkMode, setIsDarkMode] = useState(false); // Set default value
   const [settings, setSettings] = useState({
-    themeMode:true,
-    backgroundColor: "#2d2d2d",
+    darkMode: isDarkMode,
+    backgroundColor: "#fafafa",
     fontSize: 12,
     fontFamily: "serif",
     textColor: "#fafafa",
   });
 
+  // Define theme based on isDarkMode
+  const theme = {
+    dark: isDarkMode,
+    colors: {
+      primary: isDarkMode ? '#151718' : '#fafafa',
+      background: isDarkMode ? '#0c0d0e' : '#fafafa',
+      secondary: isDarkMode ? '#202425' : '#fafafa',
+      text: isDarkMode ? '#e5e5e5' : '#031412',
+      ltext: isDarkMode ? '#494d50' : '#031412',
+    },
+  };
+
+  // Randomly selects a sermon from the collection
   const handleRandomSermons = () => {
     let sermonIndex = Math.floor(Math.random() * sermonCollection.length);
     setSelectedSermon(sermonCollection[sermonIndex]);
@@ -57,40 +72,41 @@ const SermonProvider = ({ children }) => {
     }
   }, []);
 
-  // load recently opened sermons from local storage
+  // Load recently opened sermons from local storage
   useEffect(() => {
     const loadRecents = async () => {
       try {
         const value = await AsyncStorage.getItem("recentlyOpenedSermons");
         if (value !== null) {
           setRecentlyOpened(JSON.parse(value));
-          // console.log(valu);
         }
       } catch (e) {
         console.log(e);
-        
       }
-    }
+    };
 
     loadRecents();
   }, []);
 
+  // Load settings from AsyncStorage and update dark mode
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const oldSettings = await AsyncStorage.getItem("sermonSettings");
-        // console.log("Loaded settings from storage:", oldSettings);
+        console.log("Loaded settings from storage:", oldSettings);
         if (oldSettings) {
-          setSettings(JSON.parse(oldSettings));
+          const parsedSettings = JSON.parse(oldSettings);
+          setSettings(parsedSettings);
+          setIsDarkMode(parsedSettings.darkMode);
         }
       } catch (error) {
         console.error("Failed to load settings:", error);
       }
     };
-  
+
     loadSettings();
   }, []);
-  
+
   return (
     <SermonContext.Provider
       value={{
@@ -105,6 +121,9 @@ const SermonProvider = ({ children }) => {
         error,
         settings,
         setSettings,
+        theme,
+        isDarkMode,
+        setIsDarkMode,
       }}
     >
       {children}

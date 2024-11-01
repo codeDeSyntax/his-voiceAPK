@@ -9,7 +9,7 @@ import {
   Text,
 } from "react-native";
 import { SermonContext } from "../Logic/globalState";
-import Settings from "../screens/settings/Settings";
+// import Settings from "../screens/settings/Settings";
 import homeImage from "../assets/cloud.png";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import LoadingScreen from "./Loader";
@@ -21,11 +21,12 @@ const RecentlyOpenedSermons = React.lazy(() =>
 );
 const SermonSearch = React.lazy(() => import("../screens/Search/Search"));
 const Home = React.lazy(() => import("../screens/Home/CurrentSermon"));
+const Settings  = React.lazy(() => import("../screens/settings/Settings"))
 
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
-  const { recentlyOpened } = useContext(SermonContext);
+  const { recentlyOpened,theme } = useContext(SermonContext);
 
   return (
     <KeyboardAvoidingView
@@ -41,10 +42,15 @@ function TabNavigator() {
             switch (route.name) {
               case "Home":
                 icon = (
-                  <Image
+                  theme.dark === true ? <Image
                     source={homeImage}
-                    style={[styles.icon, { tintColor: color }]}
-                  />
+                    style={[styles.icon, { tintColor:color }]}
+                  /> : <Ionicons 
+                  name={focused ? "library" : "library-outline"} 
+                  size={size} 
+                  color={color}
+                  style={styles.tabIcon} 
+                />
                 );
                 break;
               case "All Sermons":
@@ -60,12 +66,15 @@ function TabNavigator() {
               case "Recent":
                 icon = (
                   <View>
-                    <Ionicons 
+                    {/* <Ionicons 
                       name={focused ? "time" : "time-outline"} 
-                      size={size} 
+                      size={.size} 
                       color={color}
                       style={styles.tabIcon} 
-                    />
+                    /> */}
+                    <Image source={require("../assets/notebook.gif")} height={50} width={50} style={[styles.icon, { 
+                      
+                     }]}/>
                     {recentlyOpened.length > 0 && (
                       <View style={styles.badgeContainer}>
                         <Text style={styles.badgeText}>
@@ -106,15 +115,17 @@ function TabNavigator() {
           tabBarShowLabel: true,
           tabBarHideOnKeyboard: true,
           tabBarStyle: {
-            backgroundColor: "#202425",
+            backgroundColor: theme.colors.secondary,
             position: "absolute",
             borderTopRightRadius: 20,
             borderTopLeftRadius: 20,
             bottom: 0,
+            paddingHorizontal:10,
+             paddingVertical:30,
             borderTopWidth: 0,
-            paddingBottom: 10,
+            paddingBottom: 20,
             paddingTop: 10,
-            height: 75,
+            height: 90,
             bottom: 0,
             right: 0,
             left: 0,
@@ -155,7 +166,7 @@ function TabNavigator() {
           options={{
             tabBarIcon: ({ focused, color, size }) => {
               return (
-                <View style={styles.homeIconContainer}>
+                <View style={[styles.homeIconContainer]}>
                   <Image
                     source={homeImage}
                     style={[styles.icon, { tintColor: "white" }]}
@@ -173,7 +184,13 @@ function TabNavigator() {
           )
           }
         </Tab.Screen>
-        <Tab.Screen name="Settings" component={Settings} />
+        <Tab.Screen name="Settings" >
+        {() => (
+            <Suspense fallback={<LoadingScreen />}>
+              <Settings />
+            </Suspense>
+          )}
+        </Tab.Screen>
         <Tab.Screen name="Search">
           {() => (
             <Suspense fallback={<LoadingScreen />}>

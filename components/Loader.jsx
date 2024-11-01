@@ -1,10 +1,13 @@
 // LoadingScreen.js
 import React from "react";
+import { useContext } from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { SermonContext } from "../Logic/globalState";
 
 const LoadingScreen = () => {
+    const {theme} = useContext(SermonContext)
   return (
-    <View style={styles.container}>
+    <View style={[styles.container,{backgroundColor:theme.colors.backgroundColor}]}>
       {/* React Native's built-in loader */}
       <ActivityIndicator size="large" color="#00bcd4" style={styles.loader} />
 

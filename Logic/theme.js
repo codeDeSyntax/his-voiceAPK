@@ -2,11 +2,13 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 
+
 const AppThemeContext = createContext();
 
 export const AppThemeProvider = ({ children }) => {
+  // const { settings, setSettings } = useContext(SermonContext);
   const systemTheme = useColorScheme();
-  const [isDarkMode, setIsDarkMode] = useState(systemTheme === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useRef, useEffect, useCallback,useContext, Suspense } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Text } from "react-native-paper";
@@ -11,19 +11,16 @@ import {
   TextInput,
   Dimensions,
 } from "react-native";
-import { ImageBackground } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
-import { useAppTheme } from "../../Logic/theme";
 import { useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
-import { LinearGradient } from "expo-linear-gradient";
-import LoadingScreen from "../../components/Loader";
+
+
 
 export default function Home() {
   
-  const { selectedSermon, settings } = React.useContext(SermonContext);
-  const { theme } = useAppTheme();
+  const { selectedSermon, settings,theme } =useContext(SermonContext);
   const route = useRoute();
   const searchPhrase = route.params?.searchPhrase || "";
 
@@ -87,15 +84,15 @@ export default function Home() {
           style={[
             styles.sermonText,
             {
-              // textAlign:'center',
-              color: settings.textColor,
+              // textAlign:'left',
+              color: theme.colors.text,
               fontFamily: settings.fontFamily,
               fontSize: settings.fontSize,
              
               // lineHeight: 30,
               // includeFontPadding:false,
               // writingDirection: "rtl",
-              // textAlignVertical: "center",
+              textAlignVertical: "left",
             },
           ]}
         >
@@ -143,7 +140,7 @@ export default function Home() {
     //  style={styles.gradient}
     // >
     
-      <View style={[styles.container, { backgroundColor:settings.backgroundColor }]}>
+      <View style={[styles.container, { backgroundColor:theme.colors.primary}]}>
       {selectedSermon.type === "mp3" ? (
         <PlaySermon sermon={selectedSermon} />
       ) : (
@@ -156,10 +153,10 @@ export default function Home() {
           onContentSizeChange={(width, height) => setContentHeight(height)}
         >
           <View>
-            <Text style={[styles.titleText, { color: settings.textColor }]}>
+            <Text style={[styles.titleText, { color: theme.colors.text }]}>
               {selectedSermon.title}
             </Text>
-            <Text style={[styles.locationText, { color: settings.textColor }]}>
+            <Text style={[styles.locationText, { color: theme.colors.text }]}>
               {selectedSermon.location}
             </Text>
             {renderSermonText()}
@@ -247,7 +244,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     // marginLeft: 0,
     // paddingLeft: 0,
-    // textAlign: "center",
+    textAlign: "left",
   },
   highlightedText: {
     backgroundColor: "green",
@@ -269,7 +266,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontStyle: "italic",
     paddingTop: 10,
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   topButton: {
     position: "absolute",

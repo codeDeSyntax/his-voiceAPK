@@ -37,8 +37,8 @@ const SermonSearch = () => {
   const [searchText, setSearchText] = useState("");
   const [filteredSermons, setFilteredSermons] = useState([]);
   const [expandedSermons, setExpandedSermons] = useState(new Set());
-  const { setSelectedSermon } = useContext(SermonContext);
-  const { theme } = useAppTheme();
+  const { setSelectedSermon,theme } = useContext(SermonContext);
+  // const { theme } = useAppTheme();
   const [loading, setLoading] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
@@ -229,7 +229,7 @@ const SermonSearch = () => {
                 <LinearGradient
                   colors={theme.dark ? 
                     ['#202425', '#202425'] : 
-                    ["#fcf7e4", '#fcf7e4']}
+                    ["#fafafa", '#fafafa']}
                   style={styles.sermonGradient}
                 >
                   <View style={styles.sermonHeader}>
@@ -321,7 +321,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor:"silver"
+    backgroundColor:"silver",
+    elevation:5
   },
   sermonGradient: {
     padding: 16,

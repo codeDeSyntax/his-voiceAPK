@@ -53,9 +53,9 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 
 function SermonList() {
   const navigation = useNavigation()
-  const { setSelectedSermon, recentlyOpened, setRecentlyOpened, settings } =
+  const { setSelectedSermon, recentlyOpened, setRecentlyOpened, settings,theme } =
     React.useContext(SermonContext);
-  const { theme } = useAppTheme();
+  // const { theme } = useAppTheme();
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
   const [selectedLetter, setSelectedLetter] = useState("All Letters");
@@ -176,11 +176,11 @@ function SermonList() {
           borderWidth: 1,
           borderColor: theme.colors.secondary,
           backgroundColor:
-            theme.dark === true
+            theme.dark 
               ? parseInt(index) % 2 === 0
                 ? theme.colors.primary
                 : theme.colors.primary
-              : "#fdfaee",
+              : "#fafafa",
         },
       ]}
       onPress={() => handleSermonClick(item)}
