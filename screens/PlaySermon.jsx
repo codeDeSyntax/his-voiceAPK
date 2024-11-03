@@ -5,11 +5,10 @@ import * as Clipboard from 'expo-clipboard';
 import Modal from 'react-native-modal';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { SermonContext } from '../Logic/globalState';
-import { useAppTheme } from '../Logic/theme';
+
 
 const DownloadSermon = () => {
-  const { selectedSermon } = useContext(SermonContext);
-  const { theme } = useAppTheme();
+  const { selectedSermon } = useContext(SermonContext)
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -20,7 +19,7 @@ const DownloadSermon = () => {
   // Function to copy text with feedback
   const copyToClipboard = async () => {
     try {
-      await Clipboard.setString(text);
+      await Clipboard.setStringAsync(text);
       setIsCopied(true);
       Alert.alert('Success', 'URL copied to clipboard');
       // Reset copy state after 2 seconds
