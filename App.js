@@ -12,23 +12,10 @@ import * as Updates from 'expo-updates';
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
+  
 
-  useEffect(() => {
-    async function checkForUpdates() {
-      try {
-        const update = await Updates.checkForUpdateAsync();
-        if (update.isAvailable) {
-          await Updates.fetchUpdateAsync();
-          Alert.alert('Update available', 'Restarting to apply the update...');
-          await Updates.reloadAsync(); // Will reload the app with the new update
-        }
-      } catch (e) {
-        console.log('Error checking for updates', e);
-      }
-    }
-
-    checkForUpdates();
-  }, []);
+ 
+  
 
   useEffect(() => {
     async function prepareApp() {
@@ -55,7 +42,7 @@ export default function App() {
   }
 
   return (
-    <AppThemeProvider>
+    <>
       <SermonProvider>
         <NavigationContainer>
           <KeyboardAvoidingView
@@ -67,6 +54,6 @@ export default function App() {
           </KeyboardAvoidingView>
         </NavigationContainer>
       </SermonProvider>
-    </AppThemeProvider>
+    </>
   );
 }

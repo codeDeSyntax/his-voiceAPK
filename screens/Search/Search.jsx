@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Pressable,
 } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
 import { useAppTheme } from "../../Logic/theme";
@@ -152,9 +153,10 @@ const SermonSearch = () => {
               </Text>
             ))}
         </Text>
-        <TouchableOpacity 
-          onPress={() => toggleExpanded(index)}
+       <View style={{flexDirection:"row",alignItems:'center',gap:6}}>
+       <TouchableOpacity 
           style={styles.expandButton}
+          onPress={() => toggleExpanded(index)}
         >
           <AntDesign
             name={isExpanded ? "upcircle" : "downcircle"}
@@ -164,7 +166,20 @@ const SermonSearch = () => {
           <Text style={[styles.expandButtonText,{color:theme.dark === true? "#60A5FA" : "gray"}]}>
             {isExpanded ? "Show less" : "Show more"}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity >
+
+       <TouchableOpacity style={[styles.expandButton,{gap:5,backgroundColor:theme.colors.primary},]} 
+          onPress={() => handleSermonClick(sermon)}
+       >
+        <Text style={[styles.expandButtonText,{color:theme.dark === true? "#60A5FA" : "gray",}]}>Sermon</Text>
+       <AntDesign 
+        name="rightcircle"
+        size={20}
+            color={theme.dark === true? "#60A5FA" : "gray"}
+         />
+       </TouchableOpacity>
+       </View>
+
       </View>
     );
   };
@@ -215,21 +230,21 @@ const SermonSearch = () => {
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color="#60A5FA" />
             <Text style={[styles.loaderText, { color: theme.colors.text }]}>
-              Searching sermons...
+              Searching through sermons...
             </Text>
           </View>
         ) : filteredSermons.length > 0 ? (
           <View style={styles.resultsContainer}>
             {filteredSermons.map((sermon, index) => (
-              <TouchableOpacity
+              <Pressable
                 key={index}
                 style={styles.sermonContainer}
-                onPress={() => handleSermonClick(sermon)}
+                
               >
                 <LinearGradient
                   colors={theme.dark ? 
                     ['#202425', '#202425'] : 
-                    ["#fafafa", '#fafafa']}
+                    ["#fafafa", '#f5f5f5']}
                   style={styles.sermonGradient}
                 >
                   <View style={styles.sermonHeader}>
@@ -245,7 +260,7 @@ const SermonSearch = () => {
                   </Text>
                   {renderSermonText(sermon, index)}
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
         ) : (
@@ -337,6 +352,7 @@ const styles = StyleSheet.create({
   },
   sermonTitle: {
     fontWeight: "700",
+    fontFamily:"serif",
     fontSize: 16,
     flex: 1,
   },

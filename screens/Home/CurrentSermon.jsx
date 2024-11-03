@@ -109,7 +109,7 @@ export default function Home() {
         style={[
           styles.sermonText,
           {
-            color: settings.textColor,
+            color: theme.colors.text,
             fontFamily: settings.fontFamily,
             fontSize: settings.fontSize,
             lineHeight: 30,
@@ -148,7 +148,7 @@ export default function Home() {
           ref={scrollViewRef}
           contentContainerStyle={[
             styles.scrollViewContainer,
-            // { backgroundColor: settings.backgroundColor },
+            { backgroundColor: theme.colors.primary },
           ]}
           onContentSizeChange={(width, height) => setContentHeight(height)}
         >

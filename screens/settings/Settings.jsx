@@ -16,6 +16,9 @@ import { SelectList } from "react-native-dropdown-select-list";
 import { Switch } from "react-native-paper";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { Alert } from 'react-native';
+import * as Updates from 'expo-updates';
+import UpdateScreen from "../Updating";
 
 function Settings() {
   const [fontsLoaded] = useFonts({
@@ -32,7 +35,8 @@ function Settings() {
   const [fontFamily, setFontFamily] = useState(settings.fontFamily);
   const [textColor, setTextColor] = useState(settings.textColor);
   const [savingTheme, setSavingTheme] = useState(false);
-  const navigation = useNavigation()
+  const navigation = useNavigation();
+  const [isUpdating, setIsUpdating] =  useState(false)
   const [backgroundColor, setBackgroundColor] = useState(
     settings.backgroundColor
   );
@@ -56,7 +60,10 @@ function Settings() {
 
       setIsDarkMode(newMode);
       setSettings(updatedSettings);
-      await AsyncStorage.setItem("sermonSettings", JSON.stringify(updatedSettings));
+      await AsyncStorage.setItem(
+        "sermonSettings",
+        JSON.stringify(updatedSettings)
+      );
       setSavingTheme(false);
     } catch (error) {
       console.error("Error saving theme settings:", error);
@@ -75,7 +82,10 @@ function Settings() {
         textColor,
       };
       setSettings(updatedSettings);
-      await AsyncStorage.setItem("sermonSettings", JSON.stringify(updatedSettings));
+      await AsyncStorage.setItem(
+        "sermonSettings",
+        JSON.stringify(updatedSettings)
+      );
     } catch (error) {
       console.error("Error saving settings:", error);
     }
@@ -93,40 +103,102 @@ function Settings() {
       setSettings(defaultSettings);
       setBackgroundColor(defaultSettings.backgroundColor);
       setTextColor(defaultSettings.textColor);
-      await AsyncStorage.setItem("sermonSettings", JSON.stringify(defaultSettings));
+      await AsyncStorage.setItem(
+        "sermonSettings",
+        JSON.stringify(defaultSettings)
+      );
     } catch (error) {
       console.error("Error restoring settings:", error);
     }
   };
 
+  async function checkForUpdates() {
+    if (__DEV__) {
+      console.log("Skipping updates check in development mode");
+      // setIsUpdating(true)
+      
+      return;
+    }
+    try {
+     navigation.navigate("updating")
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        Alert.alert('Update available', 'Restarting to apply the update...');
+        await Updates.reloadAsync(); // Will reload the app with the new update
+        navigation.navigate("welcome")
+      }else {
+        navigation.navigate("welcome")
+      }
+    } catch (e) {
+      console.log('Error checking for updates', e);
+    }
+  }
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.dark ? '#1A1A1A' : '#F8F9FA' }]}>
-      <Text style={[styles.headerTitle, { color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+  <>
+  {
+    isUpdating ? <UpdateScreen/> : (
+      <ScrollView
+      style={[
+        styles.container,
+        { backgroundColor: theme.dark ? "#1A1A1A" : "#F8F9FA" },
+      ]}
+    >
+      <Text
+        style={[
+          styles.headerTitle,
+          { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+        ]}
+      >
         Settings
       </Text>
 
       {/* Main Settings Group */}
-      <View style={[styles.settingsGroup, { backgroundColor: theme.dark ? '#2A2A2A' : '#FFFFFF' }]}>
+      <View
+        style={[
+          styles.settingsGroup,
+          { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
+        ]}
+      >
         <TouchableOpacity style={styles.settingItem}>
           <View style={styles.settingLeft}>
-            <View style={[styles.iconContainer, { backgroundColor: '#60A5FA' }]}>
+            <View
+              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+            >
               <Icon name="language" size={20} color="#FFF" />
             </View>
-            <Text style={[styles.settingText, { color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+            <Text
+              style={[
+                styles.settingText,
+                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+              ]}
+            >
               App Language
             </Text>
           </View>
-          <Icon name="chevron-forward" size={20} color={theme.dark ? '#999' : '#666'} />
+          <Icon
+            name="chevron-forward"
+            size={20}
+            color={theme.dark ? "#999" : "#666"}
+          />
         </TouchableOpacity>
 
         <View style={styles.separator} />
 
         <TouchableOpacity style={styles.settingItem}>
           <View style={styles.settingLeft}>
-            <View style={[styles.iconContainer, { backgroundColor: '#60A5FA' }]}>
+            <View
+              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+            >
               <Icon name="text" size={20} color="#FFF" />
             </View>
-            <Text style={[styles.settingText, { color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+            <Text
+              style={[
+                styles.settingText,
+                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+              ]}
+            >
               Font Settings
             </Text>
           </View>
@@ -157,14 +229,25 @@ function Settings() {
               searchicon={<FontAwesome5 name="search" color={textTheme} />}
               arrowicon={<FontAwesome5 name="caret-down" color={textTheme} />}
               placeholder="Font family"
-              boxStyles={[styles.selectBox, { backgroundColor: theme.dark ? '#3A3A3A' : '#F0F0F0' }]}
-              inputStyles={{ color: theme.dark ? '#FFFFFF' : '#1A1A1A' }}
-              dropdownStyles={[styles.dropdown, { backgroundColor: theme.dark ? '#3A3A3A' : '#FFFFFF' }]}
-              dropdownTextStyles={{ color: theme.dark ? '#FFFFFF' : '#1A1A1A' }}
+              boxStyles={[
+                styles.selectBox,
+                { backgroundColor: theme.dark ? "#3A3A3A" : "#F0F0F0" },
+              ]}
+              inputStyles={{ color: theme.dark ? "#FFFFFF" : "#1A1A1A" }}
+              dropdownStyles={[
+                styles.dropdown,
+                { backgroundColor: theme.dark ? "#3A3A3A" : "#FFFFFF" },
+              ]}
+              dropdownTextStyles={{ color: theme.dark ? "#FFFFFF" : "#1A1A1A" }}
             />
 
             <View style={styles.sliderContainer}>
-              <Text style={[styles.sliderLabel, { color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+              <Text
+                style={[
+                  styles.sliderLabel,
+                  { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                ]}
+              >
                 Font Size: {fontSize}px
               </Text>
               <Slider
@@ -174,13 +257,27 @@ function Settings() {
                 value={fontSize}
                 onValueChange={setFontSize}
                 minimumTrackTintColor="#60A5FA"
-                maximumTrackTintColor={theme.dark ? '#666' : '#CCC'}
+                maximumTrackTintColor={theme.dark ? "#666" : "#CCC"}
                 thumbTintColor="#60A5FA"
               />
             </View>
 
-            <View style={[styles.previewBox, { backgroundColor: theme.dark ? '#3A3A3A' : '#F0F0F0' }]}>
-              <Text style={[styles.previewText, { fontFamily, fontSize, color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+            <View
+              style={[
+                styles.previewBox,
+                { backgroundColor: theme.dark ? "#3A3A3A" : "#F0F0F0" },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.previewText,
+                  {
+                    fontFamily,
+                    fontSize,
+                    color: theme.dark ? "#FFFFFF" : "#1A1A1A",
+                  },
+                ]}
+              >
                 Preview Text
               </Text>
             </View>
@@ -191,10 +288,17 @@ function Settings() {
 
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
-            <View style={[styles.iconContainer, { backgroundColor: '#60A5FA' }]}>
+            <View
+              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+            >
               <Icon name="moon" size={20} color="#FFF" />
             </View>
-            <Text style={[styles.settingText, { color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+            <Text
+              style={[
+                styles.settingText,
+                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+              ]}
+            >
               Dark Mode
             </Text>
           </View>
@@ -207,52 +311,99 @@ function Settings() {
 
         <View style={styles.separator} />
 
-        <TouchableOpacity style={styles.settingItem} onPress={() => navigation?.navigate("About")}>
+        <TouchableOpacity
+          style={styles.settingItem}
+          onPress={() => navigation?.navigate("About")}
+        >
           <View style={styles.settingLeft}>
-            <View style={[styles.iconContainer, { backgroundColor: '#60A5FA' }]}>
+            <View
+              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+            >
               <Icon name="help-circle" size={20} color="#FFF" />
             </View>
-            <Text style={[styles.settingText, { color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+            <Text
+              style={[
+                styles.settingText,
+                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+              ]}
+            >
               About
             </Text>
           </View>
-          <Icon name="chevron-forward" size={20} color={theme.dark ? '#999' : '#666'} />
+          <Icon
+            name="chevron-forward"
+            size={20}
+            color={theme.dark ? "#999" : "#666"}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.settingItem} onPress={checkForUpdates}>
+          <View style={styles.settingLeft}>
+            <View
+              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+            >
+              <Icon name="download" size={20} color="#FFF" />
+            </View>
+            <Text
+              style={[
+                styles.settingText,
+                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+              ]}
+            >
+              Check for Updates
+            </Text>
+          </View>
+
+          <Icon name="download" size={20} color={theme.colors.backgroundColor} />
         </TouchableOpacity>
       </View>
 
+      
+
       {/* Save Button */}
       <TouchableOpacity
-        style={[styles.saveButton, { backgroundColor: '#60A5FA' }]}
+        style={[styles.saveButton, { backgroundColor: "#60A5FA" }]}
         onPress={saveSettings}
       >
         <Text style={styles.saveButtonText}>Save Settings</Text>
       </TouchableOpacity>
 
       {/* Reset Button */}
-      <TouchableOpacity
-        style={[styles.resetButton]}
-        onPress={restoreDefault}
-      >
-        <Text style={[styles.resetButtonText, { color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+      <TouchableOpacity style={[styles.resetButton]} onPress={restoreDefault}>
+        <Text
+          style={[
+            styles.resetButtonText,
+            { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+          ]}
+        >
           Reset to Defaults
         </Text>
       </TouchableOpacity>
 
       {/* Saving Theme Modal */}
-      <Modal
-        transparent={true}
-        visible={savingTheme}
-        animationType="fade"
-      >
+      <Modal transparent={true} visible={savingTheme} animationType="fade">
         <View style={styles.modalBackground}>
-          <View style={[styles.modalContainer, { backgroundColor: theme.dark ? '#2A2A2A' : '#FFFFFF' }]}>
-            <Text style={[styles.modalText, { color: theme.dark ? '#FFFFFF' : '#1A1A1A' }]}>
+          <View
+            style={[
+              styles.modalContainer,
+              { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
+            ]}
+          >
+            <Text
+              style={[
+                styles.modalText,
+                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+              ]}
+            >
               Saving Theme...
             </Text>
           </View>
         </View>
       </Modal>
     </ScrollView>
+    )
+  }
+  </>
   );
 }
 
@@ -263,15 +414,15 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontFamily:"serif",
-    fontWeight: '700',
+    fontFamily: "serif",
+    fontWeight: "700",
     marginBottom: 32,
     marginTop: 20,
   },
   settingsGroup: {
     borderRadius: 16,
     padding: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -281,31 +432,31 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderRadius: 12,
   },
   settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   iconContainer: {
     width: 36,
     height: 36,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   settingText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   separator: {
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
     marginHorizontal: 16,
   },
   previewSection: {
@@ -321,7 +472,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 0,
     marginTop: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -343,43 +494,43 @@ const styles = StyleSheet.create({
   previewBox: {
     padding: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   previewText: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   saveButton: {
     marginTop: 24,
     padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   saveButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   resetButton: {
     marginTop: 12,
     padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   resetButtonText: {
     fontSize: 14,
   },
   modalBackground: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContainer: {
     padding: 24,
     borderRadius: 16,
-    width: '80%',
-    alignItems: 'center',
-    shadowColor: '#000',
+    width: "80%",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -390,7 +541,7 @@ const styles = StyleSheet.create({
   },
   modalText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
 
