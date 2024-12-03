@@ -386,32 +386,49 @@ function SermonList() {
         onRequestClose={closeDropdown}
       >
         <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, {
+            backgroundColor:theme.colors.secondary
+          }]}>
             <FlatList
               data={years}
-              renderItem={({ item }) => (
+              renderItem={({ item,index }) => (
                 <Pressable
-                  style={styles.gridItem}
+                  style={[styles.gridItem, {
+                    borderWidth: 1,
+                    borderColor: theme.colors.secondary,
+                    backgroundColor:
+                      theme.dark 
+                        ? parseInt(index) % 2 === 0
+                          ? theme.colors.primary
+                          : theme.colors.primary
+                        : "#fafafa",
+                  }]}
                   onPress={() => {
                     setSelectedYear(item);
                     closeDropdown();
                   }}
                 >
-                  <Text style={styles.gridItemText}>{item}</Text>
+                  <Text style={[styles.gridItemText, {
+                    color: theme.dark === true ? theme.colors.text : "gray"
+                  }]}>{item}</Text>
                 </Pressable>
               )}
-              numColumns={3}
+              numColumns={4}
               keyExtractor={(item) => item}
               contentContainerStyle={styles.gridContainer}
             />
             <Pressable
-              style={[styles.allYearsOption]}
+              style={[styles.allYearsOption,{
+                backgroundColor:theme.colors.primary
+              }]}
               onPress={() => {
                 setSelectedYear("All Years");
                 closeDropdown();
               }}
             >
-              <Text style={styles.gridBtnText}>All Years</Text>
+              <Text style={[styles.gridBtnText,{
+                color: theme.dark === true ? theme.colors.text : "gray"
+              }]}>All Years</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -424,18 +441,34 @@ function SermonList() {
         onRequestClose={closeDropdown}
       >
         <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, {
+            backgroundColor:theme.colors.secondary
+          }]}>
+
             <FlatList
               data={alphabet}
-              renderItem={({ item }) => (
+              renderItem={({ item,index }) => (
                 <Pressable
-                  style={styles.gridItem}
+                  style={[styles.gridItem, 
+                    {
+                      borderWidth: 1,
+                      borderColor: theme.colors.secondary,
+                      backgroundColor:
+                        theme.dark 
+                          ? parseInt(index) % 2 === 0
+                            ? theme.colors.primary
+                            : theme.colors.primary
+                          : "#fafafa",
+                    }
+                  ]}
                   onPress={() => {
                     setSelectedLetter(item);
                     closeDropdown();
                   }}
                 >
-                  <Text style={styles.gridItemText}>{item}</Text>
+                  <Text style={[styles.gridItemText,{
+                    color: theme.dark === true ? theme.colors.text : "gray"
+                  }]}>{item}</Text>
                 </Pressable>
               )}
               numColumns={5}
@@ -443,13 +476,18 @@ function SermonList() {
               contentContainerStyle={styles.gridContainer}
             />
             <Pressable
-              style={[styles.allLettersOption]}
+              style={[styles.allLettersOption, {
+                backgroundColor:theme.dark ? "#2d2d2d"  :"",
+                elevation:5
+              }]}
               onPress={() => {
                 setSelectedLetter("All Letters");
                 closeDropdown();
               }}
             >
-              <Text style={styles.gridBtnText}>All Letters</Text>
+              <Text style={[styles.gridBtnText,{
+                color: theme.dark === true ? theme.colors.text : "gray"
+              }]}>All Letters</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -461,7 +499,7 @@ function SermonList() {
 const styles = StyleSheet.create({
   // ... (styles remain unchanged)
   container: {
-    flex: 1,
+    // flex: 1,
     paddingTop: 40,
     // backgroundColor:'#2d2d2d'
   },
@@ -582,16 +620,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 16,
+    
   },
   gridContainer: {
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   gridItem: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 4,
     margin: 4,
     borderRadius: 8,
     backgroundColor: "#f0f0f0",
@@ -600,7 +639,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#427092",
   },
   gridItemText: {
-    fontSize: 16,
+    fontSize: 12,
     color: "#333",
   },
   selectedGridItemText: {

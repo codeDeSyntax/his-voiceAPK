@@ -39,7 +39,8 @@ function StackNavigator() {
   }, []);
   return (
   
-     <Stack.Navigator initialRouteName="welcome" >
+     <Stack.Navigator initialRouteName="welcome" 
+     >
       <Stack.Screen 
         name="MainTabs" 
         component={TabNavigator} 

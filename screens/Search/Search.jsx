@@ -10,12 +10,12 @@ import {
   Pressable,
 } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
-import { useAppTheme } from "../../Logic/theme";
 import { ActivityIndicator } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AntDesign } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
+
 
 import earlySermons from "../../sermons/1964-1969/firstset";
 import secondSet from "../../sermons/1970/1970";
@@ -31,15 +31,14 @@ const sermons = [
   ...lastSet,
 ];
 
-const CONTEXT_LENGTH = 30; // Default context length
-const EXPANDED_CONTEXT_LENGTH = 150; // Expanded context length
+const CONTEXT_LENGTH = 30;
+const EXPANDED_CONTEXT_LENGTH = 150;
 
 const SermonSearch = () => {
   const [searchText, setSearchText] = useState("");
   const [filteredSermons, setFilteredSermons] = useState([]);
   const [expandedSermons, setExpandedSermons] = useState(new Set());
-  const { setSelectedSermon,theme } = useContext(SermonContext);
-  // const { theme } = useAppTheme();
+  const { setSelectedSermon, theme } = useContext(SermonContext);
   const [loading, setLoading] = useState(false);
   const fadeAnim = new Animated.Value(0);
 
@@ -52,7 +51,7 @@ const SermonSearch = () => {
     }
 
     setLoading(true);
-    setExpandedSermons(new Set()); // Reset expanded states on new search
+    setExpandedSermons(new Set());
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -62,7 +61,6 @@ const SermonSearch = () => {
           const regex = new RegExp(`(${searchText})`, "i");
           const match = sermon.sermon.match(regex);
           if (match) {
-            // Store both short and expanded context
             const shortContext = sermon.sermon.slice(
               Math.max(0, match.index - CONTEXT_LENGTH),
               Math.min(sermon.sermon.length, match.index + match[0].length + CONTEXT_LENGTH)
@@ -148,38 +146,53 @@ const SermonSearch = () => {
                     : undefined
                 }
                 >
-                
                 {" " + part.trim().replace(/<\/?highlight>/g, "").trim() + " "}
               </Text>
             ))}
         </Text>
-       <View style={{flexDirection:"row",alignItems:'center',gap:6}}>
-       <TouchableOpacity 
-          style={styles.expandButton}
-          onPress={() => toggleExpanded(index)}
-        >
-          <AntDesign
-            name={isExpanded ? "upcircle" : "downcircle"}
-            size={20}
-            color={theme.dark === true? "#60A5FA" : "gray"}
-          />
-          <Text style={[styles.expandButtonText,{color:theme.dark === true? "#60A5FA" : "gray"}]}>
-            {isExpanded ? "Show less" : "Show more"}
-          </Text>
-        </TouchableOpacity >
+        <View style={styles.sermonActionContainer}>
+          <TouchableOpacity 
+            style={[styles.expandButton, 
+              {
+                borderWidth: 1,
+                borderColor: theme.colors.secondary,
+                backgroundColor:
+                  theme.dark 
+                    ? parseInt(index) % 2 === 0
+                      ? theme.colors.primary
+                      : theme.colors.primary
+                    : "#fafafa",
+              }
+            ]}
+            onPress={() => toggleExpanded(index)}
+          >
+            <AntDesign
+              name={isExpanded ? "upcircle" : "downcircle"}
+              size={20}
+              color={theme.dark === true? "gray" : "gray"}
+            />
+            <Text style={[styles.expandButtonText,{color:theme.dark === true? "gray" : "gray"}]}>
+              {isExpanded ? "Show less" : "Show more"}
+            </Text>
+          </TouchableOpacity>
 
-       <TouchableOpacity style={[styles.expandButton,{gap:5,backgroundColor:theme.colors.primary},]} 
-          onPress={() => handleSermonClick(sermon)}
-       >
-        <Text style={[styles.expandButtonText,{color:theme.dark === true? "#60A5FA" : "gray",}]}>Sermon</Text>
-       <AntDesign 
-        name="rightcircle"
-        size={20}
-            color={theme.dark === true? "#60A5FA" : "gray"}
-         />
-       </TouchableOpacity>
-       </View>
-
+          <TouchableOpacity 
+            style={[
+              styles.sermonDetailButton,
+              {backgroundColor: theme.colors.primary}
+            ]} 
+            onPress={() => handleSermonClick(sermon)}
+          >
+            <Text style={[styles.sermonDetailButtonText, {color: theme.dark === true? "gray" : "gray"}]}>
+              Open Sermon
+            </Text>
+            <AntDesign 
+              name="rightcircle"
+              size={20}
+              color={theme.dark === true? "gray" : "gray"}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -187,7 +200,13 @@ const SermonSearch = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
       <View style={styles.searchContainer}>
-        <View style={[styles.inputWrapper, {borderColor: theme.dark === true? "#494d50" : "gray",}]}>
+        <View style={[
+          styles.inputWrapper, 
+          {borderColor: theme.dark === true? "#494d50" : "gray", 
+            backgroundColor:theme.colors.background
+          }
+          
+        ]}>
           <Ionicons
             name="search"
             size={24}
@@ -197,15 +216,16 @@ const SermonSearch = () => {
           <TextInput
             style={[
               styles.searchInput,
-              { color: theme.dark === true ? theme.colors.text : "black",
-                
-               }
+              { 
+                color: theme.dark === true ? theme.colors.text : "black",
+                fontFamily:"serif"
+              }
             ]}
             placeholder="Search quotes"
             value={searchText}
             onChangeText={setSearchText}
-            placeholderTextColor={theme.dark === true ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)"}
-            selectionColor={theme.dark === true ? "#60A5FA" : "gray"}
+            placeholderTextColor={theme.dark === true ? "gray" : "rgba(0,0,0,0.5)"}
+            selectionColor={theme.dark === true ? "gray" : "gray"}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={handleClearSearch}>
@@ -219,57 +239,90 @@ const SermonSearch = () => {
           )}
         </View>
         <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <View style={styles.gradientButton}>
-            <Text style={styles.searchButtonText}>Search</Text>
-          </View>
+          <Text style={styles.searchButtonText}>Search</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {loading ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#60A5FA" />
-            <Text style={[styles.loaderText, { color: theme.colors.text }]}>
-              Searching through sermons...
-            </Text>
+            <View style={styles.loaderWrapper}>
+              <ActivityIndicator 
+                size="large" 
+                color="#60A5FA" 
+              />
+              <Text style={[
+                styles.loaderText, 
+                { color: theme.colors.text }
+              ]}>
+                Searching through sermons...
+              
+              </Text>
+            </View>
           </View>
         ) : filteredSermons.length > 0 ? (
           <View style={styles.resultsContainer}>
             {filteredSermons.map((sermon, index) => (
               <Pressable
                 key={index}
-                style={styles.sermonContainer}
-                
+                style={[styles.sermonContainer]}
               >
-                <LinearGradient
-                  colors={theme.dark ? 
-                    ['#202425', '#202425'] : 
-                    ["#fafafa", '#f5f5f5']}
-                  style={styles.sermonGradient}
+                <View
+                 
+                  style={[styles.sermonGradient, {
+                    borderWidth: 1,
+                    borderColor: theme.colors.secondary,
+                    backgroundColor:
+                      theme.dark 
+                        ? parseInt(index) % 2 === 0
+                          ? theme.colors.primary
+                          : theme.colors.primary
+                        : "#fafafa",
+                  }]}
                 >
                   <View style={styles.sermonHeader}>
-                    <Text style={[styles.sermonTitle, { color: theme.dark === true ? theme.colors.text : "black" }]}>
-                      {sermon.title}
-                    </Text>
-                    <View>
-                      <Text style={styles.sermonYear}>{sermon.year}</Text>
+                    <View style={styles.sermonTitleContainer}>
+                      <Text 
+                        style={[
+                          styles.sermonTitle, 
+                          { color: theme.dark === true ? theme.colors.text : "black" }
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {sermon.title}
+                      </Text>
+                      <Text style={styles.sermonYear}>
+                        {sermon.year}
+                      </Text>
                     </View>
                   </View>
-                  <Text style={[styles.sermonLrgbaocation, { color:theme.dark === true? "#494d50" : "gray"}]}>
-                    {sermon.location}
+                  <Text 
+                    style={[
+                      styles.sermonLocation, 
+                      { color: theme.dark === true? "#494d50" : "gray" }
+                    ]}
+                  >
+                    {sermon.location ? sermon.location : null}
                   </Text>
                   {renderSermonText(sermon, index)}
-                </LinearGradient>
+                </View>
               </Pressable>
             ))}
           </View>
         ) : (
           <View style={styles.noResultsContainer}>
-            <Text style={[styles.noResultsText, { color: 'silver' }]}>
+            <Text style={[
+              styles.noResultsText, 
+              { color: theme.dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }
+            ]}>
               {searchText.trim() !== ""
                 ? "No sermons found"
                 : "Search quotes from all sermons"}
             </Text>
+            <Ionicons name="library" size={100} color="gray" style={{marginTop:30}}/>
           </View>
         )}
       </ScrollView>
@@ -296,10 +349,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(96, 165, 250, 0.3)",
     borderRadius: 16,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical:4,
     flex: 1,
     marginRight: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    // backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchInput: {
     flex: 1,
@@ -314,17 +373,20 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: "#494d50"
-  },
-  gradientButton: {
     paddingVertical: 14,
     paddingHorizontal: 24,
+    backgroundColor: "#494d50",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchButtonText: {
     color: 'white',
     fontWeight: '600',
     fontSize: 16,
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
@@ -336,25 +398,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor:"silver",
-    elevation:5
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sermonGradient: {
     padding: 16,
     borderRadius: 16,
-    elevation:5
   },
   sermonHeader: {
+    marginBottom: 8,
+  },
+  sermonTitleContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
   sermonTitle: {
     fontWeight: "700",
-    fontFamily:"serif",
-    fontSize: 16,
+    fontFamily: "serif",
+    fontSize: 14,
     flex: 1,
+    marginRight: 10,
   },
   sermonYear: {
     fontSize: 14,
@@ -363,35 +430,54 @@ const styles = StyleSheet.create({
   },
   sermonLocation: {
     fontSize: 12,
-    marginBottom: 8,
+    // marginBottom: 8,
     fontWeight: '500',
   },
   sermonTextContainer: {
-    position: 'relative',
+    marginTop: 2,
   },
   sermonContent: {
     fontFamily: "serif",
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 20,
   },
   highlightedText: {
     backgroundColor: "rgba(16, 185, 129, 0.1)",
     color: "#10B981",
-    fontFamily: "monospace",
+    // fontFamily: "monospace",
+    fontStyle:"italic",
     borderRadius: 8,
     overflow: 'hidden',
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
+  sermonActionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+  },
   expandButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    padding: 4,
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(96, 165, 250, 0.1)',
   },
   expandButtonText: {
-    color: '#60A5FA',
     marginLeft: 8,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  sermonDetailButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  sermonDetailButtonText: {
     fontSize: 12,
     fontWeight: '500',
   },
@@ -401,19 +487,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 50,
   },
+  loaderWrapper: {
+    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+    paddingVertical: 20,
+    paddingHorizontal: 30,
+    borderRadius: 16,
+  },
   loaderText: {
     marginTop: 12,
     fontSize: 16,
+    textAlign: 'center',
+    opacity: 0.7,
   },
   noResultsContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 40,
+    paddingHorizontal: 16,
   },
   noResultsText: {
     fontSize: 16,
-    opacity: 0.8,
+    textAlign: 'center',
+    opacity: 0.6,
   },
 });
 

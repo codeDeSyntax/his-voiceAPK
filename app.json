@@ -4,6 +4,7 @@
     "slug": "his-voice",
     "version": "1.0.0",
     "orientation": "portrait",
+    "newArchEnabled": true,
     "icon": "./assets/adaptive-icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -42,5 +43,7 @@
     "runtimeVersion": {
       "policy": "appVersion"
     }
+    
   }
+  
 }

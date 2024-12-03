@@ -411,12 +411,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    paddingTop:40
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: "serif",
     fontWeight: "700",
-    marginBottom: 32,
+    marginBottom: 12,
     marginTop: 20,
   },
   settingsGroup: {

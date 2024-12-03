@@ -45,13 +45,8 @@ export default function App() {
     <>
       <SermonProvider>
         <NavigationContainer>
-          <KeyboardAvoidingView
-            style={{ flex: 1, }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            <StackNavigator />
             <StatusBar style="light" backgroundColor="#22272a" />
-          </KeyboardAvoidingView>
+            <StackNavigator />
         </NavigationContainer>
       </SermonProvider>
     </>
