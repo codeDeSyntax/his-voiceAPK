@@ -2,35 +2,24 @@
   "build": {
     "preview": {
       "android": {
-        "buildType": "apk",
-        "proguard": true,
-        "jsEngine": "hermes"
+        "buildType": "apk"
       },
       "channel": "preview"
     },
     "preview2": {
       "android": {
         "gradleCommand": ":app:assembleRelease",
-        "buildType": "apk",
-        "proguard": true,
-        "jsEngine": "hermes"
+        "buildType": "apk"
       },
       "channel": "preview2"
     },
     "preview3": {
-      "android": {
-        "developmentClient": true,
-        "buildType": "apk",
-        "proguard": true,
-        "jsEngine": "hermes"
-      },
+      "developmentClient": true,
       "channel": "preview3"
     },
     "production": {
       "android": {
-        "buildType": "apk",  
-        "proguard": true,
-        "jsEngine": "hermes"
+        "buildType": "apk" 
       },
       "channel": "production"
     }
