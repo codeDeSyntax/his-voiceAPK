@@ -10,15 +10,28 @@
     },
     "preview2": {
       "android": {
-        "gradleCommand": ":app:assembleRelease"
+        "gradleCommand": ":app:assembleRelease",
+        "buildType": "apk",
+        "proguard": true,
+        "jsEngine": "hermes"
       },
       "channel": "preview2"
     },
     "preview3": {
-      "developmentClient": true,
+      "android": {
+        "developmentClient": true,
+        "buildType": "apk",
+        "proguard": true,
+        "jsEngine": "hermes"
+      },
       "channel": "preview3"
     },
     "production": {
+      "android": {
+        "buildType": "apk",  
+        "proguard": true,
+        "jsEngine": "hermes"
+      },
       "channel": "production"
     }
   }
