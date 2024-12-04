@@ -394,8 +394,9 @@ function SermonList() {
               renderItem={({ item,index }) => (
                 <Pressable
                   style={[styles.gridItem, {
-                    borderWidth: 1,
-                    borderColor: theme.colors.secondary,
+                    // borderWidth: 1,
+                    // borderColor: theme.dark === true ? "red" :'silver',
+                    elevation:3,
                     backgroundColor:
                       theme.dark 
                         ? parseInt(index) % 2 === 0
@@ -451,8 +452,9 @@ function SermonList() {
                 <Pressable
                   style={[styles.gridItem, 
                     {
-                      borderWidth: 1,
-                      borderColor: theme.colors.secondary,
+                      // borderWidth: 1,
+                      // borderColor: theme.dark === true ? "red" :'silver',
+                      elevation:3,
                       backgroundColor:
                         theme.dark 
                           ? parseInt(index) % 2 === 0
@@ -477,7 +479,7 @@ function SermonList() {
             />
             <Pressable
               style={[styles.allLettersOption, {
-                backgroundColor:theme.dark ? "#2d2d2d"  :"",
+                backgroundColor:theme.dark ? "#2d2d2d"  :"white",
                 elevation:5
               }]}
               onPress={() => {

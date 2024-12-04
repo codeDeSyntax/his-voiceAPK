@@ -354,7 +354,7 @@ function Settings() {
             </Text>
           </View>
 
-          <Icon name="download" size={20} color={theme.colors.backgroundColor} />
+          <Icon name="download" size={20} color={theme.colors.text} />
         </TouchableOpacity>
       </View>
 

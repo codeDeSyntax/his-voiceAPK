@@ -7,7 +7,7 @@ import StackNavigator from './components/StackNavigator';
 import { NavigationContainer } from '@react-navigation/native';
 import { SermonProvider } from './Logic/globalState';
 import { AppThemeProvider } from './Logic/theme';
-import { Alert } from 'react-native';
+import { Alert,Text } from 'react-native';
 import * as Updates from 'expo-updates';
 
 export default function App() {
@@ -38,7 +38,7 @@ export default function App() {
   }, []);
 
   if (!appIsReady) {
-    return null; // Prevent rendering the app until it's fully ready
+    return <Text>loading</Text>; // Prevent rendering the app until it's fully ready
   }
 
   return (

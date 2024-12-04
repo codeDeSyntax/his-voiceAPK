@@ -2,7 +2,9 @@
   "build": {
     "preview": {
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "proguard": true,
+        "jsEngine": "hermes"
       },
       "channel": "preview"
     },

@@ -147,20 +147,21 @@ function RecentlyOpenedSermons() {
           {
             borderWidth:1,
             borderColor:theme.colors.secondary,
-            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? theme.colors.primary : theme.colors.primary) : 'white'
+            backgroundColor: theme.dark === true ? (parseInt(index) % 2 === 0 ? theme.colors.primary : theme.colors.primary) : 'white',
+            gap:10
           },
         ]}
         
       >
 
-      <TouchableOpacity onPress={() => handleSermonClick(item)} >
+      <TouchableOpacity onPress={() => handleSermonClick(item)} style={{width:"90%"}} >
       <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
             padding: 5,
             fontSize: 12,
-            width: 250,
+            width: 200,
             borderRadius: 10,
             backgroundColor:theme.colors.background,
             marginBottom:2
@@ -292,18 +293,32 @@ function RecentlyOpenedSermons() {
         onRequestClose={closeDropdown}
       >
         <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent,
+            {
+              backgroundColor:theme.colors.secondary
+            }
+          ]}>
             <FlatList
               data={years}
-              renderItem={({ item }) => (
+              renderItem={({ item ,index}) => (
                 <Pressable
-                  style={styles.gridItem}
+                  style={[styles.gridItem,{
+                    elevation:3,
+                    backgroundColor:
+                      theme.dark 
+                        ? parseInt(index) % 2 === 0
+                          ? theme.colors.primary
+                          : theme.colors.primary
+                        : "#fafafa",
+                  }]}
                   onPress={() => {
                     setSelectedYear(item);
                     closeDropdown();
                   }}
                 >
-                  <Text style={styles.gridItemText}>{item}</Text>
+                  <Text style={[styles.gridItemText,{
+                    color: theme.dark === true ? theme.colors.text : "gray"
+                  }]}>{item}</Text>
                 </Pressable>
               )}
               numColumns={3}
@@ -311,7 +326,9 @@ function RecentlyOpenedSermons() {
               contentContainerStyle={styles.gridContainer}
             />
             <Pressable
-              style={[styles.allYearsOption]}
+              style={[styles.allYearsOption, {
+                backgroundColor:theme.colors.primary
+              }]}
               onPress={() => {
                 setSelectedYear("All Years");
                 closeDropdown();
@@ -330,18 +347,34 @@ function RecentlyOpenedSermons() {
         onRequestClose={closeDropdown}
       >
         <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent,
+            {
+              backgroundColor:theme.colors.secondary
+            }
+          ]}>
             <FlatList
               data={alphabet}
-              renderItem={({ item }) => (
+              renderItem={({ item,index }) => (
                 <Pressable
-                  style={styles.gridItem}
+                  style={[styles.gridItem, 
+                    {
+                      elevation:3,
+                      backgroundColor:
+                        theme.dark 
+                          ? parseInt(index) % 2 === 0
+                            ? theme.colors.primary
+                            : theme.colors.primary
+                          : "#fafafa",
+                    }
+                  ]}
                   onPress={() => {
                     setSelectedLetter(item);
                     closeDropdown();
                   }}
                 >
-                  <Text style={styles.gridItemText}>{item}</Text>
+                  <Text style={[styles.gridItemText,{
+                    color: theme.dark === true ? theme.colors.text : "gray"
+                  }]}>{item}</Text>
                 </Pressable>
               )}
               numColumns={5}
@@ -349,7 +382,9 @@ function RecentlyOpenedSermons() {
               contentContainerStyle={styles.gridContainer}
             />
             <Pressable
-              style={[styles.allLettersOption]}
+              style={[styles.allLettersOption, {
+                backgroundColor:theme.colors.primary
+              }]}
               onPress={() => {
                 setSelectedLetter("All Letters");
                 closeDropdown();
@@ -450,7 +485,7 @@ const styles = StyleSheet.create({
     paddingVertical:10,
     marginBottom: 12,
     flexDirection:'row',
-    justifyContent:'space-between',
+    justifyContent:'center',
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -486,8 +521,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 4,
     margin: 4,
     borderRadius: 8,
     backgroundColor: "#f0f0f0",

@@ -146,7 +146,7 @@ const SermonSearch = () => {
                     : undefined
                 }
                 >
-                {" " + part.trim().replace(/<\/?highlight>/g, "").trim() + " "}
+                {" " + part.trim().replace(/<\/?highlight>/g, "") + " ".trim()}
               </Text>
             ))}
         </Text>
@@ -168,7 +168,7 @@ const SermonSearch = () => {
           >
             <AntDesign
               name={isExpanded ? "upcircle" : "downcircle"}
-              size={20}
+              size={15}
               color={theme.dark === true? "gray" : "gray"}
             />
             <Text style={[styles.expandButtonText,{color:theme.dark === true? "gray" : "gray"}]}>
@@ -188,7 +188,7 @@ const SermonSearch = () => {
             </Text>
             <AntDesign 
               name="rightcircle"
-              size={20}
+              size={15}
               color={theme.dark === true? "gray" : "gray"}
             />
           </TouchableOpacity>
@@ -203,7 +203,7 @@ const SermonSearch = () => {
         <View style={[
           styles.inputWrapper, 
           {borderColor: theme.dark === true? "#494d50" : "gray", 
-            backgroundColor:theme.colors.background
+            backgroundColor:theme.colors.secondary
           }
           
         ]}>
@@ -322,7 +322,7 @@ const SermonSearch = () => {
                 ? "No sermons found"
                 : "Search quotes from all sermons"}
             </Text>
-            <Ionicons name="library" size={100} color="gray" style={{marginTop:30}}/>
+            <Ionicons name="library" size={100} color={theme.dark === true ? "" :"silver"} style={{marginTop:30}}/>
           </View>
         )}
       </ScrollView>
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   loaderWrapper: {
-    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+    // backgroundColor: 'rgba(96, 165, 250, 0.1)',
     paddingVertical: 20,
     paddingHorizontal: 30,
     borderRadius: 16,
