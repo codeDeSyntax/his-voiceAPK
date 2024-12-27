@@ -5,12 +5,13 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "newArchEnabled": true,
-    "icon": "./assets/adaptive-icon.png",
+   
+
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#171717",
       "image": "./assets/cloud.png",
-      "resizeMode": "contain"
+      "resizeMode": "cover",
+      "backgroundColor": "#171717"
     },
     "updates": {
       "enabled": true,
@@ -31,9 +32,7 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "plugins": [
-      "expo-font"
-    ],
+    "plugins": ["expo-font"],
     "extra": {
       "eas": {
         "projectId": "8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
@@ -43,7 +42,5 @@
     "runtimeVersion": {
       "policy": "appVersion"
     }
-    
   }
-  
 }

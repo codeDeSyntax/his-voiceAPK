@@ -69,8 +69,8 @@ const UpdateScreen = () => {
           size="large" 
           color="#60a5fa" // Lighter blue for better contrast
         />
-        <Text style={styles.updateText}>Applying Update</Text>
-        <Text style={styles.subText}>Please don't close the application</Text>
+        <Text style={styles.updateText}>His voice</Text>
+        <Text style={styles.subText}>Robert Lambert Lee</Text>
       </View>
 
       {/* Version Text */}

@@ -164,7 +164,7 @@ function Settings() {
             <View
               style={[styles.iconContainer, { backgroundColor: theme.colors.background,opacity:20 }]}
             >
-              <Icon name="language" size={20} color="#FFF" />
+              <Icon name="language" size={20} color={theme.colors.text} />
             </View>
             <Text
               style={[
@@ -189,7 +189,7 @@ function Settings() {
             <View
               style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
-              <Icon name="text" size={20} color="#FFF" />
+              <Icon name="text" size={20} color={theme.colors.text} />
             </View>
             <Text
               style={[
@@ -290,7 +290,7 @@ function Settings() {
             <View
               style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
-              <Icon name="moon" size={20} color="#FFF" />
+              <Icon name="moon" size={20} color={theme.colors.text} />
             </View>
             <Text
               style={[
@@ -318,7 +318,7 @@ function Settings() {
             <View
               style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
-              <Icon name="help-circle" size={20} color="#FFF" />
+              <Icon name="help-circle" size={20} color={theme.colors.text} />
             </View>
             <Text
               style={[
@@ -341,7 +341,7 @@ function Settings() {
             <View
               style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
-              <Icon name="download" size={20} color="#FFF" />
+              <Icon name="download" size={20} color={theme.colors.text} />
             </View>
             <Text
               style={[
