@@ -9,12 +9,9 @@
     "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#171717",
-      "image": "./assets/icon.png",
+      "image": "./assets/cloud.png",
       "resizeMode": "contain"
     },
-    "assetBundlePatterns": [
-      "assets/*"
-    ],
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
@@ -26,7 +23,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2d2d2d"
       },
       "package": "com.boblambert.hisvoice"
