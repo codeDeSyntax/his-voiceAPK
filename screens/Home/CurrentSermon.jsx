@@ -160,14 +160,14 @@ export default function Home() {
       {selectedSermon.type === "text" && (
         <>
           <TouchableOpacity
-            style={styles.topButton}
+            style={[styles.topButton, {backgroundColor:theme.colors.background,elevation:5}]}
             onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
           >
-            <Feather name="arrow-up" size={24} color="white" />
+            <Feather name="arrow-up" size={24}  color={theme.colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.bottomButton}
+            style={[styles.bottomButton,{backgroundColor:theme.colors.background,elevation:5}]}
             onPress={() =>
               scrollViewRef.current?.scrollTo({
                 y: contentHeight,
@@ -175,7 +175,7 @@ export default function Home() {
               })
             }
           >
-            <Feather name="arrow-down" size={24} color="white" />
+            <Feather name="arrow-down" size={24} color={theme.colors.text} />
           </TouchableOpacity>
 
           {searchResults.length > 0 && (
@@ -279,35 +279,27 @@ const styles = StyleSheet.create({
   topButton: {
     position: "absolute",
     right: 20,
-    bottom: 150,
+    bottom: 160,
     backgroundColor: "#2d2d2d",
     borderRadius: 30,
     width: 50,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#fafafa",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    elevation: 5,
+   
   },
   
   bottomButton: {
     position: "absolute",
     right: 20,
-    bottom: 80,
+    bottom: 100,
     backgroundColor: "#2d2d2d",
     borderRadius: 30,
     width: 50,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#fafafa",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    elevation: 5,
+  
   },
   
   navigationContainer: {

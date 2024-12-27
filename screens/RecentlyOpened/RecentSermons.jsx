@@ -182,7 +182,7 @@ function RecentlyOpenedSermons() {
                 {item.type === "mp3" && <FontAwesome5 name="microphone"  color={theme.dark === true  ? theme.colors.text : "gray"}/>}
               </Text>
             ) : (
-             <Ionicons name= 'text' color='#fafafa'/>
+             <Ionicons name= 'text' color={theme.colors.text}/>
             )}
           </Animated.View>
         </View>
@@ -193,7 +193,7 @@ function RecentlyOpenedSermons() {
        
       </TouchableOpacity>
      <TouchableOpacity style={{alignSelf:''}} onPress={() => removeFromRecents(item)}>
-     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "#cd3131" : "gray"} />
+     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "#cd3131" : "#cd3131"} />
      </TouchableOpacity>
       </Pressable>
     )
@@ -221,9 +221,9 @@ function RecentlyOpenedSermons() {
         </View>
        {
         recentlyOpened.length > 0 &&
-        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#3d4043' : 'white', borderWidth:!theme.dark ? 1 : 0, borderColor:'silver'}]}>
+        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#3d4043' : 'white',  borderColor:'silver',elevation:5}]}>
         <TextInput
-          style={[styles.searchInput, {color:'gray',border:theme.dark === true ? 0 : 1, backgroundColor:theme.dark === true ? '#3d4043' : 'white'   }]}
+          style={[styles.searchInput, {color:'gray',backgroundColor:theme.dark === true ? '#3d4043' : 'white',elevation:5 ,fontStyle:"italic"  }]}
           placeholder="Search Sermons"
           value={searchText}
           onChangeText={setSearchText}

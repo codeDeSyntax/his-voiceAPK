@@ -15,45 +15,45 @@ import { BlurView } from 'expo-blur';
 const { width, height } = Dimensions.get('window');
 
 const UpdateScreen = () => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  // const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    // Animation setup
-    const pulseAnimation = Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 1.05,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      })
-    ]);
+  // useEffect(() => {
+  //   // Animation setup
+  //   const pulseAnimation = Animated.sequence([
+  //     Animated.timing(scaleAnim, {
+  //       toValue: 1.05,
+  //       duration: 1000,
+  //       useNativeDriver: true,
+  //     }),
+  //     Animated.timing(scaleAnim, {
+  //       toValue: 1,
+  //       duration: 1000,
+  //       useNativeDriver: true,
+  //     })
+  //   ]);
 
-    // Start animation with error handling
-    const animationLoop = Animated.loop(pulseAnimation);
-    animationLoop.start((result) => {
-      if (!result.finished) {
-        console.warn('Animation was interrupted');
-      }
-    });
+  //   // Start animation with error handling
+  //   const animationLoop = Animated.loop(pulseAnimation);
+  //   animationLoop.start((result) => {
+  //     if (!result.finished) {
+  //       console.warn('Animation was interrupted');
+  //     }
+  //   });
 
-    // Cleanup function
-    return () => {
-      animationLoop.stop();
-    };
-  }, []);
+  //   // Cleanup function
+  //   return () => {
+  //     animationLoop.stop();
+  //   };
+  // }, []);
 
   const renderContent = () => (
     <View style={styles.contentContainer}>
       {/* Update Image */}
       <Animated.View style={[
         styles.imageContainer,
-        {
-          transform: [{ scale: scaleAnim }]
-        }
+        // {
+        //   transform: [{ scale: scaleAnim }]
+        // }
       ]}>
         <Image 
           source={require('../assets/cloud.png')}
