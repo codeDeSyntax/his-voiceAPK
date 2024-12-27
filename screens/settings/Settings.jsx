@@ -16,8 +16,6 @@ import { SelectList } from "react-native-dropdown-select-list";
 import { Switch } from "react-native-paper";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { Alert } from 'react-native';
-import * as Updates from 'expo-updates';
 import UpdateScreen from "../Updating";
 
 function Settings() {
@@ -112,28 +110,28 @@ function Settings() {
     }
   };
 
-  async function checkForUpdates() {
-    if (__DEV__) {
-      console.log("Skipping updates check in development mode");
-      // setIsUpdating(true)
+  // async function checkForUpdates() {
+  //   if (__DEV__) {
+  //     console.log("Skipping updates check in development mode");
+  //     // setIsUpdating(true)
       
-      return;
-    }
-    try {
-     navigation.navigate("updating")
-      const update = await Updates.checkForUpdateAsync();
-      if (update.isAvailable) {
-        await Updates.fetchUpdateAsync();
-        Alert.alert('Update available', 'Restarting to apply the update...');
-        await Updates.reloadAsync(); // Will reload the app with the new update
-        navigation.navigate("welcome")
-      }else {
-        navigation.navigate("welcome")
-      }
-    } catch (e) {
-      console.log('Error checking for updates', e);
-    }
-  }
+  //     return;
+  //   }
+  //   try {
+  //    navigation.navigate("updating")
+  //     const update = await Updates.checkForUpdateAsync();
+  //     if (update.isAvailable) {
+  //       await Updates.fetchUpdateAsync();
+  //       Alert.alert('Update available', 'Restarting to apply the update...');
+  //       await Updates.reloadAsync(); // Will reload the app with the new update
+  //       navigation.navigate("welcome")
+  //     }else {
+  //       navigation.navigate("welcome")
+  //     }
+  //   } catch (e) {
+  //     console.log('Error checking for updates', e);
+  //   }
+  // }
 
   return (
   <>
@@ -161,10 +159,10 @@ function Settings() {
           { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
         ]}
       >
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity style={styles.settingItem} disabled>
           <View style={styles.settingLeft}>
             <View
-              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+              style={[styles.iconContainer, { backgroundColor: theme.colors.background,opacity:20 }]}
             >
               <Icon name="language" size={20} color="#FFF" />
             </View>
@@ -189,7 +187,7 @@ function Settings() {
         <TouchableOpacity style={styles.settingItem}>
           <View style={styles.settingLeft}>
             <View
-              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+              style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
               <Icon name="text" size={20} color="#FFF" />
             </View>
@@ -224,7 +222,7 @@ function Settings() {
               ]}
               setSelected={(val) => setFontFamily(val)}
               save="value"
-              value={fontFamily}
+              value={settings.fontFamily}
               search={false}
               searchicon={<FontAwesome5 name="search" color={textTheme} />}
               arrowicon={<FontAwesome5 name="caret-down" color={textTheme} />}
@@ -245,18 +243,19 @@ function Settings() {
               <Text
                 style={[
                   styles.sliderLabel,
-                  { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                  { color: theme.dark ? "#FFFFFF" : "#1A1A1A",fontFamily:fontFamily },
                 ]}
               >
                 Font Size: {fontSize}px
               </Text>
               <Slider
-                style={styles.slider}
+                style={[styles.slider,{height:20}]}
                 minimumValue={12}
                 maximumValue={24}
                 value={fontSize}
                 onValueChange={setFontSize}
                 minimumTrackTintColor="#60A5FA"
+                step={1}
                 maximumTrackTintColor={theme.dark ? "#666" : "#CCC"}
                 thumbTintColor="#60A5FA"
               />
@@ -289,7 +288,7 @@ function Settings() {
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
             <View
-              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+              style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
               <Icon name="moon" size={20} color="#FFF" />
             </View>
@@ -317,7 +316,7 @@ function Settings() {
         >
           <View style={styles.settingLeft}>
             <View
-              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+              style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
               <Icon name="help-circle" size={20} color="#FFF" />
             </View>
@@ -337,10 +336,10 @@ function Settings() {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingItem} onPress={checkForUpdates}>
+        <TouchableOpacity style={styles.settingItem} disabled>
           <View style={styles.settingLeft}>
             <View
-              style={[styles.iconContainer, { backgroundColor: "#60A5FA" }]}
+              style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
               <Icon name="download" size={20} color="#FFF" />
             </View>
@@ -362,7 +361,7 @@ function Settings() {
 
       {/* Save Button */}
       <TouchableOpacity
-        style={[styles.saveButton, { backgroundColor: "#60A5FA" }]}
+        style={[styles.saveButton, { backgroundColor: theme.colors.background }]}
         onPress={saveSettings}
       >
         <Text style={styles.saveButtonText}>Save Settings</Text>
@@ -450,6 +449,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    elevation:5
   },
   settingText: {
     fontSize: 16,

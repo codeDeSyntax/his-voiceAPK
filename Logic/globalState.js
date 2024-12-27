@@ -31,7 +31,7 @@ const SermonProvider = ({ children }) => {
     darkMode: isDarkMode,
     backgroundColor: "#fafafa",
     fontSize: 12,
-    fontFamily: "serif",
+    fontFamily:  require("../assets/fonts/Philosopher-Regular.ttf"),
     textColor: "#fafafa",
   });
 

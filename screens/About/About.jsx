@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Linking, TouchableOpacity, ScrollView, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useContext } from 'react';
+import { SermonContext } from '../../Logic/globalState';
 import { useAppTheme } from '../../Logic/theme';
 
 function About({ navigation }) {
@@ -8,7 +10,7 @@ function About({ navigation }) {
     Linking.openURL(url);
   };
 
-  const { theme } = useAppTheme();
+  const { theme } = useContext(SermonContext);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>

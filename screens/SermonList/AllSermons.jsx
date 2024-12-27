@@ -52,9 +52,14 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 );
 
 function SermonList() {
-  const navigation = useNavigation()
-  const { setSelectedSermon, recentlyOpened, setRecentlyOpened, settings,theme } =
-    React.useContext(SermonContext);
+  const navigation = useNavigation();
+  const {
+    setSelectedSermon,
+    recentlyOpened,
+    setRecentlyOpened,
+    settings,
+    theme,
+  } = React.useContext(SermonContext);
   // const { theme } = useAppTheme();
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
@@ -107,7 +112,8 @@ function SermonList() {
 
   const handleSermonClick = async (sermon) => {
     setSelectedSermon(sermon);
-
+    navigation?.navigate("Home");
+    
     const updatedRecentlyOpenedSermons = [
       sermon,
       ...recentlyOpened.filter((item) => item.id !== sermon.id),
@@ -123,8 +129,6 @@ function SermonList() {
     } catch (error) {
       console.error("Failed to update recents in AsyncStorage", error);
     }
-
-    navigation?.navigate("Home");
   };
   const LocationNotFound = useCallback(
     () => (
@@ -174,13 +178,13 @@ function SermonList() {
         styles.sermonItem,
         {
           borderWidth: 1,
-          borderColor: theme.colors.secondary,
-          backgroundColor:
-            theme.dark 
-              ? parseInt(index) % 2 === 0
-                ? theme.colors.primary
-                : theme.colors.primary
-              : "#fafafa",
+          borderColor: theme.dark ===  true ? theme.colors.secondary : "#f4f6f3",
+          elevation:1,
+          backgroundColor: theme.dark
+            ? parseInt(index) % 2 === 0
+              ? theme.colors.primary
+              : theme.colors.primary
+            : "#fafafa",
         },
       ]}
       onPress={() => handleSermonClick(item)}
@@ -257,14 +261,20 @@ function SermonList() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={[styles.searchContainer]}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <Text
             style={[
               styles.label,
               { color: theme.colors.text, fontFamily: "serif" },
             ]}
           >
-            Sermon List
+            R.L.L sermons
           </Text>
           <Ionicons
             name="book"
@@ -288,14 +298,18 @@ function SermonList() {
               {
                 backgroundColor: theme.colors.secondary,
                 color: theme.dark === true ? theme.colors.text : "gray",
+                fontFamily:"serif",
+                fontStyle:"italic"
+                
               },
             ]}
             placeholder="Search Sermons"
             value={searchText}
             onChangeText={setSearchText}
             placeholderTextColor={
-              theme.dark === true ? theme.colors.text : "gray"
+              theme.dark === true ? "gray" : "gray"
             }
+            
             selectionColor={theme.dark === true ? theme.colors.text : "gray"}
           />
           <TouchableOpacity
@@ -311,6 +325,7 @@ function SermonList() {
           </TouchableOpacity>
         </View>
       </View>
+      {/* message with green success colors */}
 
       <View style={styles.filtersContainer}>
         <TouchableOpacity
@@ -348,27 +363,27 @@ function SermonList() {
         <TouchableOpacity
           style={[
             styles.sortButton,
-            { flexDirection: "row", alignItems: "center", gap: 3 },
+            { flexDirection: "row", alignItems: "center", gap: 3,backgroundColor: theme.dark === true ? "#22272a" : "white", },
           ]}
           onPress={filterOnlyText}
         >
-          <Ionicons name="text" color="#fafafa" />
-          <Ionicons name="filter" color="#fafafa" />
+          <Ionicons name="text" color={theme.colors.text} />
+          <Ionicons name="filter" color={theme.colors.text} />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
             styles.sortButton,
-            { flexDirection: "row", alignItems: "center", gap: 3 },
+            { flexDirection: "row", alignItems: "center", gap: 3,backgroundColor: theme.dark === true ? "#22272a" : "white", },
           ]}
           onPress={filterOnlyAudio}
         >
           <Text>🔊</Text>
-          <Ionicons name="filter" color="#fafafa" />
+          <Ionicons name="filter" color={theme.colors.text} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.sortButton} onPress={toggleSortOrder}>
-          <FontAwesome name="sort" size={20} color="#fff" />
+        <TouchableOpacity style={[styles.sortButton,{backgroundColor: theme.dark === true ? "#22272a" : "white",}]} onPress={toggleSortOrder}>
+          <FontAwesome name="sort" size={20} color={theme.colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -377,6 +392,31 @@ function SermonList() {
         renderItem={renderSermonItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <View style={{ paddingVertical: 10 }}>
+            <Text
+              style={{
+                color: theme.colors.text,
+                fontStyle: "italic",
+                fontWeight: "100",
+                fontSize: 10,
+              }}
+            >
+              Sermon list contains both audio and transcribed versions.Audio
+              versions are indicated with a microphone and are not available
+              within the app now.
+            </Text>
+            <Text
+             style={{
+              color: theme.colors.text,
+              fontStyle: "italic",
+              fontWeight: "100",
+              fontSize: 10,
+              color:"green"
+            }}
+            >Rather, links of the sermons are available. They take you to the download page</Text>
+          </View>
+        }
       />
 
       {/* Year Modal */}
@@ -386,32 +426,46 @@ function SermonList() {
         onRequestClose={closeDropdown}
       >
         <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
-          <View style={[styles.modalContent, {
-            backgroundColor:theme.colors.secondary
-          }]}>
+          <View
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: theme.colors.secondary,
+              },
+            ]}
+          >
             <FlatList
               data={years}
-              renderItem={({ item,index }) => (
+              renderItem={({ item, index }) => (
                 <Pressable
-                  style={[styles.gridItem, {
-                    // borderWidth: 1,
-                    // borderColor: theme.dark === true ? "red" :'silver',
-                    elevation:3,
-                    backgroundColor:
-                      theme.dark 
+                  style={[
+                    styles.gridItem,
+                    {
+                      // borderWidth: 1,
+                      // borderColor: theme.dark === true ? "red" :'silver',
+                      elevation: 3,
+                      backgroundColor: theme.dark
                         ? parseInt(index) % 2 === 0
                           ? theme.colors.primary
                           : theme.colors.primary
                         : "#fafafa",
-                  }]}
+                    },
+                  ]}
                   onPress={() => {
                     setSelectedYear(item);
                     closeDropdown();
                   }}
                 >
-                  <Text style={[styles.gridItemText, {
-                    color: theme.dark === true ? theme.colors.text : "gray"
-                  }]}>{item}</Text>
+                  <Text
+                    style={[
+                      styles.gridItemText,
+                      {
+                        color: theme.dark === true ? theme.colors.text : "gray",
+                      },
+                    ]}
+                  >
+                    {item}
+                  </Text>
                 </Pressable>
               )}
               numColumns={4}
@@ -419,17 +473,27 @@ function SermonList() {
               contentContainerStyle={styles.gridContainer}
             />
             <Pressable
-              style={[styles.allYearsOption,{
-                backgroundColor:theme.colors.primary
-              }]}
+              style={[
+                styles.allYearsOption,
+                {
+                  backgroundColor: theme.colors.primary,
+                },
+              ]}
               onPress={() => {
                 setSelectedYear("All Years");
                 closeDropdown();
               }}
             >
-              <Text style={[styles.gridBtnText,{
-                color: theme.dark === true ? theme.colors.text : "gray"
-              }]}>All Years</Text>
+              <Text
+                style={[
+                  styles.gridBtnText,
+                  {
+                    color: theme.dark === true ? theme.colors.text : "gray",
+                  },
+                ]}
+              >
+                All Years
+              </Text>
             </Pressable>
           </View>
         </Pressable>
@@ -442,35 +506,46 @@ function SermonList() {
         onRequestClose={closeDropdown}
       >
         <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
-          <View style={[styles.modalContent, {
-            backgroundColor:theme.colors.secondary
-          }]}>
-
+          <View
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: theme.colors.secondary,
+              },
+            ]}
+          >
             <FlatList
               data={alphabet}
-              renderItem={({ item,index }) => (
+              renderItem={({ item, index }) => (
                 <Pressable
-                  style={[styles.gridItem, 
+                  style={[
+                    styles.gridItem,
                     {
                       // borderWidth: 1,
                       // borderColor: theme.dark === true ? "red" :'silver',
-                      elevation:3,
-                      backgroundColor:
-                        theme.dark 
-                          ? parseInt(index) % 2 === 0
-                            ? theme.colors.primary
-                            : theme.colors.primary
-                          : "#fafafa",
-                    }
+                      elevation: 3,
+                      backgroundColor: theme.dark
+                        ? parseInt(index) % 2 === 0
+                          ? theme.colors.primary
+                          : theme.colors.primary
+                        : "#fafafa",
+                    },
                   ]}
                   onPress={() => {
                     setSelectedLetter(item);
                     closeDropdown();
                   }}
                 >
-                  <Text style={[styles.gridItemText,{
-                    color: theme.dark === true ? theme.colors.text : "gray"
-                  }]}>{item}</Text>
+                  <Text
+                    style={[
+                      styles.gridItemText,
+                      {
+                        color: theme.dark === true ? theme.colors.text : "gray",
+                      },
+                    ]}
+                  >
+                    {item}
+                  </Text>
                 </Pressable>
               )}
               numColumns={5}
@@ -478,18 +553,28 @@ function SermonList() {
               contentContainerStyle={styles.gridContainer}
             />
             <Pressable
-              style={[styles.allLettersOption, {
-                backgroundColor:theme.dark ? "#2d2d2d"  :"white",
-                elevation:5
-              }]}
+              style={[
+                styles.allLettersOption,
+                {
+                  backgroundColor: theme.dark ? "#2d2d2d" : "white",
+                  elevation: 5,
+                },
+              ]}
               onPress={() => {
                 setSelectedLetter("All Letters");
                 closeDropdown();
               }}
             >
-              <Text style={[styles.gridBtnText,{
-                color: theme.dark === true ? theme.colors.text : "gray"
-              }]}>All Letters</Text>
+              <Text
+                style={[
+                  styles.gridBtnText,
+                  {
+                    color: theme.dark === true ? theme.colors.text : "gray",
+                  },
+                ]}
+              >
+                All Letters
+              </Text>
             </Pressable>
           </View>
         </Pressable>
@@ -597,15 +682,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 12,
     borderRadius: 10,
-    elevation: 5,
+    // elevation: 5,
     shadowColor: "#000",
     //  borderWidth:1,
     borderColor: "silver",
   },
   sermonTitle: {
     fontSize: 13,
-    fontWeight: "500",
-    fontFamily:'serif',
+    fontWeight: "600",
+    fontFamily: "serif",
     marginBottom: 4,
     color: "#bfc7ca",
   },
@@ -622,7 +707,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 16,
-    
   },
   gridContainer: {
     paddingVertical: 4,

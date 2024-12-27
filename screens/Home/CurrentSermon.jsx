@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback,useContext, Suspense } from "react";
+import React, { useState, useRef, useEffect, useCallback, useContext, Suspense } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Text } from "react-native-paper";
@@ -6,7 +6,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  // Text,
   TouchableOpacity,
   TextInput,
   Dimensions,
@@ -16,11 +15,8 @@ import { useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
 
-
-
 export default function Home() {
-  
-  const { selectedSermon, settings,theme } =useContext(SermonContext);
+  const { selectedSermon, settings, theme } = useContext(SermonContext);
   const route = useRoute();
   const searchPhrase = route.params?.searchPhrase || "";
 
@@ -49,21 +45,15 @@ export default function Home() {
   useFocusEffect(
     useCallback(() => {
       const scrollToMatch = () => {
-        if (
-          selectedSermon &&
-          selectedSermon.sermon &&
-          searchResults.length > 0
-        ) {
+        if (selectedSermon && selectedSermon.sermon && searchResults.length > 0) {
           const { height: windowHeight } = Dimensions.get("window");
           const matchIndex = searchResults[currentResultIndex].index;
-          const position =
-            (matchIndex / selectedSermon.sermon.length) * contentHeight;
+          const position = (matchIndex / selectedSermon.sermon.length) * contentHeight;
           const offset = Math.max(position - windowHeight / 2, 0);
           scrollViewRef.current?.scrollTo({ y: offset, animated: true });
         }
       };
 
-      // Delay scrolling to ensure layout is updated
       setTimeout(scrollToMatch, 100);
     }, [searchResults, currentResultIndex, contentHeight, selectedSermon])
   );
@@ -76,34 +66,44 @@ export default function Home() {
   };
 
   const renderSermonText = () => {
+    if (!selectedSermon || !selectedSermon.sermon) return null;
+
+    // Clean up the sermon text by properly handling paragraphs
+    const cleanSermonText = selectedSermon.sermon
+      .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+      .replace(/\n{3,}/g, '\n\n')  // Replace multiple newlines with double newline
+      .trim();  // Remove leading/trailing whitespace
+
     if (searchResults.length === 0) {
+      // Split text into proper paragraphs (separated by double newlines)
+      const paragraphs = cleanSermonText.split(/\n\n+/);
+      
       return (
-        <Text
-        // variant="bodyLarge"
-        selectable={true}
-          style={[
-            styles.sermonText,
-            {
-              // textAlign:'left',
-              color: theme.colors.text,
-              fontFamily: settings.fontFamily,
-              fontSize: settings.fontSize,
-             
-              // lineHeight: 30,
-              // includeFontPadding:false,
-              // writingDirection: "rtl",
-              textAlignVertical: "left",
-            },
-          ]}
-        >
-          {selectedSermon.sermon}
-        </Text>
+        <View style={styles.sermonContainer}>
+          {paragraphs.map((paragraph, index) => (
+            <View key={index} style={styles.paragraphContainer}>
+              <Text
+                selectable={true}
+                style={[
+                  styles.paragraphText,
+                  {
+                    color: theme.colors.text,
+                    fontFamily: settings.fontFamily,
+                    fontSize: settings.fontSize,
+                  },
+                ]}
+              >
+                {/* Replace single newlines with spaces within paragraphs */}
+                {paragraph.replace(/\n/g, ' ').trim()}
+              </Text>
+            </View>
+          ))}
+        </View>
       );
     }
 
-    const parts = selectedSermon.sermon.split(
-      new RegExp(`(${searchPhrase})`, "gi")
-    );
+    // Handle search highlighting with cleaned text
+    const parts = cleanSermonText.split(new RegExp(`(${searchPhrase})`, "gi"));
     return (
       <Text
         style={[
@@ -116,36 +116,27 @@ export default function Home() {
           },
         ]}
       >
-        {parts.map((part, index) =>
-          part.toLowerCase() === searchPhrase.toLowerCase() ? (
-            <Text key={index} style={styles.highlightedText}>
-              {part}
-            </Text>
-          ) : (
-            part
-          )
-        )}
+        {parts.map((part, index) => (
+          <Text key={index} style={{color: theme.colors.text,fontFamily:settings.fontFamily}}>
+            {part.toLowerCase() === searchPhrase.toLowerCase() ? (
+              <Text style={[styles.highlightedText]}>{part}</Text>
+            ) : (
+              part
+            )}
+          </Text>
+        ))}
       </Text>
     );
   };
 
   return (
-    // <ImageBackground
-    // source={require('../../assets/pic11.jpeg')} // Make sure to add your background image
-    //   style={styles.backgroundImage}
-    // >
-    // <LinearGradient
-    //  colors={['rgba(0,0,0,0.1)', '#2f2f2f', '#2f2f2f']}
-    //  locations={[0, 0.7, 1]}
-    //  style={styles.gradient}
-    // >
-    
-      <View style={[styles.container, { backgroundColor:theme.colors.primary}]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
       {selectedSermon.type === "mp3" ? (
         <PlaySermon sermon={selectedSermon} />
       ) : (
         <ScrollView
           ref={scrollViewRef}
+          showsVerticalScrollIndicator={true}
           contentContainerStyle={[
             styles.scrollViewContainer,
             { backgroundColor: theme.colors.primary },
@@ -153,12 +144,14 @@ export default function Home() {
           onContentSizeChange={(width, height) => setContentHeight(height)}
         >
           <View>
-            <Text style={[styles.titleText, { color: theme.colors.text }]}>
+            <Text style={[styles.titleText, { color: theme.colors.text, textAlign: "left" }]}>
               {selectedSermon.title}
             </Text>
+            
             <Text style={[styles.locationText, { color: theme.colors.text }]}>
               {selectedSermon.location}
             </Text>
+            
             {renderSermonText()}
           </View>
         </ScrollView>
@@ -168,9 +161,7 @@ export default function Home() {
         <>
           <TouchableOpacity
             style={styles.topButton}
-            onPress={() =>
-              scrollViewRef.current?.scrollTo({ y: 0, animated: true })
-            }
+            onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
           >
             <Feather name="arrow-up" size={24} color="white" />
           </TouchableOpacity>
@@ -191,9 +182,7 @@ export default function Home() {
             <View style={styles.navigationContainer}>
               <TouchableOpacity
                 style={styles.prevButton}
-                onPress={() =>
-                  setCurrentResultIndex((current) => Math.max(0, current - 1))
-                }
+                onPress={() => setCurrentResultIndex((current) => Math.max(0, current - 1))}
               >
                 <Text style={styles.prevButtonText}>Previous</Text>
               </TouchableOpacity>
@@ -217,8 +206,6 @@ export default function Home() {
         </>
       )}
     </View>
-    
-    // </LinearGradient>
   );
 }
 
@@ -226,48 +213,69 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  
   backgroundImage: {
     flex: 1,
     width: "100%",
     height: "100%",
   },
+  
   gradient: {
     flex: 1,
   },
+  
   scrollViewContainer: {
     paddingHorizontal: 15,
     paddingTop: 60,
     paddingBottom: 100,
   },
+  
+  sermonContainer: {
+    flex: 1,
+    paddingVertical: 10,
+  },
+  
+  paragraphContainer: {
+    marginBottom: 20,  // Space between paragraphs
+    paddingVertical: 10,  // Internal padding for each paragraph
+  },
+  
+  paragraphText: {
+    lineHeight: 25,
+    textAlign: "left",
+  },
+  
   sermonText: {
     lineHeight: 25,
     marginBottom: 15,
-    // marginLeft: 0,
-    // paddingLeft: 0,
     textAlign: "left",
   },
+  
   highlightedText: {
     backgroundColor: "green",
-    color: "#14f39d", // Match text color with the border
+    color: "#14f39d",
     fontWeight: "bold",
   },
+  
   titleText: {
     color: "#cdc4d6",
-    fontFamily: "monospace",
+    fontFamily: "serif",
     fontWeight: "900",
     textAlign: "center",
     textDecorationLine: "underline",
     fontSize: 15,
   },
+  
   locationText: {
     color: "#cdc4d6",
     fontFamily: "monospace",
     fontWeight: "500",
-    textAlign: "center",
+    textAlign: "left",
     fontStyle: "italic",
     paddingTop: 10,
     paddingBottom: 10,
   },
+  
   topButton: {
     position: "absolute",
     right: 20,
@@ -284,6 +292,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 5,
   },
+  
   bottomButton: {
     position: "absolute",
     right: 20,
@@ -300,6 +309,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 5,
   },
+  
   navigationContainer: {
     position: "absolute",
     bottom: 30,
@@ -309,18 +319,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  
   matchesText: {
     fontSize: 14,
     color: "#555",
   },
+  
   prevButtonText: {
     fontSize: 18,
     color: "#2d2d2d",
   },
+  
   nextButtonText: {
     fontSize: 18,
     color: "#2d2d2d",
   },
 });
-
-// export default Home;

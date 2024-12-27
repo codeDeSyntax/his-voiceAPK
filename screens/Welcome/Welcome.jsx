@@ -22,6 +22,9 @@ const Welcome = ({ navigation }) => {
      <ImageBackground
       source={require('../../assets/icon.png')} // Make sure to add your background image
       style={styles.backgroundImage}
+      // tintColor={"#2f2f2f"}
+      blurRadius={10}
+     
     >
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.8)']}

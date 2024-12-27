@@ -83,7 +83,7 @@ function RecentlyOpenedSermons() {
   });
 
 
-  const handleSermonClick = async (sermon) => {
+  const handleSermonClick = (sermon) => {
 
     setSelectedSermon(sermon);
     navigation?.navigate("Home");
@@ -162,9 +162,10 @@ function RecentlyOpenedSermons() {
             padding: 5,
             fontSize: 12,
             width: 200,
-            borderRadius: 10,
+            borderRadius: 5,
             backgroundColor:theme.colors.background,
-            marginBottom:2
+            marginBottom:2,
+            paddingHorizontal:10
           }}
         >
           <Text
@@ -192,7 +193,7 @@ function RecentlyOpenedSermons() {
        
       </TouchableOpacity>
      <TouchableOpacity style={{alignSelf:''}} onPress={() => removeFromRecents(item)}>
-     <FontAwesome name="trash" size={25} color={theme.dark === true  ? theme.colors.text : "gray"} />
+     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "#cd3131" : "gray"} />
      </TouchableOpacity>
       </Pressable>
     )

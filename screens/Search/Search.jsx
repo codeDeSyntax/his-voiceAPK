@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Animated,
   Pressable,
+  Image
 } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
 import { ActivityIndicator } from "react-native-paper";
@@ -40,6 +41,7 @@ const SermonSearch = () => {
   const [expandedSermons, setExpandedSermons] = useState(new Set());
   const { setSelectedSermon, theme } = useContext(SermonContext);
   const [loading, setLoading] = useState(false);
+  const [found, setFound] = useState(true);
   const fadeAnim = new Animated.Value(0);
 
   const navigation = useNavigation();
@@ -61,6 +63,7 @@ const SermonSearch = () => {
           const regex = new RegExp(`(${searchText})`, "i");
           const match = sermon.sermon.match(regex);
           if (match) {
+            
             const shortContext = sermon.sermon.slice(
               Math.max(0, match.index - CONTEXT_LENGTH),
               Math.min(sermon.sermon.length, match.index + match[0].length + CONTEXT_LENGTH)
@@ -86,7 +89,10 @@ const SermonSearch = () => {
               type: sermon.type,
             };
           }
-          return null;
+          else{
+            setFound(false);
+            return null;
+          }
         })
         .filter(Boolean);
 
@@ -223,7 +229,12 @@ const SermonSearch = () => {
             ]}
             placeholder="Search quotes"
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={(e) =>{
+              setSearchText(e);
+              setSearchText;
+              setFound(true)
+
+            }}
             placeholderTextColor={theme.dark === true ? "gray" : "rgba(0,0,0,0.5)"}
             selectionColor={theme.dark === true ? "gray" : "gray"}
           />
@@ -322,7 +333,12 @@ const SermonSearch = () => {
                 ? "No sermons found"
                 : "Search quotes from all sermons"}
             </Text>
-            <Ionicons name="library" size={100} color={theme.dark === true ? "" :"silver"} style={{marginTop:30}}/>
+            {
+              !found && (
+                <Image source={require("../../assets/viewnotfound.png")} alt="alt" width={40} height={40} />
+              )
+            }
+            <Ionicons name="library" size={100} color={theme.dark === true ? "gray" :"silver"} style={{marginTop:30, display:!found ? "none" :"flex"}}/>
           </View>
         )}
       </ScrollView>
@@ -508,6 +524,8 @@ const styles = StyleSheet.create({
   },
   noResultsText: {
     fontSize: 16,
+    paddingVertical:4,
+    fontFamily:"serif",
     textAlign: 'center',
     opacity: 0.6,
   },
