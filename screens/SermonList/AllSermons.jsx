@@ -112,13 +112,12 @@ function SermonList() {
 
   const handleSermonClick = async (sermon) => {
     setSelectedSermon(sermon);
-    navigation?.navigate("Home");
     
     const updatedRecentlyOpenedSermons = [
       sermon,
       ...recentlyOpened.filter((item) => item.id !== sermon.id),
     ].slice(0, 10); // Limit to 10 most recent sermons
-
+    
     setRecentlyOpened(updatedRecentlyOpenedSermons);
 
     try {
@@ -126,6 +125,7 @@ function SermonList() {
         "recentlyOpenedSermons",
         JSON.stringify(updatedRecentlyOpenedSermons)
       );
+      navigation?.navigate("Home");
     } catch (error) {
       console.error("Failed to update recents in AsyncStorage", error);
     }

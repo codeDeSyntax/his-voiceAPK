@@ -335,7 +335,12 @@ const SermonSearch = () => {
             </Text>
             {
               !found && (
-                <Image source={require("../../assets/viewnotfound.png")} alt="alt" width={40} height={40} />
+                <Image source={require("../../assets/viewnotfound.png")} alt="alt" width={40} height={40} 
+                style={{
+                  overlayColor: "rgba(0,0,0,0.5)",
+                }}
+                
+                />
               )
             }
             <Ionicons name="library" size={100} color={theme.dark === true ? "gray" :"silver"} style={{marginTop:30, display:!found ? "none" :"flex"}}/>

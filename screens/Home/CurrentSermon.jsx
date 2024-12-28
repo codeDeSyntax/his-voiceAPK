@@ -136,7 +136,7 @@ export default function Home() {
       ) : (
         <ScrollView
           ref={scrollViewRef}
-          showsVerticalScrollIndicator={true}
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollViewContainer,
             { backgroundColor: theme.colors.primary },
