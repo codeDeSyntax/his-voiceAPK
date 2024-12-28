@@ -193,7 +193,7 @@ function RecentlyOpenedSermons() {
        
       </TouchableOpacity>
      <TouchableOpacity style={{alignSelf:''}} onPress={() => removeFromRecents(item)}>
-     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "#cd3131" : "#cd3131"} />
+     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "#FFCCCC" : "#FFCCCC"} />
      </TouchableOpacity>
       </Pressable>
     )
@@ -221,9 +221,9 @@ function RecentlyOpenedSermons() {
         </View>
        {
         recentlyOpened.length > 0 &&
-        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#3d4043' : 'white',  borderColor:'silver',elevation:5}]}>
+        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#212121' : 'white',  borderColor:'silver',elevation:5}]}>
         <TextInput
-          style={[styles.searchInput, {color:'gray',backgroundColor:theme.dark === true ? '#3d4043' : 'white',elevation:5 ,fontStyle:"italic"  }]}
+          style={[styles.searchInput, {color:'gray',backgroundColor:theme.dark === true ? '#212121' : 'white',elevation:5 ,fontStyle:"italic"  }]}
           placeholder="Search Sermons"
           value={searchText}
           onChangeText={setSearchText}

@@ -159,17 +159,24 @@ function Settings() {
           { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
         ]}
       >
-        <TouchableOpacity style={styles.settingItem} disabled>
+        <TouchableOpacity 
+
+        style={[styles.settingItem,{opacity:70}]} 
+        disabled={true}
+        activeOpacity={0.7}
+        aria-disabled={true}
+        accessibilityElementsHidden={true}
+        >
           <View style={styles.settingLeft}>
             <View
-              style={[styles.iconContainer, { backgroundColor: theme.colors.background,opacity:20 }]}
+              style={[styles.iconContainer, { backgroundColor: theme.colors.background, }]}
             >
-              <Icon name="language" size={20} color={theme.colors.text} />
+              <Icon name="language" size={20} color={theme.dark ? "gray" : "silver"} />
             </View>
             <Text
               style={[
                 styles.settingText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                { color: theme.dark ? "gray" : "silver" },
               ]}
             >
               App Language
@@ -178,7 +185,7 @@ function Settings() {
           <Icon
             name="chevron-forward"
             size={20}
-            color={theme.dark ? "#999" : "#666"}
+            color={theme.dark ? "gray" : "silver"}
           />
         </TouchableOpacity>
 
@@ -332,7 +339,7 @@ function Settings() {
           <Icon
             name="chevron-forward"
             size={20}
-            color={theme.dark ? "#999" : "#666"}
+            color={theme.dark ? "#fafafa" : "#666"}
           />
         </TouchableOpacity>
 
@@ -341,19 +348,19 @@ function Settings() {
             <View
               style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
             >
-              <Icon name="download" size={20} color={theme.colors.text} />
+              <Icon name="download" size={20} color={theme.dark ? "gray" : "silver"} />
             </View>
             <Text
               style={[
                 styles.settingText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                { color: theme.dark ? "gray" : "silver"},
               ]}
             >
               Check for Updates
             </Text>
           </View>
 
-          <Icon name="download" size={20} color={theme.colors.text} />
+          <Icon name="download" size={20} color={theme.dark ? "gray" : "silver"} />
         </TouchableOpacity>
       </View>
 

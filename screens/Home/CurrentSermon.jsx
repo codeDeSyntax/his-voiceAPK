@@ -1,14 +1,13 @@
-import React, { useState, useRef, useEffect, useCallback, useContext, Suspense } from "react";
+import React, { useState, useRef, useEffect, useCallback, useContext } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { useFonts } from "expo-font";
 import { Text } from "react-native-paper";
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Dimensions,
+  Animated,
 } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
 import { useRoute } from "@react-navigation/native";
@@ -22,8 +21,11 @@ export default function Home() {
 
   const [searchResults, setSearchResults] = useState([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
-  const scrollViewRef = useRef(null);
   const [contentHeight, setContentHeight] = useState(0);
+  const [showFloatingCard, setShowFloatingCard] = useState(false);
+  
+  const scrollViewRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (selectedSermon && searchPhrase) {
@@ -42,6 +44,14 @@ export default function Home() {
     }
   }, [selectedSermon, searchPhrase]);
 
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: showFloatingCard ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [showFloatingCard, fadeAnim]);
+
   useFocusEffect(
     useCallback(() => {
       const scrollToMatch = () => {
@@ -58,52 +68,47 @@ export default function Home() {
     }, [searchResults, currentResultIndex, contentHeight, selectedSermon])
   );
 
-  const scrollToMatch = (index) => {
-    const { height: windowHeight } = Dimensions.get("window");
-    const position = (index / selectedSermon.sermon.length) * contentHeight;
-    const offset = Math.max(position - windowHeight / 2, 0);
-    scrollViewRef.current?.scrollTo({ y: offset, animated: true });
-  };
-
   const renderSermonText = () => {
-    if (!selectedSermon || !selectedSermon.sermon) return null;
-
-    // Clean up the sermon text by properly handling paragraphs
     const cleanSermonText = selectedSermon.sermon
-      .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
-      .replace(/\n{3,}/g, '\n\n')  // Replace multiple newlines with double newline
-      .trim();  // Remove leading/trailing whitespace
+      .replace(/\s+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
 
     if (searchResults.length === 0) {
-      // Split text into proper paragraphs (separated by double newlines)
-      const paragraphs = cleanSermonText.split(/\n\n+/);
-      
+      // Split for Endnote highlighting when there's no search
+      const parts = cleanSermonText.split(/(Endnote)/gi);
       return (
-        <View style={styles.sermonContainer}>
-          {paragraphs.map((paragraph, index) => (
-            <View key={index} style={styles.paragraphContainer}>
-              <Text
-                selectable={true}
-                style={[
-                  styles.paragraphText,
-                  {
-                    color: theme.colors.text,
-                    fontFamily: settings.fontFamily,
-                    fontSize: settings.fontSize,
-                  },
-                ]}
-              >
-                {/* Replace single newlines with spaces within paragraphs */}
-                {paragraph.replace(/\n/g, ' ').trim()}
+        <Text
+          selectable={true}
+          style={[
+            styles.sermonText,
+            {
+              color: theme.colors.text,
+              fontFamily: settings.fontFamily,
+              fontSize: settings.fontSize,
+              textAlignVertical: "left",
+            },
+          ]}
+        >
+          {/* <Feather name="mic" size={24} color={theme.dark  === true ? "gray" : "gray"} />
+          <Feather name="mic" size={24} color={"gray"} style={{marginRight:5}} /> */}
+          🔊🔊
+          {parts.map((part, index) =>
+            part.toLowerCase() === "endnote" ? (
+              <Text key={index} style={[styles.endnoteText]}>
+                {part}
               </Text>
-            </View>
-          ))}
-        </View>
+            ) : (
+              part
+            )
+          )}
+          <Feather name="key" size={24} color={theme.colors.text} />
+        </Text>
       );
     }
 
-    // Handle search highlighting with cleaned text
-    const parts = cleanSermonText.split(new RegExp(`(${searchPhrase})`, "gi"));
+    // Handle both search highlighting and Endnote highlighting
+    const parts = cleanSermonText.split(new RegExp(`(${searchPhrase}|Endnote)`, "gi"));
     return (
       <Text
         style={[
@@ -116,18 +121,56 @@ export default function Home() {
           },
         ]}
       >
-        {parts.map((part, index) => (
-          <Text key={index} style={{color: theme.colors.text,fontFamily:settings.fontFamily}}>
-            {part.toLowerCase() === searchPhrase.toLowerCase() ? (
-              <Text style={[styles.highlightedText]}>{part}</Text>
-            ) : (
-              part
-            )}
-          </Text>
-        ))}
+        {/* <Feather name="info" size={24} color={theme.colors.text} /> */}
+        {parts.map((part, index) => {
+          if (part.toLowerCase() === searchPhrase.toLowerCase()) {
+            return (
+              <Text key={index} style={styles.highlightedText}>
+                {part}
+              </Text>
+            );
+          } else if (part.toLowerCase() === "endnote") {
+            return (
+              <Text key={index} style={styles.endnoteText}>
+                {part}
+              </Text>
+            );
+          }
+          return part;
+        })}
       </Text>
     );
   };
+
+  const FloatingCard = () => (
+    <Animated.View
+      style={[
+        styles.floatingCard,
+        {
+          opacity: fadeAnim,
+          transform: [
+            {
+              translateY: fadeAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [50, 0],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <Text style={[styles.floatingCardTitle,{fontFamily:"serif"}]}>{selectedSermon.title}</Text>
+      {selectedSermon.date && (
+        <Text style={[styles.floatingCardText,{fontStyle:"italic"}]}>{selectedSermon.date}</Text>
+      )}
+      {selectedSermon.location && (
+        <Text style={styles.floatingCardText}>{selectedSermon.location}</Text>
+      )}
+      {selectedSermon.year && (
+        <Text style={styles.floatingCardText}>{selectedSermon.year}</Text>
+      )}
+    </Animated.View>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
@@ -136,7 +179,6 @@ export default function Home() {
       ) : (
         <ScrollView
           ref={scrollViewRef}
-          showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollViewContainer,
             { backgroundColor: theme.colors.primary },
@@ -144,14 +186,12 @@ export default function Home() {
           onContentSizeChange={(width, height) => setContentHeight(height)}
         >
           <View>
-            <Text style={[styles.titleText, { color: theme.colors.text, textAlign: "left" }]}>
+            <Text style={[styles.titleText, { color: theme.colors.text,textAlign:"left",fontFamily:"serif" }]}>
               {selectedSermon.title}
             </Text>
-            
-            <Text style={[styles.locationText, { color: theme.colors.text }]}>
+            <Text style={[styles.locationText, { color: theme.colors.text,textAlign:"left",fontFamily:"serif" }]}>
               {selectedSermon.location}
             </Text>
-            
             {renderSermonText()}
           </View>
         </ScrollView>
@@ -160,14 +200,21 @@ export default function Home() {
       {selectedSermon.type === "text" && (
         <>
           <TouchableOpacity
-            style={[styles.topButton, {backgroundColor:theme.colors.background,elevation:5}]}
-            onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+            style={[styles.floatingButton, { bottom: 220,backgroundColor:theme.colors.background,elevation:5  }]}
+            onPress={() => setShowFloatingCard(!showFloatingCard)}
           >
-            <Feather name="arrow-up" size={24}  color={theme.colors.text} />
+            <Feather name="info" size={24} color={theme.colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.bottomButton,{backgroundColor:theme.colors.background,elevation:5}]}
+            style={[styles.floatingButton, { bottom: 150,backgroundColor:theme.colors.background,elevation:5 }]}
+            onPress={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+          >
+            <Feather name="arrow-up" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.floatingButton, { bottom: 80,backgroundColor:theme.colors.background,elevation:5 }]}
             onPress={() =>
               scrollViewRef.current?.scrollTo({
                 y: contentHeight,
@@ -178,13 +225,15 @@ export default function Home() {
             <Feather name="arrow-down" size={24} color={theme.colors.text} />
           </TouchableOpacity>
 
+          {showFloatingCard && <FloatingCard />}
+
           {searchResults.length > 0 && (
             <View style={styles.navigationContainer}>
               <TouchableOpacity
-                style={styles.prevButton}
+                style={styles.navButton}
                 onPress={() => setCurrentResultIndex((current) => Math.max(0, current - 1))}
               >
-                <Text style={styles.prevButtonText}>Previous</Text>
+                <Text style={styles.navButtonText}>Previous</Text>
               </TouchableOpacity>
 
               <Text style={styles.matchesText}>
@@ -192,14 +241,14 @@ export default function Home() {
               </Text>
 
               <TouchableOpacity
-                style={styles.nextButton}
+                style={styles.navButton}
                 onPress={() =>
                   setCurrentResultIndex((current) =>
                     Math.min(searchResults.length - 1, current + 1)
                   )
                 }
               >
-                <Text style={styles.nextButtonText}>Next</Text>
+                <Text style={styles.navButtonText}>Next</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -213,95 +262,55 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  
-  backgroundImage: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-  },
-  
-  gradient: {
-    flex: 1,
-  },
-  
   scrollViewContainer: {
     paddingHorizontal: 15,
     paddingTop: 60,
     paddingBottom: 100,
   },
-  
-  sermonContainer: {
-    flex: 1,
-    paddingVertical: 10,
-  },
-  
-  paragraphContainer: {
-    marginBottom: 20,  // Space between paragraphs
-    paddingVertical: 10,  // Internal padding for each paragraph
-  },
-  
-  paragraphText: {
-    lineHeight: 25,
-    textAlign: "left",
-  },
-  
   sermonText: {
     lineHeight: 25,
     marginBottom: 15,
     textAlign: "left",
   },
-  
   highlightedText: {
     backgroundColor: "green",
     color: "#14f39d",
     fontWeight: "bold",
+   
   },
-  
+  endnoteText: {
+    textDecorationLine: 'underline',
+    color: '#4a90e2',
+    fontWeight: '500',
+    fontStyle: 'italic',
+  },
   titleText: {
-    color: "#cdc4d6",
-    fontFamily: "serif",
+    fontFamily: "monospace",
     fontWeight: "900",
     textAlign: "center",
     textDecorationLine: "underline",
     fontSize: 15,
   },
-  
   locationText: {
-    color: "#cdc4d6",
     fontFamily: "monospace",
     fontWeight: "500",
-    textAlign: "left",
+    textAlign: "center",
     fontStyle: "italic",
     paddingTop: 10,
     paddingBottom: 10,
   },
-  
-  topButton: {
+  floatingButton: {
     position: "absolute",
     right: 20,
-    bottom: 160,
     backgroundColor: "#2d2d2d",
     borderRadius: 30,
+    marginBottom:15,
     width: 50,
     height: 50,
     justifyContent: "center",
     alignItems: "center",
    
   },
-  
-  bottomButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 100,
-    backgroundColor: "#2d2d2d",
-    borderRadius: 30,
-    width: 50,
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-  
-  },
-  
   navigationContainer: {
     position: "absolute",
     bottom: 30,
@@ -310,20 +319,46 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    padding: 10,
   },
-  
   matchesText: {
     fontSize: 14,
     color: "#555",
   },
-  
-  prevButtonText: {
-    fontSize: 18,
-    color: "#2d2d2d",
+  navButton: {
+    padding: 8,
+    backgroundColor: '#2d2d2d',
+    borderRadius: 15,
   },
-  
-  nextButtonText: {
-    fontSize: 18,
-    color: "#2d2d2d",
+  navButtonText: {
+    fontSize: 16,
+    color: 'white',
+  },
+  floatingCard: {
+    position: 'absolute',
+    right: 20,
+    bottom: 300,
+    backgroundColor: 'rgba(45, 45, 45, 0.95)',
+    borderRadius: 15,
+    padding: 15,
+    width: 250,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  floatingCardTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  floatingCardText: {
+    color: 'white',
+    fontSize: 14,
+    marginBottom: 4,
   },
 });
