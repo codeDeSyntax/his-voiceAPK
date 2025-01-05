@@ -174,6 +174,7 @@ function SermonList() {
   const renderSermonItem = ({ item, index }) => (
     <TouchableOpacity
       key={item.id}
+      
       style={[
         styles.sermonItem,
         {
@@ -390,6 +391,7 @@ function SermonList() {
       <FlatList
         data={filteredSermons}
         renderItem={renderSermonItem}
+        initialNumToRender={50}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
@@ -751,4 +753,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SermonList;
+export default React.memo(SermonList);

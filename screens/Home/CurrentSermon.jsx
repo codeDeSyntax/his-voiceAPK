@@ -14,7 +14,7 @@ import { useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
 
-export default function Home() {
+ function Home() {
   const { selectedSermon, settings, theme } = useContext(SermonContext);
   const route = useRoute();
   const searchPhrase = route.params?.searchPhrase || "";
@@ -26,6 +26,14 @@ export default function Home() {
   
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const validateTextContent = (content) => {
+    if (typeof content !== 'string') {
+      console.warn(`Invalid text content type: ${typeof content}`, content);
+      return String(content); // Convert to string if it's not already
+    }
+    return content;
+  };
 
   useEffect(() => {
     if (selectedSermon && searchPhrase) {
@@ -55,10 +63,14 @@ export default function Home() {
   useFocusEffect(
     useCallback(() => {
       const scrollToMatch = () => {
-        if (selectedSermon && selectedSermon.sermon && searchResults.length > 0) {
+        if (
+          selectedSermon?.sermon?.length && 
+          searchResults.length > 0 && 
+          contentHeight > 0
+        ) {
           const { height: windowHeight } = Dimensions.get("window");
           const matchIndex = searchResults[currentResultIndex].index;
-          const position = (matchIndex / selectedSermon.sermon.length) * contentHeight;
+          const position = Math.floor((matchIndex / selectedSermon.sermon.length) * contentHeight);
           const offset = Math.max(position - windowHeight / 2, 0);
           scrollViewRef.current?.scrollTo({ y: offset, animated: true });
         }
@@ -73,70 +85,59 @@ export default function Home() {
       .replace(/\s+/g, ' ')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
-
+  
     if (searchResults.length === 0) {
-      // Split for Endnote highlighting when there's no search
       const parts = cleanSermonText.split(/(Endnote)/gi);
       return (
         <Text
           selectable={true}
-          style={[
-            styles.sermonText,
-            {
-              color: theme.colors.text,
-              fontFamily: settings.fontFamily,
-              fontSize: settings.fontSize,
-              textAlignVertical: "left",
-            },
-          ]}
+          style={[styles.sermonText, {
+            color: theme.colors.text,
+            fontFamily: settings.fontFamily,
+            fontSize: settings.fontSize,
+            textAlignVertical: "left",
+          }]}
         >
-          {/* <Feather name="mic" size={24} color={theme.dark  === true ? "gray" : "gray"} />
-          <Feather name="mic" size={24} color={"gray"} style={{marginRight:5}} /> */}
           🔊🔊
-          {parts.map((part, index) =>
-            part.toLowerCase() === "endnote" ? (
+          {parts.map((part, index) => {
+            const validatedPart = validateTextContent(part);
+            return part.toLowerCase() === "endnote" ? (
               <Text key={index} style={[styles.endnoteText]}>
-                {part}
+                {validatedPart}
               </Text>
-            ) : (
-              part
-            )
-          )}
+            ) : validatedPart;
+          })}
           <Feather name="key" size={24} color={theme.colors.text} />
         </Text>
       );
     }
-
-    // Handle both search highlighting and Endnote highlighting
+  
     const parts = cleanSermonText.split(new RegExp(`(${searchPhrase}|Endnote)`, "gi"));
     return (
       <Text
-        style={[
-          styles.sermonText,
-          {
-            color: theme.colors.text,
-            fontFamily: settings.fontFamily,
-            fontSize: settings.fontSize,
-            lineHeight: 30,
-          },
-        ]}
+        style={[styles.sermonText, {
+          color: theme.colors.text,
+          fontFamily: settings.fontFamily,
+          fontSize: settings.fontSize,
+          lineHeight: 30,
+        }]}
       >
-        {/* <Feather name="info" size={24} color={theme.colors.text} /> */}
         {parts.map((part, index) => {
+          const validatedPart = validateTextContent(part);
           if (part.toLowerCase() === searchPhrase.toLowerCase()) {
             return (
               <Text key={index} style={styles.highlightedText}>
-                {part}
+                {validatedPart}
               </Text>
             );
           } else if (part.toLowerCase() === "endnote") {
             return (
               <Text key={index} style={styles.endnoteText}>
-                {part}
+                {validatedPart}
               </Text>
             );
           }
-          return part;
+          return validatedPart;
         })}
       </Text>
     );
@@ -362,3 +363,5 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 });
+
+export default React.memo(Home)

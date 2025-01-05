@@ -553,4 +553,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Settings;
+export default React.memo(Settings);

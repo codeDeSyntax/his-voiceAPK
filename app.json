@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/cloud.png",
       "resizeMode": "cover",
-      "backgroundColor": "#171717"
+      "backgroundColor": "#2d2d2d"
     },
     "updates": {
       "enabled": true,
