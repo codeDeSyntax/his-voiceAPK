@@ -208,7 +208,7 @@ const SermonSearch = () => {
       <View style={styles.searchContainer}>
         <View style={[
           styles.inputWrapper, 
-          {borderColor: theme.dark === true? "#494d50" : "gray", 
+          {borderColor: theme.dark === true? "#494d50" : "#494d50", 
             backgroundColor:theme.colors.secondary
           }
           

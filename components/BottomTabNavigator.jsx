@@ -269,11 +269,11 @@ const styles = StyleSheet.create({
     width: Platform.OS == "ios" ? 54 : 64,
     top: Platform.OS == "ios" ? -12 : -22,
     borderRadius: Platform.OS == "ios" ? 27 : 32,
-    shadowColor: "#60A5FA",
+    shadowColor: "gray",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 10,
+    elevation: 5,
   },
 });
 
