@@ -109,7 +109,7 @@ import PlaySermon from "../PlaySermon";
             textAlignVertical: "left",
           }]}
         >
-          🔊🔊
+          {"🔊🔊"}
           {parts?.map((part, index) => {
             const validatedPart = validateTextContent(part);
             return part.toLowerCase() === "endnote" ? (
