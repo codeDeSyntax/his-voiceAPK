@@ -7,13 +7,6 @@
       },
       "channel": "preview"
     },
-    "preview2": {
-      "android": {
-        "gradleCommand": ":app:assembleRelease",
-        "buildType": "apk"
-      },
-      "channel": "preview2"
-    },
     "preview3": {
       "developmentClient": true,
       "channel": "preview3"

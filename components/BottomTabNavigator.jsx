@@ -17,12 +17,10 @@ import LoadingScreen from "./Loader";
 
 // Lazy load components
 const SermonList = React.lazy(() => import("../screens/SermonList/AllSermons"));
-const RecentlyOpenedSermons = React.lazy(() =>
-  import("../screens/RecentlyOpened/RecentSermons")
-);
-const SermonSearch = React.lazy(() => import("../screens/Search/Search"));
-const Home = React.lazy(() => import("../screens/Home/CurrentSermon"));
-const Settings = React.lazy(() => import("../screens/settings/Settings"));
+import RecentlyOpenedSermons from "../screens/RecentlyOpened/RecentSermons";
+import SermonSearch from "../screens/Search/Search";
+import Home from "../screens/Home/CurrentSermon";
+import Settings from "../screens/settings/Settings";
 
 const Tab = createBottomTabNavigator();
 
@@ -198,10 +196,15 @@ function TabNavigator() {
           options={{
             tabBarIcon: ({ focused, color, size }) => {
               return (
-                <View style={[styles.homeIconContainer]}>
+                <View style={[styles.homeIconContainer,
+                {
+                  backgroundColor:theme.dark === true ? '#272727' : "white",
+                 
+                  
+                  }]}>
                   <Image
                     source={homeImage}
-                    style={[styles.icon, { tintColor: "white" }]}
+                    style={[styles.icon, { tintColor: theme.dark === true ? '' : "gray" }]}
                   />
                 </View>
               );

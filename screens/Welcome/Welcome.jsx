@@ -10,7 +10,7 @@ const Welcome = ({ navigation }) => {
   });
 
   const handleGoToSermons = () => {
-    navigation.navigate('MainTabs');
+    navigation?.navigate('MainTabs');
   };
 
   if (!fontsLoaded) {

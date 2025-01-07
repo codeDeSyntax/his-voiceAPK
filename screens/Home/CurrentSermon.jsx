@@ -15,7 +15,7 @@ import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
 
  function Home() {
-  const { selectedSermon, settings, theme } = useContext(SermonContext);
+  const { selectedSermon, settings, theme,handleRandomSermons } = useContext(SermonContext);
   const route = useRoute();
   const searchPhrase = route.params?.searchPhrase || "";
 
@@ -27,13 +27,25 @@ import PlaySermon from "../PlaySermon";
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+    useEffect(() => {
+    handleRandomSermons();
+
+  }, []);
+
   const validateTextContent = (content) => {
-    if (typeof content !== 'string') {
-      console.warn(`Invalid text content type: ${typeof content}`, content);
-      return String(content); // Convert to string if it's not already
+    if (content == null) return "no sermon text content";
+    if (typeof content === "number") return content.toString();
+    if (typeof content !== "string") {
+      try {
+        return String(content);
+      } catch (e) {
+        console.error("Error converting content to string:", e);
+        return "";
+      }
     }
     return content;
   };
+
 
   useEffect(() => {
     if (selectedSermon && searchPhrase) {
@@ -41,7 +53,7 @@ import PlaySermon from "../PlaySermon";
       const matches = [];
       let match;
 
-      while ((match = regex.exec(selectedSermon.sermon)) !== null) {
+      while ((match = regex.exec(selectedSermon?.sermon)) !== null) {
         matches.push({
           match: match[0],
           index: match.index,
@@ -70,7 +82,7 @@ import PlaySermon from "../PlaySermon";
         ) {
           const { height: windowHeight } = Dimensions.get("window");
           const matchIndex = searchResults[currentResultIndex].index;
-          const position = Math.floor((matchIndex / selectedSermon.sermon.length) * contentHeight);
+          const position = Math.floor((matchIndex / selectedSermon?.sermon?.length) * contentHeight);
           const offset = Math.max(position - windowHeight / 2, 0);
           scrollViewRef.current?.scrollTo({ y: offset, animated: true });
         }
@@ -81,13 +93,12 @@ import PlaySermon from "../PlaySermon";
   );
 
   const renderSermonText = () => {
-    const cleanSermonText = selectedSermon.sermon
-      .replace(/\s+/g, ' ')
+    const cleanSermonText = selectedSermon?.sermon?.replace(/\s+/g, ' ')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
   
     if (searchResults.length === 0) {
-      const parts = cleanSermonText.split(/(Endnote)/gi);
+      const parts = cleanSermonText?.split(/(Endnote)/gi);
       return (
         <Text
           selectable={true}
@@ -99,7 +110,7 @@ import PlaySermon from "../PlaySermon";
           }]}
         >
           🔊🔊
-          {parts.map((part, index) => {
+          {parts?.map((part, index) => {
             const validatedPart = validateTextContent(part);
             return part.toLowerCase() === "endnote" ? (
               <Text key={index} style={[styles.endnoteText]}>
@@ -112,7 +123,7 @@ import PlaySermon from "../PlaySermon";
       );
     }
   
-    const parts = cleanSermonText.split(new RegExp(`(${searchPhrase}|Endnote)`, "gi"));
+    const parts = cleanSermonText?.split(new RegExp(`(${searchPhrase}|Endnote)`, "gi"));
     return (
       <Text
         style={[styles.sermonText, {
@@ -160,22 +171,22 @@ import PlaySermon from "../PlaySermon";
         },
       ]}
     >
-      <Text style={[styles.floatingCardTitle,{fontFamily:"serif"}]}>{selectedSermon.title}</Text>
+      <Text style={[styles.floatingCardTitle,{fontFamily:"serif"}]}>{selectedSermon?.title}</Text>
       {selectedSermon.date && (
-        <Text style={[styles.floatingCardText,{fontStyle:"italic"}]}>{selectedSermon.date}</Text>
+        <Text style={[styles.floatingCardText,{fontStyle:"italic"}]}>{selectedSermon?.date}</Text>
       )}
-      {selectedSermon.location && (
-        <Text style={styles.floatingCardText}>{selectedSermon.location}</Text>
+      {selectedSermon?.location && (
+        <Text style={styles.floatingCardText}>{selectedSermon?.location}</Text>
       )}
-      {selectedSermon.year && (
-        <Text style={styles.floatingCardText}>{selectedSermon.year}</Text>
+      {selectedSermon?.year && (
+        <Text style={styles.floatingCardText}>{selectedSermon?.year}</Text>
       )}
     </Animated.View>
   );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
-      {selectedSermon.type === "mp3" ? (
+      {selectedSermon?.type === "mp3" ? (
         <PlaySermon sermon={selectedSermon} />
       ) : (
         <ScrollView
@@ -187,18 +198,18 @@ import PlaySermon from "../PlaySermon";
           onContentSizeChange={(width, height) => setContentHeight(height)}
         >
           <View>
-            <Text style={[styles.titleText, { color: theme.colors.text,textAlign:"left",fontFamily:"serif" }]}>
-              {selectedSermon.title}
-            </Text>
-            <Text style={[styles.locationText, { color: theme.colors.text,textAlign:"left",fontFamily:"serif" }]}>
-              {selectedSermon.location}
-            </Text>
-            {renderSermonText()}
-          </View>
+                <Text style={[styles.titleText, { color: theme.colors.text }]}>
+                  {selectedSermon?.title}
+                </Text>
+                <Text style={[styles.locationText, { color: theme.colors.text }]}>
+                  {selectedSermon?.location}
+                </Text>
+                {renderSermonText()}
+              </View>
         </ScrollView>
       )}
 
-      {selectedSermon.type === "text" && (
+      {selectedSermon?.type === "text" && (
         <>
           <TouchableOpacity
             style={[styles.floatingButton, { bottom: 220,backgroundColor:theme.colors.background,elevation:5  }]}
@@ -286,19 +297,18 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   titleText: {
-    fontFamily: "monospace",
+    fontFamily: "serif",
     fontWeight: "900",
-    textAlign: "center",
-    textDecorationLine: "underline",
-    fontSize: 15,
+    fontSize: 24,
+    textAlign: "left",
+    marginBottom: 8,
   },
   locationText: {
-    fontFamily: "monospace",
+    fontFamily: "serif",
     fontWeight: "500",
-    textAlign: "center",
+    fontSize: 16,
     fontStyle: "italic",
-    paddingTop: 10,
-    paddingBottom: 10,
+    marginBottom: 24,
   },
   floatingButton: {
     position: "absolute",
@@ -364,4 +374,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(Home)
+export default Home

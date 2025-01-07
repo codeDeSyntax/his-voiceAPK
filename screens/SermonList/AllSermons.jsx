@@ -753,4 +753,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(SermonList);
+export default SermonList;

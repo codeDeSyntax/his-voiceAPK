@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  Pressable,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { SermonContext } from "../../Logic/globalState";
@@ -368,7 +369,7 @@ function Settings() {
 
       {/* Save Button */}
       <TouchableOpacity
-        style={[styles.saveButton, { backgroundColor: theme.colors.background }]}
+        style={[styles.saveButton, { backgroundColor: theme.dark ? "#2A2A2A" : "gray" }]}
         onPress={saveSettings}
       >
         <Text style={styles.saveButtonText}>Save Settings</Text>
@@ -553,4 +554,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(Settings);
+export default Settings ;
