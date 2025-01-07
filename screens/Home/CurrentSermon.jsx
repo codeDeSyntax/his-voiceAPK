@@ -109,16 +109,15 @@ import PlaySermon from "../PlaySermon";
             textAlignVertical: "left",
           }]}
         >
-          {"🔊🔊"}
+          
           {parts?.map((part, index) => {
             const validatedPart = validateTextContent(part);
             return part.toLowerCase() === "endnote" ? (
               <Text key={index} style={[styles.endnoteText]}>
-                {validatedPart}
+                {`${validatedPart}`}
               </Text>
-            ) : validatedPart;
+            ) : `${validatedPart}`;
           })}
-          <Feather name="key" size={24} color={theme.colors.text} />
         </Text>
       );
     }
@@ -138,17 +137,17 @@ import PlaySermon from "../PlaySermon";
           if (part.toLowerCase() === searchPhrase.toLowerCase()) {
             return (
               <Text key={index} style={styles.highlightedText}>
-                {validatedPart}
+                {`${validatedPart}`}
               </Text>
             );
           } else if (part.toLowerCase() === "endnote") {
             return (
               <Text key={index} style={styles.endnoteText}>
-                {validatedPart}
+                {`${validatedPart}`}
               </Text>
             );
           }
-          return validatedPart;
+          return `${validatedPart}`;
         })}
       </Text>
     );
@@ -239,7 +238,7 @@ import PlaySermon from "../PlaySermon";
 
           {showFloatingCard && <FloatingCard />}
 
-          {searchResults.length > 0 && (
+          {searchResults.length > 0 && searchPhrase && (
             <View style={styles.navigationContainer}>
               <TouchableOpacity
                 style={styles.navButton}
@@ -324,7 +323,7 @@ const styles = StyleSheet.create({
   },
   navigationContainer: {
     position: "absolute",
-    bottom: 30,
+    top: 40,
     left: 15,
     right: 15,
     flexDirection: "row",

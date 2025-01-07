@@ -368,13 +368,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(96, 165, 250, 0.3)",
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical:4,
     flex: 1,
     marginRight: 12,
-    // backgroundColor: 'rgba(255, 255, 255, 0.05)',
+
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -385,6 +384,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 10,
     fontSize: 16,
+    // backgroundColor:"red"
   },
   searchIcon: {
     marginRight: 10,
