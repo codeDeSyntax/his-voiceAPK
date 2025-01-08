@@ -47,12 +47,13 @@ const SermonProvider = ({ children }) => {
     }),
     [isDarkMode]
   );
-
+  
   // Memoize handlers
   const handleRandomSermons = useCallback(() => {
+    const textSermons = allSermons.filter(sermon => sermon.type === 'text');
     if (allSermons.length > 0) {
       const sermonIndex = Math.floor(Math.random() * allSermons.length);
-      setSelectedSermon(allSermons[sermonIndex]);
+      setSelectedSermon(textSermons[sermonIndex]);
       console.log(selectedSermon)
     }
   }, [allSermons]);

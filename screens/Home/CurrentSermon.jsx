@@ -20,7 +20,7 @@ import { useRoute } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
 
-function Home() {
+const Home = () => {
   const { selectedSermon, settings, theme, handleRandomSermons } =
     useContext(SermonContext);
   const route = useRoute();
