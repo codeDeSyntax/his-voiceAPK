@@ -5,8 +5,6 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "newArchEnabled": true,
-   
-
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/cloud.png",
@@ -32,7 +30,10 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font",
+      "expo-router"
+    ],
     "extra": {
       "eas": {
         "projectId": "8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
