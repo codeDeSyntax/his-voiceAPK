@@ -6,16 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  Pressable,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { SermonContext } from "../../Logic/globalState";
 import Slider from "@react-native-community/slider";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SelectList } from "react-native-dropdown-select-list";
 import { Switch } from "react-native-paper";
-import { FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import UpdateScreen from "../Updating";
 
@@ -31,17 +28,15 @@ function Settings() {
   const { settings, setSettings, theme, setIsDarkMode, isDarkMode } =
     useContext(SermonContext);
   const [fontSize, setFontSize] = useState(settings.fontSize);
-  const [fontFamily, setFontFamily] = useState(settings.fontFamily);
-  const [textColor, setTextColor] = useState(settings.textColor);
+  const [fontFamily, setFontFamily] = useState("");
+  const [textColor, setTextColor] = useState("");
   const [savingTheme, setSavingTheme] = useState(false);
   const navigation = useNavigation();
-  const [isUpdating, setIsUpdating] =  useState(false)
+  const [isUpdating, setIsUpdating] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState(
     settings.backgroundColor
   );
   const [showPreview, setShowPreview] = useState(false);
-
-  const textTheme = theme.colors.text;
 
   const toggleTheme = async () => {
     try {
@@ -115,7 +110,7 @@ function Settings() {
   //   if (__DEV__) {
   //     console.log("Skipping updates check in development mode");
   //     // setIsUpdating(true)
-      
+
   //     return;
   //   }
   //   try {
@@ -135,282 +130,286 @@ function Settings() {
   // }
 
   return (
-  <>
-  {
-    isUpdating ? <UpdateScreen/> : (
-      <ScrollView
-      style={[
-        styles.container,
-        { backgroundColor: theme.dark ? "#1A1A1A" : "#F8F9FA" },
-      ]}
-    >
-      <Text
-        style={[
-          styles.headerTitle,
-          { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-        ]}
-      >
-        Settings
-      </Text>
-
-      {/* Main Settings Group */}
-      <View
-        style={[
-          styles.settingsGroup,
-          { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
-        ]}
-      >
-        <TouchableOpacity 
-
-        style={[styles.settingItem,{opacity:70}]} 
-        disabled={true}
-        activeOpacity={0.7}
-        aria-disabled={true}
-        accessibilityElementsHidden={true}
-        >
-          <View style={styles.settingLeft}>
-            <View
-              style={[styles.iconContainer, { backgroundColor: theme.colors.background, }]}
-            >
-              <Icon name="language" size={20} color={theme.dark ? "gray" : "silver"} />
-            </View>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? "gray" : "silver" },
-              ]}
-            >
-              App Language
-            </Text>
-          </View>
-          <Icon
-            name="chevron-forward"
-            size={20}
-            color={theme.dark ? "gray" : "silver"}
-          />
-        </TouchableOpacity>
-
-        <View style={styles.separator} />
-
-        <TouchableOpacity style={styles.settingItem}>
-          <View style={styles.settingLeft}>
-            <View
-              style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
-            >
-              <Icon name="text" size={20} color={theme.colors.text} />
-            </View>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-              ]}
-            >
-              Font Settings
-            </Text>
-          </View>
-          <Switch
-            value={showPreview}
-            onValueChange={() => setShowPreview(!showPreview)}
-            color="#60A5FA"
-          />
-        </TouchableOpacity>
-
-        {showPreview && (
-          <View style={styles.previewSection}>
-            <SelectList
-              data={[
-                "System",
-                "sans-serif",
-                "serif",
-                "Roboto",
-                "monospace",
-                "Philosopher-Regular",
-                "Merienda-VariableFont",
-                "GrenzeGotisch-VariableFont",
-              ]}
-              setSelected={(val) => setFontFamily(val)}
-              save="value"
-              value={settings.fontFamily}
-              search={false}
-              searchicon={<FontAwesome5 name="search" color={textTheme} />}
-              arrowicon={<FontAwesome5 name="caret-down" color={textTheme} />}
-              placeholder="Font family"
-              boxStyles={[
-                styles.selectBox,
-                { backgroundColor: theme.dark ? "#3A3A3A" : "#F0F0F0" },
-              ]}
-              inputStyles={{ color: theme.dark ? "#FFFFFF" : "#1A1A1A" }}
-              dropdownStyles={[
-                styles.dropdown,
-                { backgroundColor: theme.dark ? "#3A3A3A" : "#FFFFFF" },
-              ]}
-              dropdownTextStyles={{ color: theme.dark ? "#FFFFFF" : "#1A1A1A" }}
-            />
-
-            <View style={styles.sliderContainer}>
-              <Text
-                style={[
-                  styles.sliderLabel,
-                  { color: theme.dark ? "#FFFFFF" : "#1A1A1A",fontFamily:fontFamily },
-                ]}
-              >
-                Font Size: {fontSize}px
-              </Text>
-              <Slider
-                style={[styles.slider,{height:20}]}
-                minimumValue={12}
-                maximumValue={24}
-                value={fontSize}
-                onValueChange={setFontSize}
-                minimumTrackTintColor="#60A5FA"
-                step={1}
-                maximumTrackTintColor={theme.dark ? "#666" : "#CCC"}
-                thumbTintColor="#60A5FA"
-              />
-            </View>
-
-            <View
-              style={[
-                styles.previewBox,
-                { backgroundColor: theme.dark ? "#3A3A3A" : "#F0F0F0" },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.previewText,
-                  {
-                    fontFamily,
-                    fontSize,
-                    color: theme.dark ? "#FFFFFF" : "#1A1A1A",
-                  },
-                ]}
-              >
-                Preview Text
-              </Text>
-            </View>
-          </View>
-        )}
-
-        <View style={styles.separator} />
-
-        <View style={styles.settingItem}>
-          <View style={styles.settingLeft}>
-            <View
-              style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
-            >
-              <Icon name="moon" size={20} color={theme.colors.text} />
-            </View>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-              ]}
-            >
-              Dark Mode
-            </Text>
-          </View>
-          <Switch
-            value={isDarkMode}
-            onValueChange={toggleTheme}
-            color="#60A5FA"
-          />
-        </View>
-
-        <View style={styles.separator} />
-
-        <TouchableOpacity
-          style={styles.settingItem}
-          onPress={() => navigation?.navigate("About")}
-        >
-          <View style={styles.settingLeft}>
-            <View
-              style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
-            >
-              <Icon name="help-circle" size={20} color={theme.colors.text} />
-            </View>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-              ]}
-            >
-              About
-            </Text>
-          </View>
-          <Icon
-            name="chevron-forward"
-            size={20}
-            color={theme.dark ? "#fafafa" : "#666"}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem} disabled>
-          <View style={styles.settingLeft}>
-            <View
-              style={[styles.iconContainer, { backgroundColor: theme.colors.background }]}
-            >
-              <Icon name="download" size={20} color={theme.dark ? "gray" : "silver"} />
-            </View>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? "gray" : "silver"},
-              ]}
-            >
-              Check for Updates
-            </Text>
-          </View>
-
-          <Icon name="download" size={20} color={theme.dark ? "gray" : "silver"} />
-        </TouchableOpacity>
-      </View>
-
-      
-
-      {/* Save Button */}
-      <TouchableOpacity
-        style={[styles.saveButton, { backgroundColor: theme.dark ? "#2A2A2A" : "gray" }]}
-        onPress={saveSettings}
-      >
-        <Text style={styles.saveButtonText}>Save Settings</Text>
-      </TouchableOpacity>
-
-      {/* Reset Button */}
-      <TouchableOpacity style={[styles.resetButton]} onPress={restoreDefault}>
-        <Text
+    <>
+      {isUpdating ? (
+        <UpdateScreen />
+      ) : (
+        <ScrollView
           style={[
-            styles.resetButtonText,
-            { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+            styles.container,
+            { backgroundColor: theme.dark ? "#1A1A1A" : "#F8F9FA" },
           ]}
         >
-          Reset to Defaults
-        </Text>
-      </TouchableOpacity>
+          <Text
+            style={[
+              styles.headerTitle,
+              { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+            ]}
+          >
+            Settings
+          </Text>
 
-      {/* Saving Theme Modal */}
-      <Modal transparent={true} visible={savingTheme} animationType="fade">
-        <View style={styles.modalBackground}>
+          {/* Main Settings Group */}
           <View
             style={[
-              styles.modalContainer,
+              styles.settingsGroup,
               { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
             ]}
           >
+            <TouchableOpacity
+              style={[styles.settingItem, { opacity: 70 }]}
+              disabled={true}
+              activeOpacity={0.7}
+              aria-disabled={true}
+              accessibilityElementsHidden={true}
+            >
+              <View style={styles.settingLeft}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: theme.colors.background },
+                  ]}
+                >
+                  <Icon
+                    name="language"
+                    size={20}
+                    color={theme.dark ? "gray" : "silver"}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.settingText,
+                    { color: theme.dark ? "gray" : "silver" },
+                  ]}
+                >
+                  App Language
+                </Text>
+              </View>
+              <Icon
+                name="chevron-forward"
+                size={20}
+                color={theme.dark ? "gray" : "silver"}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.separator} />
+
+            <TouchableOpacity style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: theme.colors.background },
+                  ]}
+                >
+                  <Icon name="text" size={20} color={theme.colors.text} />
+                </View>
+                <Text
+                  style={[
+                    styles.settingText,
+                    { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                  ]}
+                >
+                  Font Settings
+                </Text>
+              </View>
+              <Switch
+                value={showPreview}
+                onValueChange={() => setShowPreview(!showPreview)}
+                color="#60A5FA"
+              />
+            </TouchableOpacity>
+
+            {showPreview && (
+              <View style={styles.previewSection}>
+                <View style={styles.sliderContainer}>
+                  <Text
+                    style={[
+                      styles.sliderLabel,
+                      { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                    ]}
+                  >
+                    Font Size: {settings.fontSize || fontSize}px
+                  </Text>
+                  <Slider
+                    style={[styles.slider, { height: 20 }]}
+                    minimumValue={12}
+                    maximumValue={24}
+                    value={fontSize}
+                    onValueChange={setFontSize}
+                    minimumTrackTintColor="#60A5FA"
+                    step={1}
+                    maximumTrackTintColor={theme.dark ? "#666" : "#CCC"}
+                    thumbTintColor="#60A5FA"
+                  />
+                </View>
+
+                <View
+                  style={[
+                    styles.previewBox,
+                    { backgroundColor: theme.dark ? "#3A3A3A" : "#F0F0F0" },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.previewText,
+                      {
+                        fontFamily: "Philosopher-Regular",
+                        fontSize,
+                        color: theme.dark ? "#FFFFFF" : "#1A1A1A",
+                      },
+                    ]}
+                  >
+                    Preview Text
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.separator} />
+
+            <View style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: theme.colors.background },
+                  ]}
+                >
+                  <Icon name="moon" size={20} color={theme.colors.text} />
+                </View>
+                <Text
+                  style={[
+                    styles.settingText,
+                    { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                  ]}
+                >
+                  Dark Mode
+                </Text>
+              </View>
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleTheme}
+                color="#60A5FA"
+              />
+            </View>
+
+            <View style={styles.separator} />
+
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => navigation?.navigate("About")}
+            >
+              <View style={styles.settingLeft}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: theme.colors.background },
+                  ]}
+                >
+                  <Icon
+                    name="help-circle"
+                    size={20}
+                    color={theme.colors.text}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.settingText,
+                    { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                  ]}
+                >
+                  About
+                </Text>
+              </View>
+              <Icon
+                name="chevron-forward"
+                size={20}
+                color={theme.dark ? "#fafafa" : "#666"}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.settingItem} disabled>
+              <View style={styles.settingLeft}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: theme.colors.background },
+                  ]}
+                >
+                  <Icon
+                    name="download"
+                    size={20}
+                    color={theme.dark ? "gray" : "silver"}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.settingText,
+                    { color: theme.dark ? "gray" : "silver" },
+                  ]}
+                >
+                  Check for Updates
+                </Text>
+              </View>
+
+              <Icon
+                name="download"
+                size={20}
+                color={theme.dark ? "gray" : "silver"}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Save Button */}
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              { backgroundColor: theme.dark ? "#2A2A2A" : "gray" },
+            ]}
+            onPress={saveSettings}
+          >
+            <Text style={styles.saveButtonText}>Save Settings</Text>
+          </TouchableOpacity>
+
+          {/* Reset Button */}
+          <TouchableOpacity
+            style={[styles.resetButton]}
+            onPress={restoreDefault}
+          >
             <Text
               style={[
-                styles.modalText,
+                styles.resetButtonText,
                 { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
               ]}
             >
-              Saving Theme...
+              Reset to Defaults
             </Text>
-          </View>
-        </View>
-      </Modal>
-    </ScrollView>
-    )
-  }
-  </>
+          </TouchableOpacity>
+
+          {/* Saving Theme Modal */}
+          <Modal transparent={true} visible={savingTheme} animationType="fade">
+            <View style={styles.modalBackground}>
+              <View
+                style={[
+                  styles.modalContainer,
+                  { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modalText,
+                    { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                  ]}
+                >
+                  Saving Theme...
+                </Text>
+              </View>
+            </View>
+          </Modal>
+        </ScrollView>
+      )}
+    </>
   );
 }
 
@@ -418,7 +417,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    paddingTop:40
+    paddingTop: 40,
   },
   headerTitle: {
     fontSize: 20,
@@ -457,7 +456,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    elevation:5
+    elevation: 5,
   },
   settingText: {
     fontSize: 16,
@@ -496,6 +495,7 @@ const styles = StyleSheet.create({
   sliderLabel: {
     fontSize: 14,
     marginBottom: 8,
+    fontFamily: "Philosopher-Regular",
   },
   slider: {
     height: 40,
@@ -507,6 +507,7 @@ const styles = StyleSheet.create({
   },
   previewText: {
     textAlign: "center",
+    fontFamily: "Philosopher-Regular",
   },
   saveButton: {
     marginTop: 24,
@@ -554,4 +555,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Settings ;
+export default Settings;

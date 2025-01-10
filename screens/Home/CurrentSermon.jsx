@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { Text } from "react-native-paper";
+import { useFonts } from "expo-font";
 import {
   View,
   StyleSheet,
@@ -21,36 +22,23 @@ import { Feather } from "@expo/vector-icons";
 import PlaySermon from "../PlaySermon";
 
 const Home = () => {
-  const { selectedSermon, settings, theme, handleRandomSermons } =
+  const { selectedSermon, settings, theme, searchText } =
     useContext(SermonContext);
-  const route = useRoute();
-  const searchPhrase = route.params?.searchPhrase || "";
 
   const [searchResults, setSearchResults] = useState([]);
+  const [searchPhrase, setSearchPhrase] = useState(searchText);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   const [showFloatingCard, setShowFloatingCard] = useState(false);
+  const [textLayouts, setTextLayouts] = useState([]);
 
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  
 
-  useEffect(() => {
-    handleRandomSermons();
-  }, []);
-
-  const validateTextContent = (content) => {
-    if (content == null) return "no sermon text content";
-    if (typeof content === "number") return content.toString();
-    if (typeof content !== "string") {
-      try {
-        return String(content);
-      } catch (e) {
-        console.error("Error converting content to string:", e);
-        return "";
-      }
-    }
-    return content;
-  };
+  const [fontsLoaded] = useFonts({
+    "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
+  });
 
   useEffect(() => {
     if (selectedSermon && searchPhrase) {
@@ -104,34 +92,25 @@ const Home = () => {
       ?.replace(/\s+/g, " ")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
-      console.log('Text content:', typeof cleanSermonText);
 
-    if (searchResults.length === 0) {
+    if (!searchPhrase) {
       const parts = cleanSermonText?.split(/(Endnote)/gi);
-      console.log('Text clean:', typeof parts);
       return (
-        <Text
-          selectable={true}
-          style={[
-            styles.sermonText,
-            {
-              color: theme.colors.text,
-              fontFamily: settings.fontFamily,
-              fontSize: settings.fontSize,
-              textAlignVertical: "left",
-            },
-          ]}
-        >
-          {parts?.map((part, index) => {
-            const validatedPart = validateTextContent(part);
-            return part.toLowerCase() === "endnote" ? (
+        <Text>
+          {parts?.map((part, index) =>
+            part.toLowerCase() === "endnote" ? (
               <Text key={index} style={[styles.endnoteText]}>
-                {`${validatedPart}`}
+                {String(part)}
               </Text>
             ) : (
-              `${validatedPart}`
-            );
-          })}
+              <Text
+                key={index}
+                style={[{ color: theme.colors.text }, styles.sermonText]}
+              >
+                {String(part)}
+              </Text>
+            )
+          )}
         </Text>
       );
     }
@@ -139,35 +118,42 @@ const Home = () => {
     const parts = cleanSermonText?.split(
       new RegExp(`(${searchPhrase}|Endnote)`, "gi")
     );
-    
+
     return (
-      <Text
-        style={[
-          styles.sermonText,
-          {
-            color: theme.colors.text,
-            fontFamily: settings.fontFamily,
-            fontSize: settings.fontSize,
-            lineHeight: 30,
-          },
-        ]}
-      >
-        {parts.map((part, index) => {
-          const validatedPart = validateTextContent(part);
+      <Text style={styles.customText}>
+        {parts?.map((part, index) => {
           if (part.toLowerCase() === searchPhrase.toLowerCase()) {
             return (
-              <Text key={index} style={styles.highlightedText}>
-                {`${validatedPart}`}
+              <Text
+                key={index}
+                style={styles.highlightedText}
+                onLayout={(event) => onTextLayout(event, index)}
+              >
+                {String(part)}
               </Text>
             );
           } else if (part.toLowerCase() === "endnote") {
             return (
-              <Text key={index} style={styles.endnoteText}>
-                {`${validatedPart}`}
+              <Text
+                key={index}
+                style={[styles.endnoteText, styles.customText]}
+              >
+                {String(part)}
               </Text>
             );
           }
-          return `${validatedPart}`;
+          return (
+            <Text
+              key={index}
+              style={[
+                { color: theme.colors.text },
+                styles.sermonText,
+                styles.customText
+              ]}
+            >
+              {String(part)}
+            </Text>
+          );
         })}
       </Text>
     );
@@ -213,25 +199,33 @@ const Home = () => {
         <PlaySermon sermon={selectedSermon} />
       ) : (
         <ScrollView
+          scrollEventThrottle={16}
+          decelerationRate="normal"
           ref={scrollViewRef}
           contentContainerStyle={[
             styles.scrollViewContainer,
             { backgroundColor: theme.colors.primary },
           ]}
           onContentSizeChange={(width, height) => {
-            setContentHeight(height)
-            console.log(contentHeight)
+            setContentHeight(height);
+            console.log(contentHeight);
           }}
         >
           <View>
             <Text style={[styles.titleText, { color: theme.colors.text }]}>
-              {selectedSermon?.title}
+              { selectedSermon?.title}
             </Text>
-            <Text style={[styles.locationText, { color: theme.colors.text }]}>
-              {selectedSermon?.location}
+            {selectedSermon?.location && (
+              <Text style={[styles.locationText, { color: theme.colors.text }]}>
+                {selectedSermon?.location}
+              </Text>
+            )}
+            <Text style={{ color: "black" }}>
+              {searchResults.length}
+              {searchText}
             </Text>
-            <Text>
-            {renderSermonText()}
+            <Text style={[{ fontSize: settings.fontSize, width: "100%" },styles.customText]}>
+            🔊🔊{renderSermonText()}
             </Text>
           </View>
         </ScrollView>
@@ -321,7 +315,7 @@ const Home = () => {
       )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -334,8 +328,12 @@ const styles = StyleSheet.create({
   },
   sermonText: {
     lineHeight: 25,
-    marginBottom: 15,
+    marginBottom: 18,
     textAlign: "left",
+    fontFamily: "Philosopher-Regular",
+  },
+  customText: {
+    fontFamily: "Philosopher-Regular",
   },
   highlightedText: {
     backgroundColor: "green",
@@ -347,6 +345,7 @@ const styles = StyleSheet.create({
     color: "#4a90e2",
     fontWeight: "500",
     fontStyle: "italic",
+    fontFamily: "Philosopher-Regular",
   },
   titleText: {
     fontFamily: "serif",
@@ -354,6 +353,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: "left",
     marginBottom: 8,
+    textDecorationLine:"underline"
   },
   locationText: {
     fontFamily: "serif",

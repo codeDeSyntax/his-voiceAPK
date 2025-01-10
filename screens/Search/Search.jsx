@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Animated,
   Pressable,
+  Keyboard,
   Image
 } from "react-native";
 import { SermonContext } from "../../Logic/globalState";
@@ -36,10 +37,10 @@ const CONTEXT_LENGTH = 30;
 const EXPANDED_CONTEXT_LENGTH = 150;
 
 const SermonSearch = () => {
-  const [searchText, setSearchText] = useState("");
+  const { setSelectedSermon, theme,searchText, setSearchText } = useContext(SermonContext);
+  const [ searchPhrase,setSearchPhrase] = useState(searchText);
   const [filteredSermons, setFilteredSermons] = useState([]);
   const [expandedSermons, setExpandedSermons] = useState(new Set());
-  const { setSelectedSermon, theme } = useContext(SermonContext);
   const [loading, setLoading] = useState(false);
   const [found, setFound] = useState(true);
   const fadeAnim = new Animated.Value(0);
@@ -47,10 +48,12 @@ const SermonSearch = () => {
   const navigation = useNavigation();
 
   const handleSearch = async () => {
-    if (searchText.trim() === "") {
+    if (searchPhrase.trim() === "") {
       setFilteredSermons([]);
       return;
     }
+
+    Keyboard.dismiss();
 
     setLoading(true);
     setExpandedSermons(new Set());
@@ -60,7 +63,7 @@ const SermonSearch = () => {
 
       const filtered = sermons
         .map((sermon) => {
-          const regex = new RegExp(`(${searchText})`, "i");
+          const regex = new RegExp(`(${searchPhrase})`, "i");
           const match = sermon.sermon.match(regex);
           if (match) {
             
@@ -122,9 +125,8 @@ const SermonSearch = () => {
   };
 
   const handleSermonClick = (sermon) => {
-    const searchPhrase = searchText;
     setSelectedSermon(sermon);
-    navigation.navigate("Home", { sermon, searchPhrase });
+    navigation.navigate("Home");
   };
 
   const handleClearSearch = () => {
@@ -228,10 +230,10 @@ const SermonSearch = () => {
               }
             ]}
             placeholder="Search quotes"
-            value={searchText}
+            value={searchPhrase}
             onChangeText={(e) =>{
               setSearchText(e);
-              setSearchText;
+              setSearchPhrase(() => e.trim())
               setFound(true)
 
             }}
@@ -370,7 +372,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical:4,
+    paddingVertical:13,
     flex: 1,
     marginRight: 12,
 

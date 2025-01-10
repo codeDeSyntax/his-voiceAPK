@@ -192,8 +192,8 @@ function RecentlyOpenedSermons() {
         </Text>
        
       </TouchableOpacity>
-     <TouchableOpacity style={{alignSelf:''}} onPress={() => removeFromRecents(item)}>
-     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "#FFCCCC" : "#FFCCCC"} />
+     <TouchableOpacity style={{opacity:4}} onPress={() => removeFromRecents(item)}>
+     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "red" : "red"} />
      </TouchableOpacity>
       </Pressable>
     )

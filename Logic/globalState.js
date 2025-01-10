@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Import sermons using dynamic imports for code splitting
 const sermonModules = {
   earlySermons: () => import("../sermons/1964-1969/firstset"),
   secondSet: () => import("../sermons/1970/1970"),
@@ -13,27 +12,27 @@ const sermonModules = {
 
 const SermonContext = createContext();
 
-// Separate initial states
 const initialSettings = {
   darkMode: false,
   backgroundColor: "#fafafa",
   fontSize: 12,
-  fontFamily: require("../assets/fonts/Philosopher-Regular.ttf"),
+  fontFamily: "serif",
   textColor: "#fafafa",
 };
 
 const SermonProvider = ({ children }) => {
   // State management
-  const [selectedSermon, setSelectedSermon] = useState({});
+  const [selectedSermon, setSelectedSermon] = useState(null);
   const [allSermons, setAllSermons] = useState([]);
+  const [textSermons, setTextSermons] = useState([]); // New state for text sermons
   const [recentlyOpened, setRecentlyOpened] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [settings, setSettings] = useState(initialSettings);
+  const [sermonsLoaded, setSermonsLoaded] = useState(false); // New state to track sermon loading
 
-  // Memoize theme object to prevent unnecessary rerenders
   const theme = useMemo(
     () => ({
       dark: isDarkMode,
@@ -47,20 +46,21 @@ const SermonProvider = ({ children }) => {
     }),
     [isDarkMode]
   );
-  
-  // Memoize handlers
-  const handleRandomSermons = useCallback(() => {
-    const textSermons = allSermons.filter(sermon => sermon.type === 'text');
-    if (allSermons.length > 0) {
-      const sermonIndex = Math.floor(Math.random() * allSermons.length);
-      setSelectedSermon(textSermons[sermonIndex]);
-      console.log(selectedSermon)
-    }
-  }, [allSermons]);
 
-  // Optimize sermon loading with chunking and async loading
-  const loadSermons = async () => {
+  // Preload and cache text sermons
+  const handleRandomSermons = useCallback(() => {
+    if (textSermons.length > 0) {
+      const randomIndex = Math.floor(Math.random() * textSermons.length);
+      setSelectedSermon(textSermons[randomIndex]);
+    }
+  }, [textSermons]);
+
+  // Improved sermon loading with better error handling and state management
+  const loadSermons = useCallback(async () => {
     try {
+      setLoading(true);
+      
+      // Load all sermon modules concurrently
       const loadedModules = await Promise.all(
         Object.values(sermonModules).map(importFn => importFn())
       );
@@ -68,16 +68,31 @@ const SermonProvider = ({ children }) => {
       const fetchedSermons = loadedModules.reduce((acc, module) => 
         [...acc, ...Object.values(module)[0]], []);
       
+      // Set all sermons
       setAllSermons(fetchedSermons);
+      
+      // Filter and set text sermons
+      const filteredTextSermons = fetchedSermons.filter(sermon => sermon.type === 'text');
+      setTextSermons(filteredTextSermons);
+      
+      setSermonsLoaded(true);
       setLoading(false);
+      
+      // Log the counts for debugging
+      console.log('Total sermons loaded:', fetchedSermons.length);
+      console.log('Text sermons loaded:', filteredTextSermons.length);
+      
+      return true; // Return success status
     } catch (err) {
+      console.error("Error loading sermons:", err);
       setError("Failed to load sermons");
       setLoading(false);
-      console.error("Error loading sermons:", err);
+      setSermonsLoaded(false);
+      return false; // Return failure status
     }
-  };
+  }, []);
 
-  // Optimize storage operations
+  // Storage operations with loading indicators
   const storageOperations = {
     saveRecents: async (recents) => {
       try {
@@ -112,36 +127,36 @@ const SermonProvider = ({ children }) => {
     }
   };
 
-  // Effect for initial sermon loading
+  // Initial load effect
   useEffect(() => {
-    loadSermons();
-  }, []);
+    const initializeApp = async () => {
+      await Promise.all([
+        loadSermons(),
+        storageOperations.loadRecents(),
+        storageOperations.loadSettings()
+      ]);
+    };
 
-  //Effecct for random sermon
-  // useEffect(() => {
-  //   handleRandomSermons();
-  // }, []);
+    initializeApp();
+  }, [loadSermons]);
 
-  // Effect for loading recent sermons
+  // Select random sermon only after sermons are loaded
   useEffect(() => {
-    storageOperations.loadRecents();
-  }, []);
+    if (sermonsLoaded && textSermons.length > 0 && !selectedSermon) {
+      handleRandomSermons();
+    }
+  }, [sermonsLoaded, textSermons, handleRandomSermons, selectedSermon]);
 
-  // Effect for loading settings
-  useEffect(() => {
-    storageOperations.loadSettings();
-  }, []);
-
-  // Memoize context value to prevent unnecessary rerenders
   const contextValue = useMemo(() => ({
     selectedSermon,
     setSelectedSermon,
     allSermons,
     setAllSermons,
+    textSermons, // Add textSermons to context
     recentlyOpened,
     setRecentlyOpened,
-    searchTerm,
-    setSearchTerm,
+    searchText,
+    setSearchText,
     error,
     settings,
     setSettings,
@@ -149,18 +164,22 @@ const SermonProvider = ({ children }) => {
     isDarkMode,
     setIsDarkMode,
     handleRandomSermons,
-    loading
+    loading,
+    sermonsLoaded // Add sermonsLoaded to context
   }), [
     selectedSermon,
     allSermons,
+    textSermons,
     recentlyOpened,
-    searchTerm,
+    searchText,
+    setSearchText,
     error,
     settings,
     theme,
     isDarkMode,
     handleRandomSermons,
-    loading
+    loading,
+    sermonsLoaded
   ]);
 
   return (
