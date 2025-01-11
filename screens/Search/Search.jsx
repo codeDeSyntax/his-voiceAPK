@@ -78,7 +78,7 @@ const SermonSearch = () => {
     setExpandedSermons(new Set());
 
     try {
-      // await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const filtered = sermons
         .map((sermon) => {
@@ -235,7 +235,7 @@ const SermonSearch = () => {
         <View style={[
           styles.inputWrapper, 
           {borderColor: theme.dark === true? "#494d50" : "#494d50", 
-            backgroundColor:theme.colors.secondary
+            // backgroundColor:theme.colors.secondary
           }
           
         ]}>
@@ -389,6 +389,7 @@ const styles = StyleSheet.create({
     marginTop: 60,
     paddingHorizontal: 16,
     marginBottom: 16,
+    backgroundColor:""
   },
   inputWrapper: {
     flexDirection: "row",
@@ -400,6 +401,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     flex: 1,
     marginRight: 12,
+    backgroundColor:"transparent"
     // shadowColor: "#000",
     // shadowOffset: { width: 0, height: 2 },
     // shadowOpacity: 0.1,
@@ -411,7 +413,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 16,
     borderWidth:0,
-    fontStyle:"italic"
+    fontStyle:"italic",
+    backgroundColor:"transparent"
   },
   searchIcon: {
     marginRight: 10,

@@ -303,7 +303,7 @@ const Home = () => {
 
           {showFloatingCard && <FloatingCard />}
 
-          {searchResults.length > 0 && searchPhrase && (
+          {( searchText && searchResults.length > 0 ) && (
             <View style={styles.navigationContainer}>
               <TouchableOpacity
                 style={styles.navButton}
