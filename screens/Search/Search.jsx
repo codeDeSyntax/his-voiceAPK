@@ -15,9 +15,7 @@ import { SermonContext } from "../../Logic/globalState";
 import { ActivityIndicator } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AntDesign } from "@expo/vector-icons";
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
-
 
 import earlySermons from "../../sermons/1964-1969/firstset";
 import secondSet from "../../sermons/1970/1970";
@@ -37,8 +35,8 @@ const CONTEXT_LENGTH = 30;
 const EXPANDED_CONTEXT_LENGTH = 150;
 
 const SermonSearch = () => {
-  const { setSelectedSermon, theme,searchText, setSearchText } = useContext(SermonContext);
-  const [ searchPhrase,setSearchPhrase] = useState(searchText);
+  const { setSelectedSermon, theme, searchText, setSearchText } = useContext(SermonContext);
+  const [searchPhrase, setSearchPhrase] = useState(searchText);
   const [filteredSermons, setFilteredSermons] = useState([]);
   const [expandedSermons, setExpandedSermons] = useState(new Set());
   const [loading, setLoading] = useState(false);
@@ -47,6 +45,26 @@ const SermonSearch = () => {
 
   const navigation = useNavigation();
 
+  const cleanText = (text) => {
+    return text
+      // Remove multiple spaces
+      .replace(/\s+/g, ' ')
+      // Remove multiple newlines, replace with single newline
+      .replace(/\n{2,}/g, '\n')
+      // Remove spaces at the beginning of lines
+      .replace(/^\s+/gm, '')
+      // Remove spaces at the end of lines
+      .replace(/\s+$/gm, '')
+      // Replace multiple newlines with single newline
+      .replace(/\n+/g, '\n')
+      // Remove indentation after newlines
+      .replace(/\n\s+/g, '\n')
+      // Remove any remaining extra whitespace
+      .replace(/\s{2,}/g, ' ')
+      // Trim the final result
+      .trim();
+  };
+
   const handleSearch = async () => {
     if (searchPhrase.trim() === "") {
       setFilteredSermons([]);
@@ -54,52 +72,65 @@ const SermonSearch = () => {
     }
 
     Keyboard.dismiss();
-
     setLoading(true);
     setExpandedSermons(new Set());
+    setFound(true);
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const filtered = sermons
         .map((sermon) => {
-          const regex = new RegExp(`(${searchPhrase})`, "i");
-          const match = sermon.sermon.match(regex);
-          if (match) {
+          const regex = new RegExp(`(${searchPhrase})`, "gi");
+          const cleanedSermon = cleanText(sermon.sermon);
+          const matches = [...cleanedSermon.matchAll(regex)];
+
+          if (matches.length > 0) {
+            const match = matches[0]; // Use the first match
+            const matchIndexInCleanText = match.index;
             
-            const shortContext = sermon.sermon.slice(
-              Math.max(0, match.index - CONTEXT_LENGTH),
-              Math.min(sermon.sermon.length, match.index + match[0].length + CONTEXT_LENGTH)
+            const shortContext = cleanedSermon.slice(
+              Math.max(0, matchIndexInCleanText - CONTEXT_LENGTH),
+              Math.min(cleanedSermon.length, matchIndexInCleanText + match[0].length + CONTEXT_LENGTH)
             );
-            const expandedContext = sermon.sermon.slice(
-              Math.max(0, match.index - EXPANDED_CONTEXT_LENGTH),
-              Math.min(sermon.sermon.length, match.index + match[0].length + EXPANDED_CONTEXT_LENGTH)
+
+            const expandedContext = cleanedSermon.slice(
+              Math.max(0, matchIndexInCleanText - EXPANDED_CONTEXT_LENGTH),
+              Math.min(cleanedSermon.length, matchIndexInCleanText + match[0].length + EXPANDED_CONTEXT_LENGTH)
             );
-            
+
+            const shortContextWithEllipsis = `${matchIndexInCleanText > CONTEXT_LENGTH ? '...' : ''}${shortContext}${
+              matchIndexInCleanText + match[0].length + CONTEXT_LENGTH < cleanedSermon.length ? '...' : ''
+            }`;
+
+            const expandedContextWithEllipsis = `${matchIndexInCleanText > EXPANDED_CONTEXT_LENGTH ? '...' : ''}${expandedContext}${
+              matchIndexInCleanText + match[0].length + EXPANDED_CONTEXT_LENGTH < cleanedSermon.length ? '...' : ''
+            }`;
+
             return {
               title: sermon.title,
               year: sermon.year,
               location: sermon.location,
-              sentence: shortContext.replace(
+              sentence: shortContextWithEllipsis.replace(
                 regex,
-                `<highlight>${match[0]}</highlight>`
+                `<highlight>$1</highlight>`
               ),
-              expandedSentence: expandedContext.replace(
+              expandedSentence: expandedContextWithEllipsis.replace(
                 regex,
-                `<highlight>${match[0]}</highlight>`
+                `<highlight>$1</highlight>`
               ),
-              sermon: sermon.sermon,
+              sermon: cleanedSermon,
               type: sermon.type,
             };
           }
-          else{
-            setFound(false);
-            return null;
-          }
+          return null;
         })
         .filter(Boolean);
 
       setFilteredSermons(filtered);
+      if (filtered.length === 0) {
+        setFound(false);
+      }
     } catch (error) {
       console.log("Could not fetch sermons", error);
     } finally {
@@ -125,14 +156,19 @@ const SermonSearch = () => {
   };
 
   const handleSermonClick = (sermon) => {
-    setSelectedSermon(sermon);
+    setSelectedSermon({
+      ...sermon,
+      sermon: cleanText(sermon.sermon)
+    });
     navigation.navigate("Home");
   };
 
   const handleClearSearch = () => {
     setSearchText("");
+    setSearchPhrase("");
     setFilteredSermons([]);
     setExpandedSermons(new Set());
+    setFound(true);
   };
 
   const renderSermonText = (sermon, index) => {
@@ -141,35 +177,36 @@ const SermonSearch = () => {
 
     return (
       <View style={styles.sermonTextContainer}>
-        <Text style={[styles.sermonContent, { color: theme.dark === true ? theme.colors.text : "black" }]}>
+        <Text 
+          style={[
+            styles.sermonContent, 
+            { color: theme.dark ? theme.colors.text : "black" }
+          ]}
+        >
           {textToRender
             .split(/(<highlight>.*?<\/highlight>)/g)
             .map((part, i) => (
               <Text
                 key={i}
-                style={
-                  part.startsWith("<highlight>") &&
-                  part.endsWith("</highlight>")
+                style={[
+                  styles.textPart,
+                  part.startsWith("<highlight>") && part.endsWith("</highlight>")
                     ? styles.highlightedText
-                    : undefined
-                }
-                >
-                {" " + part.trim().replace(/<\/?highlight>/g, "") + " ".trim()}
+                    : null
+                ]}
+              >
+                {part.replace(/<\/?highlight>/g, "")}
               </Text>
             ))}
         </Text>
         <View style={styles.sermonActionContainer}>
           <TouchableOpacity 
-            style={[styles.expandButton, 
+            style={[
+              styles.expandButton, 
               {
                 borderWidth: 1,
                 borderColor: theme.colors.secondary,
-                backgroundColor:
-                  theme.dark 
-                    ? parseInt(index) % 2 === 0
-                      ? theme.colors.primary
-                      : theme.colors.primary
-                    : "#fafafa",
+                backgroundColor: theme.dark ? theme.colors.primary : "#fafafa",
               }
             ]}
             onPress={() => toggleExpanded(index)}
@@ -177,9 +214,9 @@ const SermonSearch = () => {
             <AntDesign
               name={isExpanded ? "upcircle" : "downcircle"}
               size={15}
-              color={theme.dark === true? "gray" : "gray"}
+              color="gray"
             />
-            <Text style={[styles.expandButtonText,{color:theme.dark === true? "gray" : "gray"}]}>
+            <Text style={[styles.expandButtonText, { color: "gray" }]}>
               {isExpanded ? "Show less" : "Show more"}
             </Text>
           </TouchableOpacity>
@@ -187,17 +224,17 @@ const SermonSearch = () => {
           <TouchableOpacity 
             style={[
               styles.sermonDetailButton,
-              {backgroundColor: theme.colors.primary}
+              { backgroundColor: theme.colors.primary }
             ]} 
             onPress={() => handleSermonClick(sermon)}
           >
-            <Text style={[styles.sermonDetailButtonText, {color: theme.dark === true? "gray" : "gray"}]}>
+            <Text style={[styles.sermonDetailButtonText, { color: "gray" }]}>
               Open Sermon
             </Text>
             <AntDesign 
               name="rightcircle"
               size={15}
-              color={theme.dark === true? "gray" : "gray"}
+              color="gray"
             />
           </TouchableOpacity>
         </View>
@@ -210,42 +247,41 @@ const SermonSearch = () => {
       <View style={styles.searchContainer}>
         <View style={[
           styles.inputWrapper, 
-          {borderColor: theme.dark === true? "#494d50" : "#494d50", 
-            backgroundColor:theme.colors.secondary
+          {
+            borderColor: theme.dark ? "#494d50" : "#494d50",
+            backgroundColor: theme.colors.secondary
           }
-          
         ]}>
           <Ionicons
             name="search"
             size={24}
-            color={theme.dark === true? "#60A5FA" : "gray"}
+            color={theme.dark ? "#60A5FA" : "gray"}
             style={styles.searchIcon}
           />
           <TextInput
             style={[
               styles.searchInput,
               { 
-                color: theme.dark === true ? theme.colors.text : "black",
-                fontFamily:"serif"
+                color: theme.dark ? theme.colors.text : "black",
+                fontFamily: "serif"
               }
             ]}
             placeholder="Search quotes"
             value={searchPhrase}
-            onChangeText={(e) =>{
-              setSearchText(e);
-              setSearchPhrase(() => e.trim())
-              setFound(true)
-
+            onChangeText={(text) => {
+              setSearchText(text);
+              setSearchPhrase(text.trim());
+              setFound(true);
             }}
-            placeholderTextColor={theme.dark === true ? "gray" : "rgba(0,0,0,0.5)"}
-            selectionColor={theme.dark === true ? "gray" : "gray"}
+            placeholderTextColor={theme.dark ? "gray" : "rgba(0,0,0,0.5)"}
+            selectionColor="gray"
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={handleClearSearch}>
               <AntDesign
                 name="closecircle"
                 size={24}
-                color={theme.dark === true? "#494d50" : "gray"}
+                color={theme.dark ? "#494d50" : "gray"}
                 style={styles.clearIcon}
               />
             </TouchableOpacity>
@@ -263,16 +299,9 @@ const SermonSearch = () => {
         {loading ? (
           <View style={styles.loaderContainer}>
             <View style={styles.loaderWrapper}>
-              <ActivityIndicator 
-                size="large" 
-                color="#60A5FA" 
-              />
-              <Text style={[
-                styles.loaderText, 
-                { color: theme.colors.text }
-              ]}>
+              <ActivityIndicator size="large" color="#60A5FA" />
+              <Text style={[styles.loaderText, { color: theme.colors.text }]}>
                 Searching through sermons...
-              
               </Text>
             </View>
           </View>
@@ -281,27 +310,26 @@ const SermonSearch = () => {
             {filteredSermons.map((sermon, index) => (
               <Pressable
                 key={index}
-                style={[styles.sermonContainer]}
+                style={styles.sermonContainer}
               >
                 <View
-                 
-                  style={[styles.sermonGradient, {
-                    borderWidth: 1,
-                    borderColor: theme.colors.secondary,
-                    backgroundColor:
-                      theme.dark 
-                        ? parseInt(index) % 2 === 0
-                          ? theme.colors.primary
-                          : theme.colors.primary
+                  style={[
+                    styles.sermonGradient,
+                    {
+                      borderWidth: 1,
+                      borderColor: theme.colors.secondary,
+                      backgroundColor: theme.dark 
+                        ? theme.colors.primary
                         : "#fafafa",
-                  }]}
+                    }
+                  ]}
                 >
                   <View style={styles.sermonHeader}>
                     <View style={styles.sermonTitleContainer}>
                       <Text 
                         style={[
                           styles.sermonTitle, 
-                          { color: theme.dark === true ? theme.colors.text : "black" }
+                          { color: theme.dark ? theme.colors.text : "black" }
                         ]}
                         numberOfLines={2}
                       >
@@ -312,14 +340,16 @@ const SermonSearch = () => {
                       </Text>
                     </View>
                   </View>
-                  <Text 
-                    style={[
-                      styles.sermonLocation, 
-                      { color: theme.dark === true? "#494d50" : "gray" }
-                    ]}
-                  >
-                    {sermon.location ? sermon.location : null}
-                  </Text>
+                  {sermon.location && (
+                    <Text 
+                      style={[
+                        styles.sermonLocation, 
+                        { color: theme.dark ? "#494d50" : "gray" }
+                      ]}
+                    >
+                      {sermon.location}
+                    </Text>
+                  )}
                   {renderSermonText(sermon, index)}
                 </View>
               </Pressable>
@@ -335,17 +365,25 @@ const SermonSearch = () => {
                 ? "No sermons found"
                 : "Search quotes from all sermons"}
             </Text>
-            {
-              !found && (
-                <Image source={require("../../assets/viewnotfound.png")} alt="alt" width={40} height={40} 
+            {!found && (
+              <Image 
+                source={require("../../assets/viewnotfound.png")} 
                 style={{
+                  width: 40,
+                  height: 40,
                   overlayColor: "rgba(0,0,0,0.5)",
                 }}
-                
-                />
-              )
-            }
-            <Ionicons name="library" size={100} color={theme.dark === true ? "gray" :"silver"} style={{marginTop:30, display:!found ? "none" :"flex"}}/>
+              />
+            )}
+            <Ionicons 
+              name="library" 
+              size={100} 
+              color={theme.dark ? "gray" : "silver"} 
+              style={{
+                marginTop: 30, 
+                display: !found ? "none" : "flex"
+              }}
+            />
           </View>
         )}
       </ScrollView>
@@ -372,10 +410,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical:13,
+    paddingVertical: 10,
     flex: 1,
     marginRight: 12,
-
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -386,7 +423,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 10,
     fontSize: 16,
-    // backgroundColor:"red"
   },
   searchIcon: {
     marginRight: 10,

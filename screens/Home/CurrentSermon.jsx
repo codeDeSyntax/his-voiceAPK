@@ -220,10 +220,7 @@ const Home = () => {
                 {selectedSermon?.location}
               </Text>
             )}
-            <Text style={{ color: "black" }}>
-              {searchResults.length}
-              {searchText}
-            </Text>
+            
             <Text style={[{ fontSize: settings.fontSize, width: "100%" },styles.customText]}>
             🔊🔊{renderSermonText()}
             </Text>
