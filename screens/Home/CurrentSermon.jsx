@@ -355,8 +355,8 @@ const styles = StyleSheet.create({
     fontFamily: "Philosopher-Regular",
   },
   highlightedText: {
-    backgroundColor: "green",
-    color: "#14f39d",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",  /* Light blue with 10% opacity */
+    color: "#3B82F6",  /* Solid blue */
     fontWeight: "bold",
   },
   endnoteText: {

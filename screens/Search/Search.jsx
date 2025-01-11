@@ -235,7 +235,7 @@ const SermonSearch = () => {
         <View style={[
           styles.inputWrapper, 
           {borderColor: theme.dark === true? "#494d50" : "#494d50", 
-            // backgroundColor:theme.colors.secondary
+            backgroundColor:theme.colors.primary
           }
           
         ]}>
@@ -361,12 +361,13 @@ const SermonSearch = () => {
             </Text>
             {
               !found && (
-                <Image source={require("../../assets/viewnotfound.png")} alt="alt" width={40} height={40} 
+                <Image 
+                source={require("../../assets/viewnotfound.png")}
                 style={{
-                  overlayColor: "rgba(0,0,0,0.5)",
-                }}
-                
-                />
+                  width: 140,
+                  height: 170,
+                  // overlayColor: "rgba(0,0,0,0.5)",
+                }}/>
               )
             }
             <Ionicons name="library" size={100} color={theme.dark === true ? "gray" :"silver"} style={{marginTop:30, display:!found ? "none" :"flex"}}/>
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     marginTop: 60,
     paddingHorizontal: 16,
     marginBottom: 16,
-    backgroundColor:""
+  
   },
   inputWrapper: {
     flexDirection: "row",
@@ -401,7 +402,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     flex: 1,
     marginRight: 12,
-    backgroundColor:"transparent"
     // shadowColor: "#000",
     // shadowOffset: { width: 0, height: 2 },
     // shadowOpacity: 0.1,
@@ -414,7 +414,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth:0,
     fontStyle:"italic",
-    backgroundColor:"transparent"
   },
   searchIcon: {
     marginRight: 10,
@@ -493,8 +492,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   highlightedText: {
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
-    color: "#10B981",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",  /* Light blue with 10% opacity */
+    color: "#3B82F6",  /* Solid blue */
     // fontFamily: "monospace",
     fontStyle:"italic",
     borderRadius: 8,
