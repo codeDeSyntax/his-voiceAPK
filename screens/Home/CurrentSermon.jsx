@@ -34,7 +34,6 @@ const Home = () => {
 
   const scrollViewRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  
 
   const [fontsLoaded] = useFonts({
     "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
@@ -134,10 +133,7 @@ const Home = () => {
             );
           } else if (part.toLowerCase() === "endnote") {
             return (
-              <Text
-                key={index}
-                style={[styles.endnoteText, styles.customText]}
-              >
+              <Text key={index} style={[styles.endnoteText, styles.customText]}>
                 {String(part)}
               </Text>
             );
@@ -148,7 +144,7 @@ const Home = () => {
               style={[
                 { color: theme.colors.text },
                 styles.sermonText,
-                styles.customText
+                styles.customText,
               ]}
             >
               {String(part)}
@@ -213,16 +209,21 @@ const Home = () => {
         >
           <View>
             <Text style={[styles.titleText, { color: theme.colors.text }]}>
-              { selectedSermon?.title}
+              {selectedSermon?.title}
             </Text>
             {selectedSermon?.location && (
               <Text style={[styles.locationText, { color: theme.colors.text }]}>
                 {selectedSermon?.location}
               </Text>
             )}
-            
-            <Text style={[{ fontSize: settings.fontSize, width: "100%" },styles.customText]}>
-            🔊🔊{renderSermonText()}
+
+            <Text
+              style={[
+                { fontSize: settings.fontSize, width: "100%" },
+                styles.customText,
+              ]}
+            >
+              🔊🔊{renderSermonText()}
             </Text>
           </View>
         </ScrollView>
@@ -230,6 +231,27 @@ const Home = () => {
 
       {selectedSermon?.type === "text" && (
         <>
+         {
+          searchPhrase && searchResults.length > 0 &&
+           <TouchableOpacity
+            style={[
+              styles.floatingButton,
+              {
+                bottom: 280,
+                backgroundColor: theme.colors.background,
+                elevation: 5,
+              },
+            ]}
+            onPress={() => {
+              setSearchPhrase("");
+              setSearchResults([])
+            }}
+          >
+            {/* <Feather name="x" size={24} color="red" /> */}
+            <Text>❌</Text>
+          </TouchableOpacity>
+         }
+
           <TouchableOpacity
             style={[
               styles.floatingButton,
@@ -350,7 +372,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: "left",
     marginBottom: 8,
-    textDecorationLine:"underline"
+    textDecorationLine: "underline",
   },
   locationText: {
     fontFamily: "serif",
