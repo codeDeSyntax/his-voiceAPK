@@ -249,7 +249,7 @@ const SermonSearch = () => {
           styles.inputWrapper, 
           {
             borderColor: theme.dark ? "#494d50" : "#494d50",
-            backgroundColor: theme.colors.secondary
+            // backgroundColor: theme.colors.secondary
           }
         ]}>
           <Ionicons
@@ -288,7 +288,7 @@ const SermonSearch = () => {
           )}
         </View>
         <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.searchButtonText}>Search</Text>
+          <Text style={styles.searchButtonText}>GO</Text>
         </TouchableOpacity>
       </View>
 
@@ -407,22 +407,25 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
+    borderBottomWidth: 1,
+    
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 6,
     flex: 1,
     marginRight: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    // elevation: 3,
   },
   searchInput: {
     flex: 1,
     paddingHorizontal: 10,
     fontSize: 16,
+    borderWidth:0,
+    fontStyle:"italic"
   },
   searchIcon: {
     marginRight: 10,
