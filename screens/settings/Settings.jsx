@@ -20,9 +20,6 @@ function Settings() {
   const [fontsLoaded] = useFonts({
     "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
     "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
-    "GrenzeGotisch-VariableFont": require("../../assets/fonts/GrenzeGotisch-VariableFont_wght.ttf"),
-    "NerkoOne-Regular": require("../../assets/fonts/NerkoOne-Regular.ttf"),
-    "Teko-VariableFont": require("../../assets/fonts/Teko-VariableFont_wght.ttf"),
   });
 
   const { settings, setSettings, theme, setIsDarkMode, isDarkMode } =
