@@ -4,6 +4,7 @@
     "slug": "his-voice",
     "version": "1.0.0",
     "orientation": "portrait",
+     "scheme": "your-app-scheme",
     "newArchEnabled": true,
     "userInterfaceStyle": "light",
     "splash": {
@@ -11,6 +12,7 @@
       "resizeMode": "cover",
       "backgroundColor": "#2d2d2d"
     },
+   
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
@@ -32,8 +34,17 @@
     },
     "plugins": [
       "expo-font",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-navigation-bar",
+        {
+          "position": "relative",
+          "visibility": "hidden",
+          "behavior": "inset-touch"
+        }
+      ]
     ],
+
     "extra": {
       "eas": {
         "projectId": "8d5b01ec-32cb-4a05-b83f-83c918a5fa98"

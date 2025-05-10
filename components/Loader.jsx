@@ -2,10 +2,10 @@
 import React from "react";
 import { useContext } from "react";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
-import { SermonContext } from "../Logic/globalState";
+import { useAppContext } from "../Logic/globalState";
 
 const LoadingScreen = () => {
-    const {theme} = useContext(SermonContext)
+    const {theme} = useAppContext()
   return (
     <View style={[styles.container,{backgroundColor:theme.colors.background}]}>
       {/* React Native's built-in loader */}

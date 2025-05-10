@@ -1,4 +1,5 @@
-import React, { useContext, useState } from "react";
+// File: Settings.js
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,15 +7,41 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  ActivityIndicator,
+  StatusBar,
+  Animated,
 } from "react-native";
 import { useFonts } from "expo-font";
-import { SermonContext } from "../../Logic/globalState";
-import Slider from "@react-native-community/slider";
-import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Switch } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import UpdateScreen from "../Updating";
+import { useAppContext } from "../../Logic/globalState";
+import { styles } from "../../styles/settings";
+
+// Import components
+import SettingsHeader from "../../components/settings/SettingsHeader";
+import ProfileSection from "../../components/settings/ProfileSection";
+import DisplaySettings from "../../components/settings/DisplaySettings";
+import AppSettings from "../../components/settings/AppSettings";
+import ActionButtons from "../../components/settings/ActionsButtons";
+import SavingModal from "../../components/settings/SavingModal";
+import NumberOfColumnsSelector from "../../components/settings/ColumnNubmerChoose";
+
+// Constants moved here to be accessible to all components
+export const FONT_OPTIONS = [
+  { name: "Default", value: "System" },
+  { name: "Merienda", value: "Merienda-VariableFont" },
+  { name: "Philosopher", value: "Philosopher-Regular" },
+  { name: "Serif", value: "serif" },
+];
+
+export const COLOR_OPTIONS = [
+  { name: "Blue", value: "#3B82F6", textColor: "#FFFFFF" },
+  { name: "Green", value: "#10B981", textColor: "#FFFFFF" },
+  { name: "Purple", value: "#8B5CF6", textColor: "#FFFFFF" },
+  { name: "Orange", value: "#F59E0B", textColor: "#FFFFFF" },
+  { name: "Pink", value: "#EC4899", textColor: "#FFFFFF" },
+];
 
 function Settings() {
   const [fontsLoaded] = useFonts({
@@ -22,18 +49,39 @@ function Settings() {
     "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
   });
 
-  const { settings, setSettings, theme, setIsDarkMode, isDarkMode } =
-    useContext(SermonContext);
-  const [fontSize, setFontSize] = useState(settings.fontSize);
-  const [fontFamily, setFontFamily] = useState("");
-  const [textColor, setTextColor] = useState("");
+  const {
+    settings,
+    setSettings,
+    updateSettings,
+    theme,
+    setIsDarkMode,
+    isDarkMode,
+    numberOfColumns,
+    setNumberOfColumns,
+  } = useAppContext();
+
+  const [fontSize, setFontSize] = useState(settings.fontSize || 16);
+  const [fontFamily, setFontFamily] = useState(settings.fontFamily || "System");
+  const [textColor, setTextColor] = useState(settings.textColor || "#FFFFFF");
+  const [accentColor, setAccentColor] = useState(
+    settings.accentColor || COLOR_OPTIONS[0].value
+  );
+
   const [savingTheme, setSavingTheme] = useState(false);
-  const navigation = useNavigation();
   const [isUpdating, setIsUpdating] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState(
-    settings.backgroundColor
+    settings.backgroundColor || (isDarkMode ? "#121212" : "#F8F9FA")
   );
-  const [showPreview, setShowPreview] = useState(false);
+  const [animation] = useState(new Animated.Value(0));
+
+  // Animation effect for theme toggling
+  useEffect(() => {
+    Animated.timing(animation, {
+      toValue: isDarkMode ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [isDarkMode]);
 
   const toggleTheme = async () => {
     try {
@@ -43,10 +91,12 @@ function Settings() {
       const updatedSettings = {
         ...settings,
         darkMode: newMode,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: newMode ? "#121212" : "#F8F9FA",
         fontSize,
         fontFamily,
-        textColor,
+        textColor: newMode ? "#FFFFFF" : "#1A1A1A",
+        accentColor,
+        numberOfColumns,
       };
 
       setIsDarkMode(newMode);
@@ -55,7 +105,11 @@ function Settings() {
         "sermonSettings",
         JSON.stringify(updatedSettings)
       );
-      setSavingTheme(false);
+
+      // Slightly delayed to show animation
+      setTimeout(() => {
+        setSavingTheme(false);
+      }, 500);
     } catch (error) {
       console.error("Error saving theme settings:", error);
       setSavingTheme(false);
@@ -64,6 +118,7 @@ function Settings() {
 
   const saveSettings = async () => {
     try {
+      setSavingTheme(true);
       const updatedSettings = {
         ...settings,
         darkMode: isDarkMode,
@@ -71,485 +126,140 @@ function Settings() {
         fontSize,
         fontFamily,
         textColor,
+        accentColor,
+        numberOfColumns,
       };
-      setSettings(updatedSettings);
-      await AsyncStorage.setItem(
-        "sermonSettings",
-        JSON.stringify(updatedSettings)
-      );
+      updateSettings(updatedSettings);
+
+      // setSettings(updatedSettings);
+      // await AsyncStorage.setItem("sermonSettings", JSON.stringify(updatedSettings));
+      setTimeout(() => {
+        setSavingTheme(false);
+      }, 800);
     } catch (error) {
       console.error("Error saving settings:", error);
+      setSavingTheme(false);
     }
   };
 
   const restoreDefault = async () => {
     try {
+      setSavingTheme(true);
       const defaultSettings = {
         darkMode: true,
-        backgroundColor: "#151718",
-        fontSize: 12,
-        fontFamily: "serif",
-        textColor: "#fafafa",
+        backgroundColor: "#121212",
+        fontSize: 16,
+        fontFamily: "System",
+        textColor: "#FFFFFF",
+        accentColor: "#3B82F6",
       };
-      setSettings(defaultSettings);
-      setBackgroundColor(defaultSettings.backgroundColor);
+
+      setFontSize(defaultSettings.fontSize);
+      setFontFamily(defaultSettings.fontFamily);
       setTextColor(defaultSettings.textColor);
+      setAccentColor(defaultSettings.accentColor);
+      setBackgroundColor(defaultSettings.backgroundColor);
+      setIsDarkMode(defaultSettings.darkMode);
+      setSettings(defaultSettings);
+
       await AsyncStorage.setItem(
         "sermonSettings",
         JSON.stringify(defaultSettings)
       );
+
+      setTimeout(() => {
+        setSavingTheme(false);
+      }, 800);
     } catch (error) {
       console.error("Error restoring settings:", error);
+      setSavingTheme(false);
     }
   };
 
-  // async function checkForUpdates() {
-  //   if (__DEV__) {
-  //     console.log("Skipping updates check in development mode");
-  //     // setIsUpdating(true)
+  const navigation = useNavigation();
 
-  //     return;
-  //   }
-  //   try {
-  //    navigation.navigate("updating")
-  //     const update = await Updates.checkForUpdateAsync();
-  //     if (update.isAvailable) {
-  //       await Updates.fetchUpdateAsync();
-  //       Alert.alert('Update available', 'Restarting to apply the update...');
-  //       await Updates.reloadAsync(); // Will reload the app with the new update
-  //       navigation.navigate("welcome")
-  //     }else {
-  //       navigation.navigate("welcome")
-  //     }
-  //   } catch (e) {
-  //     console.log('Error checking for updates', e);
-  //   }
-  // }
+  if (isUpdating) {
+    return <UpdateScreen />;
+  }
 
   return (
     <>
-      {isUpdating ? (
-        <UpdateScreen />
-      ) : (
-        <ScrollView
+      <ScrollView
+        style={[styles.container, { backgroundColor: theme.colors.primary }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <SettingsHeader theme={theme} accentColor={accentColor} />
+
+        <ProfileSection theme={theme} accentColor={accentColor} />
+
+        <Text
           style={[
-            styles.container,
-            { backgroundColor: theme.dark ? "#1A1A1A" : "#F8F9FA" },
+            styles.sectionHeader,
+            { color: theme.dark ? "#BBBBBB" : "#666666" },
           ]}
         >
-          <Text
-            style={[
-              styles.headerTitle,
-              { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-            ]}
-          >
-            Settings
-          </Text>
+          DISPLAY
+        </Text>
 
-          {/* Main Settings Group */}
-          <View
-            style={[
-              styles.settingsGroup,
-              { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
-            ]}
-          >
-            <TouchableOpacity
-              style={[styles.settingItem, { opacity: 70 }]}
-              disabled={true}
-              activeOpacity={0.7}
-              aria-disabled={true}
-              accessibilityElementsHidden={true}
-            >
-              <View style={styles.settingLeft}>
-                <View
-                  style={[
-                    styles.iconContainer,
-                    { backgroundColor: theme.colors.background },
-                  ]}
-                >
-                  <Icon
-                    name="language"
-                    size={20}
-                    color={theme.dark ? "gray" : "silver"}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.settingText,
-                    { color: theme.dark ? "gray" : "silver" },
-                  ]}
-                >
-                  App Language
-                </Text>
-              </View>
-              <Icon
-                name="chevron-forward"
-                size={20}
-                color={theme.dark ? "gray" : "silver"}
-              />
-            </TouchableOpacity>
+        <DisplaySettings
+          theme={theme}
+          accentColor={accentColor}
+          isDarkMode={isDarkMode}
+          toggleTheme={toggleTheme}
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          fontFamily={fontFamily}
+          setFontFamily={setFontFamily}
+        />
 
-            <View style={styles.separator} />
+        {/* number of columns selector UI */}
 
-            <TouchableOpacity style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <View
-                  style={[
-                    styles.iconContainer,
-                    { backgroundColor: theme.colors.background },
-                  ]}
-                >
-                  <Icon name="text" size={20} color={theme.colors.text} />
-                </View>
-                <Text
-                  style={[
-                    styles.settingText,
-                    { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-                  ]}
-                >
-                  Font Settings
-                </Text>
-              </View>
-              <Switch
-                value={showPreview}
-                onValueChange={() => setShowPreview(!showPreview)}
-                color="#60A5FA"
-              />
-            </TouchableOpacity>
+        {/* <View
+          style={[styles.settingBlock, { backgroundColor: theme.colors.secondary }]}
+        > */}
+          {/* <NumberOfColumnsSelector
+            theme={theme}
+            numberOfColumns={numberOfColumns}
+            setNumberOfColumns={setNumberOfColumns}
+            accentColor={accentColor}
+          /> */}
+        {/* </View> */}
 
-            {showPreview && (
-              <View style={styles.previewSection}>
-                <View style={styles.sliderContainer}>
-                  <Text
-                    style={[
-                      styles.sliderLabel,
-                      { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-                    ]}
-                  >
-                    Font Size: {settings.fontSize || fontSize}px
-                  </Text>
-                  <Slider
-                    style={[styles.slider, { height: 20 }]}
-                    minimumValue={12}
-                    maximumValue={24}
-                    value={fontSize}
-                    onValueChange={setFontSize}
-                    minimumTrackTintColor="#60A5FA"
-                    step={1}
-                    maximumTrackTintColor={theme.dark ? "#666" : "#CCC"}
-                    thumbTintColor="#60A5FA"
-                  />
-                </View>
+        <Text
+          style={[
+            styles.sectionHeader,
+            { color: theme.dark ? "#BBBBBB" : "#666666", marginTop: 24 },
+          ]}
+        >
+          APP
+        </Text>
 
-                <View
-                  style={[
-                    styles.previewBox,
-                    { backgroundColor: theme.dark ? "#3A3A3A" : "#F0F0F0" },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.previewText,
-                      {
-                        fontFamily: "Philosopher-Regular",
-                        fontSize,
-                        color: theme.dark ? "#FFFFFF" : "#1A1A1A",
-                      },
-                    ]}
-                  >
-                    Preview Text
-                  </Text>
-                </View>
-              </View>
-            )}
+        <AppSettings theme={theme} navigation={navigation} />
 
-            <View style={styles.separator} />
+        <Text
+          style={[
+            styles.versionText,
+            { color: theme.dark ? "#777777" : "#999999" },
+          ]}
+        >
+          Version 1.0.0 • Build 2025.05.09
+        </Text>
 
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <View
-                  style={[
-                    styles.iconContainer,
-                    { backgroundColor: theme.colors.background },
-                  ]}
-                >
-                  <Icon name="moon" size={20} color={theme.colors.text} />
-                </View>
-                <Text
-                  style={[
-                    styles.settingText,
-                    { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-                  ]}
-                >
-                  Dark Mode
-                </Text>
-              </View>
-              <Switch
-                value={isDarkMode}
-                onValueChange={toggleTheme}
-                color="#60A5FA"
-              />
-            </View>
+        <ActionButtons
+          theme={theme}
+          accentColor={accentColor}
+          saveSettings={saveSettings}
+          restoreDefault={restoreDefault}
+        />
 
-            <View style={styles.separator} />
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => navigation?.navigate("About")}
-            >
-              <View style={styles.settingLeft}>
-                <View
-                  style={[
-                    styles.iconContainer,
-                    { backgroundColor: theme.colors.background },
-                  ]}
-                >
-                  <Icon
-                    name="help-circle"
-                    size={20}
-                    color={theme.colors.text}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.settingText,
-                    { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-                  ]}
-                >
-                  About
-                </Text>
-              </View>
-              <Icon
-                name="chevron-forward"
-                size={20}
-                color={theme.dark ? "#fafafa" : "#666"}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.settingItem} disabled>
-              <View style={styles.settingLeft}>
-                <View
-                  style={[
-                    styles.iconContainer,
-                    { backgroundColor: theme.colors.background },
-                  ]}
-                >
-                  <Icon
-                    name="download"
-                    size={20}
-                    color={theme.dark ? "gray" : "silver"}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.settingText,
-                    { color: theme.dark ? "gray" : "silver" },
-                  ]}
-                >
-                  Check for Updates
-                </Text>
-              </View>
-
-              <Icon
-                name="download"
-                size={20}
-                color={theme.dark ? "gray" : "silver"}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Save Button */}
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              { backgroundColor: theme.dark ? "#2A2A2A" : "gray" },
-            ]}
-            onPress={saveSettings}
-          >
-            <Text style={styles.saveButtonText}>Save Settings</Text>
-          </TouchableOpacity>
-
-          {/* Reset Button */}
-          <TouchableOpacity
-            style={[styles.resetButton]}
-            onPress={restoreDefault}
-          >
-            <Text
-              style={[
-                styles.resetButtonText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-              ]}
-            >
-              Reset to Defaults
-            </Text>
-          </TouchableOpacity>
-
-          {/* Saving Theme Modal */}
-          <Modal transparent={true} visible={savingTheme} animationType="fade">
-            <View style={styles.modalBackground}>
-              <View
-                style={[
-                  styles.modalContainer,
-                  { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.modalText,
-                    { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
-                  ]}
-                >
-                  Saving Theme...
-                </Text>
-              </View>
-            </View>
-          </Modal>
-        </ScrollView>
-      )}
+        <SavingModal
+          visible={savingTheme}
+          theme={theme}
+          accentColor={accentColor}
+        />
+      </ScrollView>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    paddingTop: 40,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: "serif",
-    fontWeight: "700",
-    marginBottom: 12,
-    marginTop: 20,
-  },
-  settingsGroup: {
-    borderRadius: 16,
-    padding: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderRadius: 12,
-  },
-  settingLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 5,
-  },
-  settingText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  separator: {
-    height: 1,
-    backgroundColor: "#E0E0E0",
-    marginHorizontal: 16,
-  },
-  previewSection: {
-    padding: 16,
-  },
-  selectBox: {
-    marginBottom: 16,
-    borderRadius: 8,
-    borderWidth: 0,
-    padding: 12,
-  },
-  dropdown: {
-    borderRadius: 8,
-    borderWidth: 0,
-    marginTop: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sliderContainer: {
-    marginBottom: 16,
-  },
-  sliderLabel: {
-    fontSize: 14,
-    marginBottom: 8,
-    fontFamily: "Philosopher-Regular",
-  },
-  slider: {
-    height: 40,
-  },
-  previewBox: {
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  previewText: {
-    textAlign: "center",
-    fontFamily: "Philosopher-Regular",
-  },
-  saveButton: {
-    marginTop: 24,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  resetButton: {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  resetButtonText: {
-    fontSize: 14,
-  },
-  modalBackground: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    padding: 24,
-    borderRadius: 16,
-    width: "80%",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-});
 
 export default Settings;

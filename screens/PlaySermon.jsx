@@ -4,11 +4,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
 import Modal from 'react-native-modal';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import { SermonContext } from '../Logic/globalState';
+import { useAppContext } from '../Logic/globalState';
 
 
 const DownloadSermon = () => {
-  const { selectedSermon } = useContext(SermonContext)
+  const { selectedSermon } = useAppContext()
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);

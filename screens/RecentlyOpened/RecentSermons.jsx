@@ -7,7 +7,7 @@ import React, {
   useContext,
   Suspense,
 } from "react";
-import { SermonContext } from "../../Logic/globalState";
+import { SermonContext, useAppContext } from "../../Logic/globalState";
 import { useAppTheme } from "../../Logic/theme";
 import {
   Image,
@@ -52,7 +52,7 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 
 function RecentlyOpenedSermons() {
   const { setSelectedSermon, recentlyOpened,setRecentlyOpened,theme } =
-    React.useContext(SermonContext);
+    useAppContext();
     // const {theme} = useAppTheme()
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");

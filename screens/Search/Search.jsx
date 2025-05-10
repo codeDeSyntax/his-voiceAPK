@@ -13,7 +13,7 @@ import {
   Modal,
   SafeAreaView
 } from "react-native";
-import { SermonContext } from "../../Logic/globalState";
+import { SermonContext, useAppContext } from "../../Logic/globalState";
 import { ActivityIndicator } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AntDesign } from "@expo/vector-icons";
@@ -37,7 +37,7 @@ const EXPANDED_CONTEXT_LENGTH = 150;
 const POPUP_CONTEXT_LENGTH = 1500;
 
 const SermonSearch = () => {
-  const { theme, searchText, setSearchText } = useContext(SermonContext);
+  const { theme, searchText, setSearchText } = useAppContext();
   const [searchPhrase, setSearchPhrase] = useState(searchText);
   const [filteredSermons, setFilteredSermons] = useState([]);
   const [expandedSermons, setExpandedSermons] = useState(new Set());
