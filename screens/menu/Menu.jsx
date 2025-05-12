@@ -97,7 +97,7 @@ const Menu = () => {
         <MenuSection>
           <MenuItem
             title="Current Sermon"
-            onPress={() => navigateTo("currentsermon")}
+            onPress={() => navigateTo("screens/CurrentSermon")}
             icon="book-outline"
           />
           <MenuItem

@@ -51,7 +51,7 @@ const ProfileSection = ({ theme, accentColor }) => {
         </Text>
       </View>
       <View style={[styles.chip, { backgroundColor: accentColor }]}>
-        <Text style={[styles.chipText, { color: "#FFFFFF" }]}>Free</Text>
+        <Text style={[styles.chipText, { color: "#FFFFFF" }]}>Hisv</Text>
       </View>
     </View>
   );

@@ -5,6 +5,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 16,
     paddingTop: 10,
+    gap: 2,
   },
   sermonItem: {
     paddingHorizontal: 12,
@@ -20,6 +21,8 @@ export const styles = StyleSheet.create({
     fontFamily: "serif",
     marginBottom: 4,
     color: "#bfc7ca",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   animatedMicrophone: {},
   modalOverlay: {
@@ -80,7 +83,7 @@ export const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    marginBottom:10
+    marginBottom: 10,
   },
   label: {
     fontSize: 18,
@@ -92,7 +95,7 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 100,
-    elevation: 5,
+    // elevation: 5,
   },
   searchInput: {
     flex: 1,
@@ -100,7 +103,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 16,
     color: "#fafafa",
-    borderRadius:100
+    borderRadius: 100,
   },
   searchButton: {
     height: 40,
@@ -109,5 +112,20 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     borderTopRightRadius: 100,
     borderBottomRightRadius: 100,
+  },
+  scrollIndicatorContainer: {
+    width: "100%",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  scrollIndicator: {
+    width: 40,
+    height: 5,
+    borderRadius: 5,
+    backgroundColor: "#ccc",
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 30,
   },
 });

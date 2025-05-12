@@ -1,7 +1,9 @@
-import { StyleSheet, Platform, StatusBar } from "react-native";
+import { StyleSheet, Platform, StatusBar, Dimensions } from "react-native";
 
+const { width, height } = Dimensions.get("window");
 const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 44 : StatusBar.currentHeight;
 const TOP_BAR_HEIGHT = 60;
+const BOTTOM_SHEET_HANDLE_HEIGHT = 20;
 
 const styles = StyleSheet.create({
   container: {
@@ -9,15 +11,15 @@ const styles = StyleSheet.create({
     paddingTop: STATUSBAR_HEIGHT,
   },
   scrollViewContainer: {
-    paddingHorizontal: 15,
-    paddingTop: TOP_BAR_HEIGHT + 10,
+    paddingHorizontal: 8,
+    paddingTop: 10,
     paddingBottom: 100,
   },
   sermonText: {
     lineHeight: 28,
     marginBottom: 18,
     textAlign: "left",
-    fontSize: 16,
+    // fontSize: 16,
   },
   highlightedText: {
     backgroundColor: "rgba(59, 130, 246, 0.1)",
@@ -29,29 +31,31 @@ const styles = StyleSheet.create({
     color: "#4a90e2",
     fontWeight: "500",
     fontStyle: "italic",
-    fontFamily: "Philosopher-Regular",
+    fontFamily: "",
   },
   titleText: {
     fontFamily: "serif",
     fontWeight: "900",
-    fontSize: 24,
-    textAlign: "left",
+    fontSize: 20,
+    textAlign: "center",
     marginBottom: 8,
     textDecorationLine: "underline",
+    
   },
   locationText: {
     fontFamily: "serif",
     fontWeight: "500",
-    fontSize: 16,
+    fontSize: 14,
     fontStyle: "italic",
     marginBottom: 24,
+    textAlign: "center",
   },
   floatingButton: {
     position: "absolute",
-    right: 10,
+    right: 20,
+    top: "50%",
     backgroundColor: "#2d2d2d",
     borderRadius: 30,
-    marginBottom: 15,
     width: 50,
     height: 50,
     justifyContent: "center",
@@ -61,57 +65,159 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    zIndex: 100,
   },
-  navigationContainer: {
+  
+  // Bottom sheet styles - Updated for custom implementation
+  overlay: {
     position: "absolute",
-    top: TOP_BAR_HEIGHT + 10,
-    left: 15,
-    right: 15,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+  },
+  bottomSheet: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: height * 0.8, // Maximum height (80% of screen)
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    backgroundColor: "white",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+    elevation: 6,
+    zIndex: 60,
+  },
+  bottomSheetHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#D9D9D9",
+    marginVertical: 10,
+    alignSelf: "center",
+  },
+  bottomSheetContent: {
+    padding: 16,
+  },
+  
+  // Paragraph styles
+  paragraphContainer: {
+    flexDirection: "row",
+    marginBottom: 18,
+  },
+  paragraphNumber: {
+    // minWidth: 30,
+    fontWeight: "bold",
+    fontSize: 15,
+    marginRight: 8,
+    textAlign: "right",
+    paddingTop: 3,
+  },
+  paragraphText: {
+    flex: 1,
+    lineHeight: 32,
+    // fontSize: 16,
+  },
+  
+  // Controls in bottom sheet
+  controlSection: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    // justifyContent: "space-around",
+    gap:2,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  controlButton: {
+    padding: 10,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    backgroundColor: "#f0f0f0",
+  },
+  controlButtonText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  
+  // Search section
+  searchContainer: {
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+    height: 40,
+  },
+  searchResults: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderRadius: 20,
-    padding: 10,
+    marginTop: 8,
+    paddingHorizontal: 10,
+  },
+  navigationButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  navButton: {
+    padding: 8,
+    marginHorizontal: 5,
+    backgroundColor: "#2d2d2d",
+    borderRadius: 8,
+  },
+  navButtonText: {
+    color: "white",
+    fontSize: 14,
   },
   matchesText: {
     fontSize: 14,
     color: "#555",
+    fontFamily: "serif",
   },
-  navButton: {
-    padding: 8,
-    backgroundColor: "#2d2d2d",
-    borderRadius: 15,
-  },
-  navButtonText: {
-    fontSize: 16,
-    color: "white",
-  },
-  floatingCard: {
-    position: "absolute",
-    right: 20,
-    bottom: 300,
-    backgroundColor: "rgba(45, 45, 45, 0.95)",
-    borderRadius: 15,
+  
+  // Sermon info section
+  sermonInfoContainer: {
     padding: 15,
-    width: 250,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    marginBottom: 16,
   },
-  floatingCardTitle: {
-    color: "white",
+  sermonInfoTitle: {
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 8,
+    fontFamily: "serif",
   },
-  floatingCardText: {
-    color: "white",
+  sermonInfoText: {
     fontSize: 14,
     marginBottom: 4,
+    fontFamily: "serif",
   },
+  
+  // Top bar styles
   topBar: {
     position: "absolute",
     top: STATUSBAR_HEIGHT,
@@ -145,6 +251,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     fontFamily: "serif",
+    fontFamily: "serif",
   },
   topBarButtonsContainer: {
     flexDirection: "row",
@@ -157,6 +264,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 6,
+  },
+  
+  // Search Feedback styles
+  feedbackContainer: {
+    position: "absolute",
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    borderRadius: 8,
+    padding: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 70,
+  },
+  feedbackText: {
+    color: "white",
+    fontWeight: "bold",
+    fontFamily: "serif",
   },
 });
 

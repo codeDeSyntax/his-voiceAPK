@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  StatusBar as RNStatusBar, 
-  View, 
+import React, { useState, useEffect, useRef } from "react";
+import {
+  StatusBar as RNStatusBar,
+  View,
   Dimensions,
-  PanResponder, 
+  PanResponder,
   Platform,
-  BackHandler
-} from 'react-native';
-import { useAppContext } from '../Logic/globalState';
+  BackHandler,
+} from "react-native";
+import { useAppContext } from "../Logic/globalState";
 
 const THRESHOLD = 15; // Reduced threshold distance to show the status bar
 const HIDE_DELAY = 1500; // Reduced time to hide status bar after inactivity
@@ -18,9 +18,6 @@ const AppStatusBar = () => {
   const lastTouch = useRef(new Date().getTime());
   const hideTimer = useRef(null);
 
- 
-
-  
   // Create pan responder to detect touches at the top of the screen
   const panResponder = useRef(
     PanResponder.create({
@@ -39,14 +36,14 @@ const AppStatusBar = () => {
         if (gestureState.dy > THRESHOLD) {
           showStatusBar();
         }
-      }
+      },
     })
   ).current;
 
   // Handle scroll event from a ScrollView/FlatList
   const handleScroll = (event) => {
     const { contentOffset } = event.nativeEvent;
-    
+
     // If scroll position is near top
     if (contentOffset.y < THRESHOLD) {
       showStatusBar();
@@ -62,7 +59,7 @@ const AppStatusBar = () => {
     if (hideTimer.current) {
       clearTimeout(hideTimer.current);
     }
-    
+
     setIsVisible(true);
     // Schedule hiding after delay
     scheduleHide();
@@ -78,7 +75,7 @@ const AppStatusBar = () => {
     if (hideTimer.current) {
       clearTimeout(hideTimer.current);
     }
-    
+
     hideTimer.current = setTimeout(() => {
       hideStatusBar();
     }, HIDE_DELAY);
@@ -94,16 +91,16 @@ const AppStatusBar = () => {
   }, []);
 
   return (
-    <View 
-      style={{ position: 'absolute', top: 0, left: 0, right: 0 }}
+    <View
+      style={{ position: "absolute", top: 0, left: 0, right: 0 }}
       {...panResponder.panHandlers}
     >
-      <RNStatusBar 
-        barStyle={theme.dark ? "light-content" : "dark-content"} 
+      <RNStatusBar
+        barStyle={theme.dark ? "light-content" : "dark-content"}
         backgroundColor={theme.dark ? "black" : "white"}
         animated={false}
         hidden={!isVisible}
-        
+        translucent={true}
       />
     </View>
   );
@@ -113,19 +110,19 @@ const AppStatusBar = () => {
 export const withStatusBarHandler = (Component) => {
   return (props) => {
     const statusBarRef = useRef(null);
-    
+
     const handleScroll = (event) => {
       // Trigger status bar behavior
       if (statusBarRef.current) {
         statusBarRef.current.handleScroll(event);
       }
-      
+
       // Make sure to call the original onScroll if it exists
       if (props.onScroll) {
         props.onScroll(event);
       }
     };
-    
+
     return (
       <>
         <AppStatusBar ref={statusBarRef} />

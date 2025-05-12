@@ -11,6 +11,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "../styles/Allsermons";
 import { useAppContext } from "../Logic/globalState";
+import { Pressable } from "react-native-gesture-handler";
 
 const SermonListView = ({
   theme,
@@ -50,7 +51,7 @@ const SermonListView = ({
       style={{
         fontSize: 9,
         color: theme.colors.ltext,
-        fontFamily: "monospace",
+        fontFamily: "Palatino",
       }}
     >
       Location not found
@@ -58,12 +59,12 @@ const SermonListView = ({
   );
 
   const renderSermonItem = ({ item, index }) => (
-    <TouchableOpacity
+    <Pressable
       key={item.id}
       style={[
         styles.sermonItem,
         {
-          width: numberOfColumns === 2 ?"50%" :"100%",
+          width: numberOfColumns === 2 ? "48%" : "100%",
           borderWidth: 1,
           borderColor: theme.dark === true ? theme.colors.secondary : "#f4f6f3",
           elevation: 1,
@@ -74,6 +75,11 @@ const SermonListView = ({
             : "#fafafa",
         },
       ]}
+      android_ripple={{
+        color: theme.dark
+          ? "rgba(255,255,255,0.1)"
+          : "rgba(0,0,0,0.05)",
+      }}
       onPress={() => handleSermonClick(item)}
     >
       <View
@@ -111,7 +117,7 @@ const SermonListView = ({
         }}
       >
         <Text style={[styles.sermonTitle, { color: theme.colors.text }]}>
-          {item.title.slice(0, 20) + "   "}{" "}
+          {item.title.slice(0, 18) }{item.title.length > 20 ? "..." : ""}
           <FontAwesome5 name="caret-right" color={theme.colors.ltext} />
         </Text>
       </View>
@@ -120,12 +126,12 @@ const SermonListView = ({
           fontSize: 9,
           color: theme.colors.ltext,
           paddingBottom: 4,
-          fontFamily: "monospace",
+          fontFamily: "Palatino",
         }}
       >
         {item.location ? item.location : <LocationNotFound />}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (
@@ -135,7 +141,8 @@ const SermonListView = ({
       initialNumToRender={10}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.listContent}
-      numColumns={numberOfColumns}
+      numColumns={2}
+      columnWrapperStyle={{ justifyContent: "space-between" }}
       // ItemSeparatorComponent={" "}
 
       //   ListHeaderComponent={listHeaderComponent}

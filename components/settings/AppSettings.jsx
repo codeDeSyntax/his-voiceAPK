@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { styles } from "../../styles/settings";
 
-const AppSettings = ({ theme, navigation }) => {
+const AppSettings = ({ theme, router }) => {
   const getSettingItemStyle = (disabled) => {
     return [styles.settingItem, { opacity: disabled ? 0.5 : 1 }];
   };
@@ -33,7 +33,7 @@ const AppSettings = ({ theme, navigation }) => {
     >
       <TouchableOpacity
         style={styles.settingItem}
-        onPress={() => navigation?.navigate("About")}
+        onPress={() => router.push("screens/About")}
       >
         <View style={styles.settingLeft}>
           <View style={getIconContainerStyle()}>

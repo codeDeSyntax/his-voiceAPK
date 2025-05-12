@@ -2,7 +2,9 @@ import React from 'react'
 import { View ,Text, } from 'react-native'
 import { styles } from '../styles/Allsermons'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 const ListAppBar = ({theme}) => {
+  const router  = useRouter();
   return (
      <View
             style={{
@@ -20,11 +22,19 @@ const ListAppBar = ({theme}) => {
             >
               R.L.L sermons
             </Text>
-            <Ionicons
+          <View style={{flexDirection: "row", gap: 10}}>
+          <Ionicons
               name="book"
               size={20}
               color={theme.dark === true ? theme.colors.text : "gray"}
             />
+            <Ionicons
+              name="settings"
+              size={20}
+              color={theme.dark === true ? theme.colors.text : "gray"}
+              onPress={() => router.push("screens/Settings")}
+            />
+          </View>
           </View>
   )
 }

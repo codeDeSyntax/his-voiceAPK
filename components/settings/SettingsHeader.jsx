@@ -5,14 +5,19 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { styles } from "../../styles/settings";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 const SettingsHeader = ({ theme, accentColor }) => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const getIconContainerStyle = () => {
     return [
       styles.iconContainer,
       {
-        backgroundColor: accentColor,
+        // backgroundColor: accentColor,
+        borderRadius:100,
+        borderStyle:"dashed",
+        borderWidth:1,
+        borderColor:theme.colors.text,
         opacity: 0.9,
         shadowColor: theme.dark ? "#000" : "#888",
         shadowOffset: { width: 0, height: 2 },
@@ -46,19 +51,19 @@ const SettingsHeader = ({ theme, accentColor }) => {
         <View
           style={[
             getIconContainerStyle(),
-            { backgroundColor: theme.colors.secondary },
+            // { backgroundColor: theme.colors.secondary },
           ]}
         >
-          <Icon name="settings-outline" size={24} color="#FFFFFF" />
+          <Icon name="settings-outline" size={24} color={theme.colors.text} />
         </View>
         <Pressable
-          onPress={() => navigation.navigate("AllSermons")}
+          onPress={() => router.push("screens/AllSermons")}
           style={[
             getIconContainerStyle(),
-            { backgroundColor: theme.colors.secondary },
+            // { backgroundColor: theme.dark ? "#121212":"gray"},
           ]}
         >
-          <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+          <Ionicons name="arrow-back-outline" size={24} color={theme.colors.text} />
         </Pressable>
       </View>
     </View>

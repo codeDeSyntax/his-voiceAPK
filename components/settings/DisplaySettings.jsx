@@ -6,6 +6,7 @@ import { Switch } from "react-native-paper";
 import Slider from "@react-native-community/slider";
 import { styles } from "../../styles/settings";
 import { FONT_OPTIONS, COLOR_OPTIONS } from "../../screens/settings/Settings";
+import { useAppContext } from "../../Logic/globalState";
 
 const DisplaySettings = ({
   theme,
@@ -21,6 +22,7 @@ const DisplaySettings = ({
   const [showFontOptions, setShowFontOptions] = useState(false);
   const [showColorOptions, setShowColorOptions] = useState(false);
   const [localAccentColor, setLocalAccentColor] = useState(accentColor);
+  const {updateSettings} = useAppContext()
 
   const getSettingItemStyle = (disabled) => {
     return [styles.settingItem, { opacity: disabled ? 0.5 : 1 }];

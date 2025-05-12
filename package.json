@@ -1,7 +1,7 @@
 {
   "name": "hisvoice",
   "version": "1.0.0",
-   "main": "expo-router/entry",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -13,17 +13,14 @@
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/hooks": "^3.0.0",
     "@react-native-community/slider": "4.5.6",
-    "@react-native-picker/picker": "2.11.0",
-    "@react-navigation/bottom-tabs": "^7.2.0",
-    "@react-navigation/native": "^7.0.14",
-    "@react-navigation/native-stack": "^7.2.0",
-    "@react-navigation/stack": "^7.3.1",
     "expo": "53.0.9",
     "expo-blur": "~14.1.4",
     "expo-clipboard": "~7.1.4",
+    "expo-constants": "~17.1.6",
     "expo-font": "~13.3.1",
     "expo-linear-gradient": "~14.1.4",
-    "expo-navigation-bar": "~4.2.4",
+    "expo-linking": "~7.1.4",
+    "expo-navigation-bar": "^4.2.4",
     "expo-router": "~5.0.6",
     "expo-splash-screen": "~0.30.8",
     "expo-status-bar": "~2.2.3",
@@ -32,16 +29,17 @@
     "react-native": "0.79.2",
     "react-native-dropdown-select-list": "^2.0.5",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-haptic-feedback": "^2.3.3",
     "react-native-modal": "^13.0.1",
     "react-native-paper": "^5.12.5",
+    "react-native-reanimated": "^3.17.5",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.10.0",
-    "expo-linking": "~7.1.4",
-    "expo-constants": "~17.1.6"
+    "react-native-screens": "~4.10.0"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "@types/react": "~19.0.10"
+    "@types/react": "~19.0.10",
+    "typescript": "^5.8.3"
   },
   "private": true
 }
