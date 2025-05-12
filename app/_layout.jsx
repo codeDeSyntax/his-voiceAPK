@@ -50,6 +50,7 @@ const RootLayout = () => {
             name="screens/Updating"
             options={{ headerShown: false, navigationBarHidden: true }}
           />
+          
         </Stack>
       </SermonProvider>
     </GestureHandlerRootView>

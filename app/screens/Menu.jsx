@@ -177,7 +177,7 @@ const Menu = () => {
           />
           <MenuItem
             title="Recent"
-            onPress={() => navigateTo("Recent")}
+            onPress={() => navigateTo("RecentSermons")}
             icon="time-outline"
           />
           <MenuItem
