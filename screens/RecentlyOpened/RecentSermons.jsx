@@ -87,7 +87,7 @@ const RecentlyOpenedSermons = () => {
   const handleSermonClick = (sermon) => {
 
     setSelectedSermon(sermon);
-    navigation?.navigate("Home");
+    navigation?.navigate("currentsermon");
 
   };
 

@@ -87,21 +87,21 @@ function SermonList() {
   const handleSermonClick = async (sermon) => {
     try {
       // Set the selected sermon in context
-      // setSelectedSermon(sermon);
+      setSelectedSermon(sermon);
 
       // Update recently opened sermons
-      // const updatedRecentlyOpenedSermons = [
-      //   sermon,
-      //   ...recentlyOpened.filter((s) => s.id !== sermon.id),
-      // ].slice(0, 10);
+      const updatedRecentlyOpenedSermons = [
+        sermon,
+        ...recentlyOpened.filter((s) => s.id !== sermon.id),
+      ].slice(0, 10);
 
-      // addToRecentlyOpened(sermon);
+      addToRecentlyOpened(sermon);
 
-      // // Store in AsyncStorage
-      // await AsyncStorage.setItem(
-      //   "recentlyOpenedSermons",
-      //   JSON.stringify(updatedRecentlyOpenedSermons)
-      // );
+      // Store in AsyncStorage
+      await AsyncStorage.setItem(
+        "recentlyOpenedSermons",
+        JSON.stringify(updatedRecentlyOpenedSermons)
+      );
 
       // Navigate
       if (navigation) {
