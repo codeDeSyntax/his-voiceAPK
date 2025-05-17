@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -8,26 +8,24 @@ import {
   StyleSheet,
   ImageBackground,
   Alert,
+  SafeAreaView,
+  StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Clipboard from "expo-clipboard";
-import Modal from "react-native-modal";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
-import { useAppContext } from "../Logic/globalState";
+import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useAppContext } from "../../Logic/globalState";
 
 const DownloadSermon = () => {
   const { selectedSermon } = useAppContext();
-  const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [modalMessage, setModalMessage] = useState("");
   const [isCopied, setIsCopied] = useState(false);
-  const [text, setText] = useState(selectedSermon?.audioUrl);
+  const audioUrl = selectedSermon?.audioUrl || "";
 
-  // Function to copy text with feedback
+  // Function to copy URL to clipboard
   const copyToClipboard = async () => {
     try {
-      await Clipboard.setStringAsync(text);
+      await Clipboard.setStringAsync(audioUrl);
       setIsCopied(true);
       Alert.alert("Success", "URL copied to clipboard");
       // Reset copy state after 2 seconds
@@ -39,202 +37,246 @@ const DownloadSermon = () => {
     }
   };
 
-  const audioUrl = selectedSermon?.audioUrl;
+  // Function to open URL in external browser
+  const openInBrowser = async () => {
+    if (!audioUrl) {
+      Alert.alert("Error", "No URL available");
+      return;
+    }
 
-  const handleLinkPress = (url) => {
-    Linking.openURL(url);
-  };
-
-  const showModal = (message) => {
-    setModalMessage(message);
-    setIsModalVisible(true);
-    setTimeout(() => {
-      setIsModalVisible(false);
-    }, 2000);
+    setIsLoading(true);
+    try {
+      const supported = await Linking.canOpenURL(audioUrl);
+      if (supported) {
+        await Linking.openURL(audioUrl);
+      } else {
+        Alert.alert("Error", "Cannot open this URL");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open URL");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <ImageBackground
-      source={require("../assets/icon.png")}
-      style={styles.backgroundImage}
-    >
-      <LinearGradient
-        colors={["rgba(0, 0, 0, 0.1)", "#000000", "#000000"]}
-        locations={[0, 0.5, 1]}
-        style={styles.gradient}
+    <View style={[styles.safeArea]}>
+      {/* <StatusBar barStyle="light-content" /> */}
+      <ImageBackground
+        source={require("../../assets/icon.png")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
       >
-        <View style={styles.container}>
-          <View style={styles.urlContainer}>
-            <Text style={styles.urlText}>{audioUrl || "No URL available"}</Text>
-            <TouchableOpacity
-              style={[
-                styles.copyButton,
-                isCopied && styles.copyButtonSuccess,
-                { backgroundColor: "#202425" },
-              ]}
-              onPress={copyToClipboard}
-              activeOpacity={0.7}
-            >
-              <FontAwesome5
-                name={isCopied ? "check" : "copy"}
-                size={16}
-                color="white"
-                style={styles.copyIcon}
-              />
-              <Text style={styles.copyButtonText}>
-                {isCopied ? "Copied!" : "Copy URL"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.subtitle}>{selectedSermon.title}</Text>
-
-          <TouchableOpacity
-            onPress={() => showModal("upcoming in newer versions")}
-            style={[styles.playButton, { backgroundColor: "#202425" }]}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="large" color="white" />
-            ) : (
-              <>
-                <Ionicons
-                  name={isPlaying ? "pause" : "play"}
-                  size={48}
-                  color="white"
-                />
-                <Text style={styles.buttonText}>
-                  {isPlaying ? "Pause" : "Play"}
+        <LinearGradient
+          colors={[
+            "rgba(0, 0, 0, 0.8)",
+            "rgba(20, 20, 20, 0.9)",
+            "rgba(0, 0, 0, 0.95)",
+          ]}
+          style={styles.gradient}
+        >
+          <View style={styles.container}>
+            <View style={styles.headerSection}>
+              <View style={styles.titleContainer}>
+                <Text
+                  style={styles.title}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {selectedSermon?.title || "Sermon Title"}
                 </Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => showModal("upcoming in newer versions")}
-            style={[styles.downloadButton, { backgroundColor: "#202425" }]}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="large" color="white" />
-            ) : (
-              <>
-                <Ionicons name="download-outline" size={48} color="white" />
-                <Text style={styles.buttonText}>Download</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <Modal
-            isVisible={isModalVisible}
-            onBackdropPress={() => setIsModalVisible(false)}
-            style={styles.modal}
-          >
-            <View style={styles.modalContent}>
-              <Text style={styles.modalText}>{modalMessage}</Text>
+              </View>
             </View>
-          </Modal>
-        </View>
-      </LinearGradient>
-    </ImageBackground>
+
+            <View style={styles.urlSection}>
+              <View style={styles.urlCard}>
+                <Text style={styles.urlLabel}>AUDIO URL</Text>
+                <Text
+                  style={styles.urlText}
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  {audioUrl || "No URL available"}
+                </Text>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={copyToClipboard}
+                  activeOpacity={0.7}
+                  disabled={!audioUrl}
+                >
+                  <FontAwesome5
+                    name={isCopied ? "check" : "copy"}
+                    size={16}
+                    color="white"
+                  />
+                  <Text style={styles.copyButtonText}>
+                    {isCopied ? "Copied!" : "Copy URL"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.actionsSection}>
+              <TouchableOpacity
+                onPress={openInBrowser}
+                style={[styles.actionButton, styles.playButton]}
+                disabled={isLoading || !audioUrl}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="large" color="white" />
+                ) : (
+                  <>
+                    <Ionicons name="play-circle" size={32} color="white" />
+                    <Text style={styles.buttonText}>Play in Browser</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={openInBrowser}
+                style={[styles.actionButton, styles.downloadButton]}
+                disabled={isLoading || !audioUrl}
+              >
+                <MaterialIcons name="cloud-download" size={32} color="white" />
+                <Text style={styles.buttonText}>Download</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                Tap any button to open in your browser
+              </Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "space-between",
     padding: 20,
   },
   backgroundImage: {
     flex: 1,
     width: "100%",
-    height: "100%", // not "50%"
   },
   gradient: {
     flex: 1,
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
+  },
+  headerSection: {
+    marginTop: 30,
     alignItems: "center",
   },
-  urlContainer: {
-    flexDirection: "column",
+  titleContainer: {
+    width: "100%",
     alignItems: "center",
-    // backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 20,
-    // width: '90%',
+    marginBottom: 10,
+  },
+  title: {
+    color: "#ffffff",
+    fontSize: 28,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 5,
+  },
+  urlSection: {
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  urlCard: {
+    backgroundColor: "rgba(32, 36, 37, 0.8)",
+    borderRadius: 16,
+    padding: 20,
+    width: "100%",
     maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  urlLabel: {
+    color: "#B0B0B0",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 10,
+    letterSpacing: 1,
   },
   urlText: {
-    // flex: 1,
     color: "#ffffff",
-    fontSize: 30,
-    marginRight: 10,
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: "center",
+    width: "100%",
   },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "#007AFF",
-  },
-  copyButtonSuccess: {
-    backgroundColor: "#34C759",
-  },
-  copyIcon: {
-    marginRight: 6,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 30,
+    backgroundColor: "rgba(0, 122, 255, 0.7)",
+    width: "80%",
   },
   copyButtonText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
+    marginLeft: 8,
   },
-  subtitle: {
-    color: "#B0B0B0",
-    fontSize: 18,
-    marginBottom: 30,
-    textAlign: "center",
+  actionsSection: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 18,
+    borderRadius: 16,
+    width: "80%",
+    maxWidth: 350,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   playButton: {
-    padding: 20,
-    borderRadius: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    minWidth: 200,
-    justifyContent: "center",
+    backgroundColor: "rgba(32, 36, 37, 0.9)",
+    borderWidth: 1,
+    borderColor: "#4CAF50",
   },
   downloadButton: {
-    padding: 20,
-    borderRadius: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    minWidth: 200,
-    justifyContent: "center",
+    backgroundColor: "rgba(32, 36, 37, 0.9)",
+    borderWidth: 1,
+    borderColor: "#007AFF",
   },
   buttonText: {
     color: "white",
     fontSize: 18,
+    fontWeight: "600",
     marginLeft: 10,
   },
-  modal: {
-    justifyContent: "center",
+  footer: {
     alignItems: "center",
+    marginBottom: 20,
   },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  modalText: {
-    fontSize: 16,
-    color: "#333",
+  footerText: {
+    color: "#B0B0B0",
+    fontSize: 14,
+    fontStyle: "italic",
   },
 });
 

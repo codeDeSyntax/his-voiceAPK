@@ -1,26 +1,65 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Text, View, ScrollView, StatusBar, Platform } from "react-native";
-import { useAppContext } from "../Logic/globalState";
-import { useRouter } from "expo-router";
-import { formatSermonIntoParagraphs, searchSermon } from "../utils/SermonUtils";
-import ParagraphText from "../components/ParagraphText";
-import BottomSheetManager from "../components/BottomSheetManager";
-import PlaySermon from "./PlaySermon";
-import { styles } from "../styles/sermon";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import {
+  Text,
+  View,
+  ScrollView,
+  StatusBar,
+  Platform,
+  KeyboardAvoidingView,
+  Keyboard,
+} from "react-native";
+import { useAppContext } from "../../Logic/globalState";
+import {
+  formatSermonIntoParagraphs,
+  searchSermon,
+} from "../../Utils/sermonUtils";
+import ParagraphText from "../../components/currentSermon/ParagraphText";
+import CustomBottomSheetController from "../../components/currentSermon/BottomSheetController";
+import DraggableFloatingBackButton from "../../components/FloatButton";
+import SearchFeedback from "../../components/currentSermon/SearchFeedback";
+import PlaySermon from "../../components/currentSermon/PlaySermon";
+import { styles } from "../../styles/currentsermon";
+import { useNavigation } from "@react-navigation/native";
+import AppStatusBar from "../../components/StatusBar";
 
 const CurrentSermon = () => {
   const { selectedSermon, settings, theme, searchText } = useAppContext();
-  const router = useRouter();
+  const router = useNavigation();
   const [searchPhrase, setSearchPhrase] = useState(searchText || "");
   const [searchResults, setSearchResults] = useState([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   const [paragraphLayouts, setParagraphLayouts] = useState({});
-  
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
   const scrollViewRef = useRef(null);
 
   // Format sermon into paragraphs
   const paragraphs = formatSermonIntoParagraphs(selectedSermon?.sermon || "");
+
+  // Add keyboard listeners to track keyboard state
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // Update search results when search phrase changes
   useEffect(() => {
@@ -28,7 +67,7 @@ const CurrentSermon = () => {
       const results = searchSermon(paragraphs, searchPhrase);
       setSearchResults(results);
       setCurrentResultIndex(0);
-      
+
       // Scroll to first result if exists
       if (results.length > 0 && paragraphLayouts[results[0]]) {
         scrollToParagraph(results[0]);
@@ -39,49 +78,67 @@ const CurrentSermon = () => {
   }, [searchPhrase]);
 
   // Store paragraph layout information for scrolling
-  const handleParagraphLayout = (index, event) => {
+  const handleParagraphLayout = useCallback((index, event) => {
     const layout = event.nativeEvent.layout;
-    setParagraphLayouts(prev => ({
+    setParagraphLayouts((prev) => ({
       ...prev,
       [index]: {
         y: layout.y,
-        height: layout.height
-      }
+        height: layout.height,
+      },
     }));
-  };
+  }, []);
+
+  // Effect to collect all paragraph layouts and their positions
+  useEffect(() => {
+    // Reset layouts when sermon changes
+    setParagraphLayouts({});
+  }, [selectedSermon?.sermon]);
 
   // Scroll to specific paragraph by index
-  const scrollToParagraph = (index) => {
+  const scrollToParagraph = useCallback((index) => {
     if (paragraphLayouts[index] && scrollViewRef.current) {
+      // Calculate position to scroll to, with some padding to see context
+      const scrollPosition = Math.max(0, paragraphLayouts[index].y - 100);
+
       scrollViewRef.current.scrollTo({
-        y: paragraphLayouts[index].y,
-        animated: true
+        y: scrollPosition,
+        animated: true,
       });
     }
-  };
+  }, [paragraphLayouts]);
 
   // Scroll to top of sermon
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-  };
+  }, []);
 
   // Scroll to bottom of sermon
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     scrollViewRef.current?.scrollTo({ y: contentHeight, animated: true });
-  };
+  }, [contentHeight]);
 
   // Navigate to a search result
-  const navigateToResult = (paragraphIndex) => {
+  const navigateToResult = useCallback((paragraphIndex) => {
     scrollToParagraph(paragraphIndex);
-  };
+
+    // Show feedback
+    setFeedbackMessage(`Navigated to paragraph ${paragraphIndex + 1}`);
+    setShowFeedback(true);
+
+    // Hide feedback after delay
+    setTimeout(() => {
+      setShowFeedback(false);
+    }, 2000);
+  }, [scrollToParagraph]);
 
   // Navigate back to all sermons
-  const handleBack = () => {
-    router.push("screens/AllSermons");
-  };
+  const handleBack = useCallback(() => {
+    router?.navigate("AllSermons");
+  }, [router]);
 
   // Render paragraphs with numbering
-  const renderSermonText = () => {
+  const renderSermonText = useCallback(() => {
     return paragraphs.map((paragraph, index) => (
       <ParagraphText
         key={`paragraph-${index}`}
@@ -91,53 +148,75 @@ const CurrentSermon = () => {
         theme={theme}
         settings={settings}
         onLayout={(event) => handleParagraphLayout(index, event)}
+        selectedSermon={selectedSermon}
       />
     ));
-  };
+  }, [paragraphs, searchPhrase, theme, settings, handleParagraphLayout]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
-      {selectedSermon?.type === "mp3" ? (
-        <PlaySermon sermon={selectedSermon} />
-      ) : (
-        <>
-          <ScrollView
-            ref={scrollViewRef}
-            scrollEventThrottle={16}
-            contentContainerStyle={styles.scrollViewContainer}
-            onContentSizeChange={(width, height) => {
-              setContentHeight(height);
-            }}
-          >
-            <View>
-              <Text style={[styles.titleText, { color: theme.colors.text }]}>
-                {selectedSermon?.title}
-              </Text>
-              {selectedSermon?.location && (
-                <Text style={[styles.locationText, { color: theme.colors.text }]}>
-                  {selectedSermon?.location}
-                </Text>
-              )}
+    <View style={{ flex: 1, backgroundColor: theme.colors.primary }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 50}
+        enabled={keyboardVisible}
+      >
+        <DraggableFloatingBackButton /> 
+        <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
+          {selectedSermon?.type === "mp3" ? (
+            <PlaySermon sermon={selectedSermon} />
+          ) : (
+            <>
+              <ScrollView
+                ref={scrollViewRef}
+                scrollEventThrottle={16}
+                contentContainerStyle={[
+                  styles.scrollViewContainer,
+                  { flexGrow: 1 }
+                ]}
+                onContentSizeChange={(width, height) => {
+                  setContentHeight(height);
+                }}
+              >
+                <View>
+                  <Text style={[styles.titleText, { color: "#044667" }]}>
+                    {selectedSermon?.title}
+                  </Text>
+                  {selectedSermon?.location && (
+                    <Text
+                      style={[styles.locationText, { color: theme.colors.text }]}
+                    >
+                      {selectedSermon?.location}
+                    </Text>
+                  )}
 
-              <View style={{ width: "100%" }}>{renderSermonText()}</View>
-            </View>
-          </ScrollView>
+                  <View style={{ width: "100%" }}>{renderSermonText()}</View>
+                </View>
+              </ScrollView>
 
-          <BottomSheetManager
-            theme={theme}
-            selectedSermon={selectedSermon}
-            searchPhrase={searchPhrase}
-            setSearchPhrase={setSearchPhrase}
-            searchResults={searchResults}
-            currentResultIndex={currentResultIndex}
-            setCurrentResultIndex={setCurrentResultIndex}
-            scrollToTop={scrollToTop}
-            scrollToBottom={scrollToBottom}
-            navigateToResult={navigateToResult}
-            onBack={handleBack}
-          />
-        </>
-      )}
+              <CustomBottomSheetController
+                theme={theme}
+                selectedSermon={selectedSermon}
+                searchPhrase={searchPhrase}
+                setSearchPhrase={setSearchPhrase}
+                searchResults={searchResults}
+                currentResultIndex={currentResultIndex}
+                setCurrentResultIndex={setCurrentResultIndex}
+                scrollToTop={scrollToTop}
+                scrollToBottom={scrollToBottom}
+                navigateToResult={navigateToResult}
+                onBack={handleBack}
+              />
+
+              <SearchFeedback
+                isVisible={showFeedback}
+                message={feedbackMessage}
+                theme={theme}
+              />
+            </>
+          )}
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };

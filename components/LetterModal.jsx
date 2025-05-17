@@ -5,7 +5,8 @@ import { styles } from "../styles/Allsermons";
 const LetterModal = ({ theme, isVisible, closeDropdown, alphabet, setSelectedLetter }) => {
   return (
     <Modal
-      transparent={true}
+      // transparent={true}
+      backdropColor={theme.colors.primary}
       visible={isVisible}
       onRequestClose={closeDropdown}
     >
@@ -58,7 +59,7 @@ const LetterModal = ({ theme, isVisible, closeDropdown, alphabet, setSelectedLet
             style={[
               styles.allLettersOption,
               {
-                backgroundColor: theme.dark ? "#2d2d2d" : "white",
+                backgroundColor: "#14aacc",
                 elevation: 5,
               },
             ]}
@@ -71,7 +72,7 @@ const LetterModal = ({ theme, isVisible, closeDropdown, alphabet, setSelectedLet
               style={[
                 styles.gridBtnText,
                 {
-                  color: theme.dark === true ? theme.colors.text : "gray",
+                  color: "white",
                 },
               ]}
             >

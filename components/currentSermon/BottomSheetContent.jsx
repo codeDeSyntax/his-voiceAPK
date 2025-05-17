@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { styles } from "../../styles/currentsermon";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 
 const BottomSheetContent = ({
   theme,
@@ -27,11 +27,11 @@ const BottomSheetContent = ({
 }) => {
   // Create a ref for the ScrollView to programmatically control it
   const scrollViewRef = useRef(null);
-  const router = useRouter();
+  const router = useNavigation();
 
   // Get window height to set a reasonable max height for the scroll view
   const windowHeight = Dimensions.get("window").height;
-  const maxHeight = windowHeight * 0.8; // Limit to 70% of screen height
+  const maxHeight = windowHeight * 0.6; // Limit to 70% of screen height
 
   // Function to scroll to top of the bottom sheet content
   const scrollToTop = () => {
@@ -209,7 +209,10 @@ const BottomSheetContent = ({
           </Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[styles.controlButton, { elevation: 3,backgroundColor:theme.colors.secondary }]}
+              style={[
+                styles.controlButton,
+                { elevation: 3, backgroundColor: theme.colors.secondary },
+              ]}
               onPress={() => {
                 onScrollToTop();
                 scrollToTop(); // Also scroll bottom sheet to top
@@ -225,7 +228,10 @@ const BottomSheetContent = ({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.controlButton, { elevation: 3,backgroundColor:theme.colors.secondary }]}
+              style={[
+                styles.controlButton,
+                { elevation: 3, backgroundColor: theme.colors.secondary },
+              ]}
               onPress={onScrollToBottom}
               activeOpacity={0.7}
             >
@@ -238,7 +244,10 @@ const BottomSheetContent = ({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.controlButton, { elevation: 3,backgroundColor:theme.colors.secondary }]}
+              style={[
+                styles.controlButton,
+                { elevation: 3, backgroundColor: theme.colors.secondary },
+              ]}
               onPress={onBack}
               activeOpacity={0.7}
             >
@@ -250,9 +259,12 @@ const BottomSheetContent = ({
               </Text> */}
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.controlButton, { elevation: 3,backgroundColor:theme.colors.secondary }]}
-            //   onPress={router.push("screens/Settings")}
-              onPress={() => router.push("screens/Settings")}
+              style={[
+                styles.controlButton,
+                { elevation: 3, backgroundColor: theme.colors.secondary },
+              ]}
+              //   onPress={router.push("screens/Settings")}
+              onPress={() => router.push("Settings")}
               activeOpacity={0.7}
             >
               <Feather name="settings" size={20} color={theme.colors.text} />

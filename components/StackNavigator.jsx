@@ -14,6 +14,7 @@ import Settings from '../screens/settings/Settings';
 import CurrentSermon from '../screens/Home/CurrentSermon';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import * as NavigationBar from "expo-navigation-bar";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 const Stack = createNativeStackNavigator();
 
 // Custom loading component with transparent background
@@ -32,32 +33,33 @@ const ScreenWithSuspense = (Component) => ({ navigation, route }) => (
 
 function StackNavigator() {
 
-    useEffect(() => {
-      const hideNavigationBar = async () => {
-        try {
-          console.log("Hiding navigation bar...");
-          // await NavigationBar.setPositionAsync("absolute");
-          await NavigationBar.setVisibilityAsync("hidden");
-          await NavigationBar.setBehaviorAsync("overlay-swipe");
-          console.log("Navigation bar hidden successfully.");
-        } catch (error) {
-          console.error("Error hiding navigation bar:", error);
-        }
-      };
+    // useEffect(() => {
+    //   const hideNavigationBar = async () => {
+    //     try {
+    //       console.log("Hiding navigation bar...");
+    //       // await NavigationBar.setPositionAsync("absolute");
+    //       await NavigationBar.setVisibilityAsync("hidden");
+    //       await NavigationBar.setBehaviorAsync("overlay-swipe");
+    //       console.log("Navigation bar hidden successfully.");
+    //     } catch (error) {
+    //       console.error("Error hiding navigation bar:", error);
+    //     }
+    //   };
   
-      if (Platform.OS === "android") {
-        hideNavigationBar();
-      }
-    }, []);
+    //   if (Platform.OS === "android") {
+    //     hideNavigationBar();
+    //   }
+    // }, []);
 
   const navigation = useNavigation();
    if (Platform.OS === 'android' && !BackHandler.removeEventListener) {
       BackHandler.removeEventListener = () => {
-        navigation.navigate(AllSermons)
+        navigation.navigate("AllSermons")
       };
     }
   return (
-    <Stack.Navigator 
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack.Navigator 
       initialRouteName="welcome"
       screenOptions={{
         headerShown: false,
@@ -95,40 +97,50 @@ function StackNavigator() {
       <Stack.Screen 
         name="welcome" 
         component={ScreenWithSuspense(Welcome)}
+        options={{navigationBarHidden:true}}
       />
       <Stack.Screen 
         name="Menu" 
         component={ScreenWithSuspense(Menu)}
+        options={{navigationBarHidden:true}}
       />
       <Stack.Screen 
         name="currentsermon" 
         component={ScreenWithSuspense(CurrentSermon)}
+        options={{navigationBarHidden:true}}
       />
       <Stack.Screen 
         name="AllSermons" 
         component={ScreenWithSuspense(SermonList)}
+        options={{navigationBarHidden:true}}
       />
       <Stack.Screen 
         name="Recent" 
         component={ScreenWithSuspense(RecentlyOpenedSermons)}
+        options={{navigationBarHidden:true}}
       />
       <Stack.Screen 
         name="Search" 
         component={ScreenWithSuspense(SermonSearch)}
+        options={{navigationBarHidden:true}}
       />
       <Stack.Screen 
         name="Settings" 
         component={ScreenWithSuspense(Settings)}
+        options={{navigationBarHidden:true}}
       />
       <Stack.Screen 
         name="About" 
         component={ScreenWithSuspense(About)}
+        options={{navigationBarHidden:true}}
       />
       <Stack.Screen 
         name="updating" 
         component={ScreenWithSuspense(UpdateScreen)}
+        options={{navigationBarHidden:true}}
       />
     </Stack.Navigator>
+    </GestureHandlerRootView>
   );
 }
 

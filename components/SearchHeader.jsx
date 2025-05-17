@@ -11,7 +11,7 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
         style={[
           styles.searchInputContainer,
           {
-            backgroundColor: theme.colors.secondary,
+            backgroundColor: theme.dark ? "#131313" : "#f3f3f3",
             borderWidth: theme.dark ? 1 : 0,
             borderColor: theme.colors.secondary,
           },
@@ -21,28 +21,32 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
           style={[
             styles.searchInput,
             {
-              backgroundColor: theme.colors.secondary,
+              backgroundColor: theme.dark ? "#131313" :"#f3f3f3",
               color: theme.dark === true ? theme.colors.text : "gray",
               fontFamily: "serif",
               fontStyle: "italic",
             },
           ]}
           placeholder="Search Sermons"
+
           value={searchText}
           onChangeText={setSearchText}
           placeholderTextColor={theme.dark === true ? "gray" : "gray"}
+        
           selectionColor={theme.dark === true ? theme.colors.text : "gray"}
+          spellCheck={false}
+          autoCorrect={false}
         />
         <TouchableOpacity
           style={[
             styles.searchButton,
-            { backgroundColor: theme.colors.secondary },
+            { backgroundColor: theme.dark ? "#34aed6" :"#34aed6" },
           ]}
           onPress={() => {
             /* Implement search action */
           }}
         >
-          <Ionicons name="search" size={20} color="#fff" />
+          <Ionicons name="search" size={20} color={"white"} />
         </TouchableOpacity>
       </View>
     </View>

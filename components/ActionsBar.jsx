@@ -10,7 +10,7 @@ import {
   Easing,
 } from "react-native";
 import { Ionicons, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 
 const ActionsBar = ({
   theme,
@@ -20,10 +20,10 @@ const ActionsBar = ({
   filterOnlyAudio,
   toggleSortOrder,
 }) => {
-  const router = useRouter();
+  const router = useNavigation();
   const [showLabels, setShowLabels] = useState(true);
   const [currentLabelIndex, setCurrentLabelIndex] = useState(0);
-  
+
   // Define button labels
   const buttonLabels = [
     "Menu",
@@ -32,13 +32,13 @@ const ActionsBar = ({
     "Filter by year",
     "Text only",
     "Audio only",
-    "Sort entries"
+    "Sort entries",
   ];
-  
+
   // Animation values
   const labelOpacity = useRef(new Animated.Value(0)).current;
   const labelTranslateY = useRef(new Animated.Value(10)).current;
-  
+
   useEffect(() => {
     if (showLabels) {
       // Start the animation sequence
@@ -49,9 +49,9 @@ const ActionsBar = ({
           setShowLabels(false);
           return;
         }
-        
+
         setCurrentLabelIndex(index);
-        
+
         // Fade in and slide up
         Animated.parallel([
           Animated.timing(labelOpacity, {
@@ -67,7 +67,7 @@ const ActionsBar = ({
             easing: Easing.out(Easing.ease),
           }),
         ]).start();
-        
+
         // After showing for a moment, fade out and prepare for next label
         timeout = setTimeout(() => {
           Animated.parallel([
@@ -91,33 +91,33 @@ const ActionsBar = ({
           });
         }, 1500); // Show each label for 1.5 seconds
       };
-      
+
       // Start animation sequence with the first label
       animateLabels(0);
-      
+
       // Cleanup
       return () => clearTimeout(timeout);
     }
   }, [showLabels]);
-  
+
   // Restart animation when user taps anywhere
   const restartAnimation = () => {
     if (!showLabels) {
       setShowLabels(true);
     }
   };
-  
+
   // Calculate position for the floating label
   const getAnimatedLabelPosition = (index) => {
     // Starting position (leftmost position for first button)
     const startingLeft = 16 + 25; // Container padding + button radius
     // Space between button center points
     const buttonSpacing = 66; // Button width (50) + gap (16)
-    
+
     // Calculate position based on index
-    return startingLeft + (buttonSpacing * index);
+    return startingLeft + buttonSpacing * index;
   };
-  
+
   return (
     <View>
       {/* Animated label overlay */}
@@ -133,16 +133,18 @@ const ActionsBar = ({
             },
           ]}
         >
-          <Text style={{ 
-            color: theme.colors.text,
-            fontSize: 12,
-            fontWeight: "bold",
-          }}>
+          <Text
+            style={{
+              color: theme.colors.text,
+              fontSize: 12,
+              fontWeight: "bold",
+            }}
+          >
             {buttonLabels[currentLabelIndex]}
           </Text>
         </Animated.View>
       )}
-      
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -151,7 +153,7 @@ const ActionsBar = ({
       >
         {/* Menu Button */}
         <TouchableOpacity
-          onPress={() => router.navigate("screens/Menu")}
+          onPress={() => router.navigate("Menu")}
           style={[
             styles.actionButton,
             {
@@ -169,10 +171,10 @@ const ActionsBar = ({
             width={30}
           />
         </TouchableOpacity>
-        
+
         {/* Search Button */}
         <TouchableOpacity
-          onPress={() => router.navigate("screens/Search")}
+          onPress={() => router.navigate("Search")}
           style={[
             styles.actionButton,
             {
@@ -185,7 +187,7 @@ const ActionsBar = ({
         >
           <Ionicons name="search-outline" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        
+
         {/* Filter by letter Button */}
         <TouchableOpacity
           onPress={() => setIsLetterModalVisible(true)}
@@ -215,7 +217,11 @@ const ActionsBar = ({
             },
           ]}
         >
-          <FontAwesome5 name="calendar-alt" size={24} color={theme.colors.text} />
+          <FontAwesome5
+            name="calendar-alt"
+            size={24}
+            color={theme.colors.text}
+          />
         </TouchableOpacity>
 
         {/* Text only Button */}
@@ -278,7 +284,7 @@ const styles = StyleSheet.create({
   actionsScrollContainer: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    marginBottom: 10,
+    // marginBottom: 10,
     gap: 16,
   },
   actionButton: {

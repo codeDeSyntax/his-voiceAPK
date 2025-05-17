@@ -4,7 +4,7 @@
     "slug": "his-voice",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "your-app-scheme",
+    "scheme": "hisvoice",
     "newArchEnabled": true,
     "userInterfaceStyle": "light",
     "updates": {
@@ -21,14 +21,15 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2d2d2d"
       },
-      "package": "com.boblambert.hisvoice"
+      "package": "com.boblambert.hisvoice",
+      "edgeToEdgeEnabled": true
+      
     },
     "web": {
       "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-font",
-      "expo-router",
       [
         "expo-splash-screen",
         {

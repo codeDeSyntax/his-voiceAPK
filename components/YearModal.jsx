@@ -2,10 +2,17 @@ import React from "react";
 import { View, Text, Modal, Pressable, FlatList } from "react-native";
 import { styles } from "../styles/Allsermons";
 
-const YearModal = ({ theme, isVisible, closeDropdown, years, setSelectedYear }) => {
+const YearModal = ({
+  theme,
+  isVisible,
+  closeDropdown,
+  years,
+  setSelectedYear,
+}) => {
   return (
     <Modal
-      transparent={true}
+      // transparent={true}
+      backdropColor={theme.colors.primary}
       visible={isVisible}
       onRequestClose={closeDropdown}
     >
@@ -58,19 +65,22 @@ const YearModal = ({ theme, isVisible, closeDropdown, years, setSelectedYear }) 
             style={[
               styles.allYearsOption,
               {
-                backgroundColor: theme.colors.primary,
+                backgroundColor: "#11a9e0",
               },
             ]}
             onPress={() => {
               setSelectedYear("All Years");
               closeDropdown();
             }}
+            android_ripple={{
+              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+            }}
           >
             <Text
               style={[
                 styles.gridBtnText,
                 {
-                  color: theme.dark === true ? theme.colors.text : "gray",
+                  color: "white",
                 },
               ]}
             >

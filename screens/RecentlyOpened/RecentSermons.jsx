@@ -35,6 +35,7 @@ import audioSermons from "../../sermons/audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoadingScreen from "../../components/Loader";
 import { useNavigation } from "@react-navigation/native";
+import DraggableFloatingBackButton from "../../components/FloatButton";
 
 const allSermons = [
   ...earlySermons,
@@ -50,7 +51,7 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
   String.fromCharCode(65 + i)
 );
 
-function RecentlyOpenedSermons() {
+const RecentlyOpenedSermons = () => {
   const { setSelectedSermon, recentlyOpened,setRecentlyOpened,theme } =
     useAppContext();
     // const {theme} = useAppTheme()
@@ -193,7 +194,7 @@ function RecentlyOpenedSermons() {
        
       </TouchableOpacity>
      <TouchableOpacity style={{opacity:4}} onPress={() => removeFromRecents(item)}>
-     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "red" : "red"} />
+     <FontAwesome name="trash" size={25} color={theme.dark === true  ? "#47daf4" : "#47daf4"} />
      </TouchableOpacity>
       </Pressable>
     )
@@ -213,6 +214,7 @@ function RecentlyOpenedSermons() {
       style={[styles.container,  {backgroundColor:theme.colors.primary}]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <DraggableFloatingBackButton/>
       <View style={styles.searchContainer}>
         <View style={{flexDirection:"row",alignItems:"center",gap:10}}>
         <Text style={[styles.label, {color:theme.colors.text}]}>
@@ -221,23 +223,24 @@ function RecentlyOpenedSermons() {
         </View>
        {
         recentlyOpened.length > 0 &&
-        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#212121' : 'white',  borderColor:'silver',elevation:5}]}>
+        <View style={[styles.searchInputContainer,  {backgroundColor:theme.dark === true ? '#212121' : '#34a6ae',  borderColor:'silver'}]}>
         <TextInput
-          style={[styles.searchInput, {color:'gray',backgroundColor:theme.dark === true ? '#212121' : 'white',elevation:5 ,fontStyle:"italic"  }]}
+          style={[styles.searchInput, {color:'gray',backgroundColor:theme.dark === true ? '#212121' : '#f3f3f3',fontStyle:"italic"  }]}
           placeholder="Search Sermons"
           value={searchText}
           onChangeText={setSearchText}
           placeholderTextColor={theme.colors.text}
           selectionColor={theme.dark === true  ? theme.colors.text : "gray"}
         />
-        <TouchableOpacity
+        <Pressable
           style={styles.searchButton}
+          android_ripple={{ color: "#427092" }}
           onPress={() => {
             /* Implement search action */
           }}
         >
           <Ionicons name="search" size={20} color="#fff" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
        }
       </View>
@@ -245,32 +248,32 @@ function RecentlyOpenedSermons() {
      {
       recentlyOpened.length > 0 && 
       <View style={styles.filtersContainer}>
-      <TouchableOpacity
+      <Pressable
         onPress={() => setIsLetterModalVisible(true)}
-        style={[styles.filterButton ,{backgroundColor:theme.dark === true ? '#22272a': 'white',shadowColor:theme.colors.text}]}
+        style={[styles.filterButton ,{borderColor:theme.colorstext}]}
       >
         {/* <Text style={styles.filterText}>{selectedLetter}</Text> */}
         <Ionicons
           name="text-outline"
-          size={16}
+          size={24}
           color={theme.colors.text}
           style={styles.dropdownIcon}
         />
-      </TouchableOpacity>
-      <TouchableOpacity
+      </Pressable>
+      <Pressable
         onPress={() => setIsYearModalVisible(true)}
-        style={[styles.filterButton ,{backgroundColor:theme.colors.background,shadowColor:theme.colors.text}]}
+        style={[styles.filterButton ,{borderColor:theme.colors.text}]}
       >
         {/* <Text style={styles.filterText}>{selectedYear}</Text> */}
-        <FontAwesome5 name="calendar-alt" color={theme.colors.text}/>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.sortButton} onPress={toggleSortOrder}>
+        <FontAwesome5 name="calendar-alt" color={theme.colors.text} size={24}/>
+      </Pressable>
+      <Pressable style={styles.sortButton} onPress={toggleSortOrder}>
         <FontAwesome
           name='sort'
           size={20}
           color='#fafafa'
         />
-      </TouchableOpacity>
+      </Pressable>
     </View>
      }
 
@@ -424,16 +427,17 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: 100,
     backgroundColor:'white',
   },
   searchInput: {
     flex: 1,
     height: 40,
     paddingHorizontal: 12,
+    paddingVertical: 12,
     fontSize: 16,
     color: "#fafafa",
-    borderRadius:8
+    borderRadius:100
     
     
   },
@@ -450,17 +454,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap:10,
     // justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 10,
+    paddingTop: 10,
     paddingBottom: 8,
   },
   filterButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    elevation: 5,
+    height:54,
+    width: 54,
+    justifyContent: "center",
+    borderRadius: 100,
+    // elevation: 5,
+    borderWidth:1,
+    borderStyle:"dashed"
   },
   filterText: {
     marginRight: 8,
@@ -473,8 +480,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     // backgroundColor: "#427092",
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 100,
   },
   listContent: {
     paddingHorizontal: 12,

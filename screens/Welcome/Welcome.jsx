@@ -10,8 +10,10 @@ import {
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-const Welcome = ({ navigation }) => {
+const Welcome = () => {
+  const navigation = useNavigation();
   const [fontsLoaded] = useFonts({
     "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
     "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),

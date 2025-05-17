@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
   },
   sermonTitle: {
     fontSize: 13,
-    fontWeight: "600",
+    // fontWeight: "900",
     fontFamily: "serif",
     marginBottom: 4,
     color: "#bfc7ca",
@@ -45,8 +45,8 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 3,
-    paddingHorizontal: 4,
+   height:50,
+   width:40,
     margin: 4,
     borderRadius: 8,
     backgroundColor: "#f0f0f0",
@@ -106,7 +106,7 @@ export const styles = StyleSheet.create({
     borderRadius: 100,
   },
   searchButton: {
-    height: 40,
+    height: 50,
     width: 40,
     justifyContent: "center",
     alignItems: "center",

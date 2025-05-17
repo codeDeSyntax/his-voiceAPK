@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppContext } from "../../Logic/globalState";
-import { useNavigation } from "expo-router";
 // import { styles } from "../../styles/settings";
 
 // Component imports
@@ -17,7 +16,7 @@ import ActionsBar from "../../components/ActionsBar";
 import SermonListView from "../../components/SermonListView";
 import YearModal from "../../components/YearModal";
 import LetterModal from "../../components/LetterModal";
-import * as NavigationBar from "expo-navigation-bar";
+
 
 const years = Array.from({ length: 10 }, (_, i) => (1973 - i).toString());
 const alphabet = Array.from({ length: 26 }, (_, i) =>
@@ -25,7 +24,7 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 );
 
 function SermonList() {
-  const navigation = useNavigation();
+  const navigation = useNavigation()
   const {
     setSelectedSermon,
     recentlyOpened,
@@ -88,21 +87,21 @@ function SermonList() {
   const handleSermonClick = async (sermon) => {
     try {
       // Set the selected sermon in context
-      setSelectedSermon(sermon);
+      // setSelectedSermon(sermon);
 
       // Update recently opened sermons
-      const updatedRecentlyOpenedSermons = [
-        sermon,
-        ...recentlyOpened.filter((s) => s.id !== sermon.id),
-      ].slice(0, 10);
+      // const updatedRecentlyOpenedSermons = [
+      //   sermon,
+      //   ...recentlyOpened.filter((s) => s.id !== sermon.id),
+      // ].slice(0, 10);
 
-      addToRecentlyOpened(sermon);
+      // addToRecentlyOpened(sermon);
 
-      // Store in AsyncStorage
-      await AsyncStorage.setItem(
-        "recentlyOpenedSermons",
-        JSON.stringify(updatedRecentlyOpenedSermons)
-      );
+      // // Store in AsyncStorage
+      // await AsyncStorage.setItem(
+      //   "recentlyOpenedSermons",
+      //   JSON.stringify(updatedRecentlyOpenedSermons)
+      // );
 
       // Navigate
       if (navigation) {
@@ -159,6 +158,7 @@ function SermonList() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ListAppBar theme={theme} />
+      <DraggableFloatingBackButton/>
 
       <ActionsBar
         theme={theme}
@@ -203,6 +203,8 @@ function SermonList() {
 import { StyleSheet } from "react-native";
 import { Appbar } from "react-native-paper";
 import ListAppBar from "../../components/AppBar";
+import { useNavigation } from "@react-navigation/native";
+import DraggableFloatingBackButton from "../../components/FloatButton";
 
 export const styles = StyleSheet.create({
   container: {

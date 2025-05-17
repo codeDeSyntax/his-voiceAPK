@@ -50,7 +50,7 @@ const SermonListView = ({
     <Text
       style={{
         fontSize: 9,
-        color: theme.colors.ltext,
+        color: "#34aed6",
         fontFamily: "Palatino",
       }}
     >
@@ -64,21 +64,15 @@ const SermonListView = ({
       style={[
         styles.sermonItem,
         {
-          width: numberOfColumns === 2 ? "48%" : "100%",
+          width: "48%",
           borderWidth: 1,
           borderColor: theme.dark === true ? theme.colors.secondary : "#f4f6f3",
           elevation: 1,
-          backgroundColor: theme.dark
-            ? parseInt(index) % 2 === 0
-              ? theme.colors.primary
-              : theme.colors.primary
-            : "#fafafa",
+          backgroundColor: theme.dark ? "transparent" : "#f7f6f6",
         },
       ]}
       android_ripple={{
-        color: theme.dark
-          ? "rgba(255,255,255,0.1)"
-          : "rgba(0,0,0,0.05)",
+        color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
       }}
       onPress={() => handleSermonClick(item)}
     >
@@ -87,12 +81,32 @@ const SermonListView = ({
           {
             flexDirection: "row",
             justifyContent: "space-between",
-            padding: 5,
+            // padding: 5,
             borderRadius: 10,
           },
         ]}
       >
-        <Text style={[{ color: "#8e969c", fontSize: 12 }]}>{item.date}</Text>
+        <View
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text
+            style={[
+              styles.sermonTitle,
+              {
+                color: theme.colors.text,
+                fontWeight: "bold",
+                textDecorationLine: "underline",
+              },
+            ]}
+          >
+            {item.title + "  "}
+            <FontAwesome5 name="caret-right" color={theme.colors.ltext} />
+          </Text>
+        </View>
         <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
           {item.type === "mp3" ? (
             <Text style={styles.animatedMicrophone}>
@@ -109,18 +123,11 @@ const SermonListView = ({
           )}
         </Animated.View>
       </View>
-      <View
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        <Text style={[styles.sermonTitle, { color: theme.colors.text }]}>
-          {item.title.slice(0, 18) }{item.title.length > 20 ? "..." : ""}
-          <FontAwesome5 name="caret-right" color={theme.colors.ltext} />
-        </Text>
-      </View>
+
+      <Text style={[{ color: "#8e969c", fontSize: 12, fontStyle: "italic",fontFamily:"serif" }]}>
+        {item.date}
+      </Text>
+
       <Text
         style={{
           fontSize: 9,

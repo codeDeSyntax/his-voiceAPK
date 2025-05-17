@@ -2,9 +2,9 @@ import React from 'react'
 import { View ,Text, } from 'react-native'
 import { styles } from '../styles/Allsermons'
 import { Ionicons } from '@expo/vector-icons'
-import { useRouter } from 'expo-router'
+import { useNavigation } from '@react-navigation/native'
 const ListAppBar = ({theme}) => {
-  const router  = useRouter();
+  const router  = useNavigation();
   return (
      <View
             style={{
@@ -32,7 +32,10 @@ const ListAppBar = ({theme}) => {
               name="settings"
               size={20}
               color={theme.dark === true ? theme.colors.text : "gray"}
-              onPress={() => router.push("screens/Settings")}
+              onPress={() => router?.navigate("Settings")}
+              android_ripple={{
+                color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+              }}
             />
           </View>
           </View>

@@ -12,7 +12,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import { useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -28,7 +27,7 @@ const DraggableFloatingBackButton = ({
   vibrationEnabled = true,
   animationEnabled = true,
 }) => {
-  const router = useRouter();
+  const router = useNavigation();
   const insets = useSafeAreaInsets();
 
   // Calculate safe area boundaries
@@ -168,7 +167,7 @@ const DraggableFloatingBackButton = ({
           if (onPress) {
             onPress();
           } else if (router && router.canGoBack()) {
-            router.back();
+            router.goBack();
           }
         } else if (snapToEdge) {
           // Snap to nearest edge if enabled
@@ -257,8 +256,8 @@ const DraggableFloatingBackButton = ({
           onPress={() => {
             if (onPress) {
               onPress();
-            } else if (navigation && navigation.canGoBack()) {
-              navigation.goBack();
+            } else if (router && router.canGoBack()) {
+              router.goBack();
             }
           }}
           activeOpacity={0.8}

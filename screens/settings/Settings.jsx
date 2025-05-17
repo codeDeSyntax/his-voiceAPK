@@ -3,17 +3,11 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Modal,
-  ActivityIndicator,
-  StatusBar,
   Animated,
 } from "react-native";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
 import UpdateScreen from "../Updating";
 import { useAppContext } from "../../Logic/globalState";
 import { styles } from "../../styles/settings";
@@ -27,6 +21,9 @@ import ActionButtons from "../../components/settings/ActionsButtons";
 import SavingModal from "../../components/settings/SavingModal";
 import NumberOfColumnsSelector from "../../components/settings/ColumnNubmerChoose";
 
+import DraggableFloatingBackButton from "../../components/FloatButton";
+import { useNavigation } from "@react-navigation/native";
+
 // Constants moved here to be accessible to all components
 export const FONT_OPTIONS = [
   { name: "Default", value: "System" },
@@ -36,7 +33,7 @@ export const FONT_OPTIONS = [
 ];
 
 export const COLOR_OPTIONS = [
-  { name: "Blue", value: "#3B82F6", textColor: "#FFFFFF" },
+  { name: "Blue", value: "#4bb7e6", textColor: "#FFFFFF" },
   { name: "Green", value: "#10B981", textColor: "#FFFFFF" },
   { name: "Purple", value: "#8B5CF6", textColor: "#FFFFFF" },
   { name: "Orange", value: "#F59E0B", textColor: "#FFFFFF" },
@@ -109,7 +106,7 @@ function Settings() {
       // Slightly delayed to show animation
       setTimeout(() => {
         setSavingTheme(false);
-      }, 500);
+      }, 400);
     } catch (error) {
       console.error("Error saving theme settings:", error);
       setSavingTheme(false);
@@ -135,7 +132,7 @@ function Settings() {
       // await AsyncStorage.setItem("sermonSettings", JSON.stringify(updatedSettings));
       setTimeout(() => {
         setSavingTheme(false);
-      }, 800);
+      }, 400);
     } catch (error) {
       console.error("Error saving settings:", error);
       setSavingTheme(false);
@@ -151,7 +148,7 @@ function Settings() {
         fontSize: 16,
         fontFamily: "System",
         textColor: "#FFFFFF",
-        accentColor: "#3B82F6",
+        accentColor: "#4bb7e6",
       };
 
       setFontSize(defaultSettings.fontSize);
@@ -176,7 +173,7 @@ function Settings() {
     }
   };
 
-  const navigation = useNavigation();
+  const router = useNavigation();
 
   if (isUpdating) {
     return <UpdateScreen />;
@@ -184,13 +181,14 @@ function Settings() {
 
   return (
     <>
+        <DraggableFloatingBackButton/>
       <ScrollView
         style={[styles.container, { backgroundColor: theme.colors.primary }]}
         showsVerticalScrollIndicator={false}
       >
         <SettingsHeader theme={theme} accentColor={accentColor} />
 
-        <ProfileSection theme={theme} accentColor={accentColor} />
+        <ProfileSection theme={theme} accentColor={"#4bb7e6"} />
 
         <Text
           style={[
@@ -234,7 +232,7 @@ function Settings() {
           APP
         </Text>
 
-        <AppSettings theme={theme} navigation={navigation} />
+        <AppSettings theme={theme} router={router} />
 
         <Text
           style={[
@@ -247,7 +245,7 @@ function Settings() {
 
         <ActionButtons
           theme={theme}
-          accentColor={accentColor}
+          accentColor={"#4bb7e6"}
           saveSettings={saveSettings}
           restoreDefault={restoreDefault}
         />
@@ -255,7 +253,7 @@ function Settings() {
         <SavingModal
           visible={savingTheme}
           theme={theme}
-          accentColor={accentColor}
+          accentColor={"#4bb7e6"}
         />
       </ScrollView>
     </>

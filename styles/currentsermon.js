@@ -284,6 +284,38 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontFamily: "serif",
   },
+  copyingParagraph: {
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+  },
+  
+  copyingParagraph: {
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+  },
+  
+  // Text selection indication
+  textSelectable: {
+    backgroundColor: "rgba(0, 123, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(0, 123, 255, 0.2)",
+    borderRadius: 4,
+  },
+  
+  // Optional: Add this toast/notification style for copy feedback
+  copyToast: {
+    position: "absolute",
+    bottom: 40,
+    alignSelf: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    zIndex: 1000,
+  },
+  copyToastText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "500",
+  },
 });
 
 export { styles };
