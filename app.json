@@ -7,9 +7,6 @@
     "scheme": "your-app-scheme",
     "newArchEnabled": true,
     "userInterfaceStyle": "light",
-
-    
-
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
@@ -20,7 +17,6 @@
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2d2d2d"
@@ -33,14 +29,6 @@
     "plugins": [
       "expo-font",
       "expo-router",
-      [
-        "expo-navigation-bar",
-        {
-          "position": "relative",
-          "visibility": "hidden",
-          "behavior": "inset-touch"
-        }
-      ],
       [
         "expo-splash-screen",
         {

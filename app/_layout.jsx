@@ -4,7 +4,7 @@ import AppStatusBar from "../components/StatusBar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useEffect } from "react";
 import { BackHandler, Platform } from "react-native";
-import "react-native-gesture-handler";
+// import "react-native-gesture-handler";
 const RootLayout = () => {
   useEffect(() => {
     if (Platform.OS === "android" && !BackHandler.removeEventListener) {
@@ -14,9 +14,9 @@ const RootLayout = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SermonProvider>
-        <AppStatusBar />
+        {/* <AppStatusBar /> */}
         {/* <SysBars/> */}
-        <Stack>
+        <Stack initialRouteName="screens/Welcome">
           <Stack.Screen
             name="screens/Welcome"
             options={{ headerShown: false, navigationBarHidden: true }}
@@ -39,18 +39,20 @@ const RootLayout = () => {
           />
           <Stack.Screen
             name="screens/Search"
-            options={{ headerShown: false,navigationBarHidden: true  }}
+            options={{ headerShown: false, navigationBarHidden: true }}
           />
           <Stack.Screen
             name="screens/Settings"
             options={{ headerShown: false, navigationBarHidden: true }}
           />
-          <Stack.Screen name="screens/About" options={{ headerShown: false,navigationBarHidden: true }} />
+          <Stack.Screen
+            name="screens/About"
+            options={{ headerShown: false, navigationBarHidden: true }}
+          />
           <Stack.Screen
             name="screens/Updating"
             options={{ headerShown: false, navigationBarHidden: true }}
           />
-          
         </Stack>
       </SermonProvider>
     </GestureHandlerRootView>
