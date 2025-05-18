@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "scheme": "hisvoice",
     "newArchEnabled": true,
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
@@ -34,10 +34,10 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#020303",
-          "image": "./assets/adaptive-icon.png",
+          "image": "./assets/hv.png",
           "dark": {
-            "image": "./assets/adaptive-icon.png",
-            "backgroundColor": "#020303"
+            "image": "./assets/hv.png",
+            "backgroundColor": "#5eb7ee"
           },
           "imageWidth": 300
         }

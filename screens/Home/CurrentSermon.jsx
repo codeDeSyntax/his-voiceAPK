@@ -20,7 +20,7 @@ import SearchFeedback from "../../components/currentSermon/SearchFeedback";
 import PlaySermon from "../../components/currentSermon/PlaySermon";
 import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
-import AppStatusBar from "../../components/StatusBar";
+import DownloadSermon from "../PlaySermon";
 
 const CurrentSermon = () => {
   const { selectedSermon, settings, theme, searchText } = useAppContext();
@@ -164,7 +164,7 @@ const CurrentSermon = () => {
         <DraggableFloatingBackButton /> 
         <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
           {selectedSermon?.type === "mp3" ? (
-            <PlaySermon sermon={selectedSermon} />
+            <DownloadSermon sermon={selectedSermon} />
           ) : (
             <>
               <ScrollView

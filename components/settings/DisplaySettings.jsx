@@ -1,12 +1,14 @@
 // File: components/DisplaySettings.js
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Pressable } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Switch } from "react-native-paper";
 import Slider from "@react-native-community/slider";
 import { styles } from "../../styles/settings";
 import { FONT_OPTIONS, COLOR_OPTIONS } from "../../screens/settings/Settings";
 import { useAppContext } from "../../Logic/globalState";
+import { useNavigation } from "@react-navigation/native";
+import { FontAwesome5, FontAwesome6, MaterialIcons } from "@expo/vector-icons";
 
 const DisplaySettings = ({
   theme,
@@ -23,6 +25,8 @@ const DisplaySettings = ({
   const [showColorOptions, setShowColorOptions] = useState(false);
   const [localAccentColor, setLocalAccentColor] = useState(accentColor);
   const {updateSettings} = useAppContext()
+
+  const navigation = useNavigation()
 
   const getSettingItemStyle = (disabled) => {
     return [styles.settingItem, { opacity: disabled ? 0.5 : 1 }];
@@ -292,7 +296,15 @@ const DisplaySettings = ({
             >
               This is a preview of how your text will appear in the app.
             </Text>
+            <Pressable onPress={()=> navigation.navigate("currentsermon") } style={[getIconContainerStyle(),{marginTop:4}]}>
+            <MaterialIcons
+              name="open-in-full"
+              size={20}
+              color={theme.dark ? "#FFFFFF" : "#333333"}
+            />
+          </Pressable>
           </View>
+          
         </View>
       )}
 

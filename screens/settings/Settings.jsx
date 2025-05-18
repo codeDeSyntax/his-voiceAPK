@@ -30,6 +30,7 @@ export const FONT_OPTIONS = [
   { name: "Merienda", value: "Merienda-VariableFont" },
   { name: "Philosopher", value: "Philosopher-Regular" },
   { name: "Serif", value: "serif" },
+  { name: "ZillaSlab", value: "ZillaSlab" },
 ];
 
 export const COLOR_OPTIONS = [
@@ -44,6 +45,7 @@ function Settings() {
   const [fontsLoaded] = useFonts({
     "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
     "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
+    "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
   });
 
   const {

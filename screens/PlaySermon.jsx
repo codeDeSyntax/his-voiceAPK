@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,276 +6,691 @@ import {
   ActivityIndicator,
   Linking,
   StyleSheet,
-  ImageBackground,
-  Alert,
   SafeAreaView,
   StatusBar,
+  ScrollView,
+  Platform,
+  Animated,
+  Easing,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Clipboard from "expo-clipboard";
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useAppContext } from "../../Logic/globalState";
+import { useAppContext } from "../Logic/globalState";
+import { useNavigation } from "@react-navigation/native";
 
 const DownloadSermon = () => {
-  const { selectedSermon } = useAppContext();
+  const { selectedSermon, theme } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const audioUrl = selectedSermon?.audioUrl || "";
-
+  const isDark = theme.dark;
+  const navigation  = useNavigation()
+  
+  // Animations using Animated API (no external library)
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const scaleAnim = useState(new Animated.Value(1))[0];
+  const progressAnim = useState(new Animated.Value(0))[0];
+  
+  // Animation sequences
+  useEffect(() => {
+    Animated.stagger(100, [
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+  
   // Function to copy URL to clipboard
   const copyToClipboard = async () => {
     try {
       await Clipboard.setStringAsync(audioUrl);
       setIsCopied(true);
-      Alert.alert("Success", "URL copied to clipboard");
+      
       // Reset copy state after 2 seconds
       setTimeout(() => {
         setIsCopied(false);
       }, 2000);
     } catch (error) {
-      Alert.alert("Error", "Failed to copy to clipboard");
+      alert("Failed to copy to clipboard");
     }
   };
 
   // Function to open URL in external browser
   const openInBrowser = async () => {
     if (!audioUrl) {
-      Alert.alert("Error", "No URL available");
+      alert("No URL available");
       return;
     }
 
     setIsLoading(true);
+    // Animate progress bar
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 3000,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    }).start();
+    
     try {
       const supported = await Linking.canOpenURL(audioUrl);
       if (supported) {
         await Linking.openURL(audioUrl);
       } else {
-        Alert.alert("Error", "Cannot open this URL");
+        alert("Cannot open this URL");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to open URL");
+      alert("Failed to open URL");
     } finally {
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsLoading(false);
+        progressAnim.setValue(0);
+      }, 500);
     }
   };
 
+  // Function to simulate download
+  const downloadSermon = async () => {
+    if (!audioUrl) {
+      alert("No URL available");
+      return;
+    }
+
+    setIsLoading(true);
+    // Animate progress bar
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 3000,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    }).start();
+    
+    try {
+      setTimeout(() => {
+        alert("Download completed!");
+        setIsLoading(false);
+        progressAnim.setValue(0);
+      }, 3000);
+    } catch (error) {
+      alert("Download failed");
+      setIsLoading(false);
+      progressAnim.setValue(0);
+    }
+  };
+
+  // Button press animation
+  const onPressIn = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 0.96,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  const onPressOut = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
-    <View style={[styles.safeArea]}>
-      {/* <StatusBar barStyle="light-content" /> */}
-      <ImageBackground
-        source={require("../../assets/icon.png")}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      >
-        <LinearGradient
-          colors={[
-            "rgba(0, 0, 0, 0.8)",
-            "rgba(20, 20, 20, 0.9)",
-            "rgba(0, 0, 0, 0.95)",
-          ]}
-          style={styles.gradient}
+    <SafeAreaView 
+      style={[
+        styles.safeArea, 
+        { backgroundColor: theme.colors.primary }
+      ]}
+    >
+    
+      
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
         >
-          <View style={styles.container}>
-            <View style={styles.headerSection}>
-              <View style={styles.titleContainer}>
-                <Text
-                  style={styles.title}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {selectedSermon?.title || "Sermon Title"}
+          <Ionicons 
+            name="arrow-back" 
+            size={24} 
+            color={theme.colors.text} 
+          />
+          <Text style={[
+            styles.backButtonText,
+            { color: theme.colors.text }
+          ]}>
+            Back
+          </Text>
+        </TouchableOpacity>
+        <View style={styles.spacer} />
+      </View>
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          {/* Sermon Title Card */}
+          <Animated.View 
+            style={[
+              styles.titleCard,
+              { 
+                backgroundColor: theme.colors.secondary,
+                opacity: fadeAnim,
+                transform: [{ translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0]
+                })}]
+              }
+            ]}
+          >
+            <Text
+              style={[
+                styles.title,
+                { color: theme.colors.text }
+              ]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {selectedSermon?.title || "Sermon Title"}
+            </Text>
+            
+            {/* Minister Name & Date */}
+            <View style={styles.sermonMeta}>
+              <Text style={[
+                styles.metaText,
+                { color: isDark ? '#B0B0B0' : '#666666' }
+              ]}>
+                {selectedSermon?.minister || "Minister Name"}
+              </Text>
+              <View style={[
+                styles.datePill,
+                { 
+                  backgroundColor: isDark ? 'rgba(138, 43, 226, 0.2)' : 'rgba(138, 43, 226, 0.15)' 
+                }
+              ]}>
+                <Text style={[
+                  styles.dateText,
+                  { color: theme.colors.text }
+                ]}>
+                  {selectedSermon?.date || "Date"}
                 </Text>
               </View>
             </View>
+          </Animated.View>
 
-            <View style={styles.urlSection}>
-              <View style={styles.urlCard}>
-                <Text style={styles.urlLabel}>AUDIO URL</Text>
-                <Text
-                  style={styles.urlText}
-                  numberOfLines={1}
-                  ellipsizeMode="middle"
-                >
-                  {audioUrl || "No URL available"}
-                </Text>
-                <TouchableOpacity
-                  style={styles.copyButton}
-                  onPress={copyToClipboard}
-                  activeOpacity={0.7}
-                  disabled={!audioUrl}
-                >
-                  <FontAwesome5
-                    name={isCopied ? "check" : "copy"}
-                    size={16}
-                    color="white"
-                  />
-                  <Text style={styles.copyButtonText}>
-                    {isCopied ? "Copied!" : "Copy URL"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.actionsSection}>
+          {/* URL Card */}
+          <Animated.View 
+            style={[
+              styles.urlCard,
+              { 
+                backgroundColor: theme.colors.secondary,
+                opacity: fadeAnim,
+                transform: [{ translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0]
+                })}]
+              }
+            ]}
+          >
+            <Text style={[
+              styles.urlLabel,
+              { color: isDark ? '#B0B0B0' : '#666666' }
+            ]}>
+              AUDIO URL
+            </Text>
+            <View style={[
+              styles.urlContainer,
+              { backgroundColor: isDark ? '#2A2A2A' : '#F0F0F0' }
+            ]}>
+              <Text
+                style={[
+                  styles.urlText,
+                  { color: isDark ? '#FFFFFF' : '#333333' }
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="middle"
+              >
+                {audioUrl || "No URL available"}
+              </Text>
               <TouchableOpacity
-                onPress={openInBrowser}
-                style={[styles.actionButton, styles.playButton]}
-                disabled={isLoading || !audioUrl}
+                style={[
+                  styles.copyButton,
+                  isCopied && styles.copiedButton
+                ]}
+                onPress={copyToClipboard}
+                activeOpacity={0.7}
+                disabled={!audioUrl}
+              >
+                <FontAwesome5
+                  name={isCopied ? "check" : "copy"}
+                  size={16}
+                  color="white"
+                />
+                <Text style={styles.copyButtonText}>
+                  {isCopied ? "Copied!" : "Copy"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+
+          {/* Action Cards */}
+          <Animated.View 
+            style={[
+              styles.actionsGrid,
+              { 
+                opacity: fadeAnim,
+                transform: [{ translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0]
+                })}]
+              }
+            ]}
+          >
+            {/* Play Button */}
+            <TouchableOpacity
+              onPress={openInBrowser}
+              activeOpacity={0.8}
+              disabled={isLoading || !audioUrl}
+              style={[
+                styles.actionCard,
+                { backgroundColor: theme.colors.secondary }
+              ]}
+            >
+              <View style={[
+                styles.iconContainer,
+                { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.15)' }
+              ]}>
+                <Ionicons name="play-circle" size={32} color="#4CAF50" />
+              </View>
+              <Text style={[
+                styles.actionTitle,
+                { color: isDark ? '#FFFFFF' : '#333333' }
+              ]}>
+                Play
+              </Text>
+              <Text style={[
+                styles.actionSubtitle,
+                { color: isDark ? '#B0B0B0' : '#666666' }
+              ]}>
+                Stream in browser
+              </Text>
+            </TouchableOpacity>
+
+            {/* Download Button */}
+            <TouchableOpacity
+              onPress={downloadSermon}
+              activeOpacity={0.8}
+              disabled={isLoading || !audioUrl}
+              style={[
+                styles.actionCard,
+                { backgroundColor: theme.colors.secondary }
+              ]}
+            >
+              <View style={[
+                styles.iconContainer,
+                { backgroundColor: isDark ? 'rgba(33, 150, 243, 0.2)' : 'rgba(33, 150, 243, 0.15)' }
+              ]}>
+                <MaterialIcons name="cloud-download" size={32} color="#2196F3" />
+              </View>
+              <Text style={[
+                styles.actionTitle,
+                { color: isDark ? '#FFFFFF' : '#333333' }
+              ]}>
+                Download
+              </Text>
+              <Text style={[
+                styles.actionSubtitle,
+                { color: isDark ? '#B0B0B0' : '#666666' }
+              ]}>
+                Save for offline
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Main Action Button */}
+          <Animated.View 
+            style={[
+              { 
+                opacity: fadeAnim,
+                transform: [
+                  { scale: scaleAnim },
+                  { translateY: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0]
+                  })}
+                ]
+              }
+            ]}
+          >
+            <TouchableOpacity
+              onPress={openInBrowser}
+              style={styles.mainActionButton}
+              activeOpacity={0.85}
+              disabled={isLoading || !audioUrl}
+              onPressIn={onPressIn}
+              onPressOut={onPressOut}
+            >
+              <LinearGradient
+                colors={isDark ? ['#4169E1', '#2196F3'] : ['#4169E1', '#8A2BE2']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.gradientButton}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="large" color="white" />
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="white" style={styles.activityIndicator} />
+                    <Text style={styles.mainButtonText}>Opening...</Text>
+                    
+                    {/* Progress bar */}
+                    <View style={styles.progressBarContainer}>
+                      <Animated.View 
+                        style={[
+                          styles.progressBar,
+                          { width: progressAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0%', '100%']
+                          })}
+                        ]} 
+                      />
+                    </View>
+                  </View>
                 ) : (
-                  <>
-                    <Ionicons name="play-circle" size={32} color="white" />
-                    <Text style={styles.buttonText}>Play in Browser</Text>
-                  </>
+                  <View style={styles.buttonContent}>
+                    <Ionicons name="mic-circle" size={22} color="white" />
+                    <Text style={styles.mainButtonText}>Listen Now</Text>
+                  </View>
                 )}
-              </TouchableOpacity>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
 
-              <TouchableOpacity
-                onPress={openInBrowser}
-                style={[styles.actionButton, styles.downloadButton]}
-                disabled={isLoading || !audioUrl}
-              >
-                <MaterialIcons name="cloud-download" size={32} color="white" />
-                <Text style={styles.buttonText}>Download</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                Tap any button to open in your browser
+          {/* Additional Features */}
+          <Animated.View 
+            style={[
+              styles.featuresContainer,
+              { 
+                opacity: fadeAnim,
+                transform: [{ translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0]
+                })}]
+              }
+            ]}
+          >
+            <TouchableOpacity style={[
+              styles.featureBox,
+              { backgroundColor: theme.colors.secondary }
+            ]}>
+              <View style={styles.featureIcon}>
+                <Ionicons name="share-social-outline" size={20} color={isDark ? '#B0B0B0' : '#666666'} />
+              </View>
+              <Text style={[
+                styles.featureText,
+                { color: isDark ? '#B0B0B0' : '#666666' }
+              ]}>
+                Share Sermon
               </Text>
-            </View>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={[
+              styles.featureBox,
+              { backgroundColor: theme.colors.secondary }
+            ]}>
+              <View style={styles.featureIcon}>
+                <Ionicons name="bookmark-outline" size={20} color={isDark ? '#B0B0B0' : '#666666'} />
+              </View>
+              <Text style={[
+                styles.featureText,
+                { color: isDark ? '#B0B0B0' : '#666666' }
+              ]}>
+                Save for Later
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+          
+          {/* Footer Text */}
+          <View style={styles.footer}>
+            <Text style={[
+              styles.footerText,
+              { color: isDark ? '#888888' : '#999999' }
+            ]}>
+              Tap any button to open in your browser
+            </Text>
           </View>
-        </LinearGradient>
-      </ImageBackground>
-    </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#000",
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    height: 60,
+    width: '100%',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  spacer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   container: {
     flex: 1,
-    justifyContent: "space-between",
     padding: 20,
+    paddingBottom: 40,
   },
-  backgroundImage: {
-    flex: 1,
-    width: "100%",
-  },
-  gradient: {
-    flex: 1,
-  },
-  headerSection: {
-    marginTop: 30,
-    alignItems: "center",
-  },
-  titleContainer: {
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  title: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 5,
-  },
-  urlSection: {
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  urlCard: {
-    backgroundColor: "rgba(32, 36, 37, 0.8)",
+  titleCard: {
     borderRadius: 16,
     padding: 20,
-    width: "100%",
-    maxWidth: 400,
-    alignItems: "center",
+    marginBottom: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  sermonMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 8,
+  },
+  metaText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  datePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  dateText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  urlCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   urlLabel: {
-    color: "#B0B0B0",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     marginBottom: 10,
     letterSpacing: 1,
   },
+  urlContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
   urlText: {
-    color: "#ffffff",
-    fontSize: 18,
-    marginBottom: 20,
-    textAlign: "center",
-    width: "100%",
+    fontSize: 14,
+    flex: 1,
+    marginRight: 10,
   },
   copyButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 30,
-    backgroundColor: "rgba(0, 122, 255, 0.7)",
-    width: "80%",
+    backgroundColor: '#4169E1',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  copiedButton: {
+    backgroundColor: '#4CAF50',
   },
   copyButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 6,
   },
-  actionsSection: {
-    alignItems: "center",
-    marginTop: 20,
+  actionsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
   },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 18,
+  actionCard: {
+    width: '48%',
     borderRadius: 16,
-    width: "80%",
-    maxWidth: 350,
-    marginBottom: 20,
+    padding: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  iconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  actionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginVertical: 6,
+  },
+  actionSubtitle: {
+    fontSize: 13,
+  },
+  mainActionButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginVertical: 10,
+    shadowColor: "#4169E1",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 5,
   },
-  playButton: {
-    backgroundColor: "rgba(32, 36, 37, 0.9)",
-    borderWidth: 1,
-    borderColor: "#4CAF50",
+  gradientButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  downloadButton: {
-    backgroundColor: "rgba(32, 36, 37, 0.9)",
-    borderWidth: 1,
-    borderColor: "#007AFF",
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  buttonText: {
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: 26,
+  },
+  progressBarContainer: {
+    position: 'absolute',
+    bottom: -8,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: 'white',
+  },
+  activityIndicator: {
+    position: 'absolute',
+    left: '35%',
+  },
+  mainButtonText: {
     color: "white",
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     marginLeft: 10,
+  },
+  featuresContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 20,
+  },
+  featureBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '48%',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  featureIcon: {
+    marginRight: 12,
+  },
+  featureText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   footer: {
     alignItems: "center",
-    marginBottom: 20,
+    marginTop: 30,
+    marginBottom: 10,
   },
   footerText: {
-    color: "#B0B0B0",
-    fontSize: 14,
+    fontSize: 13,
     fontStyle: "italic",
   },
 });

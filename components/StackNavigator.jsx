@@ -97,47 +97,47 @@ function StackNavigator() {
       <Stack.Screen 
         name="welcome" 
         component={ScreenWithSuspense(Welcome)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
       <Stack.Screen 
         name="Menu" 
         component={ScreenWithSuspense(Menu)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
       <Stack.Screen 
         name="currentsermon" 
         component={ScreenWithSuspense(CurrentSermon)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
       <Stack.Screen 
         name="AllSermons" 
         component={ScreenWithSuspense(SermonList)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
       <Stack.Screen 
         name="Recent" 
         component={ScreenWithSuspense(RecentlyOpenedSermons)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
       <Stack.Screen 
         name="Search" 
         component={ScreenWithSuspense(SermonSearch)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
       <Stack.Screen 
         name="Settings" 
         component={ScreenWithSuspense(Settings)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
       <Stack.Screen 
         name="About" 
         component={ScreenWithSuspense(About)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
       <Stack.Screen 
         name="updating" 
         component={ScreenWithSuspense(UpdateScreen)}
-        options={{navigationBarHidden:true}}
+        options={{navigationBarHidden:true,statusBarHidden:true}}
       />
     </Stack.Navigator>
     </GestureHandlerRootView>

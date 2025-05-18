@@ -331,6 +331,8 @@ const SermonSearch = () => {
               marginBottom: 20,
             },
           ]}
+          selectable={true}
+          selectionColor={"yellow"}
         >
           {selectedSermonContent.popupContent
             .split(/(<highlight>.*?<\/highlight>)/g)

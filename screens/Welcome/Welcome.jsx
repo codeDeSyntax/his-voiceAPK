@@ -15,8 +15,8 @@ import { useNavigation } from "@react-navigation/native";
 const Welcome = () => {
   const navigation = useNavigation();
   const [fontsLoaded] = useFonts({
-    "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
-    "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
+    
+    "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
   });
 
   const handleGoToSermons = () => {
@@ -96,15 +96,16 @@ const styles = StyleSheet.create({
     // elevation: 5,
   },
   title: {
-    fontFamily: "Merienda-VariableFont",
-    fontSize: 24,
+    fontFamily: "ZillaSlab-Regular",
+    fontSize: 20,
     textAlign: "center",
     marginBottom: 20,
     color: "white",
+    fontWeight:"thin"
   },
   subtitle: {
-    fontFamily: "Merienda-VariableFont",
-    fontSize: 20,
+    fontFamily: "serif",
+    fontSize:18,
     textAlign: "center",
     marginBottom: 40,
     color: "#b4afaf",
@@ -114,8 +115,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems:"center",
     borderRadius: 100,
-    height: 120,
-    width: 120,
+    height: 100,
+    width: 100,
     borderWidth:1,
     borderColor:"white",
     borderStyle:"dashed"
