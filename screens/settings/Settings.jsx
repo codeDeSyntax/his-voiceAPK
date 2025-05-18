@@ -19,7 +19,7 @@ import DisplaySettings from "../../components/settings/DisplaySettings";
 import AppSettings from "../../components/settings/AppSettings";
 import ActionButtons from "../../components/settings/ActionsButtons";
 import SavingModal from "../../components/settings/SavingModal";
-import NumberOfColumnsSelector from "../../components/settings/ColumnNubmerChoose";
+
 
 import DraggableFloatingBackButton from "../../components/FloatButton";
 import { useNavigation } from "@react-navigation/native";

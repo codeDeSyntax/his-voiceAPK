@@ -7,8 +7,7 @@ import React, {
   useContext,
   Suspense,
 } from "react";
-import { SermonContext, useAppContext } from "../../Logic/globalState";
-import { useAppTheme } from "../../Logic/theme";
+
 import {
   Image,
   View,
@@ -24,27 +23,12 @@ import {
   Animated,
   Easing,
 } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
-import earlySermons from "../../sermons/1964-1969/firstset";
-import secondSet from "../../sermons/1970/1970";
-import thirdSet from "../../sermons/1971/1971";
-import fourthSet from "../../sermons/1972/1972";
-import lastSet from "../../sermons/1973/1973";
-import audioSermons from "../../sermons/audio";
+import { FontAwesome, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import LoadingScreen from "../../components/Loader";
 import { useNavigation } from "@react-navigation/native";
 import DraggableFloatingBackButton from "../../components/FloatButton";
 
-const allSermons = [
-  ...earlySermons,
-  ...secondSet,
-  ...thirdSet,
-  ...fourthSet,
-  ...lastSet,
-  ...audioSermons,
-];
 
 const years = Array.from({ length: 10 }, (_, i) => (1973 - i).toString());
 const alphabet = Array.from({ length: 26 }, (_, i) =>
@@ -183,7 +167,7 @@ const RecentlyOpenedSermons = () => {
                 {item.type === "mp3" && <FontAwesome5 name="microphone"  color={theme.dark === true  ? theme.colors.text : "gray"}/>}
               </Text>
             ) : (
-             <Ionicons name= 'text' color={theme.colors.text}/>
+             <MaterialIcons name= 'text-format' color={theme.colors.text}/>
             )}
           </Animated.View>
         </View>
@@ -219,7 +203,7 @@ const RecentlyOpenedSermons = () => {
         <View style={{flexDirection:"row",alignItems:"center",gap:10}}>
         <Text style={[styles.label, {color:theme.colors.text}]}>
           Recents</Text>
-        <Image source={require("../../assets/notebook.gif")}  style={{height:30,width:30,marginVertical:20,borderRadius:100}}/>
+        <MaterialIcons name="note-alt"  style={{height:30,width:30,marginVertical:20,borderRadius:100}} color={"blue"}/>
         </View>
        {
         recentlyOpened.length > 0 &&
@@ -239,7 +223,7 @@ const RecentlyOpenedSermons = () => {
             /* Implement search action */
           }}
         >
-          <Ionicons name="search" size={20} color="#fff" />
+          <MaterialIcons name="search" size={20} color="#fff" />
         </Pressable>
       </View>
        }
@@ -253,8 +237,8 @@ const RecentlyOpenedSermons = () => {
         style={[styles.filterButton ,{borderColor:theme.colorstext}]}
       >
         {/* <Text style={styles.filterText}>{selectedLetter}</Text> */}
-        <Ionicons
-          name="text-outline"
+        <MaterialIcons
+          name="text-format"
           size={24}
           color={theme.colors.text}
           style={styles.dropdownIcon}
