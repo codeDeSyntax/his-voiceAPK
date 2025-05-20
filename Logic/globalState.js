@@ -7,6 +7,7 @@ import React, {
   useContext,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform, ToastAndroid } from "react-native";
 
 // Separate configuration from component logic
 const SERMON_MODULES = {
@@ -88,6 +89,12 @@ export const SermonProvider = ({ children }) => {
 
     setRecentlyOpened((prevRecents) => {
       // Remove if already exists
+      // dont allow for duplicates
+      const sermonExists = prevRecents.some((s) => (s.id === sermon.id && s.title === sermon.title)); 
+      if (sermonExists) {
+        Platform.OS === "android" ? ToastAndroid.show("Already in recents ⛈️", ToastAndroid.LONG) : Alert.alert("Already in recents ⛈️", "Already in recents ⛈️");
+        return prevRecents;
+      }
       const filteredRecents = prevRecents.filter((s) => s.id !== sermon.id);
       // Add to beginning of array
       const newRecents = [{
@@ -97,7 +104,7 @@ export const SermonProvider = ({ children }) => {
         location: sermon?.location,
         type: sermon.type,
         year:sermon.year
-      }, ...filteredRecents].slice(0, 10); // Limit to 10 items
+      }, ...filteredRecents].slice(0, 20); // Limit to 10 items
 
       // Save to storage
       AsyncStorage.setItem(
