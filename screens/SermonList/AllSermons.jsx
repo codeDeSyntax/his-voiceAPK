@@ -5,6 +5,7 @@ import {
   Platform,
   Text,
   Alert,
+  ToastAndroid,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppContext } from "../../Logic/globalState";
@@ -17,14 +18,13 @@ import SermonListView from "../../components/SermonListView";
 import YearModal from "../../components/YearModal";
 import LetterModal from "../../components/LetterModal";
 
-
 const years = Array.from({ length: 10 }, (_, i) => (1973 - i).toString());
 const alphabet = Array.from({ length: 26 }, (_, i) =>
   String.fromCharCode(65 + i)
 );
 
 function SermonList() {
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const {
     setSelectedSermon,
     recentlyOpened,
@@ -41,8 +41,6 @@ function SermonList() {
   const [isLetterModalVisible, setIsLetterModalVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
   const [filteredSermons, setFilteredSermons] = useState(allSermons);
-
-
 
   const applyFilters = () => {
     const newFilteredSermons = allSermons.filter((sermon) => {
@@ -86,23 +84,22 @@ function SermonList() {
 
   const handleSermonClick = async (sermon) => {
     try {
+      // const sermonToSet = allSermons.find(
+      //   (s) => s.title === sermon.title && s.type === sermon.type
+      // );
       // Set the selected sermon in context
       setSelectedSermon(sermon);
 
-      // Update recently opened sermons
-      const updatedRecentlyOpenedSermons = [
-        sermon,
-        ...recentlyOpened.filter((s) => s.id !== sermon.id),
-      ].slice(0, 10);
-
-      addToRecentlyOpened(sermon);
-
-      // Store in AsyncStorage
-      await AsyncStorage.setItem(
-        "recentlyOpenedSermons",
-        JSON.stringify(updatedRecentlyOpenedSermons)
-      );
-
+      addToRecentlyOpened({
+        title: sermon.title,
+        type: sermon.type,
+        date: sermon.date,
+        year: sermon.year,
+        location: sermon.location,
+      });
+      Platform.OS === "android"
+        ? ToastAndroid.show("in few seconds ⛈️", ToastAndroid.LONG)
+        : Alert.alert("in few seconds ⛈️", "in few seconds ⛈️");
       // Navigate
       if (navigation) {
         navigation.navigate("currentsermon");
@@ -111,7 +108,11 @@ function SermonList() {
       }
     } catch (error) {
       console.error("Error in sermon navigation:", error);
-      Alert.alert("Navigation Error", "Could not navigate to the sermon.");
+      if (Platform.OS === "android") {
+        ToastAndroid.show("Error occurred", ToastAndroid.SHORT);
+      } else {
+        Alert.alert("Error", "Error occurred");
+      }
     }
   };
 
@@ -158,7 +159,7 @@ function SermonList() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ListAppBar theme={theme} />
-      <DraggableFloatingBackButton/>
+      <DraggableFloatingBackButton />
 
       <ActionsBar
         theme={theme}

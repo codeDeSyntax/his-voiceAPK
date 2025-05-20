@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Platform,
+  ToastAndroid,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { useNavigation } from "@react-navigation/native";
 
-const MenuItem = ({ title, onPress, icon }) => {
+const MenuItem = ({ title, onPress, icon,crossed }) => {
   const { theme } = useAppContext();
   const navigation = useNavigation();
 
@@ -28,7 +30,7 @@ const MenuItem = ({ title, onPress, icon }) => {
       <Text
         style={[
           styles.menuItemText,
-          { color: theme.colors.text, fontFamily: "serif", fontSize: 15 },
+          { color: theme.colors.text, fontFamily: "serif", fontSize: 15, textDecorationLine: crossed ? 'line-through' : 'none' },
         ]}
       >
         {title}
@@ -102,8 +104,17 @@ const Menu = () => {
           />
           <MenuItem
             title="Current Sermon Info & Notes"
-            onPress={() => navigateTo("SermonInfo")}
+            onPress={() =>{
+              if (Platform.OS === 'android') {
+                ToastAndroid.show('not functional yet 💀', ToastAndroid.SHORT);
+              } else {
+                // For iOS and other platforms
+                Alert.alert('not functional yet 💀', 'not functional yet 💀⛈️');
+              }
+            
+            }}
             icon="information-circle-outline"
+            crossed={true}
           />
         </MenuSection>
 

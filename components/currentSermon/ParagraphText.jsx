@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
+import { useFonts } from "expo-font";
 
 const ParagraphText = ({
   paragraph,
@@ -62,6 +63,11 @@ const ParagraphText = ({
       setIsCopying(false);
     }
   };
+
+  const [fontsLoaded] = useFonts({
+      "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+    });
+  
   
   // Function to handle text selection via double tap
   const handleTextPress = () => {

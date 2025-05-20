@@ -90,7 +90,14 @@ export const SermonProvider = ({ children }) => {
       // Remove if already exists
       const filteredRecents = prevRecents.filter((s) => s.id !== sermon.id);
       // Add to beginning of array
-      const newRecents = [sermon, ...filteredRecents].slice(0, 10); // Limit to 10 items
+      const newRecents = [{
+        id: sermon.id,
+        title:sermon.title,
+        date: sermon.date,
+        location: sermon?.location,
+        type: sermon.type,
+        year:sermon.year
+      }, ...filteredRecents].slice(0, 10); // Limit to 10 items
 
       // Save to storage
       AsyncStorage.setItem(
@@ -217,6 +224,7 @@ export const SermonProvider = ({ children }) => {
       textSermons,
       recentlyOpened,
       addToRecentlyOpened,
+      setRecentlyOpened,
 
       // UI state
       searchText,

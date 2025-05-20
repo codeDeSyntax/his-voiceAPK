@@ -14,7 +14,7 @@ import {
   SafeAreaView,
   Dimensions,
 } from "react-native";
-import { SermonContext, useAppContext } from "../../Logic/globalState";
+import {  useAppContext } from "../../Logic/globalState";
 import { ActivityIndicator } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AntDesign, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
