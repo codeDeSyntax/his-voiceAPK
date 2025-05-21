@@ -34,8 +34,13 @@ const alphabet = Array.from({ length: 26 }, (_, i) =>
 );
 
 const RecentlyOpenedSermons = () => {
-  const { setSelectedSermon, recentlyOpened, setRecentlyOpened, theme, allSermons} =
-    useAppContext();
+  const {
+    setSelectedSermon,
+    recentlyOpened,
+    setRecentlyOpened,
+    theme,
+    allSermons,
+  } = useAppContext();
   // const {theme} = useAppTheme()
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
@@ -73,8 +78,10 @@ const RecentlyOpenedSermons = () => {
     if (sermonToSet) {
       setSelectedSermon(sermonToSet);
       navigation?.navigate("currentsermon");
-    } else {  
-      Platform.OS === "android" ? ToastAndroid.show("Sermon not found ⛈️", ToastAndroid.LONG) : Alert.alert("Sermon not found");
+    } else {
+      Platform.OS === "android"
+        ? ToastAndroid.show("Sermon not found ⛈️", ToastAndroid.LONG)
+        : Alert.alert("Sermon not found");
     }
   };
 
@@ -227,7 +234,7 @@ const RecentlyOpenedSermons = () => {
         <FontAwesome
           name="trash"
           size={25}
-          color={theme.dark === true ? "#47daf4" : "#47daf4"}
+          color={theme.dark === true ? "#47daf4" : "#000000"}
         />
       </TouchableOpacity>
     </Pressable>
@@ -269,7 +276,7 @@ const RecentlyOpenedSermons = () => {
             style={[
               styles.searchInputContainer,
               {
-                backgroundColor: theme.dark === true ? "#212121" : "#34a6ae",
+                backgroundColor: theme.dark === true ? "#212121" : "",
                 borderColor: "silver",
               },
             ]}
@@ -290,7 +297,10 @@ const RecentlyOpenedSermons = () => {
               selectionColor={theme.dark === true ? theme.colors.text : "gray"}
             />
             <Pressable
-              style={styles.searchButton}
+              style={[
+                styles.searchButton,
+                { backgroundColor: theme.dark ? "#427092" : "#000000" },
+              ]}
               android_ripple={{ color: "#427092" }}
               onPress={() => {
                 /* Implement search action */
@@ -330,13 +340,18 @@ const RecentlyOpenedSermons = () => {
           <Pressable
             style={[styles.filterButton, { borderColor: theme.colors.text }]}
             onPress={toggleSortOrder}
+            android_ripple={{ color: "#427092" }}
           >
-            <FontAwesome name="sort" size={20} color="#fafafa" />
+            <FontAwesome name="sort" size={20} color={theme.colors.text} />
           </Pressable>
           <Pressable
             style={[styles.filterButton, { borderColor: theme.colors.text }]}
           >
-            <MaterialIcons name="format-clear" size={20} color="#fafafa" />
+            <MaterialIcons
+              name="format-clear"
+              size={20}
+              color={theme.colors.text}
+            />
           </Pressable>
         </View>
       )}
@@ -538,7 +553,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: "#fafafa",
-    borderRadius: 100,
+    borderTopLeftRadius:100,
+    borderBottomLeftRadius:100
+    // borderRadius: 100,
   },
   searchButton: {
     height: 40,
@@ -546,8 +563,8 @@ const styles = StyleSheet.create({
     // backgroundColor: "#427092",
     justifyContent: "center",
     alignItems: "center",
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
+    borderTopRightRadius: 100,
+    borderBottomRightRadius: 100,
   },
   filtersContainer: {
     flexDirection: "row",
