@@ -33,7 +33,7 @@ const AppSettings = ({ theme, router }) => {
     >
       <TouchableOpacity
         style={styles.settingItem}
-        onPress={() => router.push("screens/About")}
+        onPress={() => router.push("About")}
       >
         <View style={styles.settingLeft}>
           <View style={getIconContainerStyle()}>

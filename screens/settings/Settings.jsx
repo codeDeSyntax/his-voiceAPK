@@ -1,5 +1,5 @@
 // File: Settings.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -19,7 +19,6 @@ import DisplaySettings from "../../components/settings/DisplaySettings";
 import AppSettings from "../../components/settings/AppSettings";
 import ActionButtons from "../../components/settings/ActionsButtons";
 import SavingModal from "../../components/settings/SavingModal";
-
 
 import DraggableFloatingBackButton from "../../components/FloatButton";
 import { useNavigation } from "@react-navigation/native";
@@ -41,12 +40,28 @@ export const COLOR_OPTIONS = [
   { name: "Pink", value: "#EC4899", textColor: "#FFFFFF" },
 ];
 
-function Settings() {
-  const [fontsLoaded] = useFonts({
-    "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
-    "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
-    "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-  });
+// Memoized fonts configuration to prevent recreation
+const FONTS_CONFIG = {
+  "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
+  "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
+  "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+};
+
+// Default settings constant
+const DEFAULT_SETTINGS = {
+  darkMode: true,
+  backgroundColor: "#121212",
+  fontSize: 16,
+  fontFamily: "System",
+  textColor: "#FFFFFF",
+  accentColor: "#4bb7e6",
+};
+
+// Fixed accent color constant
+const FIXED_ACCENT_COLOR = "#4bb7e6";
+
+const Settings = React.memo(() => {
+  const [fontsLoaded] = useFonts(FONTS_CONFIG);
 
   const {
     settings,
@@ -59,30 +74,58 @@ function Settings() {
     setNumberOfColumns,
   } = useAppContext();
 
-  const [fontSize, setFontSize] = useState(settings.fontSize || 16);
-  const [fontFamily, setFontFamily] = useState(settings.fontFamily || "System");
-  const [textColor, setTextColor] = useState(settings.textColor || "#FFFFFF");
-  const [accentColor, setAccentColor] = useState(
-    settings.accentColor || COLOR_OPTIONS[0].value
-  );
+  // Memoized initial values to prevent unnecessary recalculations
+  const initialValues = useMemo(() => ({
+    fontSize: settings.fontSize || 16,
+    fontFamily: settings.fontFamily || "System",
+    textColor: settings.textColor || "#FFFFFF",
+    accentColor: settings.accentColor || COLOR_OPTIONS[0].value,
+    backgroundColor: settings.backgroundColor || (isDarkMode ? "#121212" : "#F8F9FA"),
+  }), [settings, isDarkMode]);
 
+  const [fontSize, setFontSize] = useState(initialValues.fontSize);
+  const [fontFamily, setFontFamily] = useState(initialValues.fontFamily);
+  const [textColor, setTextColor] = useState(initialValues.textColor);
+  const [accentColor, setAccentColor] = useState(initialValues.accentColor);
+  const [backgroundColor, setBackgroundColor] = useState(initialValues.backgroundColor);
+  
   const [savingTheme, setSavingTheme] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [backgroundColor, setBackgroundColor] = useState(
-    settings.backgroundColor || (isDarkMode ? "#121212" : "#F8F9FA")
-  );
-  const [animation] = useState(new Animated.Value(0));
+  
+  // Memoized animation value to prevent recreation
+  const animation = useMemo(() => new Animated.Value(isDarkMode ? 1 : 0), []);
 
-  // Animation effect for theme toggling
+  const router = useNavigation();
+
+  // Memoized container style
+  const containerStyle = useMemo(
+    () => [styles.container, { backgroundColor: theme.colors.primary }],
+    [theme.colors.primary]
+  );
+
+  // Memoized section header style
+  const sectionHeaderStyle = useMemo(
+    () => [styles.sectionHeader, { color: theme.dark ? "#BBBBBB" : "#666666" }],
+    [theme.dark]
+  );
+
+  // Memoized version text style
+  const versionTextStyle = useMemo(
+    () => [styles.versionText, { color: theme.dark ? "#777777" : "#999999" }],
+    [theme.dark]
+  );
+
+  // Animation effect for theme toggling - optimized with useCallback
   useEffect(() => {
     Animated.timing(animation, {
       toValue: isDarkMode ? 1 : 0,
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [isDarkMode]);
+  }, [isDarkMode, animation]);
 
-  const toggleTheme = async () => {
+  // Optimized toggle theme function with useCallback
+  const toggleTheme = useCallback(async () => {
     try {
       setSavingTheme(true);
       const newMode = !isDarkMode;
@@ -100,10 +143,7 @@ function Settings() {
 
       setIsDarkMode(newMode);
       setSettings(updatedSettings);
-      await AsyncStorage.setItem(
-        "sermonSettings",
-        JSON.stringify(updatedSettings)
-      );
+      await AsyncStorage.setItem("sermonSettings", JSON.stringify(updatedSettings));
 
       // Slightly delayed to show animation
       setTimeout(() => {
@@ -113,9 +153,20 @@ function Settings() {
       console.error("Error saving theme settings:", error);
       setSavingTheme(false);
     }
-  };
+  }, [
+    isDarkMode,
+    settings,
+    fontSize,
+    fontFamily,
+    textColor,
+    accentColor,
+    numberOfColumns,
+    setIsDarkMode,
+    setSettings,
+  ]);
 
-  const saveSettings = async () => {
+  // Optimized save settings function with useCallback
+  const saveSettings = useCallback(async () => {
     try {
       setSavingTheme(true);
       const updatedSettings = {
@@ -128,10 +179,9 @@ function Settings() {
         accentColor,
         numberOfColumns,
       };
+      
       updateSettings(updatedSettings);
 
-      // setSettings(updatedSettings);
-      // await AsyncStorage.setItem("sermonSettings", JSON.stringify(updatedSettings));
       setTimeout(() => {
         setSavingTheme(false);
       }, 400);
@@ -139,32 +189,32 @@ function Settings() {
       console.error("Error saving settings:", error);
       setSavingTheme(false);
     }
-  };
+  }, [
+    settings,
+    isDarkMode,
+    backgroundColor,
+    fontSize,
+    fontFamily,
+    textColor,
+    accentColor,
+    numberOfColumns,
+    updateSettings,
+  ]);
 
-  const restoreDefault = async () => {
+  // Optimized restore default function with useCallback
+  const restoreDefault = useCallback(async () => {
     try {
       setSavingTheme(true);
-      const defaultSettings = {
-        darkMode: true,
-        backgroundColor: "#121212",
-        fontSize: 16,
-        fontFamily: "System",
-        textColor: "#FFFFFF",
-        accentColor: "#4bb7e6",
-      };
 
-      setFontSize(defaultSettings.fontSize);
-      setFontFamily(defaultSettings.fontFamily);
-      setTextColor(defaultSettings.textColor);
-      setAccentColor(defaultSettings.accentColor);
-      setBackgroundColor(defaultSettings.backgroundColor);
-      setIsDarkMode(defaultSettings.darkMode);
-      setSettings(defaultSettings);
+      setFontSize(DEFAULT_SETTINGS.fontSize);
+      setFontFamily(DEFAULT_SETTINGS.fontFamily);
+      setTextColor(DEFAULT_SETTINGS.textColor);
+      setAccentColor(DEFAULT_SETTINGS.accentColor);
+      setBackgroundColor(DEFAULT_SETTINGS.backgroundColor);
+      setIsDarkMode(DEFAULT_SETTINGS.darkMode);
+      setSettings(DEFAULT_SETTINGS);
 
-      await AsyncStorage.setItem(
-        "sermonSettings",
-        JSON.stringify(defaultSettings)
-      );
+      await AsyncStorage.setItem("sermonSettings", JSON.stringify(DEFAULT_SETTINGS));
 
       setTimeout(() => {
         setSavingTheme(false);
@@ -173,31 +223,25 @@ function Settings() {
       console.error("Error restoring settings:", error);
       setSavingTheme(false);
     }
-  };
+  }, [setSettings, setIsDarkMode]);
 
-  const router = useNavigation();
-
+  // Early return for updating state
   if (isUpdating) {
     return <UpdateScreen />;
   }
 
   return (
     <>
-        <DraggableFloatingBackButton/>
+      <DraggableFloatingBackButton />
       <ScrollView
-        style={[styles.container, { backgroundColor: theme.colors.primary }]}
+        style={containerStyle}
         showsVerticalScrollIndicator={false}
       >
         <SettingsHeader theme={theme} accentColor={accentColor} />
 
-        <ProfileSection theme={theme} accentColor={"#4bb7e6"} />
+        <ProfileSection theme={theme} accentColor={FIXED_ACCENT_COLOR} />
 
-        <Text
-          style={[
-            styles.sectionHeader,
-            { color: theme.dark ? "#BBBBBB" : "#666666" },
-          ]}
-        >
+        <Text style={sectionHeaderStyle}>
           DISPLAY
         </Text>
 
@@ -212,42 +256,21 @@ function Settings() {
           setFontFamily={setFontFamily}
         />
 
-        {/* number of columns selector UI */}
-
-        {/* <View
-          style={[styles.settingBlock, { backgroundColor: theme.colors.secondary }]}
-        > */}
-          {/* <NumberOfColumnsSelector
-            theme={theme}
-            numberOfColumns={numberOfColumns}
-            setNumberOfColumns={setNumberOfColumns}
-            accentColor={accentColor}
-          /> */}
-        {/* </View> */}
-
         <Text
-          style={[
-            styles.sectionHeader,
-            { color: theme.dark ? "#BBBBBB" : "#666666", marginTop: 24 },
-          ]}
+          style={[sectionHeaderStyle, { marginTop: 24 }]}
         >
           APP
         </Text>
 
         <AppSettings theme={theme} router={router} />
 
-        <Text
-          style={[
-            styles.versionText,
-            { color: theme.dark ? "#777777" : "#999999" },
-          ]}
-        >
+        <Text style={versionTextStyle}>
           Version 1.0.0 • Build 2025.05.09
         </Text>
 
         <ActionButtons
           theme={theme}
-          accentColor={"#4bb7e6"}
+          accentColor={FIXED_ACCENT_COLOR}
           saveSettings={saveSettings}
           restoreDefault={restoreDefault}
         />
@@ -255,11 +278,14 @@ function Settings() {
         <SavingModal
           visible={savingTheme}
           theme={theme}
-          accentColor={"#4bb7e6"}
+          accentColor={FIXED_ACCENT_COLOR}
         />
       </ScrollView>
     </>
   );
-}
+});
+
+// Display name for debugging
+Settings.displayName = 'Settings';
 
 export default Settings;

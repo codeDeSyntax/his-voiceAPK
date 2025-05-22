@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Pressable } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Switch } from "react-native-paper";
+import { Switch } from "react-native";
 import Slider from "@react-native-community/slider";
 import { styles } from "../../styles/settings";
 import { FONT_OPTIONS, COLOR_OPTIONS } from "../../screens/settings/Settings";

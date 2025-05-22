@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { View, TouchableOpacity, Animated, Dimensions } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import TopCardContent from "./BottomSheetContent";
 import { styles } from "../../styles/currentsermon";
 
@@ -119,21 +119,19 @@ const CustomTopCardController = ({
         style={[
           styles.floatingButton,
           {
-            backgroundColor: isCardOpen
-              ? theme.colors.primary
-              : theme.colors.background,
-            borderWidth: 2,
-            borderColor: theme.colors.text,
+            backgroundColor: theme.dark ? "#1a1919" : "#ececec",
+            // borderWidth: 1,
+            borderColor: theme.dark ? "#1a1919" : "#4276b7",
           },
         ]}
         onPress={handleTogglePress}
         activeOpacity={0.8}
       >
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
-          <Feather
-            name={isCardOpen ? "x" : "menu"}
+          <MaterialIcons
+            name={isCardOpen ? "cancel" : "menu-open"}
             size={24}
-            color={theme.colors.text}
+            color={theme.dark ? "#e5e5e5" : "#4276b7"}
           />
         </Animated.View>
       </TouchableOpacity>

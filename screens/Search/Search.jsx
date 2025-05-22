@@ -15,8 +15,7 @@ import {
   Dimensions,
 } from "react-native";
 import {  useAppContext } from "../../Logic/globalState";
-import { ActivityIndicator } from "react-native-paper";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { ActivityIndicator } from "react-native";
 import { AntDesign, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import styles from "../../styles/Search";
 
