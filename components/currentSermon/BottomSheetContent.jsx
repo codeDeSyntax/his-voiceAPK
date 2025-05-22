@@ -1,174 +1,337 @@
-import React, { useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Dimensions,
+  ActivityIndicator,
+  Image,
   Platform,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
+import { useFonts } from "expo-font";
 
-const BottomSheetContent = ({
+const TopCardContent = ({
   theme,
   selectedSermon,
   searchPhrase,
   setSearchPhrase,
   searchResults,
+  setSearchResults,
+  searching,
   currentResultIndex,
   setCurrentResultIndex,
   onScrollToTop,
   onScrollToBottom,
   onNavigateToResult,
   onBack,
+  searchSermon,
+  paragraphs,
+  paragraphLayouts,
+  scrollToParagraph,
+  isCardOpen,
 }) => {
-  // Create a ref for the ScrollView to programmatically control it
   const scrollViewRef = useRef(null);
   const router = useNavigation();
 
-  // Get window height to set a reasonable max height for the scroll view
-  const windowHeight = Dimensions.get("window").height;
-  const maxHeight = windowHeight * 0.6; // Limit to 70% of screen height
+  const submitSearch = useCallback(() => {
+    if (searchPhrase.trim()) {
+      const results = searchSermon(paragraphs, searchPhrase);
+      setSearchResults(results);
+      setCurrentResultIndex(0);
 
-  // Function to scroll to top of the bottom sheet content
-  const scrollToTop = () => {
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      if (results.length > 0 && paragraphLayouts[results[0]]) {
+        scrollToParagraph(results[0]);
+      }
+    } else {
+      setSearchResults([]);
+    }
+  }, [
+    searchPhrase,
+    searchSermon,
+    paragraphs,
+    setSearchResults,
+    setCurrentResultIndex,
+    paragraphLayouts,
+    scrollToParagraph,
+  ]);
+
+  const clearSearch = useCallback(() => {
+    setSearchPhrase("");
+    setSearchResults([]);
+    setCurrentResultIndex(0);
+  }, [setSearchPhrase, setSearchResults, setCurrentResultIndex]);
+
+  // Receipt-style separator component
+  const ReceiptSeparator = () => (
+    <View style={styles.receiptSeparator}>
+      <Text style={[styles.receiptDots, { color: theme.colors.text }]}>
+        • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
+      </Text>
+    </View>
+  );
+
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    return {
+      date: now.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      }),
+      time: now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+    };
   };
 
-  return (
-    <View style={[styles.bottomSheetContent, { maxHeight: maxHeight }]}>
-      {/* Scroll indicator at top of sheet for better UX */}
-      <View style={styles.scrollIndicatorContainer}>
-        <View style={styles.scrollIndicator} />
-      </View>
+  const { date: currentDate, time: currentTime } = getCurrentDateTime();
 
+  return (
+    <View
+      style={[
+        styles.topCardContainer,
+        {
+          borderColor: theme.dark ? "" : "red",
+          display: !isCardOpen && "none",
+        },
+      ]}
+    >
       <ScrollView
         ref={scrollViewRef}
-        showsVerticalScrollIndicator={true}
-        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.topCardScrollContent}
         bounces={true}
-        overScrollMode="always"
-        keyboardShouldPersistTaps="handled" // Important for text input inside scrollview
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Sermon Information Section */}
-        <View
-          style={[
-            styles.controlSection,
-            { backgroundColor: theme.colors.secondary },
-          ]}
-        >
+        {/* Receipt Header */}
+        <View style={styles.receiptHeader}>
+          <Image
+            source={require("../../assets/roundedLam.jpg")}
+            style={{ height: 40, width: 40 }}
+          />
           <Text
             style={[
-              styles.sectionTitle,
-              { color: theme.colors.text, fontFamily: "serif" },
+              styles.receiptTitle,
+              { color: theme.colors.text, fontFamily: "ZillaSlab" },
             ]}
           >
-            Sermon Information
+            Search paragraph or phrase
           </Text>
-          <View
-            style={[
-              styles.sermonInfoContainer,
-              {
-                backgroundColor: theme.colors.secondary,
-                borderWidth: 1,
-                borderColor: theme.colors.text,
-                borderStyle: "dashed",
-              },
-            ]}
-          >
-            <Text
-              style={[styles.sermonInfoTitle, { color: theme.colors.text }]}
-            >
-              {selectedSermon?.title}
-            </Text>
-            {selectedSermon?.date && (
-              <Text
-                style={[
-                  styles.sermonInfoText,
-                  { color: theme.colors.text, fontStyle: "italic" },
-                ]}
-              >
-                {selectedSermon?.date}
-              </Text>
-            )}
-            {selectedSermon?.location && (
-              <Text
-                style={[styles.sermonInfoText, { color: theme.colors.text }]}
-              >
-                {selectedSermon?.location}
-              </Text>
-            )}
-            {selectedSermon?.year && (
-              <Text
-                style={[styles.sermonInfoText, { color: theme.colors.text }]}
-              >
-                {selectedSermon?.year}
-              </Text>
-            )}
-          </View>
+
+          <Text style={[styles.receiptDateTime, { color: theme.colors.text }]}>
+            {currentDate} {currentTime}
+          </Text>
         </View>
 
-        {/* Search Section */}
-        <View style={styles.controlSection}>
+        <ReceiptSeparator />
+
+        {/* Sermon Information Section */}
+        <View style={styles.receiptSection}>
           <Text
-            style={[
-              styles.sectionTitle,
-              { color: theme.colors.text, fontFamily: "serif" },
-            ]}
+            style={[styles.receiptSectionHeader, { color: theme.colors.text }]}
           >
-            Search Sermon
+            CURRENT SERMON
           </Text>
-          <View style={styles.searchContainer}>
-            <Feather name="search" size={20} color={theme.colors.text} />
-            <TextInput
-              style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search by text or paragraph number..."
-              placeholderTextColor="#888"
-              value={searchPhrase}
-              onChangeText={setSearchPhrase}
-            />
-            {searchPhrase ? (
-              <TouchableOpacity onPress={() => setSearchPhrase("")}>
-                <Feather name="x" size={20} color={theme.colors.text} />
-              </TouchableOpacity>
-            ) : null}
+
+          <View style={styles.receiptItem}>
+            <Text style={[styles.receiptLabel, { color: theme.colors.text }]}>
+              TITLE:
+            </Text>
+            <Text
+              style={[styles.receiptValue, { color: theme.colors.text }]}
+              numberOfLines={3}
+            >
+              {selectedSermon?.title || "N/A"}
+            </Text>
           </View>
 
-          {searchPhrase && searchResults.length > 0 ? (
-            <View style={styles.searchResults}>
-              <Text style={styles.matchesText}>
-                {`${searchResults.length} ${
-                  searchResults.length === 1 ? "match" : "matches"
-                } found`}
+          {selectedSermon?.date && (
+            <View style={styles.receiptItem}>
+              <Text style={[styles.receiptLabel, { color: theme.colors.text }]}>
+                DATE:
               </Text>
-              <View style={styles.navigationButtons}>
+              <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
+                {selectedSermon.date}
+              </Text>
+            </View>
+          )}
+
+          {selectedSermon?.location && (
+            <View style={styles.receiptItem}>
+              <Text style={[styles.receiptLabel, { color: theme.colors.text }]}>
+                LOCATION:
+              </Text>
+              <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
+                {selectedSermon.location}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <ReceiptSeparator />
+
+        {/* Search Section */}
+        <View style={styles.receiptSection}>
+          <Text
+            style={[styles.receiptSectionHeader, { color: theme.colors.text }]}
+          >
+            TEXT SEARCH
+          </Text>
+
+          <View style={styles.receiptSearchRow}>
+            <View
+              style={[
+                styles.receiptSearchContainer,
+                { borderColor: theme.colors.text },
+              ]}
+            >
+              <TextInput
+                style={[
+                  styles.receiptSearchInput,
+                  { color: theme.colors.text },
+                ]}
+                placeholder="Enter search term..."
+                placeholderTextColor="#666"
+                value={searchPhrase}
+                onChangeText={setSearchPhrase}
+                returnKeyType="search"
+                onSubmitEditing={submitSearch}
+              />
+              {searchPhrase ? (
+                <TouchableOpacity
+                  onPress={clearSearch}
+                  style={styles.receiptClearButton}
+                >
+                  <Text
+                    style={[
+                      styles.receiptClearText,
+                      { color: theme.colors.text },
+                    ]}
+                  >
+                    ✕
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            <TouchableOpacity
+              onPress={submitSearch}
+              style={[
+                styles.receiptSearchButton,
+                {
+                  borderColor: theme.colors.text,
+                  backgroundColor: searchPhrase.trim()
+                    ? theme.colors.text
+                    : "transparent",
+                },
+              ]}
+              disabled={!searchPhrase.trim()}
+            >
+              <Text
+                style={[
+                  styles.receiptSearchButtonText,
+                  {
+                    color: searchPhrase.trim()
+                      ? theme.colors.background || "#fff"
+                      : theme.colors.text,
+                  },
+                ]}
+              >
+                GO
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {searching && (
+            <View style={styles.receiptLoadingContainer}>
+              <Text
+                style={[
+                  styles.receiptLoadingText,
+                  { color: theme.colors.text },
+                ]}
+              >
+                SEARCHING...
+              </Text>
+              <ActivityIndicator size="small" color={theme.colors.text} />
+            </View>
+          )}
+
+          {searchPhrase && searchResults.length > 0 ? (
+            <View style={styles.receiptResults}>
+              <View style={styles.receiptResultsHeader}>
+                <Text
+                  style={[
+                    styles.receiptResultsCount,
+                    { color: theme.colors.text },
+                  ]}
+                >
+                  MATCHES FOUND: {searchResults.length}
+                </Text>
+                <Text
+                  style={[
+                    styles.receiptResultsPosition,
+                    { color: theme.colors.text },
+                  ]}
+                >
+                  {currentResultIndex + 1}/{searchResults.length}
+                </Text>
+              </View>
+
+              <View style={styles.receiptNavRow}>
                 <TouchableOpacity
                   style={[
-                    styles.navButton,
-                    currentResultIndex === 0 ? { opacity: 0.5 } : {},
+                    styles.receiptNavButton,
+                    {
+                      borderColor: theme.colors.text,
+                      backgroundColor:
+                        currentResultIndex === 0
+                          ? "transparent"
+                          : theme.colors.text,
+                      opacity: currentResultIndex === 0 ? 0.3 : 1,
+                    },
                   ]}
                   onPress={() => {
                     const newIndex = Math.max(0, currentResultIndex - 1);
                     setCurrentResultIndex(newIndex);
                     onNavigateToResult(searchResults[newIndex]);
-                    scrollToTop(); // Scroll the bottom sheet to top when navigating
                   }}
                   disabled={currentResultIndex === 0}
                 >
-                  <Text style={styles.navButtonText}>Previous</Text>
+                  <Text
+                    style={[
+                      styles.receiptNavButtonText,
+                      {
+                        color:
+                          currentResultIndex === 0
+                            ? theme.colors.text
+                            : theme.colors.background || "#fff",
+                      },
+                    ]}
+                  >
+                    PREV
+                  </Text>
                 </TouchableOpacity>
-                <Text style={styles.matchesText}>
-                  {`${currentResultIndex + 1} / ${searchResults.length}`}
-                </Text>
+
                 <TouchableOpacity
                   style={[
-                    styles.navButton,
-                    currentResultIndex === searchResults.length - 1
-                      ? { opacity: 0.5 }
-                      : {},
+                    styles.receiptNavButton,
+                    {
+                      borderColor: theme.colors.text,
+                      backgroundColor:
+                        currentResultIndex === searchResults.length - 1
+                          ? "transparent"
+                          : theme.colors.text,
+                      opacity:
+                        currentResultIndex === searchResults.length - 1
+                          ? 0.3
+                          : 1,
+                    },
                   ]}
                   onPress={() => {
                     const newIndex = Math.min(
@@ -177,132 +340,155 @@ const BottomSheetContent = ({
                     );
                     setCurrentResultIndex(newIndex);
                     onNavigateToResult(searchResults[newIndex]);
-                    scrollToTop(); // Scroll the bottom sheet to top when navigating
                   }}
                   disabled={currentResultIndex === searchResults.length - 1}
                 >
-                  <Text style={styles.navButtonText}>Next</Text>
+                  <Text
+                    style={[
+                      styles.receiptNavButtonText,
+                      {
+                        color:
+                          currentResultIndex === searchResults.length - 1
+                            ? theme.colors.text
+                            : theme.colors.background || "#fff",
+                      },
+                    ]}
+                  >
+                    NEXT
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
-          ) : searchPhrase && searchResults.length === 0 ? (
-            <Text style={[styles.matchesText, { marginTop: 8 }]}>
-              No matches found
-            </Text>
+          ) : searchPhrase && searchResults.length === 0 && !searching ? (
+            <View style={styles.receiptNoResults}>
+              <Text
+                style={[
+                  styles.receiptNoResultsText,
+                  { color: theme.colors.text },
+                ]}
+              >
+                NO MATCHES FOUND
+              </Text>
+            </View>
           ) : null}
         </View>
 
-        {/* Navigation Section */}
-        <View
-          style={[
-            styles.controlSection,
-            { marginBottom: Platform.OS === "ios" ? 30 : 20 },
-          ]}
-        >
+        <ReceiptSeparator />
+
+        {/* Actions Section */}
+        <View style={styles.receiptSection}>
           <Text
-            style={[
-              styles.sectionTitle,
-              { color: theme.colors.text, fontFamily: "serif" },
-            ]}
+            style={[styles.receiptSectionHeader, { color: theme.colors.text }]}
           >
-            Navigation
+            QUICK ACTIONS
           </Text>
-          <View style={styles.buttonRow}>
+
+          <View style={styles.receiptActionsGrid}>
             <TouchableOpacity
               style={[
-                styles.controlButton,
-                { elevation: 3, backgroundColor: theme.colors.secondary },
+                styles.receiptActionButton,
+                { borderColor: theme.colors.text },
               ]}
-              onPress={() => {
-                onScrollToTop();
-                scrollToTop(); // Also scroll bottom sheet to top
-              }}
-              activeOpacity={0.7}
+              onPress={onScrollToTop}
+              activeOpacity={0.8}
             >
-              <Feather name="arrow-up" size={20} color={theme.colors.text} />
-              {/* <Text
-                style={[styles.controlButtonText, { color: theme.colors.text }]}
+              <Text
+                style={[styles.receiptActionCode, { color: theme.colors.text }]}
               >
-                Top
-              </Text> */}
+                01
+              </Text>
+              <Text
+                style={[styles.receiptActionText, { color: theme.colors.text }]}
+              >
+                SCROLL TOP
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.controlButton,
-                { elevation: 3, backgroundColor: theme.colors.secondary },
+                styles.receiptActionButton,
+                { borderColor: theme.colors.text },
               ]}
               onPress={onScrollToBottom}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Feather name="arrow-down" size={20} color={theme.colors.text} />
-              {/* <Text
-                style={[styles.controlButtonText, { color: theme.colors.text }]}
+              <Text
+                style={[styles.receiptActionCode, { color: theme.colors.text }]}
               >
-                Bottom
-              </Text> */}
+                02
+              </Text>
+              <Text
+                style={[styles.receiptActionText, { color: theme.colors.text }]}
+              >
+                SCROLL END
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.controlButton,
-                { elevation: 3, backgroundColor: theme.colors.secondary },
+                styles.receiptActionButton,
+                { borderColor: theme.colors.text },
               ]}
               onPress={onBack}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Feather name="list" size={20} color={theme.colors.text} />
-              {/* <Text
-                style={[styles.controlButtonText, { color: theme.colors.text }]}
+              <Text
+                style={[styles.receiptActionCode, { color: theme.colors.text }]}
               >
-                All Sermons
-              </Text> */}
+                03
+              </Text>
+              <Text
+                style={[styles.receiptActionText, { color: theme.colors.text }]}
+              >
+                SERMON LIST
+              </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[
-                styles.controlButton,
-                { elevation: 3, backgroundColor: theme.colors.secondary },
+                styles.receiptActionButton,
+                { borderColor: theme.colors.text },
               ]}
-              //   onPress={router.push("screens/Settings")}
               onPress={() => router.push("Settings")}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Feather name="settings" size={20} color={theme.colors.text} />
-              {/* <Text
-                style={[styles.controlButtonText, { color: theme.colors.text }]}
+              <Text
+                style={[styles.receiptActionCode, { color: theme.colors.text }]}
               >
-                All Sermons
-              </Text> */}
+                04
+              </Text>
+              <Text
+                style={[styles.receiptActionText, { color: theme.colors.text }]}
+              >
+                SETTINGS
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Add padding at the bottom to ensure all content is accessible */}
-        <View style={{ height: 20 }} />
+        <ReceiptSeparator />
+
+        {/* Receipt Footer */}
+        <View style={styles.receiptFooter}>
+          <Text
+            style={[styles.receiptFooterText, { color: theme.colors.text }]}
+          >
+            THANK YOU FOR USING
+          </Text>
+          <Text
+            style={[styles.receiptFooterText, { color: theme.colors.text }]}
+          >
+            SERMON SEARCH SYSTEM
+          </Text>
+          <Text
+            style={[styles.receiptFooterSmall, { color: theme.colors.text }]}
+          >
+            ═══════════════════════
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
 };
 
-// These styles should be added to your currentsermon.js styles file
-const additionalStyles = {
-  scrollIndicatorContainer: {
-    width: "100%",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  scrollIndicator: {
-    width: 40,
-    height: 5,
-    borderRadius: 5,
-    backgroundColor: "#ccc",
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 30,
-  },
-};
-
-// You can merge additionalStyles with your existing styles
-
-export default BottomSheetContent;
+export default TopCardContent;

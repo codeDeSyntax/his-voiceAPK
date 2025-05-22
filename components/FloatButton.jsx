@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   StyleSheet,
   Animated,
   PanResponder,
-  TouchableOpacity,
   Dimensions,
   Platform,
   Easing,
+  Vibration,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,7 +15,15 @@ import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
-const DraggableFloatingBackButton = ({
+// Helper function to convert hex to rgba - memoized outside component
+const hexToRgba = (hex, alpha = 1) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const DraggableFloatingBackButton = React.memo(({
   size = 54,
   iconSize = 26,
   iconColor = "white",
@@ -30,15 +38,16 @@ const DraggableFloatingBackButton = ({
   const router = useNavigation();
   const insets = useSafeAreaInsets();
 
-  // Calculate safe area boundaries
-  const safeAreaBounds = {
+  const safeAreaBounds = useMemo(() => ({
     top: insets.top + 10,
     bottom: height - insets.bottom - size - 10,
     left: insets.left + 10,
     right: width - insets.right - size - 10,
-  };
+  }), [insets, size]);
 
-  // State for tracking position
+  // Pre-calculate colors to avoid runtime parsing
+  const accentRgba = useMemo(() => hexToRgba(accentColor, 0.25), [accentColor]);
+
   const pan = useRef(
     new Animated.ValueXY({
       x: initialPosition.x,
@@ -46,14 +55,67 @@ const DraggableFloatingBackButton = ({
     })
   ).current;
 
-  // State for visual feedback
   const [isPressed, setIsPressed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rippleAnim = useRef(new Animated.Value(0)).current;
+  const blinkAnim = useRef(new Animated.Value(1)).current;
 
-  // For touch feedback
-  const handlePressIn = () => {
+  // Add blinking effect for interactivity
+  useEffect(() => {
+    if (animationEnabled && !isDragging) {
+      const blinkSequence = Animated.loop(
+        Animated.sequence([
+          Animated.timing(blinkAnim, {
+            toValue: 0.4,
+            duration: 2000,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          Animated.timing(blinkAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.ease),
+          }),
+        ])
+      );
+      
+      blinkSequence.start();
+      
+      return () => blinkSequence.stop();
+    }
+  }, [animationEnabled, isDragging]);
+
+  const triggerHapticFeedback = useCallback(() => {
+    if (vibrationEnabled) {
+      try {
+        if (Platform.OS === "ios") {
+          // Use dynamic import for haptic feedback
+          import("react-native-haptic-feedback").then((HapticFeedback) => {
+            HapticFeedback.default.trigger("impactLight", {
+              enableVibrateFallback: true,
+              ignoreAndroidSystemSettings: false,
+            });
+          }).catch(() => {
+            // Fallback to basic vibration if haptic feedback is not available
+            const { Vibration } = require("react-native");
+            Vibration.vibrate(50);
+          });
+        } else {
+          // Android fallback
+          const { Vibration } = require("react-native");
+          Vibration.vibrate(50);
+        }
+      } catch (error) {
+        console.warn("Vibration not available:", error);
+      }
+    }
+  }, [vibrationEnabled]);
+
+  const handlePressIn = useCallback(() => {
     setIsPressed(true);
+    triggerHapticFeedback();
 
     if (animationEnabled) {
       Animated.parallel([
@@ -70,17 +132,9 @@ const DraggableFloatingBackButton = ({
         }),
       ]).start();
     }
+  }, [animationEnabled, triggerHapticFeedback]);
 
-    if (vibrationEnabled && Platform.OS === "ios") {
-      const ReactNativeHapticFeedback = require("react-native-haptic-feedback");
-      ReactNativeHapticFeedback.trigger("impactLight", {
-        enableVibrateFallback: true,
-        ignoreAndroidSystemSettings: false,
-      });
-    }
-  };
-
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     setIsPressed(false);
 
     if (animationEnabled) {
@@ -98,28 +152,17 @@ const DraggableFloatingBackButton = ({
         }),
       ]).start();
     }
-  };
+  }, [animationEnabled]);
 
-  // Function to snap to the nearest edge
-  const snapToNearestEdge = (x, y) => {
-    const distanceToLeft = x;
-    const distanceToRight = width - x - size;
+  const handlePress = useCallback(() => {
+    if (onPress) {
+      onPress();
+    } else if (router && router.canGoBack()) {
+      router.goBack();
+    }
+  }, [onPress, router]);
 
-    const targetX =
-      distanceToLeft < distanceToRight
-        ? safeAreaBounds.left
-        : safeAreaBounds.right;
-
-    Animated.spring(pan, {
-      toValue: { x: targetX, y },
-      tension: 50,
-      friction: 10,
-      useNativeDriver: false, // We need to animate layout properties
-    }).start();
-  };
-
-  // Function to ensure button stays within safe area
-  const ensureWithinBounds = (x, y) => {
+  const ensureWithinBounds = useCallback((x, y) => {
     const boundedX = Math.min(
       Math.max(x, safeAreaBounds.left),
       safeAreaBounds.right
@@ -129,99 +172,87 @@ const DraggableFloatingBackButton = ({
       safeAreaBounds.bottom
     );
     return { x: boundedX, y: boundedY };
-  };
+  }, [safeAreaBounds]);
 
-  // Configure PanResponder
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponderCapture: () => true,
+  const snapToNearestEdge = useCallback((x, y) => {
+    const distanceToLeft = x;
+    const distanceToRight = width - x - size;
 
-      onPanResponderGrant: (_, gestureState) => {
-        // Store initial touch position
-        pan.setOffset({
-          x: pan.x._value,
-          y: pan.y._value,
-        });
-        pan.setValue({ x: 0, y: 0 });
-        handlePressIn();
-      },
+    const targetX =
+      distanceToLeft < distanceToRight
+        ? safeAreaBounds.left
+        : safeAreaBounds.right;
 
-      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
-        useNativeDriver: false,
-      }),
+    // Use spring animation without native driver for pan values
+    Animated.spring(pan, {
+      toValue: { x: targetX, y },
+      tension: 50,
+      friction: 10,
+      useNativeDriver: false,
+    }).start();
+  }, [pan, safeAreaBounds, size]);
 
-      onPanResponderRelease: (_, gestureState) => {
-        // End the gesture
-        pan.flattenOffset();
-        handlePressOut();
-
-        // Check if this was a tap or a drag
-        const wasTap =
-          Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5;
-
-        if (wasTap) {
-          // Handle tap (navigate back)
-          if (onPress) {
-            onPress();
-          } else if (router && router.canGoBack()) {
-            router.goBack();
-          }
-        } else if (snapToEdge) {
-          // Snap to nearest edge if enabled
-          const boundedPosition = ensureWithinBounds(
-            pan.x._value,
-            pan.y._value
-          );
-          snapToNearestEdge(boundedPosition.x, boundedPosition.y);
-        } else {
-          // Just ensure within bounds
-          const boundedPosition = ensureWithinBounds(
-            pan.x._value,
-            pan.y._value
-          );
-          pan.setValue(boundedPosition);
-        }
-      },
-    })
-  ).current;
-
-  // Shadow styles that depend on platform
-  const shadowStyle = Platform.select({
-    ios: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.27,
-      shadowRadius: 4.65,
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, gestureState) => {
+      // Only start dragging if movement is significant
+      return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
     },
-    android: {
-      elevation: 6,
+    onPanResponderGrant: () => {
+      setIsDragging(true);
+      pan.setOffset({
+        x: pan.x._value,
+        y: pan.y._value,
+      });
+      pan.setValue({ x: 0, y: 0 });
+      handlePressIn();
     },
-    default: {},
-  });
+    onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+      useNativeDriver: false,
+    }),
+    onPanResponderRelease: (_, gestureState) => {
+      setIsDragging(false);
+      pan.flattenOffset();
+      handlePressOut();
 
-  // Apply styles based on pressed state
-  const buttonContainerStyle = {
+      const wasTap =
+        Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5;
+
+      if (wasTap) {
+        handlePress();
+      } else if (snapToEdge) {
+        const boundedPosition = ensureWithinBounds(
+          pan.x._value,
+          pan.y._value
+        );
+        snapToNearestEdge(boundedPosition.x, boundedPosition.y);
+      } else {
+        const boundedPosition = ensureWithinBounds(
+          pan.x._value,
+          pan.y._value
+        );
+        // Use setValue instead of animated setValue to avoid native driver conflicts
+        Animated.timing(pan, {
+          toValue: boundedPosition,
+          duration: 200,
+          useNativeDriver: false,
+          easing: Easing.out(Easing.ease),
+        }).start();
+      }
+    },
+  }), [pan, handlePressIn, handlePressOut, handlePress, snapToEdge, ensureWithinBounds, snapToNearestEdge]);
+
+  const buttonContainerStyle = useMemo(() => ({
     ...styles.buttonContainer,
-    ...shadowStyle,
     width: size,
     height: size,
     borderRadius: size / 2,
-    backgroundColor: isPressed
-      ? `rgba(${parseInt(accentColor.slice(1, 3), 16)}, ${parseInt(
-          accentColor.slice(3, 5),
-          16
-        )}, ${parseInt(accentColor.slice(5, 7), 16)}, 0.25)`
-      : backgroundColor,
+    backgroundColor: isPressed ? accentRgba : backgroundColor,
     borderColor: accentColor,
-    borderStyle: "dashed",
     transform: [{ scale: scaleAnim }],
-  };
+  }), [size, isPressed, accentRgba, backgroundColor, accentColor, scaleAnim]);
 
-  // Ripple animation styles
-  const rippleStyle = {
+  const rippleStyle = useMemo(() => ({
     ...styles.ripple,
     width: size * 1.4,
     height: size * 1.4,
@@ -239,35 +270,31 @@ const DraggableFloatingBackButton = ({
         }),
       },
     ],
-  };
+  }), [size, accentColor, rippleAnim]);
 
   return (
     <Animated.View
       style={[
         styles.container,
-        { transform: [{ translateX: pan.x }, { translateY: pan.y }] },
+        { 
+          transform: [
+            { translateX: pan.x }, 
+            { translateY: pan.y }
+          ],
+          opacity: blinkAnim, // Add blinking effect
+        },
       ]}
       {...panResponder.panHandlers}
     >
       <Animated.View style={rippleStyle} />
       <Animated.View style={buttonContainerStyle}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            if (onPress) {
-              onPress();
-            } else if (router && router.canGoBack()) {
-              router.goBack();
-            }
-          }}
-          activeOpacity={0.8}
-        >
+        <View style={styles.button}>
           <Ionicons name="chevron-back" size={iconSize} color={iconColor} />
-        </TouchableOpacity>
+        </View>
       </Animated.View>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

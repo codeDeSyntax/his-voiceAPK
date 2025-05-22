@@ -60,7 +60,7 @@ export const formatSermonIntoParagraphs = (text) => {
    * @param {string} searchPhrase - Text to search for or paragraph number
    * @returns {Array} - Array of search result indices
    */
-  export const searchSermon = (paragraphs, searchPhrase) => {
+  export const searchSermon =  (paragraphs, searchPhrase) => {
     if (!searchPhrase || !paragraphs || paragraphs.length === 0) {
       return [];
     }

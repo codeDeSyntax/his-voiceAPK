@@ -1,15 +1,22 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, TouchableOpacity, Animated, PanResponder, Dimensions } from "react-native";
+import { View, TouchableOpacity, Animated, Dimensions } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import BottomSheetContent from "./BottomSheetContent";
+import TopCardContent from "./BottomSheetContent";
 import { styles } from "../../styles/currentsermon";
 
-const CustomBottomSheetController = ({
+const CustomTopCardController = ({
   theme,
+  isCardOpen, setIsCardOpen,
   selectedSermon,
+  searchSermon,
+  paragraphs,
+  paragraphLayouts,
+  scrollToParagraph,
   searchPhrase,
   setSearchPhrase,
   searchResults,
+  setSearchResults,
+  searching,
   currentResultIndex,
   setCurrentResultIndex,
   scrollToTop,
@@ -18,161 +25,105 @@ const CustomBottomSheetController = ({
   onBack,
 }) => {
   // Screen dimensions
-  const { height } = Dimensions.get("window");
-  
-  // Define snap points as percentages of screen height
-  const snapPoints = [
-    height * 0.3,  // 30%
-    height * 0.55, // 55%
-    height * 1.0,  // 80%
-  ];
-  
-  // State to track bottom sheet visibility and position
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
-  const [currentSnapPoint, setCurrentSnapPoint] = useState(-1);
-  
+  const { width, height } = Dimensions.get("window");
+
+  // State to track card visibility
+  // const [isCardOpen, setIsCardOpen] = useState(false);
+
   // Animation values
-  const translateY = useRef(new Animated.Value(height)).current;
+  const translateX = useRef(new Animated.Value(width * 0.8)).current; // Start off-screen to the right
   const rotateAnim = useRef(new Animated.Value(0)).current;
-  
-  // Pan responder for drag gestures
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        translateY.setOffset(translateY._value);
-        translateY.setValue(0);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        translateY.setValue(gestureState.dy);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        translateY.flattenOffset();
-        
-        // Calculate current position
-        const currentPosition = translateY._value + (height - snapPoints[currentSnapPoint]);
-        
-        // Determine whether to snap up, down, or close based on velocity and position
-        if (gestureState.vy > 0.5) {
-          // Fast downward swipe - go to next lower snap point or close
-          if (currentSnapPoint === 0) {
-            closeBottomSheet();
-          } else {
-            snapToIndex(currentSnapPoint - 1);
-          }
-        } else if (gestureState.vy < -0.5) {
-          // Fast upward swipe - go to next higher snap point
-          if (currentSnapPoint < snapPoints.length - 1) {
-            snapToIndex(currentSnapPoint + 1);
-          }
-        } else {
-          // Find nearest snap point based on current position
-          let closestSnapIndex = -1;
-          let closestDistance = Number.MAX_VALUE;
-          
-          snapPoints.forEach((point, index) => {
-            const distance = Math.abs(height - point - currentPosition);
-            if (distance < closestDistance) {
-              closestDistance = distance;
-              closestSnapIndex = index;
-            }
-          });
-          
-          if (closestSnapIndex === -1) {
-            closeBottomSheet();
-          } else {
-            snapToIndex(closestSnapIndex);
-          }
-        }
-      }
-    })
-  ).current;
-  
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+
   // Handle button animation
   useEffect(() => {
     Animated.timing(rotateAnim, {
-      toValue: isBottomSheetOpen ? 1 : 0,
+      toValue: isCardOpen ? 1 : 0,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [isBottomSheetOpen]);
-  
+  }, [isCardOpen]);
+
   // Calculate button rotation
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["0deg", "90deg"],
+    outputRange: ["0deg", "180deg"],
   });
-  
-  // Functions to control the bottom sheet
-  const snapToIndex = (index) => {
-    if (index >= 0 && index < snapPoints.length) {
-      const finalPosition = height - snapPoints[index];
-      setCurrentSnapPoint(index);
-      setIsBottomSheetOpen(true);
-      
-      Animated.spring(translateY, {
-        toValue: finalPosition,
-        tension: 50,
-        friction: 12,
+
+  // Functions to control the card
+  const openCard = () => {
+    setIsCardOpen(true);
+
+    Animated.parallel([
+      Animated.spring(translateX, {
+        toValue: 0,
+        tension: 80,
+        friction: 8,
         useNativeDriver: true,
-      }).start();
-    }
+      }),
+      Animated.timing(overlayOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
-  
-  const closeBottomSheet = () => {
-    setIsBottomSheetOpen(false);
-    setCurrentSnapPoint(-1);
-    
-    Animated.spring(translateY, {
-      toValue: height,
-      tension: 65,
-      friction: 12,
-      useNativeDriver: true,
-    }).start();
+
+  const closeCard = () => {
+    setIsCardOpen(false);
+
+    Animated.parallel([
+      Animated.spring(translateX, {
+        toValue: width * 0.8,
+        tension: 80,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
-  
+
   const handleTogglePress = () => {
-    if (isBottomSheetOpen) {
-      closeBottomSheet();
-      console.log("Bottom sheet closed");
+    if (isCardOpen) {
+      closeCard();
     } else {
-      snapToIndex(2);
-      console.log("Bottom sheet opened to snap point 0");
+      openCard();
     }
   };
-  
-  // Overlay opacity based on bottom sheet position
-  const overlayOpacity = translateY.interpolate({
-    inputRange: [height - snapPoints[2], height],
-    outputRange: [0.5, 0],
-    extrapolate: 'clamp',
-  });
 
   return (
     <>
       {/* Semi-transparent overlay */}
-      {isBottomSheetOpen && (
-        <Animated.View 
-          style={[
-            styles.overlay,
-            { 
-              opacity: overlayOpacity,
-              backgroundColor: 'black',
-            }
-          ]}
-          pointerEvents={isBottomSheetOpen ? "auto" : "none"}
-          onTouchStart={() => closeBottomSheet()}
+      <Animated.View
+        style={[
+          styles.topCardOverlay,
+          {
+            opacity: isCardOpen ? 1 : 0
+          },
+        ]}
+        pointerEvents={isCardOpen ? "auto" : "none"}
+      >
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={closeCard}
         />
-      )}
-      
+      </Animated.View>
+
       {/* Toggle button */}
       <TouchableOpacity
         style={[
           styles.floatingButton,
           {
-            backgroundColor: isBottomSheetOpen
+            backgroundColor: isCardOpen
               ? theme.colors.primary
               : theme.colors.background,
+            borderWidth: 2,
+            borderColor: theme.colors.text,
           },
         ]}
         onPress={handleTogglePress}
@@ -180,48 +131,63 @@ const CustomBottomSheetController = ({
       >
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
           <Feather
-            name={isBottomSheetOpen ? "x" : "menu"}
+            name={isCardOpen ? "x" : "menu"}
             size={24}
             color={theme.colors.text}
           />
         </Animated.View>
       </TouchableOpacity>
 
-      {/* Custom Bottom Sheet */}
-      <Animated.View
-        style={[
-          styles.bottomSheet,
-          {
-            transform: [{ translateY: translateY }],
-            backgroundColor: theme.colors.background,
-          },
-        ]}
-      >
-        {/* Handle indicator */}
-        <View 
-          {...panResponder.panHandlers}
-          style={styles.bottomSheetHandle}
+      {/* Top Card */}
+      {isCardOpen && (
+        <Animated.View
+          style={[
+            styles.topCard,
+            {
+              transform: [{ translateX: translateX }],
+              backgroundColor: theme.colors.background,
+              borderColor: theme.colors.text,
+            },
+          ]}
+          pointerEvents={isCardOpen ? "auto" : "none"}
         >
-          <View style={styles.handleIndicator} />
-        </View>
-        
-        {/* Bottom Sheet Content */}
-        <BottomSheetContent
-          theme={theme}
-          selectedSermon={selectedSermon}
-          searchPhrase={searchPhrase}
-          setSearchPhrase={setSearchPhrase}
-          searchResults={searchResults}
-          currentResultIndex={currentResultIndex}
-          setCurrentResultIndex={setCurrentResultIndex}
-          onScrollToTop={scrollToTop}
-          onScrollToBottom={scrollToBottom}
-          onNavigateToResult={navigateToResult}
-          onBack={onBack}
-        />
-      </Animated.View>
+          {/* Close button inside card */}
+          <TouchableOpacity
+            style={[
+              styles.topCardCloseButton,
+              { backgroundColor: theme.colors.secondary },
+            ]}
+            onPress={closeCard}
+            activeOpacity={0.7}
+          >
+            <Feather name="x" size={18} color={theme.colors.text} />
+          </TouchableOpacity>
+
+          {/* Card Content */}
+          <TopCardContent
+            theme={theme}
+            selectedSermon={selectedSermon}
+            searchPhrase={searchPhrase}
+            setSearchPhrase={setSearchPhrase}
+            searchResults={searchResults}
+            setSearchResults={setSearchResults}
+            currentResultIndex={currentResultIndex}
+            setCurrentResultIndex={setCurrentResultIndex}
+            onScrollToTop={scrollToTop}
+            onScrollToBottom={scrollToBottom}
+            onNavigateToResult={navigateToResult}
+            onBack={onBack}
+            searchSermon={searchSermon}
+            paragraphs={paragraphs}
+            paragraphLayouts={paragraphLayouts}
+            scrollToParagraph={scrollToParagraph}
+            searching={searching}
+            isCardOpen={isCardOpen}
+          />
+        </Animated.View>
+      )}
     </>
   );
 };
 
-export default CustomBottomSheetController;
+export default CustomTopCardController;

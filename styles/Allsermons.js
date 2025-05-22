@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
     borderColor: "silver",
   },
   sermonTitle: {
-    fontSize: 13,
+    fontSize: 14,
     // fontWeight: "900",
     fontFamily: "serif",
     marginBottom: 4,

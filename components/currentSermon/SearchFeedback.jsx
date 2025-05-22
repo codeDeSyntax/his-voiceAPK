@@ -1,55 +1,62 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet } from 'react-native';
 
-const SearchFeedback = ({ 
-  isVisible, 
-  message = "Paragraph found", 
-  theme, 
-  duration = 2000 
+const SearchFeedback = ({
+  isVisible,
+  message = 'Paragraph found',
+  theme,
+  duration = 2000,
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  
+  const isMounted = useRef(false);
+
   useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+
     if (isVisible) {
-      // Reset to 0 and fade in
-      fadeAnim.setValue(0);
+      fadeAnim.setValue(0); // Reset first to avoid glitches
+
+      const fadeIn = Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      });
+
+      const fadeOut = Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      });
+
       Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
+        fadeIn,
         Animated.delay(duration - 600),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        })
+        fadeOut,
       ]).start();
     }
-  }, [isVisible, fadeAnim, duration]);
+  }, [isVisible]);
 
   if (!isVisible) return null;
 
+  const containerStyle = {
+    opacity: fadeAnim,
+    backgroundColor: theme?.colors?.primary || '#000',
+    transform: [
+      {
+        translateY: fadeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [20, 0],
+        }),
+      },
+    ],
+  };
+
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          opacity: fadeAnim,
-          backgroundColor: theme.colors.primary,
-          transform: [
-            {
-              translateY: fadeAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [20, 0],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
-      <Text style={[styles.message, { color: theme.colors.text }]}>
+    <Animated.View style={[styles.container, containerStyle]}>
+      <Text style={[styles.message, { color: theme?.colors?.text || '#fff' }]}>
         {message}
       </Text>
     </Animated.View>
@@ -61,12 +68,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 100,
     alignSelf: 'center',
-    padding: 10,
-    borderRadius: 5,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: 4,
     elevation: 5,
   },
   message: {
@@ -75,4 +83,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchFeedback;
+export default React.memo(SearchFeedback);

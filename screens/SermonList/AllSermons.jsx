@@ -17,13 +17,17 @@ import ActionsBar from "../../components/ActionsBar";
 import SermonListView from "../../components/SermonListView";
 import YearModal from "../../components/YearModal";
 import LetterModal from "../../components/LetterModal";
+import { StyleSheet } from "react-native";
+import ListAppBar from "../../components/AppBar";
+import { useNavigation } from "@react-navigation/native";
+import DraggableFloatingBackButton from "../../components/FloatButton";
 
 const years = Array.from({ length: 10 }, (_, i) => (1973 - i).toString());
 const alphabet = Array.from({ length: 26 }, (_, i) =>
   String.fromCharCode(65 + i)
 );
 
-function SermonList() {
+const SermonList = React.memo(() => {
   const navigation = useNavigation();
   const {
     setSelectedSermon,
@@ -88,7 +92,6 @@ function SermonList() {
       //   (s) => s.title === sermon.title && s.type === sermon.type
       // );
       // Set the selected sermon in context
-      setSelectedSermon(sermon);
 
       addToRecentlyOpened({
         title: sermon.title,
@@ -97,9 +100,10 @@ function SermonList() {
         year: sermon.year,
         location: sermon.location,
       });
-      Platform.OS === "android"
-        ? ToastAndroid.show("in few seconds ⛈️", ToastAndroid.LONG)
-        : Alert.alert("in few seconds ⛈️", "in few seconds ⛈️");
+      // Platform.OS === "android"
+      //   ? ToastAndroid.show("in few seconds ⛈️", ToastAndroid.SHORT)
+      //   : Alert.alert("in few seconds ⛈️", "in few seconds ⛈️");
+      setSelectedSermon(sermon);
       // Navigate
       if (navigation) {
         navigation.navigate("currentsermon");
@@ -199,13 +203,7 @@ function SermonList() {
       />
     </KeyboardAvoidingView>
   );
-}
-
-import { StyleSheet } from "react-native";
-import { Appbar } from "react-native-paper";
-import ListAppBar from "../../components/AppBar";
-import { useNavigation } from "@react-navigation/native";
-import DraggableFloatingBackButton from "../../components/FloatButton";
+});
 
 export const styles = StyleSheet.create({
   container: {

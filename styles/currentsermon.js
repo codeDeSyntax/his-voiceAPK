@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
   highlightedText: {
     backgroundColor: "rgba(59, 130, 246, 0.1)",
     color: "#3B82F6",
-    fontWeight: "bold",
+    // fontWeight: "bold",
   },
   endnoteText: {
     textDecorationLine: "underline",
@@ -40,7 +40,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
     textDecorationLine: "underline",
-    
   },
   locationText: {
     fontFamily: "serif",
@@ -53,7 +52,7 @@ const styles = StyleSheet.create({
   floatingButton: {
     position: "absolute",
     right: 20,
-    top: "50%",
+    top: "60%",
     backgroundColor: "#2d2d2d",
     borderRadius: 30,
     width: 50,
@@ -67,7 +66,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 100,
   },
-  
+
   // Bottom sheet styles - Updated for custom implementation
   overlay: {
     position: "absolute",
@@ -104,7 +103,313 @@ const styles = StyleSheet.create({
   bottomSheetContent: {
     padding: 16,
   },
-  
+
+  topCardOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    zIndex: 90,
+  },
+  topCard: {
+    position: "absolute",
+    top: STATUSBAR_HEIGHT + 70,
+    right: 10,
+    width: width * 0.85,
+    height: height * 0.45,
+    borderRadius: 20, // More receipt-like sharp corners
+    backgroundColor: "white",
+    // Receipt-style border pattern
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#333",
+    shadowColor: "#000",
+    shadowOffset: { width: -3, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 12,
+    zIndex: 95,
+  },
+  topCardContainer: {
+    flex: 1,
+    paddingTop: 8,
+    paddingHorizontal: 4,
+  },
+  topCardScrollContent: {
+    paddingHorizontal: 12,
+    paddingBottom: 16,
+  },
+  topCardCloseButton: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+    backgroundColor: "rgba(0,0,0,0.1)",
+    borderWidth: 1,
+    borderStyle: "dotted",
+  },
+
+  // Receipt Header Styles
+  receiptHeader: {
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  receiptTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    letterSpacing: 2,
+    // fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    textAlign: "center",
+  },
+  receiptSubtitle: {
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 1,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    textAlign: "center",
+    marginTop: 2,
+  },
+  receiptDateTime: {
+    fontSize: 9,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    textAlign: "center",
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+
+  // Receipt Separator
+  receiptSeparator: {
+    paddingVertical: 6,
+    alignItems: "center",
+  },
+  receiptDots: {
+    fontSize: 8,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 1,
+    opacity: 0.6,
+  },
+
+  // Receipt Sections
+  receiptSection: {
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  receiptSectionHeader: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "ZillaSlab",
+    marginBottom: 6,
+    textAlign: "center",
+    textDecorationLine: "underline",
+  },
+
+  // Receipt Items
+  receiptItem: {
+    marginBottom: 4,
+    paddingHorizontal: 2,
+  },
+  receiptLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "ZillaSlab",
+    letterSpacing: 0.5,
+    marginBottom: 1,
+  },
+  receiptValue: {
+    fontSize: 10,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    paddingLeft: 8,
+    lineHeight: 12,
+  },
+
+  // Search Styles
+  receiptSearchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  receiptSearchContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderRadius:10,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    minHeight: 32,
+    backgroundColor: "rgba(0,0,0,0.02)",
+  },
+  receiptSearchInput: {
+    flex: 1,
+    fontSize: 10,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 0.5,
+    borderRadius:5
+  },
+  receiptClearButton: {
+    padding: 2,
+    marginLeft: 4,
+  },
+  receiptClearText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+  },
+  receiptSearchButton: {
+    width: 35,
+    height: 45,
+    borderWidth: 1,
+    borderRadius:10,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  receiptSearchButtonText: {
+    fontSize: 12,
+    fontWeight: "800",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 0.5,
+    paddingVertical:10
+  },
+
+  // Loading
+  receiptLoadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    gap: 8,
+  },
+  receiptLoadingText: {
+    fontSize: 9,
+    fontWeight: "600",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 1,
+  },
+
+  // Search Results
+  receiptResults: {
+    marginTop: 6,
+    paddingHorizontal: 2,
+  },
+  receiptResultsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  receiptResultsCount: {
+    fontSize: 9,
+    fontWeight: "700",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 0.5,
+  },
+  receiptResultsPosition: {
+    fontSize: 9,
+    fontWeight: "700",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 0.5,
+  },
+  receiptNavRow: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+  },
+  receiptNavButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 50,
+  },
+  receiptNavButtonText: {
+    fontSize: 9,
+    fontWeight: "800",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 0.5,
+  },
+
+  // No Results
+  receiptNoResults: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  receiptNoResultsText: {
+    fontSize: 9,
+    fontWeight: "600",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 1,
+    textAlign: "center",
+  },
+
+  // Actions Grid
+  receiptActionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingHorizontal: 2,
+  },
+  receiptActionButton: {
+    flexDirection: "column",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    width: "48%",
+    backgroundColor: "rgba(0,0,0,0.02)",
+    borderRadius:10
+  },
+  receiptActionCode: {
+    fontSize: 12,
+    fontWeight: "900",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  receiptActionText: {
+    fontSize: 8,
+    fontWeight: "700",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 0.5,
+    textAlign: "center",
+  },
+
+  // Receipt Footer
+  receiptFooter: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  receiptFooterText: {
+    fontSize: 9,
+    fontWeight: "700",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 1,
+    textAlign: "center",
+    lineHeight: 12,
+  },
+  receiptFooterSmall: {
+    fontSize: 8,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    textAlign: "center",
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+
   // Paragraph styles
   paragraphContainer: {
     flexDirection: "row",
@@ -123,7 +428,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     // fontSize: 16,
   },
-  
+
   // Controls in bottom sheet
   controlSection: {
     marginBottom: 16,
@@ -136,7 +441,7 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: "row",
     // justifyContent: "space-around",
-    gap:2,
+    gap: 2,
     alignItems: "center",
     marginBottom: 12,
   },
@@ -153,7 +458,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  
+
   // Search section
   searchContainer: {
     marginBottom: 16,
@@ -197,7 +502,7 @@ const styles = StyleSheet.create({
     color: "#555",
     fontFamily: "serif",
   },
-  
+
   // Sermon info section
   sermonInfoContainer: {
     padding: 15,
@@ -216,7 +521,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontFamily: "serif",
   },
-  
+
   // Top bar styles
   topBar: {
     position: "absolute",
@@ -265,7 +570,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginLeft: 6,
   },
-  
+
   // Search Feedback styles
   feedbackContainer: {
     position: "absolute",
@@ -287,11 +592,11 @@ const styles = StyleSheet.create({
   copyingParagraph: {
     backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
-  
+
   copyingParagraph: {
     backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
-  
+
   // Text selection indication
   textSelectable: {
     backgroundColor: "rgba(0, 123, 255, 0.05)",
@@ -299,7 +604,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 123, 255, 0.2)",
     borderRadius: 4,
   },
-  
+
   // Optional: Add this toast/notification style for copy feedback
   copyToast: {
     position: "absolute",

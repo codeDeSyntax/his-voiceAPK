@@ -12,8 +12,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { useNavigation } from "@react-navigation/native";
+import DraggableFloatingBackButton from "../../components/FloatButton";
 
-const MenuItem = ({ title, onPress, icon,crossed }) => {
+const MenuItem = ({ title, onPress, icon, crossed }) => {
   const { theme } = useAppContext();
   const navigation = useNavigation();
 
@@ -30,7 +31,12 @@ const MenuItem = ({ title, onPress, icon,crossed }) => {
       <Text
         style={[
           styles.menuItemText,
-          { color: theme.colors.text, fontFamily: "serif", fontSize: 15, textDecorationLine: crossed ? 'line-through' : 'none' },
+          {
+            color: theme.colors.text,
+            fontFamily: "serif",
+            fontSize: 15,
+            textDecorationLine: crossed ? "line-through" : "none",
+          },
         ]}
       >
         {title}
@@ -63,32 +69,19 @@ const Menu = () => {
   const { theme } = useAppContext();
   const navigation = useNavigation();
   const navigateTo = (screenName) => {
-    navigation.navigate(screenName, {
-      transition: {
-        animation: "slide_to_left",
-        config: {
-          duration: 300,
-        },
-      },
-    });
+    navigation.navigate(screenName);
   };
 
   const closeMenu = () => {
     // You can add any close menu logic here if needed
-    navigation.navigate("AllSermons", {
-      transition: {
-        animation: "slide_to_left",
-        config: {
-          duration: 50,
-        },
-      },
-    });
+    navigation.navigate("AllSermons");
   };
 
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.primary }]}
     >
+      <DraggableFloatingBackButton/>
       <View style={styles.header}>
         <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
           <Ionicons name="close" size={32} color={theme.colors.text} />
@@ -104,14 +97,13 @@ const Menu = () => {
           />
           <MenuItem
             title="Current Sermon Info & Notes"
-            onPress={() =>{
-              if (Platform.OS === 'android') {
-                ToastAndroid.show('not functional yet 💀', ToastAndroid.SHORT);
+            onPress={() => {
+              if (Platform.OS === "android") {
+                ToastAndroid.show("not functional yet 💀", ToastAndroid.SHORT);
               } else {
                 // For iOS and other platforms
-                Alert.alert('not functional yet 💀', 'not functional yet 💀⛈️');
+                Alert.alert("not functional yet 💀", "not functional yet 💀⛈️");
               }
-            
             }}
             icon="information-circle-outline"
             crossed={true}

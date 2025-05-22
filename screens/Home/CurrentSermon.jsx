@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  Suspense,
+} from "react";
 import {
   Text,
   View,
@@ -17,12 +24,12 @@ import ParagraphText from "../../components/currentSermon/ParagraphText";
 import CustomBottomSheetController from "../../components/currentSermon/BottomSheetController";
 import DraggableFloatingBackButton from "../../components/FloatButton";
 import SearchFeedback from "../../components/currentSermon/SearchFeedback";
-import PlaySermon from "../../components/currentSermon/PlaySermon";
 import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
 import DownloadSermon from "../PlaySermon";
+import CustomTopCardController from "../../components/currentSermon/BottomSheetController";
 
-const CurrentSermon = () => {
+const CurrentSermon = React.memo(() => {
   const { selectedSermon, settings, theme, searchText } = useAppContext();
   const router = useNavigation();
   const [searchPhrase, setSearchPhrase] = useState(searchText || "");
@@ -33,11 +40,16 @@ const CurrentSermon = () => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [isCardOpen, setIsCardOpen] = useState(false);
 
   const scrollViewRef = useRef(null);
 
   // Format sermon into paragraphs
-  const paragraphs = formatSermonIntoParagraphs(selectedSermon?.sermon || "");
+  const paragraphs = useMemo(
+    () => formatSermonIntoParagraphs(selectedSermon?.sermon || ""),
+    [selectedSermon?.sermon]
+  );
 
   // Add keyboard listeners to track keyboard state
   useEffect(() => {
@@ -47,7 +59,7 @@ const CurrentSermon = () => {
         setKeyboardVisible(true);
       }
     );
-    
+
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
@@ -63,19 +75,30 @@ const CurrentSermon = () => {
 
   // Update search results when search phrase changes
   useEffect(() => {
-    if (searchPhrase) {
-      const results = searchSermon(paragraphs, searchPhrase);
-      setSearchResults(results);
-      setCurrentResultIndex(0);
+    const fetchSearchResults = async () => {
+      if (searchPhrase) {
+        try {
+          setSearching(true);
+          const results = searchSermon(paragraphs, searchPhrase);
+          setSearchResults(results);
+          setSearching(false);
+          setCurrentResultIndex(0);
 
-      // Scroll to first result if exists
-      if (results.length > 0 && paragraphLayouts[results[0]]) {
-        scrollToParagraph(results[0]);
+          if (results.length > 0 && paragraphLayouts[results[0]]) {
+            scrollToParagraph(results[0]);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      } else {
+        setSearchResults([]);
       }
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchPhrase]);
+    };
+
+    const timeout = setTimeout(fetchSearchResults, 300); // Debounce delay
+
+    return () => clearTimeout(timeout);
+  }, [searchPhrase, paragraphs, paragraphLayouts, scrollToParagraph]);
 
   // Store paragraph layout information for scrolling
   const handleParagraphLayout = useCallback((index, event) => {
@@ -96,17 +119,20 @@ const CurrentSermon = () => {
   }, [selectedSermon?.sermon]);
 
   // Scroll to specific paragraph by index
-  const scrollToParagraph = useCallback((index) => {
-    if (paragraphLayouts[index] && scrollViewRef.current) {
-      // Calculate position to scroll to, with some padding to see context
-      const scrollPosition = Math.max(0, paragraphLayouts[index].y - 100);
+  const scrollToParagraph = useCallback(
+    (index) => {
+      if (paragraphLayouts[index] && scrollViewRef.current) {
+        // Calculate position to scroll to, with some padding to see context
+        const scrollPosition = Math.max(0, paragraphLayouts[index].y - 100);
 
-      scrollViewRef.current.scrollTo({
-        y: scrollPosition,
-        animated: true,
-      });
-    }
-  }, [paragraphLayouts]);
+        scrollViewRef.current.scrollTo({
+          y: scrollPosition,
+          animated: true,
+        });
+      }
+    },
+    [paragraphLayouts]
+  );
 
   // Scroll to top of sermon
   const scrollToTop = useCallback(() => {
@@ -119,18 +145,21 @@ const CurrentSermon = () => {
   }, [contentHeight]);
 
   // Navigate to a search result
-  const navigateToResult = useCallback((paragraphIndex) => {
-    scrollToParagraph(paragraphIndex);
+  const navigateToResult = useCallback(
+    (paragraphIndex) => {
+      scrollToParagraph(paragraphIndex);
 
-    // Show feedback
-    setFeedbackMessage(`Navigated to paragraph ${paragraphIndex + 1}`);
-    setShowFeedback(true);
+      // Show feedback
+      setFeedbackMessage(`Navigated to paragraph ${paragraphIndex + 1}`);
+      setShowFeedback(true);
 
-    // Hide feedback after delay
-    setTimeout(() => {
-      setShowFeedback(false);
-    }, 2000);
-  }, [scrollToParagraph]);
+      // Hide feedback after delay
+      setTimeout(() => {
+        setShowFeedback(false);
+      }, 2000);
+    },
+    [scrollToParagraph]
+  );
 
   // Navigate back to all sermons
   const handleBack = useCallback(() => {
@@ -138,7 +167,7 @@ const CurrentSermon = () => {
   }, [router]);
 
   // Render paragraphs with numbering
-  const renderSermonText = useCallback(() => {
+  const renderSermonText = useMemo(() => {
     return paragraphs.map((paragraph, index) => (
       <ParagraphText
         key={`paragraph-${index}`}
@@ -151,7 +180,14 @@ const CurrentSermon = () => {
         selectedSermon={selectedSermon}
       />
     ));
-  }, [paragraphs, searchPhrase, theme, settings, handleParagraphLayout]);
+  }, [
+    paragraphs,
+    searchPhrase,
+    theme,
+    settings,
+    handleParagraphLayout,
+    selectedSermon,
+  ]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.primary }}>
@@ -161,8 +197,10 @@ const CurrentSermon = () => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 50}
         enabled={keyboardVisible}
       >
-        <DraggableFloatingBackButton /> 
-        <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
+        <DraggableFloatingBackButton />
+        <View
+          style={[styles.container, { backgroundColor: theme.colors.primary }]}
+        >
           {selectedSermon?.type === "mp3" ? (
             <DownloadSermon sermon={selectedSermon} />
           ) : (
@@ -172,7 +210,7 @@ const CurrentSermon = () => {
                 scrollEventThrottle={16}
                 contentContainerStyle={[
                   styles.scrollViewContainer,
-                  { flexGrow: 1 }
+                  { flexGrow: 1 },
                 ]}
                 onContentSizeChange={(width, height) => {
                   setContentHeight(height);
@@ -184,29 +222,42 @@ const CurrentSermon = () => {
                   </Text>
                   {selectedSermon?.location && (
                     <Text
-                      style={[styles.locationText, { color: theme.colors.text }]}
+                      style={[
+                        styles.locationText,
+                        { color: theme.colors.text },
+                      ]}
                     >
                       {selectedSermon?.location}
                     </Text>
                   )}
 
-                  <View style={{ width: "100%" }}>{renderSermonText()}</View>
+                  <View style={{ width: "100%" }}>{renderSermonText}</View>
                 </View>
               </ScrollView>
 
-              <CustomBottomSheetController
+              {/* <Suspense fallback={<Text>Loading...</Text>}> */}
+              <CustomTopCardController
                 theme={theme}
                 selectedSermon={selectedSermon}
                 searchPhrase={searchPhrase}
                 setSearchPhrase={setSearchPhrase}
                 searchResults={searchResults}
+                setSearchResults={setSearchResults}
                 currentResultIndex={currentResultIndex}
                 setCurrentResultIndex={setCurrentResultIndex}
                 scrollToTop={scrollToTop}
                 scrollToBottom={scrollToBottom}
                 navigateToResult={navigateToResult}
                 onBack={handleBack}
+                searchSermon={searchSermon}
+                paragraphs={paragraphs}
+                paragraphLayouts={paragraphLayouts}
+                scrollToParagraph={scrollToParagraph}
+                searching={searching}
+                isCardOpen={isCardOpen}
+                setIsCardOpen={setIsCardOpen}
               />
+              {/* </Suspense> */}
 
               <SearchFeedback
                 isVisible={showFeedback}
@@ -219,6 +270,6 @@ const CurrentSermon = () => {
       </KeyboardAvoidingView>
     </View>
   );
-};
+});
 
 export default CurrentSermon;

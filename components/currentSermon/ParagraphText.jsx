@@ -1,266 +1,274 @@
-import React, { useState, useRef } from "react";
-import { 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  ToastAndroid, 
-  Platform, 
-  Alert, 
-  findNodeHandle, 
-  UIManager,
-  NativeModules
+import React, { useState, useRef, useMemo, useCallback } from "react";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  ToastAndroid,
+  Platform,
+  Alert,
+  Vibration,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
 import { useFonts } from "expo-font";
 
-const ParagraphText = ({
-  paragraph,
-  index,
-  searchPhrase = "",
-  theme,
-  settings,
-  onLayout = () => {},
-  selectedSermon,
-}) => {
-  const [isCopying, setIsCopying] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const textRef = useRef(null);
-  const lastTapTime = useRef(0);
-  const doubleTapDelay = 300; // milliseconds
-
-  // Function to copy paragraph to clipboard
-  const copyToClipboard = async () => {
-    try {
-      setIsCopying(true);
-      
-      // Format the text to include sermon details
-      const sermonInfo = selectedSermon 
-        ? `\n\nFrom: "${selectedSermon.title}" - ${selectedSermon.date || 'No date available'}`
-        : '';
-      
-      const textToCopy = `${paragraph}${sermonInfo}`;
-      
-      await Clipboard.setStringAsync(textToCopy);
-      
-      // Show feedback based on platform
-      if (Platform.OS === 'android') {
-        ToastAndroid.show('Paragraph copied to clipboard', ToastAndroid.SHORT);
-      } else {
-        // For iOS and other platforms
-        Alert.alert('Copied', 'Paragraph copied to clipboard');
-      }
-    } catch (error) {
-      console.error('Failed to copy text: ', error);
-      
-      // Show error feedback
-      if (Platform.OS === 'android') {
-        ToastAndroid.show('Failed to copy text', ToastAndroid.SHORT);
-      } else {
-        Alert.alert('Error', 'Failed to copy text');
-      }
-    } finally {
-      setIsCopying(false);
-    }
-  };
-
-  const [fontsLoaded] = useFonts({
-      "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-    });
-  
-  
-  // Function to handle text selection via double tap
-  const handleTextPress = () => {
-    const now = Date.now();
-    const isDoubleTap = (now - lastTapTime.current) < doubleTapDelay;
+// Memoized text highlighting component for better performance
+const HighlightedText = React.memo(
+  ({ parts, searchPhrase, theme, settings }) => 
     
-    lastTapTime.current = now;
-    
-    if (isDoubleTap && textRef.current) {
-      setIsSelecting(true);
-      selectTextMethod();
-      
-      // Reset selection state after a delay
-      setTimeout(() => {
-        setIsSelecting(false);
-      }, 3000);
-    }
-  };
-  
-  // Method to select text based on platform
-  const selectTextMethod = () => {
-    if (textRef.current) {
-      // The most reliable approach is to just set the selectable prop to true
-      // and let the native selection behavior work
-      
-      // On Android, we can show a toast to guide the user
-      // if (Platform.OS === 'android') {
-      //   ToastAndroid.show('Text is now selectable', ToastAndroid.SHORT);
-      // }
-      
-      // For iOS, we can try to use the selection API if available
-      if (Platform.OS === 'ios' && NativeModules.RNSelection) {
-        try {
-          const reactTag = findNodeHandle(textRef.current);
-          if (reactTag) {
-            NativeModules.RNSelection.select(reactTag);
-          }
-        } catch (error) {
-          console.log('Unable to programmatically select text', error);
-        }
-      }
-    }
-  };
+    (
+    <>
+      {parts.map((part, partIndex) =>
+        part.toLowerCase() === searchPhrase.toLowerCase() ? (
+          <Text
+            key={`highlight-${partIndex}`}
+            style={[
+              styles.highlightedText,
 
-  // Check if paragraph contains "Endnote"
-  if (paragraph.includes("Endnote")) {
-    const parts = paragraph.split(/(Endnote)/gi);
-    return (
-      <TouchableOpacity
-        style={styles.paragraphContainer}
-        onLayout={onLayout}
-        id={`paragraph-${index}`}
-        onLongPress={copyToClipboard}
-        onPress={handleTextPress}
-        delayLongPress={500} // Standard long press delay
-        activeOpacity={0.7} // Visual feedback on press
-      >
-        <Text style={[styles.paragraphNumber, { color: theme.colors.text }]}>
-          {index + 1}
-        </Text>
-        <Text
-          ref={textRef}
-          style={[
-            styles.paragraphText,
-            {
+              {
+                color: theme.dark? "black" :"white",
+                fontSize: settings.fontSize,
+                fontFamily:settings.fontFamily || "ZillaSlab",
+                borderRadius:10,
+                backgroundColor: theme.dark
+                  ? "white"
+                  : "rgba(59, 130, 246, 0.1)",
+              },
+            ]}
+          >
+            {part}
+          </Text>
+        ) : (
+          <Text
+            key={`text-${partIndex}`}
+            style={{
               color: theme.colors.text,
-              fontFamily: settings.fontFamily,
               fontSize: settings.fontSize,
-            },
-          ]}
-          selectable={true} // Make the text selectable
-        >
-          {parts.map((part, partIndex) =>
-            part.toLowerCase() === "endnote" ? (
-              <Text
-                key={`endnote-${partIndex}`}
-                style={[styles.endnoteText, { fontSize: settings.fontSize }]}
-              >
-                {part}
-              </Text>
-            ) : part.toLowerCase().trim() === "William Marrion Branham" ? (
-              <>
-                <Text
-                  key={`wmb-${partIndex}`}
-                  style={[styles.endnoteText, { fontSize: settings.fontSize }]}
-                >
-                  {part}
-                </Text>
-              </>
-            ) : (
-              <Text
-                key={`text-${partIndex}`}
-                style={{
-                  color: theme.colors.text,
-                  fontSize: settings.fontSize,
-                }}
-              >
-                {part}
-              </Text>
-            )
-          )}
-        </Text>
-      </TouchableOpacity>
-    );
-  }
+              fontFamily:settings.fontFamily
+            }}
+          >
+            {part}
+          </Text>
+        )
+      )}
+    </>
+  )
+);
 
-  // If no search phrase, just render the normal paragraph
-  if (!searchPhrase) {
+// Memoized endnote text component
+const EndnoteText = React.memo(({ parts, theme, settings }) => (
+  <>
+    {parts.map((part, partIndex) => {
+      const lowerPart = part.toLowerCase();
+      if (lowerPart === "endnote") {
+        return (
+          <Text
+            key={`endnote-${partIndex}`}
+            style={[styles.endnoteText, { fontSize: settings.fontSize }]}
+          >
+            {part}
+          </Text>
+        );
+      } else if (lowerPart.trim() === "william marrion branham") {
+        return (
+          <Text
+            key={`wmb-${partIndex}`}
+            style={[styles.endnoteText, { fontSize: settings.fontSize }]}
+          >
+            {part}
+          </Text>
+        );
+      } else {
+        return (
+          <Text
+            key={`text-${partIndex}`}
+            style={{
+              color: theme.colors.text,
+              fontSize: settings.fontSize,
+            }}
+          >
+            {part}
+          </Text>
+        );
+      }
+    })}
+  </>
+));
+
+const ParagraphText = React.memo(
+  ({
+    paragraph,
+    index,
+    searchPhrase = "",
+    theme,
+    settings,
+    onLayout,
+    selectedSermon,
+  }) => {
+
+    const [fontsLoaded] = useFonts({
+        "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+      });
+    const [isCopying, setIsCopying] = useState(false);
+    const lastTapTime = useRef(0);
+
+    // Constants
+    const DOUBLE_TAP_DELAY = 300;
+    const LONG_PRESS_DELAY = 500;
+    const VIBRATION_DURATION = 50;
+
+    // Memoize expensive computations
+    const textStyle = useMemo(
+      () => [
+        styles.paragraphText,
+        {
+          color: theme.colors.text,
+          fontFamily: settings.fontFamily || "ZillaSlab",
+          fontSize: settings.fontSize,
+        },
+      ],
+      [theme.colors.text, settings.fontFamily, settings.fontSize]
+    );
+
+    const paragraphNumberStyle = useMemo(
+      () => [styles.paragraphNumber, { color: theme.colors.text }],
+      [theme.colors.text]
+    );
+
+    const containerStyle = useMemo(
+      () => [styles.paragraphContainer, isCopying && styles.copyingParagraph],
+      [isCopying]
+    );
+
+    // Memoize text processing for search and endnotes
+    const processedText = useMemo(() => {
+      const hasEndnote = paragraph.includes("Endnote");
+      const hasSearch = searchPhrase && searchPhrase.length > 0;
+
+      if (hasEndnote) {
+        return {
+          type: "endnote",
+          parts: paragraph.split(/(Endnote)/gi),
+        };
+      } else if (hasSearch) {
+        return {
+          type: "search",
+          parts: paragraph.split(new RegExp(`(${searchPhrase})`, "gi")),
+        };
+      } else {
+        return {
+          type: "normal",
+          text: paragraph,
+        };
+      }
+    }, [paragraph, searchPhrase]);
+
+    // Optimized clipboard function with better error handling
+    const copyToClipboard = useCallback(async () => {
+      if (isCopying) return; // Prevent multiple simultaneous copies
+
+      try {
+        setIsCopying(true);
+
+        // Provide haptic feedback
+        if (Platform.OS === "ios") {
+          Vibration.vibrate(VIBRATION_DURATION);
+        }
+
+        const sermonInfo = selectedSermon
+          ? `\n\nFrom: "${selectedSermon.title}" - ${
+              selectedSermon.date || "No date available"
+            }`
+          : "";
+
+        const textToCopy = `${paragraph}${sermonInfo}`;
+        await Clipboard.setStringAsync(textToCopy);
+
+        // Platform-specific feedback
+        const message = "Paragraph copied to clipboard";
+        if (Platform.OS === "android") {
+          ToastAndroid.show(message, ToastAndroid.SHORT);
+        } else {
+          Alert.alert("Copied", message);
+        }
+      } catch (error) {
+        console.error("Copy failed:", error);
+
+        const errorMessage = "Failed to copy text";
+        if (Platform.OS === "android") {
+          ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
+        } else {
+          Alert.alert("Error", errorMessage);
+        }
+      } finally {
+        setIsCopying(false);
+      }
+    }, [isCopying, paragraph, selectedSermon]);
+
+    // Optimized double-tap handler
+    const handleTextPress = useCallback(() => {
+      const now = Date.now();
+      const timeDiff = now - lastTapTime.current;
+      lastTapTime.current = now;
+
+      if (timeDiff < DOUBLE_TAP_DELAY) {
+        // Double tap detected - provide visual feedback
+        if (Platform.OS === "ios") {
+          Vibration.vibrate(30); // Lighter vibration for double tap
+        }
+        // The text is already selectable, so native selection will handle it
+      }
+    }, []);
+
+    // Render text content based on type
+    const renderTextContent = useCallback(() => {
+      switch (processedText.type) {
+        case "endnote":
+          return (
+            <EndnoteText
+              parts={processedText.parts}
+              theme={theme}
+              settings={settings}
+            />
+          );
+        case "search":
+          return (
+            <HighlightedText
+              parts={processedText.parts}
+              searchPhrase={searchPhrase}
+              theme={theme}
+              settings={settings}
+            />
+          );
+        default:
+          return processedText.text;
+      }
+    }, [processedText, theme, settings, searchPhrase]);
+
     return (
       <TouchableOpacity
-        style={[
-          styles.paragraphContainer,
-          isCopying && styles.copyingParagraph
-        ]}
+        style={containerStyle}
         onLayout={onLayout}
-        id={`paragraph-${index}`}
         onLongPress={copyToClipboard}
         onPress={handleTextPress}
-        delayLongPress={500}
+        delayLongPress={LONG_PRESS_DELAY}
         activeOpacity={0.7}
+        disabled={isCopying} // Prevent interaction while copying
       >
-        <Text style={[styles.paragraphNumber, { color: theme.colors.text }]}>
-          {index + 1}
-        </Text>
+        <Text style={paragraphNumberStyle}>{index + 1}</Text>
         <Text
-          ref={textRef}
-          style={[
-            styles.paragraphText,
-            { 
-              color: theme.colors.text, 
-              fontFamily: settings.fontFamily,
-              fontSize: settings.fontSize 
-            },
-            isSelecting && styles.textSelectable
-          ]}
+          style={textStyle}
           selectable={true}
+          allowFontScaling={false} // Prevent accessibility font scaling issues
         >
-          {paragraph}
+          {renderTextContent()}
         </Text>
       </TouchableOpacity>
     );
   }
+);
 
-  // For search results, highlight matching text
-  const parts = paragraph.split(new RegExp(`(${searchPhrase})`, "gi"));
-  return (
-    <TouchableOpacity
-      style={[
-        styles.paragraphContainer,
-        isCopying && styles.copyingParagraph
-      ]}
-      onLayout={onLayout}
-      id={`paragraph-${index}`}
-      onLongPress={copyToClipboard}
-      onPress={handleTextPress}
-      delayLongPress={500}
-      activeOpacity={0.7}
-    >
-      <Text style={[styles.paragraphNumber, { color: theme.colors.text }]}>
-        {index + 1}
-      </Text>
-      <Text
-        ref={textRef}
-        style={[
-          styles.paragraphText,
-          { 
-            color: theme.colors.text, 
-            fontFamily: settings.fontFamily,
-            fontSize: settings.fontSize 
-          },
-        ]}
-        selectable={true}
-      >
-        {parts.map((part, partIndex) =>
-          part.toLowerCase() === searchPhrase.toLowerCase() ? (
-            <Text
-              key={`highlight-${partIndex}`}
-              style={[styles.highlightedText, { color: theme.colors.text, fontSize: settings.fontSize }]}
-            >
-              {part}
-            </Text>
-          ) : (
-            <Text
-              key={`text-${partIndex}`}
-              style={{ color: theme.colors.text, fontSize: settings.fontSize }}
-            >
-              {part}
-            </Text>
-          )
-        )}
-      </Text>
-    </TouchableOpacity>
-  );
-};
+// Add display name for debugging
+ParagraphText.displayName = "ParagraphText";
 
 export default ParagraphText;

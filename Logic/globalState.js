@@ -29,7 +29,7 @@ const INITIAL_SETTINGS = {
   darkMode: false,
   backgroundColor: "#fafafa",
   fontSize: 12,
-  fontFamily: "serif",
+  fontFamily: "ZillaSlab",
   textColor: "#031412", // Fixed inconsistency - textColor should match non-dark text
 };
 
@@ -92,7 +92,7 @@ export const SermonProvider = ({ children }) => {
       // dont allow for duplicates
       const sermonExists = prevRecents.some((s) => (s.id === sermon.id && s.title === sermon.title)); 
       if (sermonExists) {
-        Platform.OS === "android" ? ToastAndroid.show("Already in recents ⛈️", ToastAndroid.LONG) : Alert.alert("Already in recents ⛈️", "Already in recents ⛈️");
+        Platform.OS === "android" ? ToastAndroid.show("Already in recents ⛈️", ToastAndroid.SHORT) : Alert.alert("Already in recents ⛈️", "Already in recents ⛈️");
         return prevRecents;
       }
       const filteredRecents = prevRecents.filter((s) => s.id !== sermon.id);

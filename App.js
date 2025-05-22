@@ -9,6 +9,7 @@ import AppStatusBar from "./components/StatusBar";
 import * as Font from "expo-font";
 import { useFonts } from "expo-font";
 
+
 // Prevent auto hide of splash screen until we're ready
 SplashScreen.preventAutoHideAsync();
 
