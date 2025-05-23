@@ -301,7 +301,7 @@ const RecentlyOpenedSermons = () => {
                 styles.searchButton,
                 { backgroundColor: theme.dark ? "#427092" : "#000000" },
               ]}
-              android_ripple={{ color: "#427092" }}
+              android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
               onPress={() => {
                 /* Implement search action */
               }}
@@ -317,6 +317,7 @@ const RecentlyOpenedSermons = () => {
           <Pressable
             onPress={() => setIsLetterModalVisible(true)}
             style={[styles.filterButton, { borderColor: theme.colors.text }]}
+            android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
           >
             {/* <Text style={styles.filterText}>{selectedLetter}</Text> */}
             <MaterialIcons
@@ -329,6 +330,7 @@ const RecentlyOpenedSermons = () => {
           <Pressable
             onPress={() => setIsYearModalVisible(true)}
             style={[styles.filterButton, { borderColor: theme.colors.text }]}
+            android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
           >
             {/* <Text style={styles.filterText}>{selectedYear}</Text> */}
             <FontAwesome5
@@ -340,12 +342,15 @@ const RecentlyOpenedSermons = () => {
           <Pressable
             style={[styles.filterButton, { borderColor: theme.colors.text }]}
             onPress={toggleSortOrder}
-            android_ripple={{ color: "#427092" }}
+            android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
           >
             <FontAwesome name="sort" size={20} color={theme.colors.text} />
           </Pressable>
+
           <Pressable
+            onPress={clearAll}
             style={[styles.filterButton, { borderColor: theme.colors.text }]}
+            android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
           >
             <MaterialIcons
               name="format-clear"
@@ -553,8 +558,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: "#fafafa",
-    borderTopLeftRadius:100,
-    borderBottomLeftRadius:100
+    borderTopLeftRadius: 100,
+    borderBottomLeftRadius: 100,
     // borderRadius: 100,
   },
   searchButton: {
