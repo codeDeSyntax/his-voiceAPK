@@ -6,7 +6,7 @@ import { View, ActivityIndicator, Platform, BackHandler } from "react-native";
 import Menu from "../screens/menu/Menu";
 import About from "../screens/About/About";
 import Welcome from "../screens/Welcome/Welcome";
-import UpdateScreen from "../screens/Updating";
+import UpdateScreen from "../screens/LoadingScreen";
 import SermonList from "../screens/SermonList/AllSermons";
 import RecentlyOpenedSermons from "../screens/RecentlyOpened/RecentSermons";
 import SermonSearch from "../screens/Search/Search";
@@ -121,7 +121,7 @@ const StackNavigator = () => {
           presentation: "card",
           detachPreviousScreen: false,
         }}
-        detachInactiveScreens={true}
+        // detachInactiveScreens={true}
       >
         <Stack.Screen
           name="welcome"

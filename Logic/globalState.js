@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform, ToastAndroid } from "react-native";
-
+import * as Updates from 'expo-updates';
 // Separate configuration from component logic
 const SERMON_MODULES = {
   earlySermons: () => import("../sermons/1964-1969/firstset"),

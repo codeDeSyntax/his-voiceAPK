@@ -14,7 +14,7 @@ import { BlurView } from 'expo-blur';
 
 const { width, height } = Dimensions.get('window');
 
-const UpdateScreen = () => {
+const LoaderScreen = () => {
   // const scaleAnim = useRef(new Animated.Value(1)).current;
 
 
@@ -140,4 +140,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UpdateScreen;
+export default LoaderScreen;

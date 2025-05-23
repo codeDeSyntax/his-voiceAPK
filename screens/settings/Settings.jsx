@@ -1,14 +1,9 @@
 // File: Settings.js
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Animated,
-} from "react-native";
+import { View, Text, ScrollView, Animated } from "react-native";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import UpdateScreen from "../Updating";
+import UpdateScreen from "../LoadingScreen";
 import { useAppContext } from "../../Logic/globalState";
 import { styles } from "../../styles/settings";
 
@@ -44,7 +39,7 @@ export const COLOR_OPTIONS = [
 const FONTS_CONFIG = {
   "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
   "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
-  "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+  ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
 };
 
 // Default settings constant
@@ -75,23 +70,29 @@ const Settings = React.memo(() => {
   } = useAppContext();
 
   // Memoized initial values to prevent unnecessary recalculations
-  const initialValues = useMemo(() => ({
-    fontSize: settings.fontSize || 16,
-    fontFamily: settings.fontFamily || "System",
-    textColor: settings.textColor || "#FFFFFF",
-    accentColor: settings.accentColor || COLOR_OPTIONS[0].value,
-    backgroundColor: settings.backgroundColor || (isDarkMode ? "#121212" : "#F8F9FA"),
-  }), [settings, isDarkMode]);
+  const initialValues = useMemo(
+    () => ({
+      fontSize: settings.fontSize || 16,
+      fontFamily: settings.fontFamily || "System",
+      textColor: settings.textColor || "#FFFFFF",
+      accentColor: settings.accentColor || COLOR_OPTIONS[0].value,
+      backgroundColor:
+        settings.backgroundColor || (isDarkMode ? "#121212" : "#F8F9FA"),
+    }),
+    [settings, isDarkMode]
+  );
 
   const [fontSize, setFontSize] = useState(initialValues.fontSize);
   const [fontFamily, setFontFamily] = useState(initialValues.fontFamily);
   const [textColor, setTextColor] = useState(initialValues.textColor);
   const [accentColor, setAccentColor] = useState(initialValues.accentColor);
-  const [backgroundColor, setBackgroundColor] = useState(initialValues.backgroundColor);
-  
+  const [backgroundColor, setBackgroundColor] = useState(
+    initialValues.backgroundColor
+  );
+
   const [savingTheme, setSavingTheme] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // Memoized animation value to prevent recreation
   const animation = useMemo(() => new Animated.Value(isDarkMode ? 1 : 0), []);
 
@@ -143,7 +144,10 @@ const Settings = React.memo(() => {
 
       setIsDarkMode(newMode);
       setSettings(updatedSettings);
-      await AsyncStorage.setItem("sermonSettings", JSON.stringify(updatedSettings));
+      await AsyncStorage.setItem(
+        "sermonSettings",
+        JSON.stringify(updatedSettings)
+      );
 
       // Slightly delayed to show animation
       setTimeout(() => {
@@ -179,7 +183,7 @@ const Settings = React.memo(() => {
         accentColor,
         numberOfColumns,
       };
-      
+
       updateSettings(updatedSettings);
 
       setTimeout(() => {
@@ -214,7 +218,10 @@ const Settings = React.memo(() => {
       setIsDarkMode(DEFAULT_SETTINGS.darkMode);
       setSettings(DEFAULT_SETTINGS);
 
-      await AsyncStorage.setItem("sermonSettings", JSON.stringify(DEFAULT_SETTINGS));
+      await AsyncStorage.setItem(
+        "sermonSettings",
+        JSON.stringify(DEFAULT_SETTINGS)
+      );
 
       setTimeout(() => {
         setSavingTheme(false);
@@ -233,17 +240,12 @@ const Settings = React.memo(() => {
   return (
     <>
       <DraggableFloatingBackButton />
-      <ScrollView
-        style={containerStyle}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={containerStyle} showsVerticalScrollIndicator={false}>
         <SettingsHeader theme={theme} accentColor={accentColor} />
 
         <ProfileSection theme={theme} accentColor={FIXED_ACCENT_COLOR} />
 
-        <Text style={sectionHeaderStyle}>
-          DISPLAY
-        </Text>
+        <Text style={sectionHeaderStyle}>DISPLAY</Text>
 
         <DisplaySettings
           theme={theme}
@@ -256,17 +258,11 @@ const Settings = React.memo(() => {
           setFontFamily={setFontFamily}
         />
 
-        <Text
-          style={[sectionHeaderStyle, { marginTop: 24 }]}
-        >
-          APP
-        </Text>
+        <Text style={[sectionHeaderStyle, { marginTop: 24 }]}>APP</Text>
 
         <AppSettings theme={theme} router={router} />
 
-        <Text style={versionTextStyle}>
-          Version 1.0.0 • Build 2025.05.09
-        </Text>
+        <Text style={versionTextStyle}>Version 1.0.0 • Build 2025.05.09</Text>
 
         <ActionButtons
           theme={theme}
@@ -286,6 +282,6 @@ const Settings = React.memo(() => {
 });
 
 // Display name for debugging
-Settings.displayName = 'Settings';
+Settings.displayName = "Settings";
 
 export default Settings;

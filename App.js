@@ -4,11 +4,11 @@ import StackNavigator from "./components/StackNavigator";
 import { NavigationContainer } from "@react-navigation/native";
 import { SermonProvider } from "./Logic/globalState";
 import { Text, BackHandler, Platform } from "react-native";
-import UpdateScreen from "./screens/Updating";
 import AppStatusBar from "./components/StatusBar";
 import * as Font from "expo-font";
 import { useFonts } from "expo-font";
-
+import UpdateScreen from "./components/Update";
+import LoaderScreen from "./screens/LoadingScreen";
 
 // Prevent auto hide of splash screen until we're ready
 SplashScreen.preventAutoHideAsync();
@@ -17,8 +17,7 @@ export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
-    'MyFont': require('./assets/fonts/ZillaSlab-Regular.ttf'),
-   
+    MyFont: require("./assets/fonts/ZillaSlab-Regular.ttf"),
   });
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export default function App() {
         if (fontsLoaded) {
           // Set default global font
           Text.defaultProps = Text.defaultProps || {};
-          Text.defaultProps.style = { fontFamily: 'MyFont' };
+          Text.defaultProps.style = { fontFamily: "MyFont" };
 
           // Artificial delay (optional)
           await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -48,13 +47,14 @@ export default function App() {
   }
 
   if (!appIsReady || !fontsLoaded) {
-    return <UpdateScreen />; // or Splash screen
+    return <LoaderScreen />; // or Splash screen
   }
 
   return (
     <SermonProvider>
       <NavigationContainer>
         <AppStatusBar />
+        <UpdateScreen/>
         <StackNavigator />
       </NavigationContainer>
     </SermonProvider>
