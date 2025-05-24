@@ -70,6 +70,13 @@ const RecentlyOpenedSermons = () => {
     }
   });
 
+  const borderStyle = {
+    backgroundColor: theme.dark === true ? "#22272a" : "white",
+    shadowColor: theme.colors.text,
+    borderColor: theme.dark ? "white" : "#121212",
+    borderWidth: 2
+  }
+
   const handleSermonClick = (sermon) => {
     //look for sermon from allsermons by title and type before setting selectedSermon
     const sermonToSet = allSermons.find(
@@ -301,7 +308,11 @@ const RecentlyOpenedSermons = () => {
                 styles.searchButton,
                 { backgroundColor: theme.dark ? "#427092" : "#000000" },
               ]}
-              android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
+              android_ripple={{
+                color: theme.dark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+              }}
               onPress={() => {
                 /* Implement search action */
               }}
@@ -316,8 +327,10 @@ const RecentlyOpenedSermons = () => {
         <View style={styles.filtersContainer}>
           <Pressable
             onPress={() => setIsLetterModalVisible(true)}
-            style={[styles.filterButton, { borderColor: theme.colors.text }]}
-            android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
+            style={[styles.filterButton, { borderColor: theme.colors.text },borderStyle]}
+            android_ripple={{
+              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+            }}
           >
             {/* <Text style={styles.filterText}>{selectedLetter}</Text> */}
             <MaterialIcons
@@ -329,8 +342,10 @@ const RecentlyOpenedSermons = () => {
           </Pressable>
           <Pressable
             onPress={() => setIsYearModalVisible(true)}
-            style={[styles.filterButton, { borderColor: theme.colors.text }]}
-            android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
+            style={[styles.filterButton, { borderColor: theme.colors.text },borderStyle]}
+            android_ripple={{
+              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+            }}
           >
             {/* <Text style={styles.filterText}>{selectedYear}</Text> */}
             <FontAwesome5
@@ -340,17 +355,21 @@ const RecentlyOpenedSermons = () => {
             />
           </Pressable>
           <Pressable
-            style={[styles.filterButton, { borderColor: theme.colors.text }]}
+            style={[styles.filterButton, { borderColor: theme.colors.text },borderStyle]}
             onPress={toggleSortOrder}
-            android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
+            android_ripple={{
+              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+            }}
           >
             <FontAwesome name="sort" size={20} color={theme.colors.text} />
           </Pressable>
 
           <Pressable
             onPress={clearAll}
-            style={[styles.filterButton, { borderColor: theme.colors.text }]}
-            android_ripple={{ color: theme.dark ? "#5d5c5c" : "#5d5c5c" }}
+            style={[styles.filterButton, { borderColor: theme.colors.text },borderStyle]}
+            android_ripple={{
+              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+            }}
           >
             <MaterialIcons
               name="format-clear"
@@ -580,15 +599,17 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   filterButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 54,
-    width: 54,
     justifyContent: "center",
-    borderRadius: 100,
-    // elevation: 5,
-    borderWidth: 1,
-    borderStyle: "dashed",
+    alignItems: "center",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+    borderStyle: "dotted",
   },
   filterText: {
     marginRight: 8,

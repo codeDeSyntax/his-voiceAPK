@@ -21,6 +21,7 @@ import { StyleSheet } from "react-native";
 import ListAppBar from "../../components/AppBar";
 import { useNavigation } from "@react-navigation/native";
 import DraggableFloatingBackButton from "../../components/FloatButton";
+// import DownloadSermon from "../PlaySermon";
 
 const years = Array.from({ length: 10 }, (_, i) => (1973 - i).toString());
 const alphabet = Array.from({ length: 26 }, (_, i) =>
@@ -165,6 +166,7 @@ const SermonList = React.memo(() => {
       <ListAppBar theme={theme} />
       <DraggableFloatingBackButton />
 
+
       <ActionsBar
         theme={theme}
         setIsLetterModalVisible={setIsLetterModalVisible}
@@ -172,7 +174,8 @@ const SermonList = React.memo(() => {
         filterOnlyText={filterOnlyText}
         filterOnlyAudio={filterOnlyAudio}
         toggleSortOrder={toggleSortOrder}
-      />
+        />
+        {/* <DownloadSermon/> */}
       <SearchHeader
         theme={theme}
         searchText={searchText}

@@ -1,12 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
-import * as Updates from 'expo-updates';
-import AppStatusBar from './StatusBar';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+} from "react-native";
+import * as Updates from "expo-updates";
+import AppStatusBar from "./StatusBar";
+import { useTheme } from "@react-navigation/native";
+import { useAppContext } from "../Logic/globalState";
 
 export default function UpdateScreen() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
+
+  const { theme } = useAppContext();
 
   useEffect(() => {
     checkForOTAUpdate();
@@ -16,13 +27,12 @@ export default function UpdateScreen() {
     try {
       const update = await Updates.checkForUpdateAsync();
       if (update.isAvailable) {
-        
         const downloaded = await Updates.fetchUpdateAsync();
         setUpdateAvailable(true);
         setModalVisible(true); // show the modal when update is ready
       }
     } catch (error) {
-      console.log('Update check failed:', error);
+      console.log("Update check failed:", error);
     }
   };
 
@@ -36,42 +46,60 @@ export default function UpdateScreen() {
     return {
       date: now.toLocaleDateString(),
       time: now.toLocaleTimeString(),
-      transactionId: now.getTime().toString().slice(-6)
+      transactionId: now.getTime().toString().slice(-6),
     };
   };
 
   const timestamp = getCurrentTimestamp();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container]}>
       {/* <AppStatusBar/> */}
-      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <StatusBar translucent backgroundColor="white" barStyle="dark-content" />
       <Modal
         visible={modalVisible}
-        transparent
+        transparent={true}
+        backdropColor={theme.colors.background}
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.receiptContainer}>
+        <View style={[styles.modalContainer,{backgroundColor:theme.colors.background}]}>
+          <View
+            style={[
+              styles.receiptContainer,
+              { backgroundColor: theme.colors.primary },
+            ]}
+          >
             {/* Receipt Header */}
             <View style={styles.receiptHeader}>
-              <Text style={styles.companyName}>SYSTEM UPDATE</Text>
-              <Text style={styles.headerSubtext}>VERSION CONTROL</Text>
+              <Text style={[styles.companyName, { color: theme.colors.text }]}>
+                SYSTEM UPDATE
+              </Text>
+              <Text
+                style={[styles.headerSubtext, { color: theme.colors.text }]}
+              >
+                VERSION CONTROL
+              </Text>
               <View style={styles.dashedLine} />
             </View>
 
             {/* Receipt Body */}
             <View style={styles.receiptBody}>
-             
-              
               <View style={styles.transactionRow}>
-                <Text style={styles.receiptLabel}>DATE:</Text>
+                <Text
+                  style={[styles.receiptLabel, { color: theme.colors.text }]}
+                >
+                  DATE:
+                </Text>
                 <Text style={styles.receiptValue}>{timestamp.date}</Text>
               </View>
-              
+
               <View style={styles.transactionRow}>
-                <Text style={styles.receiptLabel}>TIME:</Text>
+                <Text
+                  style={[styles.receiptLabel, { color: theme.colors.text }]}
+                >
+                  TIME:
+                </Text>
                 <Text style={styles.receiptValue}>{timestamp.time}</Text>
               </View>
 
@@ -79,17 +107,37 @@ export default function UpdateScreen() {
 
               {/* Main Item */}
               <View style={styles.itemSection}>
-                <Text style={styles.itemName}>APP UPDATE AVAILABLE</Text>
-                <Text style={styles.itemDescription}>NEW VERSION READY</Text>
+                <Text style={[styles.itemName, { color: theme.colors.text }]}>
+                  APP UPDATE AVAILABLE
+                </Text>
+                <Text
+                  style={[styles.itemDescription, { color: theme.colors.text }]}
+                >
+                  NEW VERSION READY
+                </Text>
                 <View style={styles.itemRow}>
-                  <Text style={styles.itemLabel}>STATUS:</Text>
-                  <Text style={styles.itemValue}>{
-                  isDownloaded ?  "DOWNLOADED" : "NOT DOWNLOADED"
-                  }</Text>
+                  <Text
+                    style={[styles.itemLabel, { color: theme.colors.text }]}
+                  >
+                    STATUS:
+                  </Text>
+                  <Text
+                    style={[styles.itemValue, { color: theme.colors.text }]}
+                  >
+                    {isDownloaded ? "DOWNLOADED" : "NOT DOWNLOADED"}
+                  </Text>
                 </View>
                 <View style={styles.itemRow}>
-                  <Text style={styles.itemLabel}>ACTION:</Text>
-                  <Text style={styles.itemValue}>RESTART REQ.</Text>
+                  <Text
+                    style={[styles.itemLabel, { color: theme.colors.text }]}
+                  >
+                    ACTION:
+                  </Text>
+                  <Text
+                    style={[styles.itemValue, { color: theme.colors.text }]}
+                  >
+                    RESTART REQ.
+                  </Text>
                 </View>
               </View>
 
@@ -97,8 +145,10 @@ export default function UpdateScreen() {
 
               {/* Message */}
               <View style={styles.messageSection}>
-                <Text style={styles.receiptMessage}>
-                  A NEW VERSION IS READY.{'\n'}
+                <Text
+                  style={[styles.receiptMessage, { color: theme.colors.text }]}
+                >
+                  A NEW VERSION IS READY.{"\n"}
                   RESTART TO APPLY UPDATE?
                 </Text>
               </View>
@@ -108,15 +158,15 @@ export default function UpdateScreen() {
 
             {/* Receipt Actions */}
             <View style={styles.actionsSection}>
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.laterButton]} 
+              <TouchableOpacity
+                style={[styles.actionButton, styles.laterButton]}
                 onPress={() => setModalVisible(false)}
               >
                 <Text style={styles.laterButtonText}>[ LATER ]</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.restartButton]} 
+
+              <TouchableOpacity
+                style={[styles.actionButton, styles.restartButton]}
                 onPress={handleUpdate}
               >
                 <Text style={styles.restartButtonText}>[ RESTART NOW ]</Text>
@@ -142,47 +192,47 @@ export default function UpdateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     position: 'absolute',
-    top:0
+    top: 0,
     // paddingTop:40
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)'
+    justifyContent: "center",
+    alignItems: "center",
+    // backgroundColor: "rgba(0,0,0,0.7)",
   },
   receiptContainer: {
-    backgroundColor: '#101010',
+    // backgroundColor: '#101010',
     width: 320,
-    maxWidth: '90%',
-    shadowColor: '#000',
+    maxWidth: "90%",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
-    borderRadius:20
+    borderRadius: 20,
   },
   receiptHeader: {
     paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 15,
-    alignItems: 'center',
+    alignItems: "center",
   },
   companyName: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 2,
-    color: '#c8c6c6',
-    textAlign: 'center',
+    color: "#c8c6c6",
+    textAlign: "center",
   },
   headerSubtext: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 12,
-    color: '#bdbbbb',
+    color: "#bdbbbb",
     letterSpacing: 1,
     marginTop: 2,
   },
@@ -191,69 +241,69 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   transactionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginVertical: 2,
   },
   receiptLabel: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 11,
-    color: '#bdbbbb',
+    color: "#bdbbbb",
     letterSpacing: 0.5,
   },
   receiptValue: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 11,
-    color: '#bdbbbb',
-    fontWeight: 'bold',
+    color: "#bdbbbb",
+    fontWeight: "bold",
   },
   itemSection: {
     marginVertical: 10,
   },
   itemName: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#bdbbbb',
+    fontWeight: "bold",
+    color: "#bdbbbb",
     marginBottom: 2,
   },
   itemDescription: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 11,
-    color: '#bdbbbb',
+    color: "#bdbbbb",
     marginBottom: 8,
   },
   itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginVertical: 1,
   },
   itemLabel: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 11,
-    color: '#bdbbbb',
+    color: "#bdbbbb",
   },
   itemValue: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 11,
-    color: '#bdbbbb',
-    fontWeight: 'bold',
+    color: "#bdbbbb",
+    fontWeight: "bold",
   },
   messageSection: {
     marginVertical: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   receiptMessage: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 12,
-    color: '#bdbbbb',
-    textAlign: 'center',
+    color: "#bdbbbb",
+    textAlign: "center",
     lineHeight: 16,
   },
   dashedLine: {
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    borderStyle: 'dashed',
+    borderTopColor: "#ddd",
+    borderStyle: "dashed",
     marginVertical: 10,
     marginHorizontal: -20,
   },
@@ -264,55 +314,55 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderRadius:20
+    borderRadius: 20,
   },
   laterButton: {
-    borderColor: '#ddd',
-    backgroundColor: '#f9f9f9',
-    color:"black"
+    borderColor: "#ddd",
+    backgroundColor: "#f9f9f9",
+    color: "black",
   },
   restartButton: {
-    borderColor: '#333',
-    backgroundColor: '#333',
+    borderColor: "#333",
+    backgroundColor: "#333",
   },
   laterButtonText: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 12,
-    color: 'black',
-    fontWeight: 'bold',
+    color: "black",
+    fontWeight: "bold",
     letterSpacing: 1,
   },
   restartButtonText: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     letterSpacing: 1,
   },
   receiptFooter: {
     paddingHorizontal: 20,
     paddingBottom: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footerText: {
-    fontFamily: 'serif',
+    fontFamily: "serif",
     fontSize: 11,
-    color: '#999',
+    color: "#999",
     letterSpacing: 2,
     marginBottom: 10,
   },
   tearLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
     paddingHorizontal: 10,
   },
   tearDot: {
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: '#ddd',
+    backgroundColor: "#ddd",
   },
 });

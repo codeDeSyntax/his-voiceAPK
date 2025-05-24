@@ -26,7 +26,7 @@ import DraggableFloatingBackButton from "../../components/FloatButton";
 import SearchFeedback from "../../components/currentSermon/SearchFeedback";
 import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
-import DownloadSermon from "../PlaySermon";
+import DownloadSermon from "../../components/currentSermon/PlaySermon";
 import CustomTopCardController from "../../components/currentSermon/BottomSheetController";
 
 const CurrentSermon = React.memo(() => {
@@ -202,7 +202,7 @@ const CurrentSermon = React.memo(() => {
           style={[styles.container, { backgroundColor: theme.colors.primary }]}
         >
           {selectedSermon?.type === "mp3" ? (
-            <DownloadSermon sermon={selectedSermon} />
+            <DownloadSermon/>
           ) : (
             <>
               <ScrollView
