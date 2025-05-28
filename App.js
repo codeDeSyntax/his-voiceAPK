@@ -53,6 +53,7 @@ export default function App() {
   return (
     <SermonProvider>
       <NavigationContainer>
+        {/* <LoaderScreen/> */}
         <AppStatusBar />
         <UpdateScreen/>
         <StackNavigator />

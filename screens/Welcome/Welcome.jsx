@@ -11,11 +11,12 @@ import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useAppContext } from "../../Logic/globalState";
 
 const Welcome = () => {
   const navigation = useNavigation();
+  const { theme } = useAppContext();
   const [fontsLoaded] = useFonts({
-    
     "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
   });
 
@@ -28,15 +29,16 @@ const Welcome = () => {
   // }
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", }}>
       <ImageBackground
         source={require("../../assets/icon.png")} // Make sure to add your background image
         style={styles.backgroundImage}
         // tintColor={"#2f2f2f"}
         blurRadius={10}
+        resizeMode=""
       >
         <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.9)"]}
+          colors={["#1c191790", "#1c1917", "#1c1917e3"]}
           style={styles.gradient}
         >
           <View style={styles.container}>
@@ -45,7 +47,7 @@ const Welcome = () => {
                 source={require("../../assets/roundedLam.jpg")}
                 style={{ height: 50, width: 50, alignSelf: "center" }}
               />
-              <Text style={styles.title}>
+              <Text style={[styles.title, ]}>
                 Transcribed and audio versions of Robert Lambert Lee sermons
               </Text>
               <Text style={styles.subtitle}>1964 - 1973</Text>
@@ -53,7 +55,7 @@ const Welcome = () => {
                 style={styles.button}
                 onPress={handleGoToSermons}
               >
-                <Ionicons name="send-outline" style={styles.buttonText}/>
+                <Ionicons name="send-outline" style={styles.buttonText} />
               </TouchableOpacity>
             </View>
           </View>
@@ -101,11 +103,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
     color: "white",
-    fontWeight:"thin"
+    fontWeight: "thin",
   },
   subtitle: {
     fontFamily: "serif",
-    fontSize:18,
+    fontSize: 18,
     textAlign: "center",
     marginBottom: 40,
     color: "#b4afaf",
@@ -113,13 +115,13 @@ const styles = StyleSheet.create({
   button: {
     // backgroundColor: "#4a4a4a",
     justifyContent: "center",
-    alignItems:"center",
+    alignItems: "center",
     borderRadius: 100,
     height: 100,
     width: 100,
-    borderWidth:1,
-    borderColor:"white",
-    borderStyle:"dashed"
+    borderWidth: 1,
+    borderColor: "white",
+    borderStyle: "dashed",
   },
   buttonText: {
     fontFamily: "Merienda-VariableFont",

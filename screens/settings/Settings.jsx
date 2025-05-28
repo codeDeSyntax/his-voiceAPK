@@ -49,11 +49,11 @@ const DEFAULT_SETTINGS = {
   fontSize: 16,
   fontFamily: "System",
   textColor: "#FFFFFF",
-  accentColor: "#4bb7e6",
+  accentColor: "#512914",
 };
 
 // Fixed accent color constant
-const FIXED_ACCENT_COLOR = "#4bb7e6";
+const FIXED_ACCENT_COLOR = "#643819";
 
 const Settings = React.memo(() => {
   const [fontsLoaded] = useFonts(FONTS_CONFIG);

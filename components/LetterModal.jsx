@@ -59,7 +59,7 @@ const LetterModal = ({ theme, isVisible, closeDropdown, alphabet, setSelectedLet
             style={[
               styles.allLettersOption,
               {
-                backgroundColor: "#14aacc",
+                backgroundColor: theme.colors.background,
                 elevation: 5,
               },
             ]}

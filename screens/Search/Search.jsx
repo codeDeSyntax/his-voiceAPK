@@ -416,7 +416,7 @@ const SermonSearch = () => {
           <Feather
             name="search"
             size={20}
-            color={theme.dark ? "#44c2ef" : "#494d50"}
+            color={theme.dark ? theme.colors.text : "#494d50"}
             style={styles.searchIcon}
           />
           <TextInput
@@ -438,7 +438,7 @@ const SermonSearch = () => {
             placeholderTextColor={
               theme.dark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"
             }
-            selectionColor={theme.dark ? theme.colors.text : "#44c2ef"}
+            selectionColor={theme.dark ? theme.colors.text : "#5d3211"}
             returnKeyType="search"
             onSubmitEditing={handleSearch}
           />
@@ -459,7 +459,7 @@ const SermonSearch = () => {
           style={[
             styles.searchButton,
             {
-              backgroundColor: theme.dark ? "#44c2ef" : "#44c2ef",
+              backgroundColor: theme.dark ? "#5d3211" : "#5d3211",
             },
           ]}
           onPress={handleSearch}
@@ -480,12 +480,12 @@ const SermonSearch = () => {
                 styles.loaderWrapper,
                 {
                   backgroundColor: theme.dark
-                    ? "rgba(255,255,255,0.05)"
+                    ? theme.colors.primary
                     : "rgba(0,0,0,0.02)",
                 },
               ]}
             >
-              <ActivityIndicator size="large" color="#44c2ef" />
+              <ActivityIndicator size="large" color="#5d3211" />
               <Text
                 style={[
                   styles.loaderText,
@@ -544,11 +544,11 @@ const SermonSearch = () => {
                       <Text
                         style={[
                           styles.sermonTitle,
-                          { color: theme.dark ? theme.colors.text : "black" },
+                          { color: theme.dark ? theme.colors.text : theme.colors.primary, fontSize:14 },
                         ]}
                         numberOfLines={2}
                       >
-                        {sermon.title}
+                        {sermon.title.trim()}
                       </Text>
                       <View
                         style={[

@@ -349,6 +349,11 @@ const DisplaySettings = ({
           value={isDarkMode}
           onValueChange={toggleTheme}
           color={localAccentColor}
+          trackColor={{
+            false: theme.dark.background,
+            true: theme.colors.background
+          }}
+          thumbColor={theme.dark ? "#f2cdb4" : "#522b11"}
         />
       </View>
     </View>

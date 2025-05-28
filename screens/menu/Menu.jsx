@@ -24,7 +24,7 @@ const MenuItem = ({ title, onPress, icon, crossed }) => {
         <Ionicons
           name={icon}
           size={24}
-          color={"#3da1ee"}
+          color={"#5d3211"}
           style={styles.menuIcon}
         />
       )}
@@ -79,7 +79,7 @@ const Menu = () => {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.primary }]}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       <DraggableFloatingBackButton/>
       <View style={styles.header}>

@@ -131,7 +131,7 @@ const CustomTopCardController = ({
           <MaterialIcons
             name={isCardOpen ? "cancel" : "menu-open"}
             size={24}
-            color={theme.dark ? "#e5e5e5" : "#4276b7"}
+            color={theme.dark ? "#e5e5e5" : "#5d3211"}
           />
         </Animated.View>
       </TouchableOpacity>

@@ -28,9 +28,9 @@ const styles = StyleSheet.create({
   },
   endnoteText: {
     textDecorationLine: "underline",
-    color: "#4a90e2",
+    
     fontWeight: "500",
-    fontStyle: "italic",
+    // fontStyle: "italic",
     fontFamily: "",
   },
   titleText: {

@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   sermonTitle: {
     fontWeight: "700",
     fontFamily: "serif",
-    fontSize: 16,
+    fontSize: 14,
     flex: 1,
     marginRight: 12,
     lineHeight: 22,

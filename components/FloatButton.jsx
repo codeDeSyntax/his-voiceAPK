@@ -14,6 +14,7 @@ import {
   Platform,
   Easing,
   Vibration,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -57,7 +58,12 @@ const DraggableFloatingBackButton = React.memo(
 
     // Pre-calculate colors to avoid runtime parsing
     const accentRgba = useMemo(
-      () => hexToRgba(accentColor, 0.25),
+      () => hexToRgba(accentColor, 0.3),
+      [accentColor]
+    );
+
+    const pressedRgba = useMemo(
+      () => hexToRgba(accentColor, 0.6),
       [accentColor]
     );
 
@@ -73,22 +79,26 @@ const DraggableFloatingBackButton = React.memo(
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const rippleAnim = useRef(new Animated.Value(0)).current;
     const blinkAnim = useRef(new Animated.Value(1)).current;
+    const pressAnim = useRef(new Animated.Value(1)).current;
+    const glowAnim = useRef(new Animated.Value(0)).current;
+    
+    // Dragging is disabled
     const draggableEnabled = false;
 
-    // Add blinking effect for interactivity
+    // Enhanced blinking effect for interactivity
     useEffect(() => {
       if (animationEnabled && !isDragging) {
         const blinkSequence = Animated.loop(
           Animated.sequence([
             Animated.timing(blinkAnim, {
-              toValue: 0.4,
-              duration: 2000,
+              toValue: 0.6,
+              duration: 3000,
               useNativeDriver: true,
               easing: Easing.inOut(Easing.ease),
             }),
             Animated.timing(blinkAnim, {
               toValue: 1,
-              duration: 2000,
+              duration: 3000,
               useNativeDriver: true,
               easing: Easing.inOut(Easing.ease),
             }),
@@ -101,27 +111,29 @@ const DraggableFloatingBackButton = React.memo(
       }
     }, [animationEnabled, isDragging]);
 
-    const triggerHapticFeedback = useCallback(() => {
+    // Enhanced haptic feedback function
+    const triggerHapticFeedback = useCallback((type = 'light') => {
       if (vibrationEnabled) {
         try {
           if (Platform.OS === "ios") {
-            // Use dynamic import for haptic feedback
+            // Enhanced iOS haptic feedback
             import("react-native-haptic-feedback")
               .then((HapticFeedback) => {
-                HapticFeedback.default.trigger("impactLight", {
+                const feedbackType = type === 'press' ? 'impactMedium' : 'impactLight';
+                HapticFeedback.default.trigger(feedbackType, {
                   enableVibrateFallback: true,
                   ignoreAndroidSystemSettings: false,
                 });
               })
               .catch(() => {
-                // Fallback to basic vibration if haptic feedback is not available
-                const { Vibration } = require("react-native");
-                Vibration.vibrate(50);
+                // Enhanced fallback vibration pattern
+                const pattern = type === 'press' ? [0, 100, 50, 100] : [0, 50];
+                Vibration.vibrate(pattern);
               });
           } else {
-            // Android fallback
-            const { Vibration } = require("react-native");
-            Vibration.vibrate(50);
+            // Enhanced Android vibration patterns
+            const pattern = type === 'press' ? [0, 80, 40, 80] : [0, 40];
+            Vibration.vibrate(pattern);
           }
         } catch (error) {
           console.warn("Vibration not available:", error);
@@ -129,27 +141,42 @@ const DraggableFloatingBackButton = React.memo(
       }
     }, [vibrationEnabled]);
 
+    // Enhanced press in handler
     const handlePressIn = useCallback(() => {
       setIsPressed(true);
-      triggerHapticFeedback();
+      triggerHapticFeedback('light');
 
       if (animationEnabled) {
         Animated.parallel([
           Animated.timing(scaleAnim, {
-            toValue: 0.92,
-            duration: 150,
+            toValue: 0.88,
+            duration: 120,
             useNativeDriver: true,
             easing: Easing.out(Easing.cubic),
           }),
+          Animated.timing(pressAnim, {
+            toValue: 0.9,
+            duration: 120,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.cubic),
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.ease),
+          }),
           Animated.timing(rippleAnim, {
             toValue: 1,
-            duration: 500,
+            duration: 400,
             useNativeDriver: true,
+            easing: Easing.out(Easing.ease),
           }),
         ]).start();
       }
     }, [animationEnabled, triggerHapticFeedback]);
 
+    // Enhanced press out handler
     const handlePressOut = useCallback(() => {
       setIsPressed(false);
 
@@ -157,26 +184,64 @@ const DraggableFloatingBackButton = React.memo(
         Animated.parallel([
           Animated.spring(scaleAnim, {
             toValue: 1,
-            tension: 200,
-            friction: 15,
+            tension: 300,
+            friction: 20,
             useNativeDriver: true,
+          }),
+          Animated.spring(pressAnim, {
+            toValue: 1,
+            tension: 300,
+            friction: 20,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.ease),
           }),
           Animated.timing(rippleAnim, {
             toValue: 0,
-            duration: 300,
+            duration: 250,
             useNativeDriver: true,
+            easing: Easing.out(Easing.ease),
           }),
         ]).start();
       }
     }, [animationEnabled]);
 
+    // Enhanced press handler with stronger feedback
     const handlePress = useCallback(() => {
-      if (onPress) {
-        onPress();
-      } else if (router && router.canGoBack()) {
-        router.goBack();
+      // Stronger haptic feedback for actual press
+      triggerHapticFeedback('press');
+      
+      // Visual feedback for press
+      if (animationEnabled) {
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 0.85,
+            duration: 80,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.cubic),
+          }),
+          Animated.spring(scaleAnim, {
+            toValue: 1,
+            tension: 400,
+            friction: 25,
+            useNativeDriver: true,
+          }),
+        ]).start();
       }
-    }, [onPress, router]);
+
+      // Execute navigation
+      setTimeout(() => {
+        if (onPress) {
+          onPress();
+        } else if (router && router.canGoBack()) {
+          router.goBack();
+        }
+      }, 50); // Small delay to feel the feedback
+    }, [onPress, router, triggerHapticFeedback, animationEnabled]);
 
     const ensureWithinBounds = useCallback(
       (x, y) => {
@@ -203,7 +268,6 @@ const DraggableFloatingBackButton = React.memo(
             ? safeAreaBounds.left
             : safeAreaBounds.right;
 
-        // Use spring animation without native driver for pan values
         Animated.spring(pan, {
           toValue: { x: targetX, y },
           tension: 50,
@@ -214,64 +278,10 @@ const DraggableFloatingBackButton = React.memo(
       [pan, safeAreaBounds, size]
     );
 
+    // Keep pan responder structure but disable it
     const panResponder = useMemo(() => {
-      if (!draggableEnabled) return { panHandlers: {} }; // 🚫 disables drag
-      return PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gestureState) => {
-          return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
-        },
-        onPanResponderGrant: () => {
-          setIsDragging(true);
-          pan.setOffset({
-            x: pan.x._value,
-            y: pan.y._value,
-          });
-          pan.setValue({ x: 0, y: 0 });
-          handlePressIn();
-        },
-        onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
-          useNativeDriver: false,
-        }),
-        onPanResponderRelease: (_, gestureState) => {
-          setIsDragging(false);
-          pan.flattenOffset();
-          handlePressOut();
-
-          const wasTap =
-            Math.abs(gestureState.dx) < 5 && Math.abs(gestureState.dy) < 5;
-
-          if (wasTap) {
-            handlePress();
-          } else if (snapToEdge) {
-            const boundedPosition = ensureWithinBounds(
-              pan.x._value,
-              pan.y._value
-            );
-            snapToNearestEdge(boundedPosition.x, boundedPosition.y);
-          } else {
-            const boundedPosition = ensureWithinBounds(
-              pan.x._value,
-              pan.y._value
-            );
-            Animated.timing(pan, {
-              toValue: boundedPosition,
-              duration: 200,
-              useNativeDriver: false,
-              easing: Easing.out(Easing.ease),
-            }).start();
-          }
-        },
-      });
-    }, [
-      pan,
-      handlePressIn,
-      handlePressOut,
-      handlePress,
-      snapToEdge,
-      ensureWithinBounds,
-      snapToNearestEdge,
-    ]);
+      return { panHandlers: {} }; // Disabled dragging
+    }, []);
 
     const buttonContainerStyle = useMemo(
       () => ({
@@ -279,34 +289,61 @@ const DraggableFloatingBackButton = React.memo(
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: isPressed ? accentRgba : backgroundColor,
+        backgroundColor: isPressed ? pressedRgba : backgroundColor,
         borderColor: accentColor,
-        transform: [{ scale: scaleAnim }],
+        borderWidth: isPressed ? 2 : 1,
+        transform: [
+          { scale: scaleAnim },
+          { scale: pressAnim }
+        ],
+        shadowColor: accentColor,
+        shadowOffset: {
+          width: 0,
+          height: 0,
+        },
+        shadowOpacity: glowAnim,
+        shadowRadius: 8,
+        elevation: isPressed ? 8 : 4,
       }),
-      [size, isPressed, accentRgba, backgroundColor, accentColor, scaleAnim]
+      [size, isPressed, pressedRgba, backgroundColor, accentColor, scaleAnim, pressAnim, glowAnim]
     );
 
     const rippleStyle = useMemo(
       () => ({
         ...styles.ripple,
-        width: size * 1.4,
-        height: size * 1.4,
-        borderRadius: (size * 1.4) / 2,
+        width: size * 1.6,
+        height: size * 1.6,
+        borderRadius: (size * 1.6) / 2,
         backgroundColor: accentColor,
         opacity: rippleAnim.interpolate({
           inputRange: [0, 1],
-          outputRange: [0.5, 0],
+          outputRange: [0, 0.3],
         }),
         transform: [
           {
             scale: rippleAnim.interpolate({
               inputRange: [0, 1],
-              outputRange: [0.5, 1.5],
+              outputRange: [0.4, 1.8],
             }),
           },
         ],
       }),
       [size, accentColor, rippleAnim]
+    );
+
+    const glowStyle = useMemo(
+      () => ({
+        ...styles.glow,
+        width: size * 1.3,
+        height: size * 1.3,
+        borderRadius: (size * 1.3) / 2,
+        backgroundColor: accentColor,
+        opacity: glowAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 0.4],
+        }),
+      }),
+      [size, accentColor, glowAnim]
     );
 
     return (
@@ -318,19 +355,36 @@ const DraggableFloatingBackButton = React.memo(
             opacity: blinkAnim,
           },
         ]}
-        {...(draggableEnabled ? panResponder.panHandlers : {})} // Only apply drag handlers if enabled
       >
+        {/* Ripple effect */}
         <Animated.View style={rippleStyle} />
-        <Animated.View style={buttonContainerStyle}>
-          <View
-            style={styles.button}
-            onTouchEnd={() => {
-              if (!isDragging) handlePress(); // Ensure it only triggers on tap
-            }}
-          >
-            <Ionicons name="chevron-back" size={iconSize} color={iconColor} />
-          </View>
-        </Animated.View>
+        
+        {/* Glow effect */}
+        <Animated.View style={glowStyle} />
+        
+        {/* Main button */}
+        <TouchableWithoutFeedback
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={handlePress}
+          delayPressIn={0}
+          delayPressOut={0}
+        >
+          <Animated.View style={buttonContainerStyle}>
+            <View style={styles.button}>
+              <Ionicons 
+                name="chevron-back" 
+                size={iconSize} 
+                color={iconColor}
+                style={{
+                  textShadowColor: 'rgba(0,0,0,0.3)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 2,
+                }}
+              />
+            </View>
+          </Animated.View>
+        </TouchableWithoutFeedback>
       </Animated.View>
     );
   }
@@ -346,7 +400,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
     overflow: "hidden",
   },
   button: {
@@ -356,6 +409,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ripple: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  glow: {
     position: "absolute",
     alignItems: "center",
     justifyContent: "center",

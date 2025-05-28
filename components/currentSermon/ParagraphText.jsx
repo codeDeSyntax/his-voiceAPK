@@ -64,7 +64,7 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
         return (
           <Text
             key={`endnote-${partIndex}`}
-            style={[styles.endnoteText, { fontSize: settings.fontSize }]}
+            style={[styles.endnoteText, { fontSize: settings.fontSize,fontFamily:settings.fontFamily,color:theme.dark ? theme.colors.hlight : "#5d3211" }]}
           >
             {part}
           </Text>

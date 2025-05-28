@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useAppContext } from '../Logic/globalState';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,7 +20,7 @@ const LoaderScreen = () => {
 
 
   const renderContent = () => (
-    <View style={styles.contentContainer}>
+    <View style={[styles.contentContainer,{backgroundColor:"#1c1917"}]}>
       {/* Update Image */}
       <Animated.View style={[
         styles.imageContainer,
@@ -28,7 +29,7 @@ const LoaderScreen = () => {
         // }
       ]}>
         <Image 
-          source={require('../assets/hv.png')}
+          source={require('../assets/cloud.png')}
           style={styles.image}
           resizeMode="contain"
           onError={(error) => console.warn('Image loading error:', error.nativeEvent.error)}
@@ -39,7 +40,7 @@ const LoaderScreen = () => {
       <View style={styles.loadingContainer}>
         <ActivityIndicator 
           size="large" 
-          color="#60a5fa" // Lighter blue for better contrast
+          color="#54381a" // Lighter blue for better contrast
         />
         <Text style={styles.updateText}>His voice</Text>
         <Text style={styles.subText}>Robert Lambert Lee</Text>
@@ -52,7 +53,7 @@ const LoaderScreen = () => {
 
   return (
     <LinearGradient
-      colors={['#151718', '#151718']} // Darker colors
+      colors={['#1c1917', '#1c1917']} // Darker colors
       style={styles.container}
       onError={(error) => console.warn('Gradient error:', error)}
     >
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)', // More subtle border
+    borderColor: '#1c1917', // More subtle border
     backgroundColor: '#202425', // Darker background
     width: width * 0.85,
     alignItems: 'center',
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
   androidContainer: {
     padding: 32,
     borderRadius: 24,
-    backgroundColor: '#202425', // Darker background
+    backgroundColor: '#1c1917', // Darker background
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)', // More subtle border
     width: width * 0.85,
@@ -124,19 +125,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#f8fafc', // Lighter text for better contrast
     marginTop: 16,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'serif',
   },
   subText: {
     fontSize: 14,
     color: '#94a3b8', // Lighter gray for better contrast
     marginTop: 8,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'serif',
   },
   versionText: {
     fontSize: 12,
     color: '#475569', // Darker gray for less emphasis
     marginTop: 8,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'serif',
   },
 });
 

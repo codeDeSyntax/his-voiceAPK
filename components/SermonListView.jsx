@@ -51,7 +51,7 @@ const SermonListView = React.memo(
       <Text
         style={{
           fontSize: 9,
-          color: theme.colors.text + "80",
+          color: theme.dark ? theme.colors.text + "80" : "#5d3211",
           fontFamily: "ZillaSlab_smb",
         }}
       >
@@ -68,13 +68,13 @@ const SermonListView = React.memo(
             {
               width: "49%",
               borderWidth: 1,
-              borderColor: theme.colors.primary,
+              borderColor: theme.dark ? theme.colors.primary :"#edebeb",
               // elevation: 1,
-              backgroundColor:theme.dark? "transparent" : "#f7f6f6",
+              backgroundColor: theme.dark ? "transparent" : "transparent",
             },
           ]}
           android_ripple={{
-            color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+            color: theme.dark ? "rgba(88, 50, 12, 0.937)" : "rgba(0,0,0,0.05)",
           }}
           onPress={() => handleSermonClick(item)}
         >
@@ -107,48 +107,46 @@ const SermonListView = React.memo(
                 ]}
               >
                 {item.title + "  "}
-                {item.type === "mp3" ? (
-                  <Text
-                    style={[
-                      styles.animatedMicrophone,
-                      { paddingHorizontal: 2 },
-                    ]}
-                  >
-                    <FontAwesome5
-                      name="microphone"
-                      color={theme.colors.hlight+"60"}
-                    />
-                  </Text>
-                ) : (
-                  <Ionicons
-                    name="text"
-                    color={theme.colors.hlight+"60"}
-                  />
-                )}
               </Text>
             </View>
             {/* <Animated.View style={{ transform: [{ scale: scaleValue }] }}> */}
 
             {/* </Animated.View> */}
           </View>
-
-          <Text
-            style={[
-              {
-                color: theme.colors.text+"50",
-                fontSize: 12,
-                fontStyle: "italic",
-                fontFamily: "serif",
-              },
-            ]}
-          >
-            {item.date}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center",gap:4 }}>
+            <Text
+              style={[
+                {
+                  color: theme.dark ? theme.colors.text + "50" : "#5d321190",
+                  fontSize: 12,
+                  fontStyle: "italic",
+                  fontFamily: "serif",
+                },
+              ]}
+            >
+              {item.date}
+            </Text>
+            {item.type === "mp3" ? (
+              <Text
+                style={[styles.animatedMicrophone, { paddingHorizontal: 2 }]}
+              >
+                <FontAwesome5
+                  name="microphone"
+                  color={theme.dark ? theme.colors.hlight + "60" : "#5d3211"}
+                />
+              </Text>
+            ) : (
+              <Ionicons
+                name="text"
+                color={theme.dark ? theme.colors.hlight + "60" : "#5d3211"}
+              />
+            )}
+          </View>
 
           <Text
             style={{
               fontSize: 9,
-              color: theme.colors.text+"80",
+              color: theme.dark ? theme.colors.text + "80" : "#5d3211",
               paddingBottom: 4,
               fontFamily: "Palatino",
             }}

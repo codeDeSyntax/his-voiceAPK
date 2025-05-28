@@ -217,7 +217,7 @@ const CurrentSermon = React.memo(() => {
                 }}
               >
                 <View>
-                  <Text style={[styles.titleText, { color: theme.colors.hlight }]}>
+                  <Text style={[styles.titleText, { color: theme.dark ? "#854412" : "#5d3211" }]}>
                     {selectedSermon?.title}
                   </Text>
                   {selectedSermon?.location && (

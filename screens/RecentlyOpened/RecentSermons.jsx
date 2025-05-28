@@ -71,11 +71,11 @@ const RecentlyOpenedSermons = () => {
   });
 
   const borderStyle = {
-    backgroundColor: theme.dark === true ? "#22272a" : "white",
+    backgroundColor: "transparent",
     shadowColor: theme.colors.text,
     borderColor: theme.dark ? "white" : "#121212",
-    borderWidth: 2
-  }
+    borderWidth: 2,
+  };
 
   const handleSermonClick = (sermon) => {
     //look for sermon from allsermons by title and type before setting selectedSermon
@@ -169,13 +169,8 @@ const RecentlyOpenedSermons = () => {
         styles.sermonItem,
         {
           borderWidth: 1,
-          borderColor: theme.colors.secondary,
-          backgroundColor:
-            theme.dark === true
-              ? parseInt(index) % 2 === 0
-                ? theme.colors.primary
-                : theme.colors.primary
-              : "white",
+          borderColor: theme.colors.primary,
+          backgroundColor: theme.dark ? "transparent" : "transparent",
           gap: 10,
         },
       ]}
@@ -199,7 +194,7 @@ const RecentlyOpenedSermons = () => {
         >
           <Text
             style={{
-              color: "#8e969c",
+              color: theme.colors.text + "90",
               fontSize: 12,
             }}
           >
@@ -226,7 +221,7 @@ const RecentlyOpenedSermons = () => {
         <Text
           style={{
             fontSize: 9,
-            color: theme.colors.ltext,
+            color: theme.colors.text + "60",
             paddingBottom: 4,
             fontFamily: "monospace",
           }}
@@ -241,7 +236,7 @@ const RecentlyOpenedSermons = () => {
         <FontAwesome
           name="trash"
           size={25}
-          color={theme.dark === true ? "#47daf4" : "#000000"}
+          color={theme.dark === true ? theme.colors.hlight : "#000000"}
         />
       </TouchableOpacity>
     </Pressable>
@@ -258,7 +253,7 @@ const RecentlyOpenedSermons = () => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.colors.primary }]}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <DraggableFloatingBackButton />
@@ -267,7 +262,7 @@ const RecentlyOpenedSermons = () => {
           <Text style={[styles.label, { color: theme.colors.text }]}>
             Recents
           </Text>
-          <MaterialIcons
+          {/* <MaterialIcons
             name="note-alt"
             style={{
               height: 30,
@@ -276,7 +271,7 @@ const RecentlyOpenedSermons = () => {
               borderRadius: 100,
             }}
             color={"blue"}
-          />
+          /> */}
         </View>
         {recentlyOpened.length > 0 && (
           <View
@@ -293,7 +288,7 @@ const RecentlyOpenedSermons = () => {
                 styles.searchInput,
                 {
                   color: "gray",
-                  backgroundColor: theme.dark === true ? "#212121" : "#f3f3f3",
+                  backgroundColor: theme.colors.primary,
                   fontStyle: "italic",
                 },
               ]}
@@ -306,7 +301,7 @@ const RecentlyOpenedSermons = () => {
             <Pressable
               style={[
                 styles.searchButton,
-                { backgroundColor: theme.dark ? "#427092" : "#000000" },
+                { backgroundColor: theme.dark ? theme.colors.hlight : "#000000" },
               ]}
               android_ripple={{
                 color: theme.dark
@@ -327,7 +322,11 @@ const RecentlyOpenedSermons = () => {
         <View style={styles.filtersContainer}>
           <Pressable
             onPress={() => setIsLetterModalVisible(true)}
-            style={[styles.filterButton, { borderColor: theme.colors.text },borderStyle]}
+            style={[
+              styles.filterButton,
+              { borderColor: theme.colors.text, backgroundColor: "transparent" },
+              borderStyle,
+            ]}
             android_ripple={{
               color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
             }}
@@ -342,7 +341,11 @@ const RecentlyOpenedSermons = () => {
           </Pressable>
           <Pressable
             onPress={() => setIsYearModalVisible(true)}
-            style={[styles.filterButton, { borderColor: theme.colors.text },borderStyle]}
+            style={[
+              styles.filterButton,
+              { borderColor: theme.colors.text, backgroundColor: "transparent" },
+              borderStyle,
+            ]}
             android_ripple={{
               color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
             }}
@@ -355,7 +358,11 @@ const RecentlyOpenedSermons = () => {
             />
           </Pressable>
           <Pressable
-            style={[styles.filterButton, { borderColor: theme.colors.text },borderStyle]}
+            style={[
+              styles.filterButton,
+              { borderColor: theme.colors.text, backgroundColor: "transparent" },
+              borderStyle,
+            ]}
             onPress={toggleSortOrder}
             android_ripple={{
               color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
@@ -366,7 +373,11 @@ const RecentlyOpenedSermons = () => {
 
           <Pressable
             onPress={clearAll}
-            style={[styles.filterButton, { borderColor: theme.colors.text },borderStyle]}
+            style={[
+              styles.filterButton,
+              { borderColor: theme.colors.text, backgroundColor: "transparent" },
+              borderStyle,
+            ]}
             android_ripple={{
               color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
             }}
@@ -608,7 +619,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5,
+    // elevation: 5,
     borderStyle: "dotted",
   },
   filterText: {
@@ -641,7 +652,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 2,
+    // elevation: 2,
   },
   sermonTitle: {
     fontSize: 13,

@@ -65,7 +65,7 @@ const YearModal = ({
             style={[
               styles.allYearsOption,
               {
-                backgroundColor: "#11a9e0",
+                backgroundColor: theme.colors.background,
               },
             ]}
             onPress={() => {
