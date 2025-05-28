@@ -9,7 +9,7 @@ import {
   Animated,
   Easing,
 } from "react-native";
-import { Ionicons, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons, FontAwesome, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 // Memoized action button component
@@ -23,7 +23,7 @@ const ActionButton = React.memo(({
   const buttonStyle = useMemo(() => [
     styles.actionButton,
     {
-      backgroundColor: theme.dark ? "#22272a" : "white",
+      backgroundColor: theme.colors.primary,
       shadowColor: theme.colors.text,
       borderColor: theme.dark ? "#747272" : "black",
       borderWidth: isHighlighted ? 3 : 2,
@@ -210,10 +210,11 @@ const ActionsBar = ({
           theme={theme}
         >
           <Image
-            source={require("../assets/menu.png")}
+            source={require("../assets/nmenu.png")}
             style={menuImageStyle}
             resizeMode="contain"
           />
+          {/* <MaterialIcons name="gri" size={24} color={theme.colors.text}/> */}
         </ActionButton>
 
         {/* Search Button */}

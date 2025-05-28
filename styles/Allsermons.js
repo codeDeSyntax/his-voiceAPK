@@ -91,28 +91,31 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 10,
   },
-  searchInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 100,
-    // elevation: 5,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    color: "#fafafa",
-    borderRadius: 100,
-  },
-  searchButton: {
-    height: 50,
-    width: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    borderTopRightRadius: 100,
-    borderBottomRightRadius: 100,
-  },
+  // Add these to your Allsermons styles
+searchInputContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  height: 50,
+  borderRadius: 8,
+  paddingHorizontal: 10,
+  position: 'relative',
+},
+placeholderContainer: {
+  position: 'absolute',
+  paddingHorizontal: 5,
+  zIndex: 1,
+},
+placeholderText: {
+  fontStyle: 'italic',
+},
+searchInput: {
+  flex: 1,
+  height: '100%',
+},
+searchButton: {
+  padding: 10,
+  borderRadius: 5,
+},
   scrollIndicatorContainer: {
     width: "100%",
     alignItems: "center",

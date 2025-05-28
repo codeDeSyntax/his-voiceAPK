@@ -11,7 +11,7 @@ const ProfileSection = ({ theme, accentColor }) => {
         styles.profileSection,
         {
           backgroundColor: theme.dark
-            ? "rgba(255, 255, 255, 0.05)"
+            ? theme.colors.primary
             : "rgba(0, 0, 0, 0.02)",
         },
       ]}
@@ -20,13 +20,13 @@ const ProfileSection = ({ theme, accentColor }) => {
         style={[
           styles.profileImage,
           {
-            backgroundColor: "#121212",
+            backgroundColor: theme.colors.primary,
             borderRadius: 100,
           },
         ]}
       >
         <Image
-          source={require("../../assets/cloud.png")}
+          source={require("../../assets/hisv.png")}
           height={50}
           width={50}
           style={{ height: 50, width: 50 }}
@@ -50,7 +50,7 @@ const ProfileSection = ({ theme, accentColor }) => {
           RobertLambertLee
         </Text>
       </View>
-      <View style={[styles.chip, { backgroundColor: accentColor }]}>
+      <View style={[styles.chip, { backgroundColor: theme.colors.hlight + "80" }]}>
         <Text style={[styles.chipText, { color: "#FFFFFF" }]}>Hisv</Text>
       </View>
     </View>

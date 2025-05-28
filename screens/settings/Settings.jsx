@@ -100,7 +100,7 @@ const Settings = React.memo(() => {
 
   // Memoized container style
   const containerStyle = useMemo(
-    () => [styles.container, { backgroundColor: theme.colors.primary }],
+    () => [styles.container, { backgroundColor: theme.colors.background }],
     [theme.colors.primary]
   );
 
@@ -238,7 +238,7 @@ const Settings = React.memo(() => {
   }
 
   return (
-    <>
+    <View style={{backgroundColor:theme.colors.background,flex:1}}>
       <DraggableFloatingBackButton />
       <ScrollView style={containerStyle} showsVerticalScrollIndicator={false}>
         <SettingsHeader theme={theme} accentColor={accentColor} />
@@ -277,7 +277,7 @@ const Settings = React.memo(() => {
           accentColor={FIXED_ACCENT_COLOR}
         />
       </ScrollView>
-    </>
+    </View>
   );
 });
 

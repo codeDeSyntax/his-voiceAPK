@@ -119,7 +119,7 @@ const CustomTopCardController = ({
         style={[
           styles.floatingButton,
           {
-            backgroundColor: theme.dark ? "#1a1919" : "#ececec",
+            backgroundColor: theme.dark ? theme.colors.background : "#ececec",
             // borderWidth: 1,
             borderColor: theme.dark ? "#1a1919" : "#4276b7",
           },

@@ -64,11 +64,11 @@ export const SermonProvider = ({ children }) => {
     () => ({
       dark: isDarkMode,
       colors: {
-        primary: isDarkMode ? "#020303" : "#fafafa",
-        background: isDarkMode ? "#0c0d0e" : "#fafafa",
+        primary: isDarkMode ? "#292524" : "#fafafa",
+        background: isDarkMode ? "#1c1917" : "#fafafa",
         secondary: isDarkMode ? "#121212" : "#fafafa",
-        text: isDarkMode ? "#e5e5e5" : "#031412",
-        ltext: isDarkMode ? "#494d50" : "#031412",
+        text: isDarkMode ? "#f2cdb4" : "#1c1917",
+        hlight: "#d57a3e",
         blueText: "",
       },
     }),

@@ -227,7 +227,7 @@ const SermonSearch = () => {
     const textToRender = isExpanded ? sermon.expandedSentence : sermon.sentence;
 
     return (
-      <View style={styles.sermonTextContainer}>
+      <View style={[styles.sermonTextContainer,{backgroundColor:theme.colors.background}]}>
         <Text
           style={[
             styles.sermonContent,
@@ -386,7 +386,7 @@ const SermonSearch = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.primary }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <DraggableFloatingBackButton />
       <View style={styles.header}>
         <Text
@@ -438,7 +438,7 @@ const SermonSearch = () => {
             placeholderTextColor={
               theme.dark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"
             }
-            selectionColor={theme.dark ? "#44c2ef" : "#44c2ef"}
+            selectionColor={theme.dark ? theme.colors.text : "#44c2ef"}
             returnKeyType="search"
             onSubmitEditing={handleSearch}
           />
@@ -531,7 +531,7 @@ const SermonSearch = () => {
                     styles.sermonCard,
                     {
                       backgroundColor: theme.dark
-                        ? "rgba(255,255,255,0.05)"
+                        ? theme.colors.background
                         : "white",
                       borderColor: theme.dark
                         ? "rgba(255,255,255,0.1)"
@@ -553,7 +553,7 @@ const SermonSearch = () => {
                       <View
                         style={[
                           styles.yearBadge,
-                          { backgroundColor: theme.colors.primary },
+                          // { backgroundColor: theme.colors.primary },
                         ]}
                       >
                         <Text style={styles.sermonYear}>{sermon.year}</Text>

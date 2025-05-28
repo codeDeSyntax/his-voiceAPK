@@ -10,7 +10,7 @@ const SavingModal = ({ visible, theme, accentColor }) => {
         <View
           style={[
             styles.modalContainer,
-            { backgroundColor: theme.dark ? "#2A2A2A" : "#FFFFFF" },
+            { backgroundColor: theme.dark ? theme.colors.primary : "#FFFFFF" },
           ]}
         >
           <Text

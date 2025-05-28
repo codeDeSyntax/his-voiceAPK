@@ -40,7 +40,7 @@ const SettingsHeader = ({ theme, accentColor }) => {
         <Text
           style={[
             styles.headerSubtitle,
-            { color: theme.dark ? "#BBBBBB" : "#666666" },
+            { color: theme.dark ? theme.colors.hlight : "#666666" },
           ]}
         >
           Customize {"\n"}your experience

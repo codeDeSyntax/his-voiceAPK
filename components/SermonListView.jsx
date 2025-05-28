@@ -19,9 +19,9 @@ const SermonListView = React.memo(
     // const { numberOfColumns } = useAppContext();
     const scaleValue = useRef(new Animated.Value(1)).current;
 
-      const [fontsLoaded] = useFonts({
-            "ZillaSlab_smb": require("../assets/fonts/ZillaSlab-SemiBold.ttf"),
-          });
+    const [fontsLoaded] = useFonts({
+      ZillaSlab_smb: require("../assets/fonts/ZillaSlab-SemiBold.ttf"),
+    });
 
     useEffect(() => {
       const pulseAnimation = Animated.loop(
@@ -51,7 +51,7 @@ const SermonListView = React.memo(
       <Text
         style={{
           fontSize: 9,
-          color: "#34aed6",
+          color: theme.colors.text + "80",
           fontFamily: "ZillaSlab_smb",
         }}
       >
@@ -66,12 +66,11 @@ const SermonListView = React.memo(
           style={[
             styles.sermonItem,
             {
-              width: "48%",
+              width: "49%",
               borderWidth: 1,
-              borderColor:
-                theme.dark === true ? theme.colors.secondary : "#f4f6f3",
-              elevation: 1,
-              backgroundColor: theme.dark ? "transparent" : "#f7f6f6",
+              borderColor: theme.colors.primary,
+              // elevation: 1,
+              backgroundColor:theme.dark? "transparent" : "#f7f6f6",
             },
           ]}
           android_ripple={{
@@ -83,7 +82,7 @@ const SermonListView = React.memo(
             style={[
               {
                 flexDirection: "row",
-                justifyContent: "space-between",
+                justifyContent: "flex-start",
                 // padding: 5,
                 borderRadius: 10,
               },
@@ -103,35 +102,40 @@ const SermonListView = React.memo(
                     color: theme.colors.text,
                     // fontWeight: "bold",
                     textDecorationLine: "underline",
-                    fontFamily:"ZillaSlab_smb"
+                    fontFamily: "ZillaSlab_smb",
                   },
                 ]}
               >
                 {item.title + "  "}
-                <FontAwesome5 name="caret-right" color={theme.colors.ltext} />
+                {item.type === "mp3" ? (
+                  <Text
+                    style={[
+                      styles.animatedMicrophone,
+                      { paddingHorizontal: 2 },
+                    ]}
+                  >
+                    <FontAwesome5
+                      name="microphone"
+                      color={theme.colors.hlight+"60"}
+                    />
+                  </Text>
+                ) : (
+                  <Ionicons
+                    name="text"
+                    color={theme.colors.hlight+"60"}
+                  />
+                )}
               </Text>
             </View>
             {/* <Animated.View style={{ transform: [{ scale: scaleValue }] }}> */}
-              {item.type === "mp3" ? (
-                <Text style={styles.animatedMicrophone}>
-                  <FontAwesome5
-                    name="microphone"
-                    color={theme.dark === true ? theme.colors.text : "gray"}
-                  />
-                </Text>
-              ) : (
-                <Ionicons
-                  name="text"
-                  color={theme.dark === true ? theme.colors.text : "gray"}
-                />
-              )}
+
             {/* </Animated.View> */}
           </View>
 
           <Text
             style={[
               {
-                color: "#8e969c",
+                color: theme.colors.text+"50",
                 fontSize: 12,
                 fontStyle: "italic",
                 fontFamily: "serif",
@@ -144,7 +148,7 @@ const SermonListView = React.memo(
           <Text
             style={{
               fontSize: 9,
-              color: theme.colors.ltext,
+              color: theme.colors.text+"80",
               paddingBottom: 4,
               fontFamily: "Palatino",
             }}

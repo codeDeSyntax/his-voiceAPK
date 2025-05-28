@@ -24,9 +24,9 @@ const DisplaySettings = ({
   const [showFontOptions, setShowFontOptions] = useState(false);
   const [showColorOptions, setShowColorOptions] = useState(false);
   const [localAccentColor, setLocalAccentColor] = useState(accentColor);
-  const {updateSettings} = useAppContext()
+  const { updateSettings } = useAppContext();
 
-  const navigation = useNavigation()
+  const navigation = useNavigation();
 
   const getSettingItemStyle = (disabled) => {
     return [styles.settingItem, { opacity: disabled ? 0.5 : 1 }];
@@ -37,7 +37,7 @@ const DisplaySettings = ({
       styles.iconContainer,
       {
         backgroundColor: theme.dark
-          ? "rgba(255, 255, 255, 0.08)"
+          ? theme.colors.primary
           : "rgba(0, 0, 0, 0.04)",
         shadowColor: theme.dark ? "#000" : "#888",
         shadowOffset: { width: 0, height: 2 },
@@ -96,7 +96,7 @@ const DisplaySettings = ({
     <View
       style={[
         styles.settingsGroup,
-        { backgroundColor: theme.colors.secondary },
+        { backgroundColor: theme.colors.primary },
       ]}
     >
       <TouchableOpacity style={getSettingItemStyle(true)} disabled={true}>
@@ -112,7 +112,7 @@ const DisplaySettings = ({
             <Text
               style={[
                 styles.settingText,
-                { color: theme.dark ? "#999999" : "#888888" },
+                { color: theme.dark ? theme.colors.text : "#888888" },
               ]}
             >
               App Language
@@ -120,7 +120,7 @@ const DisplaySettings = ({
             <Text
               style={[
                 styles.settingDescription,
-                { color: theme.dark ? "#777777" : "#999999" },
+                { color: theme.dark ? theme.colors.text : "#999999" },
               ]}
             >
               English (United States)
@@ -137,7 +137,7 @@ const DisplaySettings = ({
       <View
         style={[
           styles.separator,
-          { backgroundColor: theme.dark ? "#FFFFFF" : "#000000" },
+          { backgroundColor: theme.dark ? theme.colors.primary : "#000000" },
         ]}
       />
 
@@ -157,7 +157,7 @@ const DisplaySettings = ({
             <Text
               style={[
                 styles.settingText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
               ]}
             >
               Font Settings
@@ -175,7 +175,7 @@ const DisplaySettings = ({
         <Icon
           name={showPreview ? "chevron-up" : "chevron-down"}
           size={20}
-          color={theme.dark ? "#FFFFFF" : "#333333"}
+          color={theme.dark ? theme.colors.text : "#333333"}
         />
       </TouchableOpacity>
 
@@ -185,7 +185,7 @@ const DisplaySettings = ({
             <Text
               style={[
                 styles.sliderLabel,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
               ]}
             >
               Font Size: {fontSize}px
@@ -196,10 +196,10 @@ const DisplaySettings = ({
               maximumValue={24}
               value={fontSize}
               onValueChange={setFontSize}
-              minimumTrackTintColor={localAccentColor}
+              minimumTrackTintColor={theme.colors.background}
               step={1}
               maximumTrackTintColor={theme.dark ? "#555555" : "#DDDDDD"}
-              thumbTintColor={localAccentColor}
+              thumbTintColor={theme.colors.hlight}
             />
           </View>
 
@@ -210,7 +210,7 @@ const DisplaySettings = ({
             <Text
               style={[
                 styles.sliderLabel,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
               ]}
             >
               Font Family: {fontFamily.split("-")[0]}
@@ -253,7 +253,7 @@ const DisplaySettings = ({
             <Text
               style={[
                 styles.sliderLabel,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
               ]}
             >
               Accent Color
@@ -276,7 +276,7 @@ const DisplaySettings = ({
             style={[
               styles.previewBox,
               {
-                backgroundColor: theme.dark ? "#292929" : "#F5F5F5",
+                backgroundColor: theme.dark ? theme.colors.background : "#F5F5F5",
                 borderWidth: 1,
                 borderColor: theme.dark
                   ? "rgba(255, 255, 255, 0.1)"
@@ -290,28 +290,30 @@ const DisplaySettings = ({
                 {
                   fontFamily: fontFamily !== "System" ? fontFamily : undefined,
                   fontSize: fontSize,
-                  color: theme.dark ? "#FFFFFF" : "#1A1A1A",
+                  color: theme.dark ? "#dedbdb" : "#1A1A1A",
                 },
               ]}
             >
               This is a preview of how your text will appear in the app.
             </Text>
-            <Pressable onPress={()=> navigation.navigate("currentsermon") } style={[getIconContainerStyle(),{marginTop:4}]}>
-            <MaterialIcons
-              name="open-in-full"
-              size={20}
-              color={theme.dark ? "#FFFFFF" : "#333333"}
-            />
-          </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate("currentsermon")}
+              style={[getIconContainerStyle(), { marginTop: 4 }]}
+            >
+              <MaterialIcons
+                name="open-in-full"
+                size={20}
+                color={theme.dark ? theme.colors.text : "#333333"}
+              />
+            </Pressable>
           </View>
-          
         </View>
       )}
 
       <View
         style={[
           styles.separator,
-          { backgroundColor: theme.dark ? "#FFFFFF" : "#000000" },
+          { backgroundColor: theme.dark ? theme.colors.primary : "#000000" },
         ]}
       />
 
@@ -328,7 +330,7 @@ const DisplaySettings = ({
             <Text
               style={[
                 styles.settingText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
               ]}
             >
               Dark Mode

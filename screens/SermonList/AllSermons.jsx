@@ -160,7 +160,7 @@ const SermonList = React.memo(() => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.colors.primary }]}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ListAppBar theme={theme} />

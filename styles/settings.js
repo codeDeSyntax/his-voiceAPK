@@ -6,7 +6,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   headerContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingBottom: 24,
     flexDirection: "row",
     alignItems: "center",
@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     fontFamily: "serif",
   },
   profileSection: {
-    marginHorizontal: 24,
+    marginHorizontal: 20,
     marginBottom: 24,
     borderRadius: 16,
     padding: 20,
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   settingsGroup: {
-    marginHorizontal: 24,
+    marginHorizontal: 18,
     marginBottom: 24,
     borderRadius: 24,
     shadowColor: "#000",

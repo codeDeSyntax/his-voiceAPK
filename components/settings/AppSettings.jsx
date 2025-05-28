@@ -28,7 +28,7 @@ const AppSettings = ({ theme, router }) => {
     <View
       style={[
         styles.settingsGroup,
-        { backgroundColor: theme.colors.secondary },
+        { backgroundColor: theme.colors.primary },
       ]}
     >
       <TouchableOpacity
@@ -47,7 +47,7 @@ const AppSettings = ({ theme, router }) => {
             <Text
               style={[
                 styles.settingText,
-                { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
               ]}
             >
               About
