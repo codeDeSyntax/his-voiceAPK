@@ -28,7 +28,7 @@ const STORAGE_KEYS = {
 const INITIAL_SETTINGS = {
   darkMode: false,
   backgroundColor: "#fafafa",
-  fontSize: 12,
+  fontSize: 22,
   fontFamily: "ZillaSlab",
   textColor: "#031412", // Fixed inconsistency - textColor should match non-dark text
 };

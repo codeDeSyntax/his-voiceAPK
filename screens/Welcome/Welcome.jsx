@@ -38,7 +38,7 @@ const Welcome = () => {
         resizeMode=""
       >
         <LinearGradient
-          colors={["#1c191740", "#1c1917", "#1c191730"]}
+          colors={["#1c191730", "#1c191730", "#1c191730"]}
           style={styles.gradient}
         >
           <View style={styles.container}>

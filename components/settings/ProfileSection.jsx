@@ -26,10 +26,11 @@ const ProfileSection = ({ theme, accentColor }) => {
         ]}
       >
         <Image
-          source={require("../../assets/hisv.png")}
+          source={require("../../assets/icon.png")}
           height={50}
           width={50}
-          style={{ height: 50, width: 50 }}
+          style={{ height: 50, width: 50,borderRadius: 100 }}
+          resizeMode="cover"
         />
       </View>
       <View style={styles.profileInfo}>
@@ -50,7 +51,7 @@ const ProfileSection = ({ theme, accentColor }) => {
           RobertLambertLee
         </Text>
       </View>
-      <View style={[styles.chip, { backgroundColor: theme.colors.hlight + "80" }]}>
+      <View style={[styles.chip, { backgroundColor: "#432917", borderRadius: 20 }]}>
         <Text style={[styles.chipText, { color: "#FFFFFF" }]}>Hisv</Text>
       </View>
     </View>

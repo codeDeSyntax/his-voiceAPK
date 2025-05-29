@@ -292,6 +292,7 @@ const DraggableFloatingBackButton = React.memo(
         backgroundColor: isPressed ? pressedRgba : backgroundColor,
         borderColor: accentColor,
         borderWidth: isPressed ? 2 : 1,
+        borderStyle:"dashed",
         transform: [
           { scale: scaleAnim },
           { scale: pressAnim }
@@ -303,7 +304,7 @@ const DraggableFloatingBackButton = React.memo(
         },
         shadowOpacity: glowAnim,
         shadowRadius: 8,
-        elevation: isPressed ? 8 : 4,
+        // elevation: isPressed ? 8 : 4,
       }),
       [size, isPressed, pressedRgba, backgroundColor, accentColor, scaleAnim, pressAnim, glowAnim]
     );

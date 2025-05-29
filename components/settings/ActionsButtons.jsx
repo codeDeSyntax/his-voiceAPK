@@ -9,7 +9,7 @@ const ActionButtons = ({ theme, accentColor, saveSettings, restoreDefault }) => 
       <TouchableOpacity
         style={[
           styles.saveButton,
-          { backgroundColor: "#150b04" },
+          { backgroundColor: theme.dark ? "#150b04" : "#432815" },
         ]}
         onPress={saveSettings}
       >
