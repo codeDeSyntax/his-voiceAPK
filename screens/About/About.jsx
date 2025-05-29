@@ -66,14 +66,14 @@ function About({ navigation }) {
           style={styles.heroContainer}
         >
           <LinearGradient
-            colors={isDark ? ["#3eb7ee", "#3eb7ee"] : ["#3eb7ee", "#3498db"]}
+            colors={isDark ? [theme.colors.primary, theme.colors.primary] : [theme.colors.primary, theme.colors.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroGradient}
           >
             <View style={styles.heroContent}>
-              <Text style={styles.heroTitle}>His Voice</Text>
-              <Text style={styles.heroSubtitle}>Sermons & Teachings</Text>
+              <Text style={[styles.heroTitle,{color:theme.colors.text}]}>His Voice</Text>
+              <Text style={[styles.heroSubtitle,{color:theme.colors.text}]}>Sermons & Teachings</Text>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -126,7 +126,7 @@ function About({ navigation }) {
             >
               <LinearGradient
                 colors={
-                  isDark ? ["#1e3c72", "#2a5298"] : ["#3eb7ee", "#3498db"]
+                  isDark ? [theme.colors.primary, theme.colors.primary] : [theme.colors.primary, theme.colors.primary]
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -138,8 +138,8 @@ function About({ navigation }) {
                   color="white"
                   style={styles.buttonIcon}
                 />
-                <Text style={styles.buttonText}>Desktop Version</Text>
-                <Icon name="open-outline" size={18} color="white" />
+                <Text style={[styles.buttonText,{color:theme.colors.text}]}>Desktop Version</Text>
+                <Icon name="open-outline" size={18} color={theme.colors.text} />
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   },
   highlightText: {
     fontWeight: "800",
-    color: "#3eb7ee",
+    color: "#723718",
     fontSize: 18,
     fontFamily: "serif",
   },
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 16,
-    color: "#3eb7ee",
+    color: "#9d4911",
     marginLeft: 10,
     fontWeight: "500",
     fontFamily: "serif",

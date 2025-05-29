@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/hisv.png",
         "backgroundColor": "#5e3c33"
       },
       "package": "com.boblambert.hisvoice",
