@@ -34,7 +34,7 @@ const Welcome = () => {
         source={require("../../assets/icon.png")} // Make sure to add your background image
         style={styles.backgroundImage}
         // tintColor={"#2f2f2f"}
-        blurRadius={10}
+        blurRadius={5}
         resizeMode=""
       >
         <LinearGradient
