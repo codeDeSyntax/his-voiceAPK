@@ -5,11 +5,13 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "hisvoice",
-    "newArchEnabled": true,
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+
     "ios": {
       "supportsTablet": true
     },
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/hisv.png",
@@ -18,30 +20,45 @@
       "package": "com.boblambert.hisvoice",
       "edgeToEdgeEnabled": true
     },
+
     "web": {
       "favicon": "./assets/hisv.png"
-    },
-    "updates": {
-      "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
-    },
+    }, 
+    "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
+
     "plugins": [
       "expo-font",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#4b2d16",
-          "image": "./assets/splash.png",
-          "resizeMode": "cover"
+          "image": "./assets/icon.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#2e241c",
+          "dark": {
+            "image": "./assets/icon.png",
+            "backgroundColor": "#2e241c"
+          },
+          "statusBar": {
+            "hidden": false,
+            "style": "light",
+            "backgroundColor": "transparent"
+          }
         }
       ]
     ],
+
+    "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
+    },
+
     "extra": {
       "eas": {
         "projectId": "8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
       }
     },
+
     "owner": "josiah-ok",
     "runtimeVersion": {
       "policy": "sdkVersion"
