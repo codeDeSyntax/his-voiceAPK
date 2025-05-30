@@ -140,8 +140,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   highlightedText: {
-    backgroundColor: "rgba(59, 130, 246, 0.15)",
-    color: "#44c2ef",
+    // backgroundColor: "rgba(59, 130, 246, 0.15)",
+    color: "#44cef",
     fontWeight: "500",
     borderRadius: 4,
     overflow: "hidden",

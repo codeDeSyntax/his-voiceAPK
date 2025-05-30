@@ -23,7 +23,7 @@
 
     "web": {
       "favicon": "./assets/hisv.png"
-    }, 
+    },
     "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
 
     "plugins": [
@@ -31,11 +31,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icon.png",
+          "image": "./assets/splashmid.png",
           "resizeMode": "cover",
           "backgroundColor": "#2e241c",
           "dark": {
-            "image": "./assets/icon.png",
+            "image": "./assets/splashmid.png",
             "backgroundColor": "#2e241c"
           },
           "statusBar": {

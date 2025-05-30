@@ -239,11 +239,13 @@ const SermonSearch = () => {
             .map((part, i) => (
               <Text
                 key={i}
-                style={
+                style={[
+                 
                   part.startsWith("<highlight>") &&
                   part.endsWith("</highlight>")
-                    ? styles.highlightedText
-                    : undefined
+                    ?  {backgroundColor:theme.dark ? "#522c12" : "#4f2c15",...styles.highlightedText,color:theme.colors.text}
+                    : undefined , ]
+                    
                 }
               >
                 {" " + part.trim().replace(/<\/?highlight>/g, "") + " ".trim()}
@@ -544,7 +546,7 @@ const SermonSearch = () => {
                       <Text
                         style={[
                           styles.sermonTitle,
-                          { color: theme.dark ? theme.colors.text : theme.colors.primary, fontSize:14 },
+                          { color: theme.dark ? theme.colors.text : "#3d220f", fontSize:14,textDecorationLine:"underline" },
                         ]}
                         numberOfLines={2}
                       >
@@ -632,7 +634,7 @@ const SermonSearch = () => {
                 >
                   <Text
                     style={{
-                      color: theme.dark ? "#44c2ef" : "#44c2ef",
+                      color: theme.dark ? theme.colors.hlight : "#1c1917",
                       fontWeight: "500",
                     }}
                   >
