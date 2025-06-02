@@ -11,10 +11,12 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
         style={[
           styles.searchInputContainer,
           {
-            backgroundColor: theme.dark ? theme.colors.primary : "#f3f3f3",
-            borderWidth: theme.dark ? 0 : 0,
-            borderColor: theme.colors.secondary,
+            backgroundColor:theme.dark ? "transparent" : "#ffffff95",
+
+            borderColor: theme.dark ? "#636262" : theme.colors.text,
+            borderWidth: theme.dark ? 1 : 0,
             borderRadius: 100,
+            borderStyle:"dotted"
           },
         ]}
       >
@@ -22,17 +24,17 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
           style={[
             styles.searchInput,
             {
-              backgroundColor: theme.dark ? theme.colors.primary : "#f3f3f3",
-              color: theme.dark === true ? theme.colors.text : "gray",
+              borderColor: theme.dark ? theme.colors.primary : "#f3f3f3",
+              color: theme.dark === true ? theme.colors.text : "#000000",
               fontFamily: "serif",
-              fontStyle: "italic",
+              // fontStyle: "italic",
               borderRadius: 100,
             },
           ]}
           placeholder="Search Sermons"
           value={searchText}
           onChangeText={setSearchText}
-          placeholderTextColor={theme.dark === true ? "gray" : "gray"}
+          placeholderTextColor={theme.dark  ? "gray" : "#00000080"}
           selectionColor={theme.dark === true ? theme.colors.text : "gray"}
           spellCheck={false}
           autoCorrect={false}

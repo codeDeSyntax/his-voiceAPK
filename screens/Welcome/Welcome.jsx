@@ -29,9 +29,9 @@ const Welcome = () => {
   // }
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", }}>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor:"#1c1917"}}>
       <ImageBackground
-        source={require("../../assets/icon.png")} // Make sure to add your background image
+        source={require("../../assets/cloud.png")} // Make sure to add your background image
         style={styles.backgroundImage}
         // tintColor={"#2f2f2f"}
         blurRadius={5}
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontFamily: "Merienda-VariableFont",
-    color: "#ffffff",
+    color: "#e6c3b8",
     fontSize: 50,
     textAlign: "center",
   },

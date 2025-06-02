@@ -17,7 +17,7 @@ const ListAppBar = ({theme}) => {
             <Text
               style={[
                 styles.label,
-                { color: theme.colors.text, fontFamily: "serif" },
+                { color: theme.dark ? theme.colors.text : "white", fontFamily: "serif" },
               ]}
             >
               R.L.L sermons
@@ -26,12 +26,12 @@ const ListAppBar = ({theme}) => {
           <Ionicons
               name="book"
               size={20}
-              color={theme.dark === true ? theme.colors.text : "gray"}
+              color={theme.dark === true ? theme.colors.text : "white"}
             />
             <Ionicons
               name="settings"
               size={20}
-              color={theme.dark === true ? theme.colors.text : "gray"}
+              color={theme.dark === true ? theme.colors.text : "white"}
               onPress={() => router?.navigate("Settings")}
               android_ripple={{
                 color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",

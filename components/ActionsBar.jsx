@@ -23,9 +23,9 @@ const ActionButton = React.memo(({
   const buttonStyle = useMemo(() => [
     styles.actionButton,
     {
-      backgroundColor: theme.colors.primary,
-      shadowColor: theme.colors.text,
-      borderColor: theme.dark ? "#747272" : "black",
+      backgroundColor: theme.dark ? theme.colors.primary : "transparent",
+      // shadowColor: theme.colors.text,
+      borderColor: theme.dark ? "#747272" : "#4a2916",
       borderWidth: isHighlighted ? 3 : 2,
     },
     style
@@ -209,12 +209,16 @@ const ActionsBar = ({
           isHighlighted={currentLabelIndex === 0 && showLabels}
           theme={theme}
         >
-          <Image
+          {
+            theme.dark ? 
+            <Image
             source={require("../assets/nmenu.png")}
             style={menuImageStyle}
             resizeMode="contain"
-          />
-          {/* <MaterialIcons name="gri" size={24} color={theme.colors.text}/> */}
+          /> : 
+          <MaterialIcons name="grid-view" size={24} color={theme.dark ? theme.colors.text  : "white"}/>
+          }
+          {/* <MaterialIcons name="gri" size={24} color={theme.dark ? theme.colors.text  : "white"}/> */}
         </ActionButton>
 
         {/* Search Button */}
@@ -223,7 +227,7 @@ const ActionsBar = ({
           isHighlighted={currentLabelIndex === 1 && showLabels}
           theme={theme}
         >
-          <Ionicons name="search-outline" size={24} color={theme.colors.text} />
+          <Ionicons name="search-outline" size={24} color={theme.dark ? theme.colors.text  : "white"} />
         </ActionButton>
 
         {/* Filter by letter Button */}
@@ -231,9 +235,9 @@ const ActionsBar = ({
           onPress={showLetterModal}
           isHighlighted={currentLabelIndex === 2 && showLabels}
           theme={theme}
-          style={{ borderColor: theme.dark ? "white" : "#121212" }}
+          // style={{ borderColor: theme.dark ? "white" : "#121212" }}
         >
-          <Ionicons name="text-outline" size={24} color={theme.colors.text} />
+          <Ionicons name="text-outline" size={24} color={theme.dark ? theme.colors.text  : "white"} />
         </ActionButton>
 
         {/* Filter by year Button */}
@@ -241,12 +245,12 @@ const ActionsBar = ({
           onPress={showYearModal}
           isHighlighted={currentLabelIndex === 3 && showLabels}
           theme={theme}
-          style={{ borderColor: theme.dark ? "white" : "#121212" }}
+          // style={{ borderColor: theme.dark ? "white" : "#121212" }}
         >
           <FontAwesome5
             name="calendar-alt"
             size={24}
-            color={theme.colors.text}
+            color={theme.dark ? theme.colors.text  : "white"}
           />
         </ActionButton>
 
@@ -257,8 +261,8 @@ const ActionsBar = ({
           theme={theme}
         >
           <View style={actionButtonContentStyle}>
-            <Ionicons name="text" size={20} color={theme.colors.text} />
-            <Ionicons name="filter" size={16} color={theme.colors.text} />
+            <Ionicons name="text" size={20} color={theme.dark ? theme.colors.text  : "white"} />
+            <Ionicons name="filter" size={16} color={theme.dark ? theme.colors.text  : "white"} />
           </View>
         </ActionButton>
 
@@ -270,7 +274,7 @@ const ActionsBar = ({
         >
           <View style={actionButtonContentStyle}>
             <Text style={audioTextStyle}>🔊</Text>
-            <Ionicons name="filter" size={16} color={theme.colors.text} />
+            <Ionicons name="filter" size={16} color={theme.dark ? theme.colors.text  : "white"} />
           </View>
         </ActionButton>
 
@@ -280,7 +284,7 @@ const ActionsBar = ({
           isHighlighted={currentLabelIndex === 6 && showLabels}
           theme={theme}
         >
-          <FontAwesome name="sort" size={24} color={theme.colors.text} />
+          <FontAwesome name="sort" size={24} color={theme.dark ? theme.colors.text  : "white"} />
         </ActionButton>
       </ScrollView>
     </View>
@@ -300,11 +304,11 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.2,
+    // shadowRadius: 4,
+    // elevation: 5,
     borderStyle: "dotted",
   },
   actionButtonContent: {

@@ -16,22 +16,26 @@ import { CommonActions, useNavigation } from "@react-navigation/native";
 import * as NavigationBar from "expo-navigation-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useScreens } from "react-native-screens";
+import { useAppContext } from "../Logic/globalState";
 // useScreens();
 const Stack = createNativeStackNavigator();
 
 // Custom loading component with transparent background
-const LoadingFallback = () => (
-  <View
-    style={{
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "transparent",
-    }}
-  >
-    <ActivityIndicator size="large" color="#0000ff" />
-  </View>
-);
+const LoadingFallback = () => {
+  const { theme } = useAppContext();
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor:theme.colors.background,
+      }}
+    >
+      <ActivityIndicator size="large" color={ theme.colors.text} />
+    </View>
+  );
+};
 
 // Suspense wrapper for smooth loading
 const ScreenWithSuspense =
@@ -39,7 +43,7 @@ const ScreenWithSuspense =
   ({ navigation, route }) =>
     (
       <Suspense fallback={<LoadingFallback />}>
-        <Component navigation={navigation} />
+        <Component  />
       </Suspense>
     );
 
@@ -120,6 +124,7 @@ const StackNavigator = () => {
           gestureEnabled: false,
           presentation: "card",
           detachPreviousScreen: false,
+          
         }}
         // detachInactiveScreens={true}
       >
@@ -147,6 +152,7 @@ const StackNavigator = () => {
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
+
             // ...CardOptions,
           }}
         />

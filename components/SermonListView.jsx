@@ -8,14 +8,14 @@ import {
   Easing,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { styles } from "../styles/Allsermons";
 import { useAppContext } from "../Logic/globalState";
 import { Pressable } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
 
 const SermonListView = React.memo(
-  ({ theme, filteredSermons, handleSermonClick }) => {
+  ({ theme, filteredSermons, handleSermonClick, setSearchText ,allSermons,setFilteredSermons}) => {
     // const { numberOfColumns } = useAppContext();
     const scaleValue = useRef(new Animated.Value(1)).current;
 
@@ -68,13 +68,14 @@ const SermonListView = React.memo(
             {
               width: "49%",
               borderWidth: 1,
-              borderColor: theme.dark ? theme.colors.primary :"#edebeb",
+              borderColor: theme.dark ? theme.colors.primary :"#bbb8b8",
+              borderStyle:"dashed",
               // elevation: 1,
               backgroundColor: theme.dark ? "transparent" : "transparent",
             },
           ]}
           android_ripple={{
-            color: theme.dark ? "rgba(88, 50, 12, 0.937)" : "rgba(0,0,0,0.05)",
+            color: theme.dark ? "#58320cef" : "rgba(0,0,0,0.05)",
           }}
           onPress={() => handleSermonClick(item)}
         >
@@ -159,6 +160,7 @@ const SermonListView = React.memo(
     );
 
     return (
+      <>
       <FlatList
         data={filteredSermons}
         renderItem={renderSermonItem}
@@ -167,10 +169,63 @@ const SermonListView = React.memo(
         contentContainerStyle={styles.listContent}
         numColumns={2}
         columnWrapperStyle={{ justifyContent: "space-between" }}
+        ListEmptyComponent={
+          <View style={{ padding: 16, alignItems: "center" }}>
+            <Text
+              style={{
+                color: theme.dark ? theme.colors.text + "80" : "#5d3211",
+                fontSize: 14,
+                fontFamily: "serif",
+              }}
+            >
+              No sermons found
+            </Text>
+          </View>
+        }
         // ItemSeparatorComponent={" "}
 
         //   ListHeaderComponent={listHeaderComponent}
       />
+    {
+      filteredSermons.length === 0 && (
+        <Animated.View
+        style={{
+          position: "absolute",
+          bottom: 20,
+          right: 20,
+          transform: [{ scale: scaleValue }],
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            backgroundColor: theme.dark ? "#58320c" : "#f0f0f0",
+            padding: 10,
+            borderRadius: 50,
+            shadowColor: "#000",
+            shadowOffset: {
+              width: 0,
+              height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5,
+          }}
+          onPress={() => {
+            setSearchText("");
+            setFilteredSermons(allSermons);
+          }}
+        >
+          <MaterialIcons
+            name="refresh"
+            size={24}
+            color={theme.dark ? theme.colors.text : "#5d3211"}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+      )
+    }
+      </>
+
     );
   }
 );
