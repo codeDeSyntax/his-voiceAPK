@@ -4,13 +4,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  backgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    // zIndex: -1,
+  },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  gradientContainer: {
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
+  },
   header: {
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 10,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontFamily: "serif",
     fontWeight: "600",
   },
@@ -26,7 +48,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 100,
     paddingHorizontal: 16,
     height: 50,
     flex: 1,
@@ -50,11 +72,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(150,150,150,0.1)",
   },
   searchButton: {
-    borderRadius: 12,
-    paddingVertical: 0,
-    paddingHorizontal: 20,
+    borderRadius: 100,
+    width:50,
     height: 50,
     justifyContent: "center",
+    alignItems:"center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -64,7 +86,7 @@ const styles = StyleSheet.create({
   searchButtonText: {
     color: "white",
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: 20,
   },
   scrollView: {
     flex: 1,
