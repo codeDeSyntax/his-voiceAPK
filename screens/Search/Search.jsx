@@ -34,6 +34,7 @@ import fourthSet from "../../sermons/1972/1972";
 import lastSet from "../../sermons/1973/1973";
 import DraggableFloatingBackButton from "../../components/FloatButton";
 import { LinearGradient } from "expo-linear-gradient";
+import { useFonts } from "expo-font";
 
 const sermons = [
   ...earlySermons,
@@ -61,6 +62,9 @@ const SermonSearch = () => {
   const [selectedSermonContent, setSelectedSermonContent] = useState(null);
   const [modalContentReady, setModalContentReady] = useState(false);
 
+   const [fontsLoaded] = useFonts({
+    "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+  });
   // Refs
   const scrollViewRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -285,6 +289,7 @@ const SermonSearch = () => {
               <Text
                 key={i}
                 style={[
+                  {color: theme.dark ? "#cdc8c8" : "black"},
                   part.startsWith("<highlight>") &&
                   part.endsWith("</highlight>")
                     ? {
@@ -628,6 +633,7 @@ const SermonSearch = () => {
                             {
                               color: theme.dark ? theme.colors.text : "#3d220f",
                               fontSize: 14,
+                              fontFamily:"ZillaSlab",
                               textDecorationLine: "underline",
                             },
                           ]}
@@ -772,7 +778,7 @@ const SermonSearch = () => {
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
-          <SafeAreaView
+          <View
             style={[
               styles.modalContainer,
               {
@@ -790,7 +796,7 @@ const SermonSearch = () => {
                   borderColor: theme.dark
                     ? "rgba(255,255,255,0.1)"
                     : "rgba(0,0,0,0.05)",
-                  maxHeight: windowHeight * 0.9, // Set maximum height to prevent overflow
+                  maxHeight: windowHeight * 1.0, // Set maximum height to prevent overflow
                 },
               ]}
             >
@@ -868,7 +874,7 @@ const SermonSearch = () => {
                 {selectedSermonContent && renderModalContent()}
               </ScrollView>
             </View>
-          </SafeAreaView>
+          </View>
         </Modal>
       </LinearGradient>
     </View>

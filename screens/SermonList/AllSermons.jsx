@@ -37,7 +37,8 @@ const lightBackgrounds = [
 
 // Background images for dark mode
 const darkBackgrounds = [
-  require("../../assets/cloud.png"),
+  // require("../../assets/scroll.png"),
+  require("../../assets/lib2.jpg"),
   require("../../assets/lib2.jpg"),
 ];
 

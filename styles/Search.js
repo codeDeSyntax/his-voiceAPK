@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   sermonTitle: {
-    fontWeight: "700",
-    fontFamily: "serif",
+    // fontWeight: "700",
+    // fontFamily: "serif",
     fontSize: 14,
     flex: 1,
     marginRight: 12,
@@ -157,14 +157,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   sermonContent: {
-    fontFamily: "serif",
-    fontSize: 14,
+    fontFamily: "ZillaSlab",
+    fontSize: 12,
     lineHeight: 22,
   },
   highlightedText: {
     // backgroundColor: "rgba(59, 130, 246, 0.15)",
     color: "#44cef",
     fontWeight: "500",
+    fontSize:12,
     borderRadius: 4,
     overflow: "hidden",
     paddingHorizontal: 2,
@@ -174,7 +175,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 14,
   },
   expandButton: {
     flexDirection: "row",
