@@ -64,6 +64,7 @@ const SermonSearch = () => {
 
    const [fontsLoaded] = useFonts({
     "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+    "ZillaSlabSemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
   // Refs
   const scrollViewRef = useRef(null);
@@ -289,7 +290,7 @@ const SermonSearch = () => {
               <Text
                 key={i}
                 style={[
-                  {color: theme.dark ? "#cdc8c8" : "black"},
+                  {color: theme.dark ? "#cdc8c8" : "black",fontSize:14},
                   part.startsWith("<highlight>") &&
                   part.endsWith("</highlight>")
                     ? {
@@ -367,6 +368,7 @@ const SermonSearch = () => {
               styles.sermonSectionTitle,
               {
                 color: theme.dark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)",
+                fontFamily: "ZillaSlabSemiBold",
               },
             ]}
           >
@@ -380,13 +382,14 @@ const SermonSearch = () => {
             styles.sermonFullContent,
             {
               color: theme.dark ? theme.colors.text : "black",
+              fontFamily: "ZillaSlab",
               fontSize: 16,
               lineHeight: 24,
               marginBottom: 20,
             },
           ]}
           selectable={true}
-          selectionColor={"yellow"}
+          selectionColor={"#8b320c"}
         >
           {selectedSermonContent.popupContent
             .split(/(<highlight>.*?<\/highlight>)/g)
@@ -401,6 +404,7 @@ const SermonSearch = () => {
                   style={
                     isHighlight
                       ? {
+                           fontFamily: "ZillaSlab",
                           backgroundColor: "#FFD700",
                           color: "#000000",
                           fontWeight: "bold",
@@ -515,7 +519,7 @@ const SermonSearch = () => {
               value={searchPhrase}
               onChangeText={(e) => {
                 setSearchText(e);
-                setSearchPhrase(e.trim());
+                setSearchPhrase(e);
                 setFound(true);
               }}
               placeholderTextColor={
@@ -632,7 +636,7 @@ const SermonSearch = () => {
                             styles.sermonTitle,
                             {
                               color: theme.dark ? theme.colors.text : "#3d220f",
-                              fontSize: 14,
+                              fontSize: 15,
                               fontFamily:"ZillaSlab",
                               textDecorationLine: "underline",
                             },
@@ -774,6 +778,7 @@ const SermonSearch = () => {
         {/* Sermon Content Modal */}
         <Modal
           animationType="slide"
+          
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
