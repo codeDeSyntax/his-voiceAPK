@@ -10,6 +10,8 @@ import { useFonts } from "expo-font";
 import UpdateScreen from "./components/Update";
 import LoaderScreen from "./screens/LoadingScreen";
 
+
+
 // Prevent auto hide of splash screen until we're ready
 SplashScreen.preventAutoHideAsync();
 

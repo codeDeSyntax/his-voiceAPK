@@ -181,7 +181,7 @@ const ParagraphText = React.memo(
             }`
           : "";
 
-        const textToCopy = `${paragraph}${sermonInfo}`;
+        const textToCopy = `https://hisvoice.tiiny.site/ \n${paragraph}${sermonInfo}`;
         await Clipboard.setStringAsync(textToCopy);
 
         // Platform-specific feedback
