@@ -121,7 +121,7 @@ function About({ navigation }) {
             <View style={styles.divider} />
             <TouchableOpacity
               style={styles.platformButton}
-              onPress={() => handleLinkPress("https://hisvoice.tiiny.site")}
+              onPress={() => handleLinkPress("https://hisvoice.vercel.app/")}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -162,7 +162,7 @@ function About({ navigation }) {
             <View style={styles.divider} />
             <TouchableOpacity
               style={styles.websiteContainer}
-              onPress={() => handleLinkPress("https://hisvoice.tiiny.site")}
+              onPress={() => handleLinkPress("https://hisvoice.vercel.app/")}
               activeOpacity={0.7}
             >
               <Icon
@@ -170,7 +170,7 @@ function About({ navigation }) {
                 size={18}
                 color={theme.colors.primary}
               />
-              <Text style={styles.link}>hisvoice.tiiny.site</Text>
+              <Text style={styles.link}>https://hisvoice.vercel.app/</Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -183,7 +183,7 @@ function About({ navigation }) {
             ]}
           >
             <Image
-              source={require("../../assets/siteImg.jpg")}
+              source={require("../../assets/site.png")}
               style={styles.image}
               resizeMode="cover"
             />
@@ -191,7 +191,7 @@ function About({ navigation }) {
               <Text style={styles.imageText}>Visit this url</Text>
               <TouchableOpacity
                 style={styles.imageButton}
-                onPress={() => handleLinkPress("https://hisvoice.tiiny.site")}
+                onPress={() => handleLinkPress("https://hisvoice.vercel.app/")}
               >
                 <Text style={styles.imageButtonText}>Explore</Text>
                 <Icon name="arrow-forward" size={16} color="white" />

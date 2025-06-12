@@ -23,6 +23,7 @@ const SERMON_MODULES = {
 const STORAGE_KEYS = {
   RECENTLY_OPENED: "recentlyOpenedSermons",
   SETTINGS: "sermonSettings",
+  LAST_POSITIONS: "sermonLastPositions",
 };
 
 const INITIAL_SETTINGS = {
@@ -58,6 +59,7 @@ export const SermonProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(INITIAL_SETTINGS.darkMode);
   const [sermonsLoaded, setSermonsLoaded] = useState(false);
   const [numberOfColumns , setNumberOfColumns] = useState(2);
+  const [lastReadPositions, setLastReadPositions] = useState({});
 
   // Theme derived from isDarkMode
   const theme = useMemo(
@@ -75,13 +77,57 @@ export const SermonProvider = ({ children }) => {
     [isDarkMode]
   );
 
+  // Update last read position for a sermon
+  const updateLastReadPosition = useCallback(async (sermonId, paragraphIndex) => {
+    try {
+      const updatedPositions = {
+        ...lastReadPositions,
+        [sermonId]: paragraphIndex
+      };
+      
+      setLastReadPositions(updatedPositions);
+      
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.LAST_POSITIONS,
+        JSON.stringify(updatedPositions)
+      );
+    } catch (error) {
+      console.error("Failed to update last read position:", error);
+    }
+  }, [lastReadPositions]);
+
+  // Get last read position for a sermon
+  const getLastReadPosition = useCallback((sermonId) => {
+    return lastReadPositions[sermonId] || 0;
+  }, [lastReadPositions]);
+
   // Handle selecting a random sermon
   const handleRandomSermons = useCallback(() => {
     if (textSermons.length > 0) {
       const randomIndex = Math.floor(Math.random() * textSermons.length);
-      setSelectedSermon(textSermons[randomIndex]);
+      const randomSermon = textSermons[randomIndex];
+      // Add last read position to sermon
+      const sermonWithPosition = {
+        ...randomSermon,
+        lastReadParagraph: getLastReadPosition(randomSermon.id)
+      };
+      setSelectedSermon(sermonWithPosition);
     }
-  }, [textSermons]);
+  }, [textSermons, getLastReadPosition]);
+
+  // Enhanced setSelectedSermon to include last read position
+  const setSelectedSermonWithPosition = useCallback((sermon) => {
+    if (sermon) {
+      const sermonWithPosition = {
+        ...sermon,
+        lastReadParagraph: getLastReadPosition(sermon.id)
+      };
+      setSelectedSermon(sermonWithPosition);
+    } else {
+      setSelectedSermon(null);
+    }
+  }, [getLastReadPosition]);
 
   // Add sermon to recently opened
   const addToRecentlyOpened = useCallback((sermon) => {
@@ -92,19 +138,20 @@ export const SermonProvider = ({ children }) => {
       // dont allow for duplicates
       const sermonExists = prevRecents.some((s) => (s.id === sermon.id && s.title === sermon.title)); 
       if (sermonExists) {
-        Platform.OS === "android" ? ToastAndroid.show("Already in recents ⛈️", ToastAndroid.SHORT) : Alert.alert("Already in recents ⛈️", "Already in recents ⛈️");
+       
         return prevRecents;
       }
       const filteredRecents = prevRecents.filter((s) => s.id !== sermon.id);
-      // Add to beginning of array
+      // Add to beginning of array with last read position
       const newRecents = [{
         id: sermon.id,
-        title:sermon.title,
+        title: sermon.title,
         date: sermon.date,
         location: sermon?.location,
         type: sermon.type,
-        year:sermon.year
-      }, ...filteredRecents].slice(0, 20); // Limit to 10 items
+        year: sermon.year,
+        lastReadParagraph: getLastReadPosition(sermon.id)
+      }, ...filteredRecents].slice(0, 20); // Limit to 20 items
 
       // Save to storage
       AsyncStorage.setItem(
@@ -114,7 +161,7 @@ export const SermonProvider = ({ children }) => {
 
       return newRecents;
     });
-  }, []);
+  }, [getLastReadPosition]);
 
   // Load sermons from modules
   const loadSermons = useCallback(async () => {
@@ -193,6 +240,12 @@ export const SermonProvider = ({ children }) => {
         setSettings(parsedSettings);
         setIsDarkMode(parsedSettings.darkMode);
       }
+
+      // Load last read positions
+      const storedPositions = await AsyncStorage.getItem(STORAGE_KEYS.LAST_POSITIONS);
+      if (storedPositions) {
+        setLastReadPositions(JSON.parse(storedPositions));
+      }
     } catch (error) {
       console.error("Failed to load stored data:", error);
     }
@@ -226,7 +279,7 @@ export const SermonProvider = ({ children }) => {
     () => ({
       // Sermon data
       selectedSermon,
-      setSelectedSermon,
+      setSelectedSermon: setSelectedSermonWithPosition,
       allSermons,
       textSermons,
       recentlyOpened,
@@ -247,11 +300,17 @@ export const SermonProvider = ({ children }) => {
       settings,
       setSettings,
 
+      // Position tracking
+      lastReadPositions,
+      updateLastReadPosition,
+      getLastReadPosition,
+
       // Actions
       handleRandomSermons,
       updateSettings,
       refreshSermons: loadSermons,
-      numberOfColumns , setNumberOfColumns,
+      numberOfColumns,
+      setNumberOfColumns,
 
       // Add additional helper functions
       filterSermonsByTag: (tag) => {
@@ -265,7 +324,7 @@ export const SermonProvider = ({ children }) => {
     }),
     [
       selectedSermon,
-      setSelectedSermon,
+      setSelectedSermonWithPosition,
       allSermons,
       textSermons,
       recentlyOpened,
@@ -277,9 +336,14 @@ export const SermonProvider = ({ children }) => {
       theme,
       isDarkMode,
       settings,
+      lastReadPositions,
+      updateLastReadPosition,
+      getLastReadPosition,
       handleRandomSermons,
       updateSettings,
       loadSermons,
+      numberOfColumns,
+      setNumberOfColumns,
     ]
   );
 

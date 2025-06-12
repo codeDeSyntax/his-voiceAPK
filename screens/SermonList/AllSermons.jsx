@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   View,
   Platform,
@@ -32,7 +38,6 @@ const lightBackgrounds = [
   require("../../assets/lib2.jpg"),
   require("../../assets/lib2.jpg"),
   // require("../../assets/cloud.png"),
-
 ];
 
 // Background images for dark mode
@@ -50,8 +55,8 @@ const AnimatedBackground = React.memo(({ theme }) => {
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
 
-  const backgrounds = useMemo(() => 
-    theme.dark ? darkBackgrounds : lightBackgrounds, 
+  const backgrounds = useMemo(
+    () => (theme.dark ? darkBackgrounds : lightBackgrounds),
     [theme.dark]
   );
 
@@ -125,12 +130,8 @@ const AnimatedBackground = React.memo(({ theme }) => {
 
 const SermonList = React.memo(() => {
   const navigation = useNavigation();
-  const {
-    setSelectedSermon,
-    allSermons,
-    addToRecentlyOpened,
-    theme,
-  } = useAppContext();
+  const { setSelectedSermon, allSermons, addToRecentlyOpened, theme } =
+    useAppContext();
 
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
@@ -145,12 +146,14 @@ const SermonList = React.memo(() => {
     const filtered = allSermons.filter((sermon) => {
       const titleLower = sermon.title.toLowerCase();
       const searchLower = searchText.toLowerCase();
-      
+
       const matchesSearch = !searchText || titleLower.includes(searchLower);
-      const matchesYear = selectedYear === "All Years" || sermon.year === selectedYear;
-      const matchesLetter = selectedLetter === "All Letters" || 
+      const matchesYear =
+        selectedYear === "All Years" || sermon.year === selectedYear;
+      const matchesLetter =
+        selectedLetter === "All Letters" ||
         titleLower.startsWith(selectedLetter.toLowerCase());
-      
+
       return matchesSearch && matchesYear && matchesLetter;
     });
 
@@ -168,38 +171,37 @@ const SermonList = React.memo(() => {
 
   // Memoized filter functions
   const filterOnlyText = useCallback(() => {
-    setFilteredSermons((prev) => prev.filter((sermon) => sermon.type === "text"));
+    setFilteredSermons((prev) =>
+      prev.filter((sermon) => sermon.type === "text")
+    );
   }, []);
 
   const filterOnlyAudio = useCallback(() => {
-    setFilteredSermons((prev) => prev.filter((sermon) => sermon.type === "mp3"));
+    setFilteredSermons((prev) =>
+      prev.filter((sermon) => sermon.type === "mp3")
+    );
   }, []);
 
-  const handleSermonClick = useCallback(async (sermon) => {
-    try {
-      addToRecentlyOpened({
-        title: sermon.title,
-        type: sermon.type,
-        date: sermon.date,
-        year: sermon.year,
-        location: sermon.location,
-      });
+  const handleSermonClick = useCallback(
+    async (sermon) => {
+      try {
+        setSelectedSermon(sermon);
 
-      setSelectedSermon(sermon);
-      
-      if (navigation) {
-        navigation.navigate("currentsermon");
-      } else {
-        console.error("Navigation object is undefined");
+        if (navigation) {
+          navigation.navigate("currentsermon");
+        } else {
+          console.error("Navigation object is undefined");
+        }
+      } catch (error) {
+        console.error("Error in sermon navigation:", error);
+        const message = "Error occurred";
+        Platform.OS === "android"
+          ? ToastAndroid.show(message, ToastAndroid.SHORT)
+          : Alert.alert("Error", message);
       }
-    } catch (error) {
-      console.error("Error in sermon navigation:", error);
-      const message = "Error occurred";
-      Platform.OS === "android" 
-        ? ToastAndroid.show(message, ToastAndroid.SHORT)
-        : Alert.alert("Error", message);
-    }
-  }, [addToRecentlyOpened, setSelectedSermon, navigation]);
+    },
+    [addToRecentlyOpened, setSelectedSermon, navigation]
+  );
 
   const closeDropdown = useCallback(() => {
     setIsYearModalVisible(false);
@@ -207,36 +209,62 @@ const SermonList = React.memo(() => {
   }, []);
 
   const toggleSortOrder = useCallback(() => {
-    setSortOrder((prev) => prev === "asc" ? "desc" : "asc");
+    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
   }, []);
 
   // Memoized components
-  const listHeaderComponent = useMemo(() => (
-    <View style={styles.headerContainer}>
-      <Text style={[styles.headerText, { color: theme.colors.text }]}>
-        Sermon list contains both audio and transcribed versions. Audio versions
-        are indicated with a microphone and are not available within the app now.
-      </Text>
-      <Text style={styles.warningText}>
-        Rather, links of the sermons are available. They take you to the
-        download page
-      </Text>
-    </View>
-  ), [theme.colors.text]);
+  const listHeaderComponent = useMemo(
+    () => (
+      <View style={styles.headerContainer}>
+        <Text style={[styles.headerText, { color: theme.colors.text }]}>
+          Sermon list contains both audio and transcribed versions. Audio
+          versions are indicated with a microphone and are not available within
+          the app now.
+        </Text>
+        <Text style={styles.warningText}>
+          Rather, links of the sermons are available. They take you to the
+          download page
+        </Text>
+      </View>
+    ),
+    [theme.colors.text]
+  );
 
-  const gradientColors = useMemo(() => 
-    theme.dark 
-      ? ["#1c191730", "#1c191790", "#1c191790", "#1c1917", "#1c1917", "#1c1917", "#1c1917", "#1c1917", "#1c1917", "#1c1917"] 
-      : ["rgba(255,255,255,0.33)", "rgba(255,255,255,0.3)","rgba(255,255,255,255)", "rgba(255,255,255,255)", "rgba(255,255,255,255)", "rgba(255,255,255,255)", "rgba(255,255,255,255)"],
+  const gradientColors = useMemo(
+    () =>
+      theme.dark
+        ? [
+            "#1c191730",
+            "#1c191790",
+            "#1c191790",
+            "#1c1917",
+            "#1c1917",
+            "#1c1917",
+            "#1c1917",
+            "#1c1917",
+            "#1c1917",
+            "#1c1917",
+          ]
+        : [
+            "rgba(255,255,255,0.33)",
+            "rgba(255,255,255,0.3)",
+            "rgba(255,255,255,255)",
+            "rgba(255,255,255,255)",
+            "rgba(255,255,255,255)",
+            "rgba(255,255,255,255)",
+            "rgba(255,255,255,255)",
+          ],
     [theme.dark]
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <AnimatedBackground theme={theme} />
-      
+
       <DraggableFloatingBackButton />
-      
+
       <LinearGradient colors={gradientColors} style={styles.gradientContainer}>
         <ListAppBar theme={theme} />
 
@@ -264,24 +292,22 @@ const SermonList = React.memo(() => {
           allSermons={allSermons}
           setFilteredSermons={setFilteredSermons}
         />
-         <YearModal
-        theme={theme}
-        isVisible={isYearModalVisible}
-        closeDropdown={closeDropdown}
-        years={years}
-        setSelectedYear={setSelectedYear}
-      />
+        <YearModal
+          theme={theme}
+          isVisible={isYearModalVisible}
+          closeDropdown={closeDropdown}
+          years={years}
+          setSelectedYear={setSelectedYear}
+        />
 
-      <LetterModal
-        theme={theme}
-        isVisible={isLetterModalVisible}
-        closeDropdown={closeDropdown}
-        alphabet={alphabet}
-        setSelectedLetter={setSelectedLetter}
-      />
+        <LetterModal
+          theme={theme}
+          isVisible={isLetterModalVisible}
+          closeDropdown={closeDropdown}
+          alphabet={alphabet}
+          setSelectedLetter={setSelectedLetter}
+        />
       </LinearGradient>
-
-     
     </View>
   );
 });
@@ -291,7 +317,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   backgroundContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -300,12 +326,12 @@ export const styles = StyleSheet.create({
   },
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   backgroundOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    backgroundColor: "rgba(0,0,0,0.1)",
   },
   gradientContainer: {
     flex: 1,

@@ -21,6 +21,7 @@ import {
   Animated,
   Easing,
   ToastAndroid,
+  Alert,
 } from "react-native";
 import { FontAwesome, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
@@ -40,8 +41,9 @@ const RecentlyOpenedSermons = () => {
     setRecentlyOpened,
     theme,
     allSermons,
+    getLastReadPosition, // Added this from context
   } = useAppContext();
-  // const {theme} = useAppTheme()
+
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
   const [selectedLetter, setSelectedLetter] = useState("All Letters");
@@ -77,20 +79,49 @@ const RecentlyOpenedSermons = () => {
     borderWidth: 2,
   };
 
-  const handleSermonClick = (sermon) => {
-    //look for sermon from allsermons by title and type before setting selectedSermon
-    const sermonToSet = allSermons.find(
-      (s) => s.title === sermon.title && s.type === sermon.type
-    );
-    if (sermonToSet) {
-      setSelectedSermon(sermonToSet);
-      navigation?.navigate("currentsermon");
-    } else {
-      Platform.OS === "android"
-        ? ToastAndroid.show("Sermon not found ⛈️", ToastAndroid.LONG)
-        : Alert.alert("Sermon not found");
-    }
-  };
+  const handleSermonClick = useCallback(
+    (sermon) => {
+      // Look for sermon from allSermons by title and type before setting selectedSermon
+      const sermonToSet = allSermons.find(
+        (s) => s.title === sermon.title && s.type === sermon.type
+      );
+
+      if (sermonToSet) {
+        // Get the current last read position for this sermon
+        const lastReadParagraph = getLastReadPosition(sermonToSet.id);
+
+        // Create sermon object with last read position
+        const sermonWithPosition = {
+          ...sermonToSet,
+          lastReadParagraph: lastReadParagraph,
+        };
+
+        // Set the selected sermon with position
+        setSelectedSermon(sermonWithPosition);
+
+        // Navigate to current sermon
+        navigation?.navigate("currentsermon");
+
+        // Optional: Show toast with last position info
+        if (lastReadParagraph > 0) {
+          const message = `Continuing from paragraph ${lastReadParagraph + 1}`;
+          if (Platform.OS === "android") {
+            ToastAndroid.show(message, ToastAndroid.SHORT);
+          } else {
+            Alert.alert("Resuming", message);
+          }
+        }
+      } else {
+        const errorMessage = "Sermon not found ⛈️";
+        if (Platform.OS === "android") {
+          ToastAndroid.show(errorMessage, ToastAndroid.LONG);
+        } else {
+          Alert.alert("Error", "Sermon not found");
+        }
+      }
+    },
+    [allSermons, getLastReadPosition, setSelectedSermon, navigation]
+  );
 
   const removeFromRecents = async (item) => {
     const updatedRecents = recentlyOpened.filter(
@@ -104,7 +135,10 @@ const RecentlyOpenedSermons = () => {
         "recentlyOpenedSermons",
         JSON.stringify(updatedRecents)
       );
-      console.log(recentlyOpened.length);
+      console.log(
+        "Sermon removed from recents. Total recents:",
+        updatedRecents.length
+      );
     } catch (error) {
       console.error("Failed to update recents in AsyncStorage", error);
     }
@@ -159,88 +193,128 @@ const RecentlyOpenedSermons = () => {
         Location not found
       </Text>
     ),
-    []
+    [theme.colors.ltext]
   );
 
-  const renderSermonItem = ({ item, index }) => (
-    <Pressable
-      key={item.id}
-      style={[
-        styles.sermonItem,
-        {
-          borderWidth: 1,
-          borderColor: theme.colors.primary,
-          backgroundColor: theme.dark ? "transparent" : "transparent",
-          gap: 10,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        onPress={() => handleSermonClick(item)}
-        style={{ width: "90%" }}
+  const renderSermonItem = ({ item, index }) => {
+    // Get the last read position for this sermon
+    const lastReadPosition = getLastReadPosition(item.id);
+
+    return (
+      <Pressable
+        key={item.id}
+        style={[
+          styles.sermonItem,
+          {
+            borderWidth: 1,
+            borderColor: theme.dark ? theme.colors.primary : "#dcdcdd",
+            backgroundColor: theme.dark ? "transparent" : "transparent",
+            gap: 10,
+          },
+        ]}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            padding: 5,
-            fontSize: 12,
-            width: 200,
-            borderRadius: 5,
-            backgroundColor: theme.colors.background,
-            marginBottom: 2,
-            paddingHorizontal: 10,
-          }}
+        <TouchableOpacity
+          onPress={() => handleSermonClick(item)}
+          style={{ width: "90%" }}
         >
-          <Text
+          <View
             style={{
-              color: theme.colors.text + "90",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              padding: 5,
               fontSize: 12,
+              width: 200,
+              borderRadius: 5,
+              backgroundColor: theme.colors.background,
+              marginBottom: 2,
+              paddingHorizontal: 10,
             }}
           >
-            {item.date}
+            <Text
+              style={{
+                color: theme.colors.text + "90",
+                fontSize: 12,
+              }}
+            >
+              {item.date}
+            </Text>
+            <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
+              {item.type === "mp3" ? (
+                <Text style={styles.animatedMicrophone}>
+                  {item.type === "mp3" && (
+                    <FontAwesome5
+                      name="microphone"
+                      color={theme.dark === true ? theme.colors.text : "gray"}
+                    />
+                  )}
+                </Text>
+              ) : (
+                <MaterialIcons name="text-format" color={theme.colors.text} />
+              )}
+            </Animated.View>
+          </View>
+          <Text style={[styles.sermonTitle, { color: theme.colors.text }]}>
+            {item.title}
           </Text>
-          <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
-            {item.type === "mp3" ? (
-              <Text style={styles.animatedMicrophone}>
-                {item.type === "mp3" && (
-                  <FontAwesome5
-                    name="microphone"
-                    color={theme.dark === true ? theme.colors.text : "gray"}
-                  />
-                )}
+          <Text
+            style={{
+              fontSize: 9,
+              color: theme.colors.text + "60",
+              paddingBottom: 4,
+              fontFamily: "monospace",
+            }}
+          >
+            {item.location ? item.location : <LocationNotFound />}
+          </Text>
+
+          {/* Show last read position if available */}
+          {lastReadPosition > 0 && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginTop: 4,
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                backgroundColor: theme.dark
+                  ? theme.colors.hlight + "20"
+                  : "#f0f0f0",
+                borderRadius: 10,
+                alignSelf: "flex-start",
+              }}
+            >
+              <MaterialIcons
+                name="bookmark"
+                size={12}
+                color={theme.dark ? theme.colors.hlight : "#666"}
+              />
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: theme.dark ? theme.colors.hlight : "#666",
+                  marginLeft: 4,
+                  fontFamily: "monospace",
+                }}
+              >
+                Paragraph {lastReadPosition + 1}
               </Text>
-            ) : (
-              <MaterialIcons name="text-format" color={theme.colors.text} />
-            )}
-          </Animated.View>
-        </View>
-        <Text style={[styles.sermonTitle, { color: theme.colors.text }]}>
-          {item.title}
-        </Text>
-        <Text
-          style={{
-            fontSize: 9,
-            color: theme.colors.text + "60",
-            paddingBottom: 4,
-            fontFamily: "monospace",
-          }}
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{ opacity: 4 }}
+          onPress={() => removeFromRecents(item)}
         >
-          {item.location ? item.location : <LocationNotFound />}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={{ opacity: 4 }}
-        onPress={() => removeFromRecents(item)}
-      >
-        <FontAwesome
-          name="trash"
-          size={25}
-          color={theme.dark === true ? theme.colors.hlight : "#000000"}
-        />
-      </TouchableOpacity>
-    </Pressable>
-  );
+          <FontAwesome
+            name="trash"
+            size={25}
+            color={theme.dark === true ? theme.colors.hlight : "#4c3423"}
+          />
+        </TouchableOpacity>
+      </Pressable>
+    );
+  };
 
   const closeDropdown = useCallback(() => {
     setIsYearModalVisible(false);
@@ -262,23 +336,13 @@ const RecentlyOpenedSermons = () => {
           <Text style={[styles.label, { color: theme.colors.text }]}>
             Recents
           </Text>
-          {/* <MaterialIcons
-            name="note-alt"
-            style={{
-              height: 30,
-              width: 30,
-              marginVertical: 20,
-              borderRadius: 100,
-            }}
-            color={"blue"}
-          /> */}
         </View>
         {recentlyOpened.length > 0 && (
           <View
             style={[
               styles.searchInputContainer,
               {
-                backgroundColor: theme.dark === true ? "#212121" : "",
+                backgroundColor: theme.dark ? "#212121" : "#f9fafb",
                 borderColor: "silver",
               },
             ]}
@@ -288,7 +352,9 @@ const RecentlyOpenedSermons = () => {
                 styles.searchInput,
                 {
                   color: "gray",
-                  backgroundColor: theme.colors.primary,
+                  backgroundColor: theme.dark
+                    ? theme.colors.primary
+                    : "#f1f1f1",
                   fontStyle: "italic",
                 },
               ]}
@@ -301,12 +367,14 @@ const RecentlyOpenedSermons = () => {
             <Pressable
               style={[
                 styles.searchButton,
-                { backgroundColor: theme.dark ? theme.colors.hlight : "#000000" },
+                {
+                  backgroundColor: theme.dark ? theme.colors.hlight : "#492f24",
+                },
               ]}
               android_ripple={{
                 color: theme.dark
                   ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.05)",
+                  : "rgb(73, 40, 9)",
               }}
               onPress={() => {
                 /* Implement search action */
@@ -324,14 +392,16 @@ const RecentlyOpenedSermons = () => {
             onPress={() => setIsLetterModalVisible(true)}
             style={[
               styles.filterButton,
-              { borderColor: theme.colors.text, backgroundColor: "transparent" },
+              {
+                borderColor: theme.colors.text,
+                backgroundColor: "transparent",
+              },
               borderStyle,
             ]}
             android_ripple={{
               color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
             }}
           >
-            {/* <Text style={styles.filterText}>{selectedLetter}</Text> */}
             <MaterialIcons
               name="text-format"
               size={24}
@@ -343,14 +413,16 @@ const RecentlyOpenedSermons = () => {
             onPress={() => setIsYearModalVisible(true)}
             style={[
               styles.filterButton,
-              { borderColor: theme.colors.text, backgroundColor: "transparent" },
+              {
+                borderColor: theme.colors.text,
+                backgroundColor: "transparent",
+              },
               borderStyle,
             ]}
             android_ripple={{
               color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
             }}
           >
-            {/* <Text style={styles.filterText}>{selectedYear}</Text> */}
             <FontAwesome5
               name="calendar-alt"
               color={theme.colors.text}
@@ -360,7 +432,10 @@ const RecentlyOpenedSermons = () => {
           <Pressable
             style={[
               styles.filterButton,
-              { borderColor: theme.colors.text, backgroundColor: "transparent" },
+              {
+                borderColor: theme.colors.text,
+                backgroundColor: "transparent",
+              },
               borderStyle,
             ]}
             onPress={toggleSortOrder}
@@ -375,7 +450,10 @@ const RecentlyOpenedSermons = () => {
             onPress={clearAll}
             style={[
               styles.filterButton,
-              { borderColor: theme.colors.text, backgroundColor: "transparent" },
+              {
+                borderColor: theme.colors.text,
+                backgroundColor: "transparent",
+              },
               borderStyle,
             ]}
             android_ripple={{
@@ -556,7 +634,6 @@ const RecentlyOpenedSermons = () => {
 };
 
 const styles = StyleSheet.create({
-  // ... (styles remain unchanged)
   container: {
     flex: 1,
     backgroundColor: "#2d2d2d",
@@ -565,8 +642,6 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 12,
     paddingBottom: 16,
-    // borderBottomWidth: 1,
-    // borderBottomColor: "gray",
   },
   label: {
     fontSize: 24,
@@ -590,12 +665,10 @@ const styles = StyleSheet.create({
     color: "#fafafa",
     borderTopLeftRadius: 100,
     borderBottomLeftRadius: 100,
-    // borderRadius: 100,
   },
   searchButton: {
     height: 40,
     width: 40,
-    // backgroundColor: "#427092",
     justifyContent: "center",
     alignItems: "center",
     borderTopRightRadius: 100,
@@ -604,7 +677,6 @@ const styles = StyleSheet.create({
   filtersContainer: {
     flexDirection: "row",
     gap: 10,
-    // justifyContent: "space-between",
     paddingHorizontal: 10,
     paddingTop: 10,
     paddingBottom: 8,
@@ -619,7 +691,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    // elevation: 5,
     borderStyle: "dotted",
   },
   filterText: {
@@ -627,11 +698,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-
   sortButton: {
     justifyContent: "center",
     alignItems: "center",
-    // backgroundColor: "#427092",
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderRadius: 100,
@@ -652,7 +721,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    // elevation: 2,
   },
   sermonTitle: {
     fontSize: 13,

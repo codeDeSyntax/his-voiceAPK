@@ -14,9 +14,7 @@ import { useFonts } from "expo-font";
 
 // Memoized text highlighting component for better performance
 const HighlightedText = React.memo(
-  ({ parts, searchPhrase, theme, settings }) => 
-    
-    (
+  ({ parts, searchPhrase, theme, settings }) => (
     <>
       {parts.map((part, partIndex) =>
         part.toLowerCase() === searchPhrase.toLowerCase() ? (
@@ -24,12 +22,11 @@ const HighlightedText = React.memo(
             key={`highlight-${partIndex}`}
             style={[
               styles.highlightedText,
-
               {
-                color: theme.dark? "black" :"white",
+                color: theme.dark ? "white" : "black",
                 fontSize: settings.fontSize,
-                fontFamily:settings.fontFamily || "ZillaSlab",
-                borderRadius:10,
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                borderRadius: 10,
                 backgroundColor: theme.dark
                   ? "white"
                   : "rgba(59, 130, 246, 0.1)",
@@ -44,7 +41,7 @@ const HighlightedText = React.memo(
             style={{
               color: theme.colors.text,
               fontSize: settings.fontSize,
-              fontFamily:settings.fontFamily
+              fontFamily: settings.fontFamily,
             }}
           >
             {part}
@@ -64,16 +61,30 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
         return (
           <Text
             key={`endnote-${partIndex}`}
-            style={[styles.endnoteText, { fontSize: settings.fontSize,fontFamily:settings.fontFamily,color:theme.dark ? theme.colors.hlight : "#5d3211" }]}
+            style={[
+              styles.endnoteText,
+              {
+                fontSize: settings.fontSize,
+                fontFamily: settings.fontFamily,
+                color: theme.dark ? theme.colors.hlight : "#5d3211",
+              },
+            ]}
           >
             {part}
           </Text>
         );
-      } else if (lowerPart.trim() === "william marrion branham") {
+      } else if (lowerPart === "reference") {
         return (
           <Text
-            key={`wmb-${partIndex}`}
-            style={[styles.endnoteText, { fontSize: settings.fontSize }]}
+            key={`reference-${partIndex}`}
+            style={[
+              styles.endnoteText,
+              {
+                fontSize: settings.fontSize,
+                fontFamily: settings.fontFamily,
+                color: theme.dark ? theme.colors.hlight : "#5d3211",
+              },
+            ]}
           >
             {part}
           </Text>
@@ -85,6 +96,7 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
             style={{
               color: theme.colors.text,
               fontSize: settings.fontSize,
+              fontFamily: settings.fontFamily,
             }}
           >
             {part}
@@ -105,10 +117,10 @@ const ParagraphText = React.memo(
     onLayout,
     selectedSermon,
   }) => {
-
     const [fontsLoaded] = useFonts({
-        "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-      });
+      ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+    });
+
     const [isCopying, setIsCopying] = useState(false);
     const lastTapTime = useRef(0);
 
@@ -135,10 +147,28 @@ const ParagraphText = React.memo(
       [theme.colors.text]
     );
 
-    const containerStyle = useMemo(
-      () => [styles.paragraphContainer, isCopying && styles.copyingParagraph],
-      [isCopying]
-    );
+    // Enhanced container style to show current reading position
+    const containerStyle = useMemo(() => {
+      const baseStyle = [styles.paragraphContainer];
+
+      // Add visual indicator if this is the last read paragraph
+      if (selectedSermon?.lastReadParagraph === index) {
+        baseStyle.push({
+          borderLeftWidth: 2,
+          paddingLeft: 2,
+          borderLeftColor: theme.dark ? theme.colors.hlight : "#5d3211",
+          backgroundColor: theme.dark
+            ? theme.colors.hlight + "10"
+            : "rgba(251, 114, 16, 0.05)",
+        });
+      }
+
+      if (isCopying) {
+        baseStyle.push(styles.copyingParagraph);
+      }
+
+      return baseStyle;
+    }, [isCopying, selectedSermon?.lastReadParagraph, index, theme]);
 
     // Memoize text processing for search and endnotes
     const processedText = useMemo(() => {
@@ -163,6 +193,20 @@ const ParagraphText = React.memo(
       }
     }, [paragraph, searchPhrase]);
 
+    // Enhanced layout handler to also track paragraph positioning
+    const handleLayout = useCallback(
+      (event) => {
+        // Call the original onLayout handler
+        if (onLayout) {
+          onLayout(event);
+        }
+
+        // Additional layout handling can be added here if needed
+        // For example, tracking when paragraphs become visible
+      },
+      [onLayout]
+    );
+
     // Optimized clipboard function with better error handling
     const copyToClipboard = useCallback(async () => {
       if (isCopying) return; // Prevent multiple simultaneous copies
@@ -181,7 +225,7 @@ const ParagraphText = React.memo(
             }`
           : "";
 
-        const textToCopy = `https://hisvoice.tiiny.site/ \n${paragraph}${sermonInfo}`;
+        const textToCopy = `https://hisvoice.vercel.app/ \n${paragraph}${sermonInfo}`;
         await Clipboard.setStringAsync(textToCopy);
 
         // Platform-specific feedback

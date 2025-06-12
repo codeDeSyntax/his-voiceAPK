@@ -14,6 +14,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   Keyboard,
+  ToastAndroid,
+  Alert,
 } from "react-native";
 import { useAppContext } from "../../Logic/globalState";
 import {
@@ -30,7 +32,13 @@ import DownloadSermon from "../../components/currentSermon/PlaySermon";
 import CustomTopCardController from "../../components/currentSermon/BottomSheetController";
 
 const CurrentSermon = React.memo(() => {
-  const { selectedSermon, settings, theme, searchText } = useAppContext();
+  const {
+    selectedSermon,
+    settings,
+    theme,
+    searchText,
+    updateLastReadPosition,
+  } = useAppContext();
   const router = useNavigation();
   const [searchPhrase, setSearchPhrase] = useState(searchText || "");
   const [searchResults, setSearchResults] = useState([]);
@@ -42,8 +50,12 @@ const CurrentSermon = React.memo(() => {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [searching, setSearching] = useState(false);
   const [isCardOpen, setIsCardOpen] = useState(false);
+  const [currentVisibleParagraph, setCurrentVisibleParagraph] = useState(0);
+  const [hasScrolledToLastPosition, setHasScrolledToLastPosition] =
+    useState(false);
 
   const scrollViewRef = useRef(null);
+  const scrollTimeout = useRef(null);
 
   // Format sermon into paragraphs
   const paragraphs = useMemo(
@@ -72,6 +84,78 @@ const CurrentSermon = React.memo(() => {
       keyboardDidHideListener.remove();
     };
   }, []);
+
+  // Track scroll position and update current visible paragraph
+  const handleScroll = useCallback(
+    (event) => {
+      const scrollY = event.nativeEvent.contentOffset.y;
+
+      // Clear existing timeout
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+
+      // Set a new timeout to update position after user stops scrolling
+      scrollTimeout.current = setTimeout(() => {
+        // Find the paragraph that's currently visible
+        let visibleParagraph = 0;
+        for (const [index, layout] of Object.entries(paragraphLayouts)) {
+          const paragraphIndex = parseInt(index);
+          if (
+            layout.y <= scrollY + 200 &&
+            layout.y + layout.height > scrollY + 200
+          ) {
+            visibleParagraph = paragraphIndex;
+            break;
+          }
+        }
+
+        setCurrentVisibleParagraph(visibleParagraph);
+
+        // Update the last read position
+        if (selectedSermon && updateLastReadPosition) {
+          updateLastReadPosition(selectedSermon.id, visibleParagraph);
+        }
+      }, 500); // Update position 500ms after user stops scrolling
+    },
+    [paragraphLayouts, selectedSermon, updateLastReadPosition]
+  );
+
+  // Scroll to last read position when sermon loads
+  useEffect(() => {
+    if (
+      selectedSermon?.lastReadParagraph !== undefined &&
+      paragraphLayouts[selectedSermon.lastReadParagraph] &&
+      !hasScrolledToLastPosition
+    ) {
+      setTimeout(() => {
+        scrollToParagraph(selectedSermon.lastReadParagraph);
+
+        // Show toast message
+        const message = `You reached paragraph ${
+          selectedSermon.lastReadParagraph + 1
+        } the last time`;
+        if (Platform.OS === "android") {
+          ToastAndroid.show(message, ToastAndroid.LONG);
+        } else {
+          Alert.alert("Last Position", message);
+        }
+
+        setHasScrolledToLastPosition(true);
+      }, 1000); // Delay to ensure layouts are ready
+    }
+  }, [
+    selectedSermon,
+    paragraphLayouts,
+    hasScrolledToLastPosition,
+    scrollToParagraph,
+  ]);
+
+  // Reset scroll state when sermon changes
+  useEffect(() => {
+    setHasScrolledToLastPosition(false);
+    setCurrentVisibleParagraph(0);
+  }, [selectedSermon?.id]);
 
   // Update search results when search phrase changes
   useEffect(() => {
@@ -166,6 +250,15 @@ const CurrentSermon = React.memo(() => {
     router?.navigate("AllSermons");
   }, [router]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+    };
+  }, []);
+
   // Render paragraphs with numbering
   const renderSermonText = useMemo(() => {
     return paragraphs.map((paragraph, index) => (
@@ -202,12 +295,13 @@ const CurrentSermon = React.memo(() => {
           style={[styles.container, { backgroundColor: theme.colors.primary }]}
         >
           {selectedSermon?.type === "mp3" ? (
-            <DownloadSermon/>
+            <DownloadSermon />
           ) : (
             <>
               <ScrollView
                 ref={scrollViewRef}
                 scrollEventThrottle={16}
+                onScroll={handleScroll}
                 contentContainerStyle={[
                   styles.scrollViewContainer,
                   { flexGrow: 1 },
@@ -217,7 +311,12 @@ const CurrentSermon = React.memo(() => {
                 }}
               >
                 <View>
-                  <Text style={[styles.titleText, { color: theme.dark ? "#854412" : "#5d3211" }]}>
+                  <Text
+                    style={[
+                      styles.titleText,
+                      { color: theme.dark ? "#854412" : "#5d3211" },
+                    ]}
+                  >
                     {selectedSermon?.title}
                   </Text>
                   {selectedSermon?.location && (

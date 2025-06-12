@@ -203,10 +203,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   receiptSectionHeader: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "bold",
     letterSpacing: 1.5,
-    fontFamily: Platform.OS === "ios" ? "Courier New" : "ZillaSlab",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "",
     marginBottom: 6,
     textAlign: "center",
     textDecorationLine: "underline",
@@ -218,17 +218,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   receiptLabel: {
-    fontSize: 9,
-    fontWeight: "700",
-    fontFamily: Platform.OS === "ios" ? "Courier New" : "ZillaSlab",
+    fontSize: 13,
+    fontWeight: "900",
+    fontFamily: Platform.OS === "ios" ? "serif" : "monospace",
     letterSpacing: 0.5,
     marginBottom: 1,
   },
   receiptValue: {
-    fontSize: 10,
+    fontSize: 12,
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     paddingLeft: 8,
     lineHeight: 12,
+    fontWeight: "900",
   },
 
   // Search Styles
@@ -422,6 +423,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     textAlign: "right",
     paddingTop: 3,
+    marginLeft:2
   },
   paragraphText: {
     flex: 1,
