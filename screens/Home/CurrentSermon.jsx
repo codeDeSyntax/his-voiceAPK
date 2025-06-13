@@ -353,6 +353,7 @@ const CurrentSermon = React.memo(() => {
                 paragraphLayouts={paragraphLayouts}
                 scrollToParagraph={scrollToParagraph}
                 searching={searching}
+                setSearching={setSearching}
                 isCardOpen={isCardOpen}
                 setIsCardOpen={setIsCardOpen}
               />

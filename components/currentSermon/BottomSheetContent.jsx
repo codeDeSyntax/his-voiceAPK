@@ -22,6 +22,7 @@ const TopCardContent = ({
   searchResults,
   setSearchResults,
   searching,
+  setSearching,
   currentResultIndex,
   setCurrentResultIndex,
   onScrollToTop,
@@ -37,8 +38,13 @@ const TopCardContent = ({
   const scrollViewRef = useRef(null);
   const router = useNavigation();
 
-  const submitSearch = useCallback(() => {
-    if (searchPhrase.trim()) {
+const submitSearch = useCallback(() => {
+  if (searchPhrase.trim()) {
+    // Set searching to true before starting the search
+    setSearching(true);
+    
+    // Simulate a more realistic search delay (remove for production if search is actually slow)
+    setTimeout(() => {
       const results = searchSermon(paragraphs, searchPhrase);
       setSearchResults(results);
       setCurrentResultIndex(0);
@@ -46,18 +52,23 @@ const TopCardContent = ({
       if (results.length > 0 && paragraphLayouts[results[0]]) {
         scrollToParagraph(results[0]);
       }
-    } else {
-      setSearchResults([]);
-    }
-  }, [
-    searchPhrase,
-    searchSermon,
-    paragraphs,
-    setSearchResults,
-    setCurrentResultIndex,
-    paragraphLayouts,
-    scrollToParagraph,
-  ]);
+      
+      // Set searching to false once search is complete
+      setSearching(false);
+    }, 100); // 500ms delay to show loading indicator
+  } else {
+    setSearchResults([]);
+  }
+}, [
+  searchPhrase,
+  searchSermon,
+  paragraphs,
+  setSearchResults,
+  setCurrentResultIndex,
+  paragraphLayouts,
+  scrollToParagraph,
+  setSearching, // Add this dependency
+]);
 
   const clearSearch = useCallback(() => {
     setSearchPhrase("");
@@ -141,10 +152,13 @@ const TopCardContent = ({
 
           <View style={styles.receiptItem}>
             <Text style={[styles.receiptLabel, { color: theme.colors.text }]}>
-              TITLE:
+              <MaterialIcons
+               name="book-online"
+               size={16}
+               />
             </Text>
             <Text
-              style={[styles.receiptValue, { color: theme.colors.text }]}
+              style={[styles.receiptValue, { color: theme.dark ? "" :"#583e17" }]}
               numberOfLines={3}
             >
               {selectedSermon?.title || "N/A"}
@@ -154,7 +168,10 @@ const TopCardContent = ({
           {selectedSermon?.date && (
             <View style={styles.receiptItem}>
               <Text style={[styles.receiptLabel, { color: theme.colors.text }]}>
-                DATE:
+                <MaterialIcons
+               name="date-range"
+               size={16}
+               />
               </Text>
               <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
                 {selectedSermon.date}
@@ -165,7 +182,10 @@ const TopCardContent = ({
           {selectedSermon?.location && (
             <View style={styles.receiptItem}>
               <Text style={[styles.receiptLabel, { color: theme.colors.text }]}>
-                LOCATION:
+                <MaterialIcons
+               name="location-on"
+               size={16}
+               />
               </Text>
               <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
                 {selectedSermon.location}
@@ -201,7 +221,7 @@ const TopCardContent = ({
                 value={searchPhrase}
                 onChangeText={setSearchPhrase}
                 returnKeyType="search"
-                onSubmitEditing={submitSearch}
+                // onSubmitEditing={submitSearch}
               />
               {searchPhrase ? (
                 <TouchableOpacity
@@ -222,6 +242,11 @@ const TopCardContent = ({
 
             <TouchableOpacity
               onPress={submitSearch}
+              android_ripple={{
+                color: theme.dark ? "#fff" : "#000",
+                radius: 20,
+                borderless: true,
+              }}
               style={[
                 styles.receiptSearchButton,
                 {
@@ -231,7 +256,7 @@ const TopCardContent = ({
                     : "transparent",
                 },
               ]}
-              disabled={!searchPhrase.trim()}
+              // disabled={!searchPhrase.trim()}
             >
               <Text
                 style={[

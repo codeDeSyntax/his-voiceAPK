@@ -17,6 +17,7 @@ const CustomTopCardController = ({
   searchResults,
   setSearchResults,
   searching,
+  setSearching,
   currentResultIndex,
   setCurrentResultIndex,
   scrollToTop,
@@ -180,6 +181,7 @@ const CustomTopCardController = ({
             paragraphLayouts={paragraphLayouts}
             scrollToParagraph={scrollToParagraph}
             searching={searching}
+            setSearching={setSearching}
             isCardOpen={isCardOpen}
           />
         </Animated.View>
