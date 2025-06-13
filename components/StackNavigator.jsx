@@ -13,10 +13,10 @@ import SermonSearch from "../screens/Search/Search";
 import Settings from "../screens/settings/Settings";
 import CurrentSermon from "../screens/Home/CurrentSermon";
 import { CommonActions, useNavigation } from "@react-navigation/native";
-import * as NavigationBar from "expo-navigation-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useScreens } from "react-native-screens";
 import { useAppContext } from "../Logic/globalState";
+import SermonAudioWebScreen from "../screens/SermonAudioWeb";
 // useScreens();
 const Stack = createNativeStackNavigator();
 
@@ -29,10 +29,10 @@ const LoadingFallback = () => {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor:theme.colors.background,
+        backgroundColor: theme.colors.background,
       }}
     >
-      <ActivityIndicator size="large" color={ theme.colors.text} />
+      <ActivityIndicator size="large" color={theme.colors.text} />
     </View>
   );
 };
@@ -43,7 +43,7 @@ const ScreenWithSuspense =
   ({ navigation, route }) =>
     (
       <Suspense fallback={<LoadingFallback />}>
-        <Component  />
+        <Component />
       </Suspense>
     );
 
@@ -124,7 +124,6 @@ const StackNavigator = () => {
           gestureEnabled: false,
           presentation: "card",
           detachPreviousScreen: false,
-          
         }}
         // detachInactiveScreens={true}
       >
@@ -204,6 +203,15 @@ const StackNavigator = () => {
         <Stack.Screen
           name="updating"
           component={ScreenWithSuspense(UpdateScreen)}
+          options={{
+            navigationBarHidden: true,
+            statusBarHidden: true,
+            // ...CardOptions,
+          }}
+        />
+        <Stack.Screen
+          name="audiowebscreen"
+          component={ScreenWithSuspense(SermonAudioWebScreen)}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,

@@ -40,7 +40,8 @@
           "imageWidth": 300
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-web-browser"
     ],
     "updates": {
       "checkAutomatically": "ON_LOAD",

@@ -55,55 +55,55 @@ const AnimatedBackground = React.memo(({ theme }) => {
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
 
-  const backgrounds = useMemo(
-    () => (theme.dark ? darkBackgrounds : lightBackgrounds),
-    [theme.dark]
-  );
+  // const backgrounds = useMemo(
+  //   () => (theme.dark ? darkBackgrounds : lightBackgrounds),
+  //   [theme.dark]
+  // );
 
-  const animateBackground = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 600, // Reduced duration for snappier feel
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1.03, // Reduced scale for subtlety
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setCurrentIndex((prev) => (prev + 1) % backgrounds.length);
-      scaleAnim.setValue(1);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }).start();
-    });
-  }, [fadeAnim, scaleAnim, backgrounds.length]);
+  // const animateBackground = useCallback(() => {
+  //   Animated.parallel([
+  //     Animated.timing(fadeAnim, {
+  //       toValue: 0,
+  //       duration: 600, // Reduced duration for snappier feel
+  //       useNativeDriver: true,
+  //     }),
+  //     Animated.timing(scaleAnim, {
+  //       toValue: 1.03, // Reduced scale for subtlety
+  //       duration: 600,
+  //       useNativeDriver: true,
+  //     }),
+  //   ]).start(() => {
+  //     setCurrentIndex((prev) => (prev + 1) % backgrounds.length);
+  //     scaleAnim.setValue(1);
+  //     Animated.timing(fadeAnim, {
+  //       toValue: 1,
+  //       duration: 600,
+  //       useNativeDriver: true,
+  //     }).start();
+  //   });
+  // }, [fadeAnim, scaleAnim, backgrounds.length]);
 
-  useEffect(() => {
-    // Clear existing timers
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (intervalRef.current) clearInterval(intervalRef.current);
+  // useEffect(() => {
+  //   // Clear existing timers
+  //   if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  //   if (intervalRef.current) clearInterval(intervalRef.current);
 
-    // Reset animation state when theme changes
-    setCurrentIndex(0);
-    fadeAnim.setValue(1);
-    scaleAnim.setValue(1);
+  //   // Reset animation state when theme changes
+  //   setCurrentIndex(0);
+  //   fadeAnim.setValue(1);
+  //   scaleAnim.setValue(1);
 
-    // Start animation cycle
-    timeoutRef.current = setTimeout(() => {
-      animateBackground();
-      intervalRef.current = setInterval(animateBackground, 60000); // Reduced interval
-    }, 3000); // Reduced initial delay
+  //   // Start animation cycle
+  //   timeoutRef.current = setTimeout(() => {
+  //     animateBackground();
+  //     intervalRef.current = setInterval(animateBackground, 60000); // Reduced interval
+  //   }, 3000); // Reduced initial delay
 
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [animateBackground, theme.dark]);
+  //   return () => {
+  //     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  //     if (intervalRef.current) clearInterval(intervalRef.current);
+  //   };
+  // }, [animateBackground, theme.dark]);
 
   return (
     <Animated.View
@@ -116,7 +116,7 @@ const AnimatedBackground = React.memo(({ theme }) => {
       ]}
     >
       <ImageBackground
-        source={backgrounds[currentIndex]}
+        source={require("../../assets/lib2.jpg")} // Placeholder image
         style={styles.backgroundImage}
         blurRadius={4} // Slightly reduced blur for better performance
         resizeMode="repeat"

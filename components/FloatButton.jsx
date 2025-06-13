@@ -18,7 +18,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { useAppContext } from "../Logic/globalState";
+import { RotateInUpLeft } from "react-native-reanimated";
 
 const { width, height } = Dimensions.get("window");
 
@@ -35,16 +37,18 @@ const DraggableFloatingBackButton = React.memo(
     size = 54,
     iconSize = 26,
     iconColor = "white",
-    backgroundColor = "#29252490",
-    accentColor = "#8d4b13",
-    initialPosition = { x: 50, y: 700 },
+    backgroundColor = "",
+    initialPosition = { x: 40, y: 700 },
     onPress,
     snapToEdge = true,
     vibrationEnabled = true,
     animationEnabled = true,
   }) => {
+    const { theme } = useAppContext();
+    const route = useRoute();
     const router = useNavigation();
     const insets = useSafeAreaInsets();
+    const accentColor = route.name === "audiowebscreen" ? "#0e1fb0" : (theme.dark ? "#43270f" : "gray")
 
     const safeAreaBounds = useMemo(
       () => ({
@@ -63,7 +67,7 @@ const DraggableFloatingBackButton = React.memo(
     );
 
     const pressedRgba = useMemo(
-      () => hexToRgba(accentColor, 0.6),
+      () => hexToRgba(accentColor, 0.9),
       [accentColor]
     );
 
@@ -81,70 +85,52 @@ const DraggableFloatingBackButton = React.memo(
     const blinkAnim = useRef(new Animated.Value(1)).current;
     const pressAnim = useRef(new Animated.Value(1)).current;
     const glowAnim = useRef(new Animated.Value(0)).current;
-    
+
     // Dragging is disabled
     const draggableEnabled = false;
 
     // Enhanced blinking effect for interactivity
-    useEffect(() => {
-      if (animationEnabled && !isDragging) {
-        const blinkSequence = Animated.loop(
-          Animated.sequence([
-            Animated.timing(blinkAnim, {
-              toValue: 0.6,
-              duration: 3000,
-              useNativeDriver: true,
-              easing: Easing.inOut(Easing.ease),
-            }),
-            Animated.timing(blinkAnim, {
-              toValue: 1,
-              duration: 3000,
-              useNativeDriver: true,
-              easing: Easing.inOut(Easing.ease),
-            }),
-          ])
-        );
-
-        blinkSequence.start();
-
-        return () => blinkSequence.stop();
-      }
-    }, [animationEnabled, isDragging]);
+  
 
     // Enhanced haptic feedback function
-    const triggerHapticFeedback = useCallback((type = 'light') => {
-      if (vibrationEnabled) {
-        try {
-          if (Platform.OS === "ios") {
-            // Enhanced iOS haptic feedback
-            import("react-native-haptic-feedback")
-              .then((HapticFeedback) => {
-                const feedbackType = type === 'press' ? 'impactMedium' : 'impactLight';
-                HapticFeedback.default.trigger(feedbackType, {
-                  enableVibrateFallback: true,
-                  ignoreAndroidSystemSettings: false,
+    const triggerHapticFeedback = useCallback(
+      (type = "light") => {
+        if (vibrationEnabled) {
+          try {
+            if (Platform.OS === "ios") {
+              // Enhanced iOS haptic feedback
+              import("react-native-haptic-feedback")
+                .then((HapticFeedback) => {
+                  const feedbackType =
+                    type === "press" ? "impactMedium" : "impactLight";
+                  HapticFeedback.default.trigger(feedbackType, {
+                    enableVibrateFallback: true,
+                    ignoreAndroidSystemSettings: false,
+                  });
+                })
+                .catch(() => {
+                  // Enhanced fallback vibration pattern
+                  const pattern =
+                    type === "press" ? [0, 100, 50, 100] : [0, 50];
+                  Vibration.vibrate(pattern);
                 });
-              })
-              .catch(() => {
-                // Enhanced fallback vibration pattern
-                const pattern = type === 'press' ? [0, 100, 50, 100] : [0, 50];
-                Vibration.vibrate(pattern);
-              });
-          } else {
-            // Enhanced Android vibration patterns
-            const pattern = type === 'press' ? [0, 80, 40, 80] : [0, 40];
-            Vibration.vibrate(pattern);
+            } else {
+              // Enhanced Android vibration patterns
+              const pattern = type === "press" ? [0, 80, 40, 80] : [0, 40];
+              Vibration.vibrate(pattern);
+            }
+          } catch (error) {
+            console.warn("Vibration not available:", error);
           }
-        } catch (error) {
-          console.warn("Vibration not available:", error);
         }
-      }
-    }, [vibrationEnabled]);
+      },
+      [vibrationEnabled]
+    );
 
     // Enhanced press in handler
     const handlePressIn = useCallback(() => {
       setIsPressed(true);
-      triggerHapticFeedback('light');
+      triggerHapticFeedback("light");
 
       if (animationEnabled) {
         Animated.parallel([
@@ -213,8 +199,8 @@ const DraggableFloatingBackButton = React.memo(
     // Enhanced press handler with stronger feedback
     const handlePress = useCallback(() => {
       // Stronger haptic feedback for actual press
-      triggerHapticFeedback('press');
-      
+      triggerHapticFeedback("press");
+
       // Visual feedback for press
       if (animationEnabled) {
         Animated.sequence([
@@ -288,25 +274,41 @@ const DraggableFloatingBackButton = React.memo(
         ...styles.buttonContainer,
         width: size,
         height: size,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
         borderRadius: size / 2,
-        backgroundColor: isPressed ? pressedRgba : backgroundColor,
+        backgroundColor: isPressed
+          ? pressedRgba
+          : route.name === "audiowebscreen"
+          ? "#0e1fb0"
+          : theme.dark
+          ? "#553103" + "90"
+          : "#dfdfdf",
         borderColor: accentColor,
-        borderWidth: isPressed ? 2 : 1,
-        borderStyle:"dashed",
-        transform: [
-          { scale: scaleAnim },
-          { scale: pressAnim }
-        ],
+        // borderWidth: isPressed ? 2 : 1,
+        // borderStyle:"dashed",
+        transform: [{ scale: scaleAnim }, { scale: pressAnim }],
         shadowColor: accentColor,
         shadowOffset: {
           width: 0,
           height: 0,
         },
+        // elevation: 2,
         shadowOpacity: glowAnim,
         shadowRadius: 8,
         // elevation: isPressed ? 8 : 4,
       }),
-      [size, isPressed, pressedRgba, backgroundColor, accentColor, scaleAnim, pressAnim, glowAnim]
+      [
+        size,
+        isPressed,
+        pressedRgba,
+        backgroundColor,
+        accentColor,
+        scaleAnim,
+        pressAnim,
+        glowAnim,
+      ]
     );
 
     const rippleStyle = useMemo(
@@ -359,10 +361,10 @@ const DraggableFloatingBackButton = React.memo(
       >
         {/* Ripple effect */}
         <Animated.View style={rippleStyle} />
-        
+
         {/* Glow effect */}
         <Animated.View style={glowStyle} />
-        
+
         {/* Main button */}
         <TouchableWithoutFeedback
           onPressIn={handlePressIn}
@@ -373,14 +375,15 @@ const DraggableFloatingBackButton = React.memo(
         >
           <Animated.View style={buttonContainerStyle}>
             <View style={styles.button}>
-              <Ionicons 
-                name="chevron-back" 
-                size={iconSize} 
-                color={iconColor}
+              <Ionicons
+                name="send"
+                size={iconSize}
+                color={route.dame === "audiowebscreen" ? "white" : (theme.dark  ? "#efbe9c" : "white")}
                 style={{
-                  textShadowColor: 'rgba(0,0,0,0.3)',
+                  textShadowColor: "rgba(0,0,0,0.3)",
                   textShadowOffset: { width: 1, height: 1 },
                   textShadowRadius: 2,
+                  transform: [{ rotate: "180deg" }],
                 }}
               />
             </View>

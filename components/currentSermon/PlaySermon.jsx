@@ -27,12 +27,12 @@ const DownloadSermon = () => {
   const audioUrl = selectedSermon?.audioUrl || "";
   const isDark = theme.dark;
   const navigation = useNavigation();
-  
+
   // Animations using Animated API (no external library)
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim = useState(new Animated.Value(1))[0];
   const progressAnim = useState(new Animated.Value(0))[0];
-  
+
   // Animation sequences
   useEffect(() => {
     Animated.stagger(100, [
@@ -43,13 +43,13 @@ const DownloadSermon = () => {
       }),
     ]).start();
   }, []);
-  
+
   // Function to copy URL to clipboard
   const copyToClipboard = async () => {
     try {
       await Clipboard.setStringAsync(audioUrl);
       setIsCopied(true);
-      
+
       // Reset copy state after 2 seconds
       setTimeout(() => {
         setIsCopied(false);
@@ -61,64 +61,64 @@ const DownloadSermon = () => {
 
   // Function to open URL in external browser
   const openInBrowser = async () => {
-    if (!audioUrl) {
-      alert("No URL available");
-      return;
-    }
+    navigation.navigate("audiowebscreen");
+    // if (!audioUrl) {
+    //   alert("No URL available");
+    //   return;
+    // }
 
-    setIsLoading(true);
-    // Animate progress bar
-    Animated.timing(progressAnim, {
-      toValue: 1,
-      duration: 3000,
-      easing: Easing.linear,
-      useNativeDriver: false,
-    }).start();
-    
-    try {
-      const supported = await Linking.canOpenURL(audioUrl);
-      if (supported) {
-        await Linking.openURL(audioUrl);
-      } else {
-        alert("Cannot open this URL");
-      }
-    } catch (error) {
-      alert("Failed to open URL");
-    } finally {
-      setTimeout(() => {
-        setIsLoading(false);
-        progressAnim.setValue(0);
-      }, 500);
-    }
+    // setIsLoading(true);
+    // // Animate progress bar
+    // Animated.timing(progressAnim, {
+    //   toValue: 1,
+    //   duration: 3000,
+    //   easing: Easing.linear,
+    //   useNativeDriver: false,
+    // }).start();
+
+    // try {
+    //   const supported = await Linking.canOpenURL(audioUrl);
+    //   if (supported) {
+    //     await Linking.openURL(audioUrl);
+    //   } else {
+    //     alert("Cannot open this URL");
+    //   }
+    // } catch (error) {
+    //   alert("Failed to open URL");
+    // } finally {
+    //   setTimeout(() => {
+    //     setIsLoading(false);
+    //     progressAnim.setValue(0);
+    //   }, 500);
+    // }
   };
 
   // Function to simulate download
   const startDownload = async () => {
-    if (!audioUrl) {
-      alert("No URL available");
-      return;
-    }
+    navigation.navigate("audiowebscreen");
+    // if (!audioUrl) {
+    //   alert("No URL available");
+    //   return;
+    // }
 
-    setIsLoading(true);
-    // Animate progress bar
-    
-    
-    try {
-      const supported = await Linking.canOpenURL(audioUrl);
-      if (supported) {
-        await Linking.openURL(audioUrl);
-      } else {
-        ToastAndroid.show("Cannot open this URL");
-      }
-    } catch (error) {
-      alert("Failed to open URL");
-    } finally {
-      setTimeout(() => {
-        setIsLoading(false);
-        progressAnim.setValue(0);
-      }, 500);
-    }
-   
+    // setIsLoading(true);
+    // // Animate progress bar
+
+    // try {
+    //   const supported = await Linking.canOpenURL(audioUrl);
+    //   if (supported) {
+    //     await Linking.openURL(audioUrl);
+    //   } else {
+    //     ToastAndroid.show("Cannot open this URL");
+    //   }
+    // } catch (error) {
+    //   alert("Failed to open URL");
+    // } finally {
+    //   setTimeout(() => {
+    //     setIsLoading(false);
+    //     progressAnim.setValue(0);
+    //   }, 500);
+    // }
   };
 
   // Button press animation
@@ -129,7 +129,7 @@ const DownloadSermon = () => {
       useNativeDriver: true,
     }).start();
   };
-  
+
   const onPressOut = () => {
     Animated.timing(scaleAnim, {
       toValue: 1,
@@ -145,7 +145,9 @@ const DownloadSermon = () => {
         DOWNLOAD/PLAY SERMON
       </Text>
       <View style={styles.dottedLine} />
-      <Text style={[styles.receiptSubtitle, { color: isDark ? '#888' : '#666' }]}>
+      <Text
+        style={[styles.receiptSubtitle, { color: isDark ? "#888" : "#666" }]}
+      >
         {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString()}
       </Text>
     </View>
@@ -155,7 +157,7 @@ const DownloadSermon = () => {
   const DottedSeparator = ({ style }) => (
     <View style={[styles.dottedSeparator, style]}>
       {Array.from({ length: 50 }).map((_, i) => (
-        <Text key={i} style={[styles.dot, { color: isDark ? '#444' : '#ccc' }]}>
+        <Text key={i} style={[styles.dot, { color: isDark ? "#444" : "#ccc" }]}>
           •
         </Text>
       ))}
@@ -163,84 +165,102 @@ const DownloadSermon = () => {
   );
 
   return (
-    <View 
-      style={[
-        styles.safeArea, 
-        { backgroundColor: theme.colors.primary }
-      ]}
-    >
+    <View style={[styles.safeArea, { backgroundColor: theme.colors.primary }]}>
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons 
-            name="arrow-back" 
-            size={24} 
-            color={theme.colors.text} 
-          />
-          <Text style={[
-            styles.backButtonText,
-            { color: theme.colors.text }
-          ]}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          <Text style={[styles.backButtonText, { color: theme.colors.text }]}>
             Back
           </Text>
         </TouchableOpacity>
         <View style={styles.spacer} />
       </View>
-      
-      <ScrollView 
+
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
           {/* Receipt Paper Container */}
-          <Animated.View 
+          <Animated.View
             style={[
               styles.receiptPaper,
-              { 
+              {
                 backgroundColor: theme.colors.secondary,
                 opacity: fadeAnim,
-                transform: [{ translateY: fadeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0]
-                })}]
-              }
+                transform: [
+                  {
+                    translateY: fadeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              },
             ]}
           >
             {/* Receipt Header */}
             <ReceiptHeader />
-            
+
             {/* Sermon Details */}
             <View style={styles.receiptSection}>
-              <Text style={[styles.sectionLabel, { color: isDark ? '#888' : '#666' }]}>
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  { color: isDark ? "#888" : "#666" },
+                ]}
+              >
                 ITEM DETAILS:
               </Text>
               <Text style={[styles.sermonTitle, { color: theme.colors.text }]}>
                 {selectedSermon?.title || "Sermon Title"}
               </Text>
               <View style={styles.receiptRow}>
-                <Text style={[styles.receiptLabel, { color: isDark ? '#aaa' : '#777' }]}>
+                <Text
+                  style={[
+                    styles.receiptLabel,
+                    { color: isDark ? "#aaa" : "#777" },
+                  ]}
+                >
                   Minister:
                 </Text>
-                <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
+                <Text
+                  style={[styles.receiptValue, { color: theme.colors.text }]}
+                >
                   Brother Bob
                 </Text>
               </View>
               <View style={styles.receiptRow}>
-                <Text style={[styles.receiptLabel, { color: isDark ? '#aaa' : '#777' }]}>
+                <Text
+                  style={[
+                    styles.receiptLabel,
+                    { color: isDark ? "#aaa" : "#777" },
+                  ]}
+                >
                   Date:
                 </Text>
-                <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
+                <Text
+                  style={[styles.receiptValue, { color: theme.colors.text }]}
+                >
                   {selectedSermon?.date || "Date"}
                 </Text>
               </View>
               <View style={styles.receiptRow}>
-                <Text style={[styles.receiptLabel, { color: isDark ? '#aaa' : '#777' }]}>
+                <Text
+                  style={[
+                    styles.receiptLabel,
+                    { color: isDark ? "#aaa" : "#777" },
+                  ]}
+                >
                   Format:
                 </Text>
-                <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
+                <Text
+                  style={[styles.receiptValue, { color: theme.colors.text }]}
+                >
                   Audio MP3
                 </Text>
               </View>
@@ -250,21 +270,25 @@ const DownloadSermon = () => {
 
             {/* URL Section */}
             <View style={styles.receiptSection}>
-              <Text style={[styles.sectionLabel, { color: isDark ? '#888' : '#666' }]}>
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  { color: isDark ? "#888" : "#666" },
+                ]}
+              >
                 AUDIO URL:
               </Text>
-              <View style={[
-                styles.urlBox,
-                { 
-                  backgroundColor: isDark ? '#1a1a1a' : '#f8f8f8',
-                  borderColor: isDark ? '#333' : '#ddd'
-                }
-              ]}>
+              <View
+                style={[
+                  styles.urlBox,
+                  {
+                    backgroundColor: isDark ? "#1a1a1a" : "#f8f8f8",
+                    borderColor: isDark ? "#333" : "#ddd",
+                  },
+                ]}
+              >
                 <Text
-                  style={[
-                    styles.urlText,
-                    { color: isDark ? '#bbb' : '#555' }
-                  ]}
+                  style={[styles.urlText, { color: isDark ? "#bbb" : "#555" }]}
                   numberOfLines={2}
                   ellipsizeMode="middle"
                 >
@@ -273,9 +297,9 @@ const DownloadSermon = () => {
                 <TouchableOpacity
                   style={[
                     styles.copyBtn,
-                    { 
-                      backgroundColor: isCopied ? '#2d5a2d' : '#404040',
-                    }
+                    {
+                      backgroundColor: isCopied ? "#2d5a2d" : "#404040",
+                    },
                   ]}
                   onPress={copyToClipboard}
                   activeOpacity={0.7}
@@ -297,10 +321,15 @@ const DownloadSermon = () => {
 
             {/* Action Items */}
             <View style={styles.receiptSection}>
-              <Text style={[styles.sectionLabel, { color: isDark ? '#888' : '#666' }]}>
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  { color: isDark ? "#888" : "#666" },
+                ]}
+              >
                 AVAILABLE ACTIONS:
               </Text>
-              
+
               <View style={styles.actionsList}>
                 <TouchableOpacity
                   onPress={openInBrowser}
@@ -309,17 +338,33 @@ const DownloadSermon = () => {
                   style={styles.actionItem}
                 >
                   <View style={styles.actionIcon}>
-                    <Ionicons name="play-circle-outline" size={20} color={isDark ? '#fff' : '#333'} />
+                    <Ionicons
+                      name="play-circle-outline"
+                      size={20}
+                      color={isDark ? "#fff" : "#333"}
+                    />
                   </View>
                   <View style={styles.actionDetails}>
-                    <Text style={[styles.actionName, { color: theme.colors.text }]}>
+                    <Text
+                      style={[styles.actionName, { color: theme.colors.text }]}
+                    >
                       Listen to AUDIO
                     </Text>
-                    <Text style={[styles.actionDesc, { color: isDark ? '#888' : '#666' }]}>
+                    <Text
+                      style={[
+                        styles.actionDesc,
+                        { color: isDark ? "#888" : "#666" },
+                      ]}
+                    >
                       Play in browser
                     </Text>
                   </View>
-                  <Text style={[styles.actionPrice, { color: isDark ? '#aaa' : '#777' }]}>
+                  <Text
+                    style={[
+                      styles.actionPrice,
+                      { color: isDark ? "#aaa" : "#777" },
+                    ]}
+                  >
                     FREE
                   </Text>
                 </TouchableOpacity>
@@ -331,17 +376,33 @@ const DownloadSermon = () => {
                   style={styles.actionItem}
                 >
                   <View style={styles.actionIcon}>
-                    <MaterialIcons name="cloud-download" size={20} color={isDark ? '#fff' : '#333'} />
+                    <MaterialIcons
+                      name="cloud-download"
+                      size={20}
+                      color={isDark ? "#fff" : "#333"}
+                    />
                   </View>
                   <View style={styles.actionDetails}>
-                    <Text style={[styles.actionName, { color: theme.colors.text }]}>
+                    <Text
+                      style={[styles.actionName, { color: theme.colors.text }]}
+                    >
                       DOWNLOAD AUDIO
                     </Text>
-                    <Text style={[styles.actionDesc, { color: isDark ? '#888' : '#666' }]}>
+                    <Text
+                      style={[
+                        styles.actionDesc,
+                        { color: isDark ? "#888" : "#666" },
+                      ]}
+                    >
                       Save for offline
                     </Text>
                   </View>
-                  <Text style={[styles.actionPrice, { color: isDark ? '#aaa' : '#777' }]}>
+                  <Text
+                    style={[
+                      styles.actionPrice,
+                      { color: isDark ? "#aaa" : "#777" },
+                    ]}
+                  >
                     FREE
                   </Text>
                 </TouchableOpacity>
@@ -350,28 +411,31 @@ const DownloadSermon = () => {
 
             <DottedSeparator />
 
-
             <DottedSeparator />
 
             {/* Receipt Footer */}
             <View style={styles.receiptFooter}>
-              <Text style={[styles.footerText, { color: isDark ? '#666' : '#888' }]}>
+              <Text
+                style={[styles.footerText, { color: isDark ? "#666" : "#888" }]}
+              >
                 Wonderful words of life!
               </Text>
-              <Text style={[styles.footerText, { color: isDark ? '#666' : '#888' }]}>
+              <Text
+                style={[styles.footerText, { color: isDark ? "#666" : "#888" }]}
+              >
                 God bless you
               </Text>
               <View style={styles.barcode}>
                 {Array.from({ length: 30 }).map((_, i) => (
-                  <View 
-                    key={i} 
+                  <View
+                    key={i}
                     style={[
                       styles.barcodeBar,
-                      { 
-                        backgroundColor: isDark ? '#444' : '#bbb',
-                        width: Math.random() > 0.5 ? 2 : 1
-                      }
-                    ]} 
+                      {
+                        backgroundColor: isDark ? "#444" : "#bbb",
+                        width: Math.random() > 0.5 ? 2 : 1,
+                      },
+                    ]}
                   />
                 ))}
               </View>
@@ -379,18 +443,20 @@ const DownloadSermon = () => {
           </Animated.View>
 
           {/* Main Action Button */}
-          <Animated.View 
+          <Animated.View
             style={[
-              { 
+              {
                 opacity: fadeAnim,
                 transform: [
                   { scale: scaleAnim },
-                  { translateY: fadeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0]
-                  })}
-                ]
-              }
+                  {
+                    translateY: fadeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              },
             ]}
           >
             <TouchableOpacity
@@ -402,26 +468,34 @@ const DownloadSermon = () => {
               onPressOut={onPressOut}
             >
               <LinearGradient
-                colors={isDark ? ['#2d2d2d', '#404040'] : ['#333333', '#555555']}
+                colors={
+                  isDark ? ["#2d2d2d", "#404040"] : ["#333333", "#979494"]
+                }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.gradientButton}
               >
                 {isLoading ? (
                   <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color="white" style={styles.activityIndicator} />
+                    <ActivityIndicator
+                      size="small"
+                      color="white"
+                      style={styles.activityIndicator}
+                    />
                     <Text style={styles.mainButtonText}>Processing...</Text>
-                    
+
                     {/* Progress bar */}
                     <View style={styles.progressBarContainer}>
-                      <Animated.View 
+                      <Animated.View
                         style={[
                           styles.progressBar,
-                          { width: progressAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ['0%', '100%']
-                          })}
-                        ]} 
+                          {
+                            width: progressAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: ["0%", "100%"],
+                            }),
+                          },
+                        ]}
                       />
                     </View>
                   </View>
@@ -436,22 +510,22 @@ const DownloadSermon = () => {
           </Animated.View>
 
           {/* Additional Options */}
-          <Animated.View 
+          <Animated.View
             style={[
               styles.additionalOptions,
-              { 
+              {
                 opacity: fadeAnim,
-                transform: [{ translateY: fadeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0]
-                })}]
-              }
+                transform: [
+                  {
+                    translateY: fadeAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              },
             ]}
-          >
-           
-            
-           
-          </Animated.View>
+          ></Animated.View>
         </View>
       </ScrollView>
     </View>
@@ -461,23 +535,23 @@ const DownloadSermon = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     height: 60,
-    width: '100%',
+    width: "100%",
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 8,
   },
   backButtonText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     marginLeft: 4,
   },
   spacer: {
@@ -501,36 +575,36 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: "rgba(0,0,0,0.05)",
   },
   receiptHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   receiptTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   receiptSubtitle: {
     fontSize: 12,
     marginTop: 8,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   dottedLine: {
-    width: '80%',
+    width: "80%",
     height: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderTopWidth: 1,
-    borderStyle: 'dotted',
-    borderColor: '#888',
+    borderStyle: "dotted",
+    borderColor: "#888",
     marginVertical: 8,
   },
   dottedSeparator: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     marginVertical: 15,
     opacity: 0.6,
   },
@@ -543,69 +617,69 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 1.5,
     marginBottom: 8,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   sermonTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
-    textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    textAlign: "center",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   receiptRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginVertical: 4,
   },
   receiptLabel: {
     fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   receiptValue: {
     fontSize: 14,
-    fontWeight: '600',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: "600",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   urlBox: {
     borderWidth: 1,
     borderRadius: 6,
     padding: 12,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
   urlText: {
     fontSize: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     marginBottom: 8,
   },
   copyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-end',
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-end",
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 4,
   },
   copyBtnText: {
-    color: 'white',
+    color: "white",
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 4,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   actionsList: {
     marginTop: 8,
   },
   actionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
   },
   actionIcon: {
     width: 30,
-    alignItems: 'center',
+    alignItems: "center",
   },
   actionDetails: {
     flex: 1,
@@ -613,59 +687,59 @@ const styles = StyleSheet.create({
   },
   actionName: {
     fontSize: 14,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   actionDesc: {
     fontSize: 12,
     marginTop: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   actionPrice: {
     fontSize: 14,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: 8,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#333',
-    borderStyle: 'dashed',
+    borderColor: "#333",
+    borderStyle: "dashed",
   },
   totalLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   totalValue: {
     fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   freeLabel: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 12,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     marginTop: 8,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   receiptFooter: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
   },
   footerText: {
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   barcode: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
     height: 30,
     marginTop: 12,
   },
@@ -675,7 +749,7 @@ const styles = StyleSheet.create({
   },
   mainActionButton: {
     borderRadius: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginVertical: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -685,35 +759,35 @@ const styles = StyleSheet.create({
   },
   gradientButton: {
     paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
     height: 26,
   },
   progressBarContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -8,
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
   progressBar: {
-    height: '100%',
-    backgroundColor: 'white',
+    height: "100%",
+    backgroundColor: "white",
   },
   activityIndicator: {
-    position: 'absolute',
-    left: '35%',
+    position: "absolute",
+    left: "35%",
   },
   mainButtonText: {
     color: "white",
@@ -721,27 +795,27 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 10,
     letterSpacing: 1,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
   additionalOptions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 16,
   },
   optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '48%',
+    flexDirection: "row",
+    alignItems: "center",
+    width: "48%",
     borderRadius: 6,
     padding: 12,
     borderWidth: 1,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
   optionText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
     marginLeft: 8,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
   },
 });
 
