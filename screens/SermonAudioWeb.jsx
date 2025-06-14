@@ -14,289 +14,289 @@ import DraggableFloatingBackButton from "../components/FloatButton";
 
 const { width, height } = Dimensions.get("window");
 
-// Magical Floating Orbs Loader Component
-const MagicalLoader = ({ theme }) => {
-  const orb1 = useRef(new Animated.Value(0)).current;
-  const orb2 = useRef(new Animated.Value(0)).current;
-  const orb3 = useRef(new Animated.Value(0)).current;
-  const orb4 = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
-  const rotate = useRef(new Animated.Value(0)).current;
+// // Magical Floating Orbs Loader Component
+// const MagicalLoader = ({ theme }) => {
+//   const orb1 = useRef(new Animated.Value(0)).current;
+//   const orb2 = useRef(new Animated.Value(0)).current;
+//   const orb3 = useRef(new Animated.Value(0)).current;
+//   const orb4 = useRef(new Animated.Value(0)).current;
+//   const pulse = useRef(new Animated.Value(0)).current;
+//   const rotate = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    // Floating animation for orbs
-    const createFloatingAnimation = (animValue, delay = 0) => {
-      return Animated.loop(
-        Animated.sequence([
-          Animated.timing(animValue, {
-            toValue: 1,
-            duration: 2000 + delay,
-            useNativeDriver: true,
-          }),
-          Animated.timing(animValue, {
-            toValue: 0,
-            duration: 2000 + delay,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    };
+//   useEffect(() => {
+//     // Floating animation for orbs
+//     const createFloatingAnimation = (animValue, delay = 0) => {
+//       return Animated.loop(
+//         Animated.sequence([
+//           Animated.timing(animValue, {
+//             toValue: 1,
+//             duration: 2000 + delay,
+//             useNativeDriver: true,
+//           }),
+//           Animated.timing(animValue, {
+//             toValue: 0,
+//             duration: 2000 + delay,
+//             useNativeDriver: true,
+//           }),
+//         ])
+//       );
+//     };
 
-    // Pulse animation
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 0,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ])
-    );
+//     // Pulse animation
+//     const pulseAnimation = Animated.loop(
+//       Animated.sequence([
+//         Animated.timing(pulse, {
+//           toValue: 1,
+//           duration: 1500,
+//           useNativeDriver: true,
+//         }),
+//         Animated.timing(pulse, {
+//           toValue: 0,
+//           duration: 1500,
+//           useNativeDriver: true,
+//         }),
+//       ])
+//     );
 
-    // Rotation animation
-    const rotateAnimation = Animated.loop(
-      Animated.timing(rotate, {
-        toValue: 1,
-        duration: 8000,
-        useNativeDriver: true,
-      })
-    );
+//     // Rotation animation
+//     const rotateAnimation = Animated.loop(
+//       Animated.timing(rotate, {
+//         toValue: 1,
+//         duration: 8000,
+//         useNativeDriver: true,
+//       })
+//     );
 
-    // Start all animations
-    createFloatingAnimation(orb1, 0).start();
-    createFloatingAnimation(orb2, 500).start();
-    createFloatingAnimation(orb3, 1000).start();
-    createFloatingAnimation(orb4, 1500).start();
-    pulseAnimation.start();
-    rotateAnimation.start();
-  }, []);
+//     // Start all animations
+//     createFloatingAnimation(orb1, 0).start();
+//     createFloatingAnimation(orb2, 500).start();
+//     createFloatingAnimation(orb3, 1000).start();
+//     createFloatingAnimation(orb4, 1500).start();
+//     pulseAnimation.start();
+//     rotateAnimation.start();
+//   }, []);
 
-  const getOrbTransform = (animValue, xOffset, yOffset) => ({
-    transform: [
-      {
-        translateX: animValue.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [xOffset, xOffset + 30, xOffset],
-        }),
-      },
-      {
-        translateY: animValue.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [yOffset, yOffset - 40, yOffset],
-        }),
-      },
-      {
-        scale: animValue.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [0.8, 1.2, 0.8],
-        }),
-      },
-    ],
-  });
+//   const getOrbTransform = (animValue, xOffset, yOffset) => ({
+//     transform: [
+//       {
+//         translateX: animValue.interpolate({
+//           inputRange: [0, 0.5, 1],
+//           outputRange: [xOffset, xOffset + 30, xOffset],
+//         }),
+//       },
+//       {
+//         translateY: animValue.interpolate({
+//           inputRange: [0, 0.5, 1],
+//           outputRange: [yOffset, yOffset - 40, yOffset],
+//         }),
+//       },
+//       {
+//         scale: animValue.interpolate({
+//           inputRange: [0, 0.5, 1],
+//           outputRange: [0.8, 1.2, 0.8],
+//         }),
+//       },
+//     ],
+//   });
 
-  const rotationTransform = {
-    transform: [
-      {
-        rotate: rotate.interpolate({
-          inputRange: [0, 1],
-          outputRange: ["0deg", "360deg"],
-        }),
-      },
-    ],
-  };
+//   const rotationTransform = {
+//     transform: [
+//       {
+//         rotate: rotate.interpolate({
+//           inputRange: [0, 1],
+//           outputRange: ["0deg", "360deg"],
+//         }),
+//       },
+//     ],
+//   };
 
-  const pulseTransform = {
-    transform: [
-      {
-        scale: pulse.interpolate({
-          inputRange: [0, 1],
-          outputRange: [1, 1.3],
-        }),
-      },
-    ],
-    opacity: pulse.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.7, 0.3],
-    }),
-  };
+//   const pulseTransform = {
+//     transform: [
+//       {
+//         scale: pulse.interpolate({
+//           inputRange: [0, 1],
+//           outputRange: [1, 1.3],
+//         }),
+//       },
+//     ],
+//     opacity: pulse.interpolate({
+//       inputRange: [0, 1],
+//       outputRange: [0.7, 0.3],
+//     }),
+//   };
 
-  return (
-    <View style={styles.loaderContainer}>
-      {/* Central rotating ring */}
-      <Animated.View style={[styles.centralRing, rotationTransform]}>
-        <View
-          style={[
-            styles.ring,
-            {
-              borderColor: theme?.colors?.primary || "#6366f1",
-              borderWidth: 2,
-            },
-          ]}
-        />
-      </Animated.View>
+//   return (
+//     <View style={styles.loaderContainer}>
+//       {/* Central rotating ring */}
+//       <Animated.View style={[styles.centralRing, rotationTransform]}>
+//         <View
+//           style={[
+//             styles.ring,
+//             {
+//               borderColor: theme?.colors?.primary || "#6366f1",
+//               borderWidth: 2,
+//             },
+//           ]}
+//         />
+//       </Animated.View>
 
-      {/* Pulsing center orb */}
-      <Animated.View style={[styles.centerOrb, pulseTransform]}>
-        <View
-          style={[
-            styles.orb,
-            {
-              backgroundColor: theme?.colors?.accent || "#8b5cf6",
-              shadowColor: theme?.colors?.accent || "#8b5cf6",
-            },
-          ]}
-        />
-      </Animated.View>
+//       {/* Pulsing center orb */}
+//       <Animated.View style={[styles.centerOrb, pulseTransform]}>
+//         <View
+//           style={[
+//             styles.orb,
+//             {
+//               backgroundColor: theme?.colors?.accent || "#8b5cf6",
+//               shadowColor: theme?.colors?.accent || "#8b5cf6",
+//             },
+//           ]}
+//         />
+//       </Animated.View>
 
-      {/* Floating orbs */}
-      <Animated.View
-        style={[styles.floatingOrb, getOrbTransform(orb1, -60, -60)]}
-      >
-        <View style={[styles.smallOrb, { backgroundColor: "#ec4899" }]} />
-      </Animated.View>
+//       {/* Floating orbs */}
+//       <Animated.View
+//         style={[styles.floatingOrb, getOrbTransform(orb1, -60, -60)]}
+//       >
+//         <View style={[styles.smallOrb, { backgroundColor: "#ec4899" }]} />
+//       </Animated.View>
 
-      <Animated.View
-        style={[styles.floatingOrb, getOrbTransform(orb2, 60, -60)]}
-      >
-        <View style={[styles.smallOrb, { backgroundColor: "#06b6d4" }]} />
-      </Animated.View>
+//       <Animated.View
+//         style={[styles.floatingOrb, getOrbTransform(orb2, 60, -60)]}
+//       >
+//         <View style={[styles.smallOrb, { backgroundColor: "#06b6d4" }]} />
+//       </Animated.View>
 
-      <Animated.View
-        style={[styles.floatingOrb, getOrbTransform(orb3, -60, 60)]}
-      >
-        <View style={[styles.smallOrb, { backgroundColor: "#10b981" }]} />
-      </Animated.View>
+//       <Animated.View
+//         style={[styles.floatingOrb, getOrbTransform(orb3, -60, 60)]}
+//       >
+//         <View style={[styles.smallOrb, { backgroundColor: "#10b981" }]} />
+//       </Animated.View>
 
-      <Animated.View
-        style={[styles.floatingOrb, getOrbTransform(orb4, 60, 60)]}
-      >
-        <View style={[styles.smallOrb, { backgroundColor: "#f59e0b" }]} />
-      </Animated.View>
+//       <Animated.View
+//         style={[styles.floatingOrb, getOrbTransform(orb4, 60, 60)]}
+//       >
+//         <View style={[styles.smallOrb, { backgroundColor: "#f59e0b" }]} />
+//       </Animated.View>
 
-      {/* Loading text with fade animation */}
-      <Animated.View
-        style={[
-          styles.loadingTextContainer,
-          {
-            opacity: pulse.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.6, 1],
-            }),
-          },
-        ]}
-      >
-        <Text
-          style={[
-            styles.loadingText,
-            {
-              color: theme?.colors?.text || "#374151",
-            },
-          ]}
-        >
-          Loading Sermon Audio
-        </Text>
-        <View style={styles.dots}>
-          <Animated.View
-            style={[
-              styles.dot,
-              {
-                opacity: orb1.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.3, 1],
-                }),
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.dot,
-              {
-                opacity: orb2.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.3, 1],
-                }),
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.dot,
-              {
-                opacity: orb3.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.3, 1],
-                }),
-              },
-            ]}
-          />
-        </View>
-      </Animated.View>
-    </View>
-  );
-};
+//       {/* Loading text with fade animation */}
+//       <Animated.View
+//         style={[
+//           styles.loadingTextContainer,
+//           {
+//             opacity: pulse.interpolate({
+//               inputRange: [0, 1],
+//               outputRange: [0.6, 1],
+//             }),
+//           },
+//         ]}
+//       >
+//         <Text
+//           style={[
+//             styles.loadingText,
+//             {
+//               color: theme?.colors?.text || "#374151",
+//             },
+//           ]}
+//         >
+//           Loading Sermon Audio
+//         </Text>
+//         <View style={styles.dots}>
+//           <Animated.View
+//             style={[
+//               styles.dot,
+//               {
+//                 opacity: orb1.interpolate({
+//                   inputRange: [0, 1],
+//                   outputRange: [0.3, 1],
+//                 }),
+//               },
+//             ]}
+//           />
+//           <Animated.View
+//             style={[
+//               styles.dot,
+//               {
+//                 opacity: orb2.interpolate({
+//                   inputRange: [0, 1],
+//                   outputRange: [0.3, 1],
+//                 }),
+//               },
+//             ]}
+//           />
+//           <Animated.View
+//             style={[
+//               styles.dot,
+//               {
+//                 opacity: orb3.interpolate({
+//                   inputRange: [0, 1],
+//                   outputRange: [0.3, 1],
+//                 }),
+//               },
+//             ]}
+//           />
+//         </View>
+//       </Animated.View>
+//     </View>
+//   );
+// };
 
-// Error Component
-const ErrorState = ({ onRetry, theme }) => (
-  <View style={styles.errorContainer}>
-    <View
-      style={[
-        styles.errorIcon,
-        {
-          backgroundColor: theme?.colors?.primary || "#f3f4f6",
-        },
-      ]}
-    >
-      <Icon name="wifi-outline" size={40} color="#ef4444" />
-    </View>
+// // Error Component
+// const ErrorState = ({ onRetry, theme }) => (
+//   <View style={styles.errorContainer}>
+//     <View
+//       style={[
+//         styles.errorIcon,
+//         {
+//           backgroundColor: theme?.colors?.primary || "#f3f4f6",
+//         },
+//       ]}
+//     >
+//       <Icon name="wifi-outline" size={40} color="#ef4444" />
+//     </View>
 
-    <Text
-      style={[
-        styles.errorTitle,
-        {
-          color: theme?.colors?.text || "#374151",
-        },
-      ]}
-    >
-      Connection Error
-    </Text>
+//     <Text
+//       style={[
+//         styles.errorTitle,
+//         {
+//           color: theme?.colors?.text || "#374151",
+//         },
+//       ]}
+//     >
+//       Connection Error
+//     </Text>
 
-    <Text
-      style={[
-        styles.errorMessage,
-        {
-          color: theme?.colors?.textSecondary || "#6b7280",
-        },
-      ]}
-    >
-      Unable to load the sermon audio. Please check your internet connection and
-      try again.
-    </Text>
+//     <Text
+//       style={[
+//         styles.errorMessage,
+//         {
+//           color: theme?.colors?.textSecondary || "#6b7280",
+//         },
+//       ]}
+//     >
+//       Unable to load the sermon audio. Please check your internet connection and
+//       try again.
+//     </Text>
 
-    <TouchableOpacity
-      style={[
-        styles.retryButton,
-        {
-          backgroundColor: theme?.colors?.accent || "#6366f1",
-        },
-      ]}
-      onPress={onRetry}
-      activeOpacity={0.8}
-    >
-      <Icon
-        name="refresh"
-        size={20}
-        color="#ffffff"
-        style={{ marginRight: 8 }}
-      />
-      <Text style={styles.retryButtonText}>Try Again</Text>
-    </TouchableOpacity>
-  </View>
-);
+//     <TouchableOpacity
+//       style={[
+//         styles.retryButton,
+//         {
+//           backgroundColor: theme?.colors?.accent || "#6366f1",
+//         },
+//       ]}
+//       onPress={onRetry}
+//       activeOpacity={0.8}
+//     >
+//       <Icon
+//         name="refresh"
+//         size={20}
+//         color="#ffffff"
+//         style={{ marginRight: 8 }}
+//       />
+//       <Text style={styles.retryButtonText}>Try Again</Text>
+//     </TouchableOpacity>
+//   </View>
+// );
 
 export default function SermonAudioWebScreen() {
   const { selectedSermon, theme } = useAppContext();
@@ -351,10 +351,11 @@ export default function SermonAudioWebScreen() {
         mixedContentMode="compatibility"
         allowsInlineMediaPlayback={true}
         mediaPlaybackRequiresUserAction={false}
+
       />
 
-      {loading && !error && <MagicalLoader theme={theme} />}
-      {error && <ErrorState onRetry={handleRetry} theme={theme} />}
+      {/* {loading && !error && <MagicalLoader theme={theme} />} */}
+      {/* {error && <ErrorState onRetry={handleRetry} theme={theme} />} */}
     </View>
   );
 }
