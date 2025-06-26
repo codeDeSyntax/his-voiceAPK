@@ -13,9 +13,10 @@ import { styles } from "../styles/Allsermons";
 import { useAppContext } from "../Logic/globalState";
 import { Pressable } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
+import { responsiveFontSize, horizontalScale, spacing } from '../Utils/responsiveUtils';
 
 const SermonListView = React.memo(
-  ({ theme, filteredSermons, handleSermonClick, setSearchText ,allSermons,setFilteredSermons}) => {
+  ({ theme, filteredSermons, handleSermonClick, setSearchText, allSermons, setFilteredSermons }) => {
     // const { numberOfColumns } = useAppContext();
     const scaleValue = useRef(new Animated.Value(1)).current;
 
@@ -50,7 +51,7 @@ const SermonListView = React.memo(
     const LocationNotFound = React.memo(() => (
       <Text
         style={{
-          fontSize: 9,
+          fontSize: responsiveFontSize(9),
           color: theme.dark ? theme.colors.text + "80" : "#5d3211",
           fontFamily: "ZillaSlab_smb",
         }}
@@ -68,8 +69,8 @@ const SermonListView = React.memo(
             {
               width: "49%",
               borderWidth: 1,
-              borderColor: theme.dark ? theme.colors.primary :"#bbb8b8",
-              borderStyle:"dashed",
+              borderColor: theme.dark ? theme.colors.primary : "#bbb8b8",
+              borderStyle: "dashed",
               // elevation: 1,
               backgroundColor: theme.dark ? "transparent" : "transparent",
             },
@@ -85,7 +86,7 @@ const SermonListView = React.memo(
                 flexDirection: "row",
                 justifyContent: "flex-start",
                 // padding: 5,
-                borderRadius: 10,
+                borderRadius: horizontalScale(10),
               },
             ]}
           >
@@ -114,12 +115,12 @@ const SermonListView = React.memo(
 
             {/* </Animated.View> */}
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center",gap:4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center",gap: spacing.xs }}>
             <Text
               style={[
                 {
                   color: theme.dark ? theme.colors.text + "50" : "#5d321190",
-                  fontSize: 12,
+                  fontSize: responsiveFontSize(12),
                   fontStyle: "italic",
                   fontFamily: "serif",
                 },
@@ -129,16 +130,18 @@ const SermonListView = React.memo(
             </Text>
             {item.type === "mp3" ? (
               <Text
-                style={[styles.animatedMicrophone, { paddingHorizontal: 2 }]}
+                style={[styles.animatedMicrophone, { paddingHorizontal: spacing.xs }]}
               >
                 <FontAwesome5
                   name="microphone"
+                  size={responsiveFontSize(12)}
                   color={theme.dark ? theme.colors.hlight + "60" : "#5d3211"}
                 />
               </Text>
             ) : (
               <Ionicons
                 name="text"
+                size={responsiveFontSize(12)}
                 color={theme.dark ? theme.colors.hlight + "60" : "#5d3211"}
               />
             )}
@@ -146,9 +149,9 @@ const SermonListView = React.memo(
 
           <Text
             style={{
-              fontSize: 9,
+              fontSize: responsiveFontSize(9),
               color: theme.dark ? theme.colors.text + "80" : "#5d3211",
-              paddingBottom: 4,
+              paddingBottom: spacing.xs,
               fontFamily: "Palatino",
             }}
           >
@@ -170,11 +173,11 @@ const SermonListView = React.memo(
         numColumns={2}
         columnWrapperStyle={{ justifyContent: "space-between" }}
         ListEmptyComponent={
-          <View style={{ padding: 16, alignItems: "center" }}>
+          <View style={{ padding: spacing.lg, alignItems: "center" }}>
             <Text
               style={{
                 color: theme.dark ? theme.colors.text + "80" : "#5d3211",
-                fontSize: 14,
+                fontSize: responsiveFontSize(14),
                 fontFamily: "serif",
               }}
             >
@@ -191,8 +194,8 @@ const SermonListView = React.memo(
         <Animated.View
         style={{
           position: "absolute",
-          bottom: 20,
-          right: 20,
+          bottom: spacing.xl,
+          right: spacing.xl,
           transform: [{ scale: scaleValue }],
         }}
       >
