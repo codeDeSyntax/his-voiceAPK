@@ -2,30 +2,69 @@ import { StyleSheet } from "react-native";
 import { responsiveFontSize, horizontalScale, verticalScale, spacing } from '../Utils/responsiveUtils';
 
 export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  backgroundContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+  },
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  contentContainer: {
+    flex: 1,
+  },
   listContent: {
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.lg,
-    paddingTop: spacing.sm,
-    gap: spacing.xs,
+    paddingTop: 0,
   },
-  sermonItem: {
-    paddingHorizontal: spacing.md,
+  // Table styles
+  tableHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-    borderRadius: horizontalScale(10),
-    shadowColor: "#000",
-    borderColor: "silver",
-  },
-  sermonTitle: {
-    fontSize: responsiveFontSize(14),
-    // fontWeight: "900",
-    fontFamily: "serif",
+    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.md,
     marginBottom: spacing.xs,
-    color: "#bfc7ca",
-    flexDirection: "row",
-    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderStyle: 'solid',
   },
-  animatedMicrophone: {},
+  tableHeaderText: {
+    fontSize: responsiveFontSize(14),
+    fontFamily: 'ZillaSlab_smb',
+    fontWeight: '600',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+    borderBottomWidth: 1,
+    borderStyle: 'dashed',
+  },
+  tableCell: {
+    justifyContent: 'center',
+  },
+  tableCellTitle: {
+    fontSize: responsiveFontSize(16),
+    marginBottom: spacing.xs,
+  },
+  tableCellLocation: {
+    fontSize: responsiveFontSize(12),
+    fontStyle: 'italic',
+    fontFamily: 'serif',
+  },
+  tableCellDate: {
+    fontSize: responsiveFontSize(14),
+    fontStyle: 'italic',
+    fontFamily: 'serif',
+  },
+  // Modal styles
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -39,6 +78,7 @@ export const styles = StyleSheet.create({
     borderRadius: horizontalScale(10),
     padding: spacing.lg,
   },
+  // Grid styles
   gridContainer: {
     paddingVertical: spacing.xs,
   },
@@ -62,6 +102,7 @@ export const styles = StyleSheet.create({
   selectedGridItemText: {
     color: "#fff",
   },
+  // Options styles
   allYearsOption: {
     backgroundColor: "#0a84ff",
     width: "100%",
@@ -80,7 +121,7 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  // search
+  // Search styles
   searchContainer: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
@@ -92,7 +133,6 @@ export const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     marginTop: spacing.sm,
   },
-  // Add these to your Allsermons styles
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',

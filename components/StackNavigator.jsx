@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useScreens } from "react-native-screens";
 import { useAppContext } from "../Logic/globalState";
 import SermonAudioWebScreen from "../screens/SermonAudioWeb";
+import BookmarksScreen from "../screens/Bookmarks/BookmarksScreen";
 // useScreens();
 const Stack = createNativeStackNavigator();
 
@@ -212,6 +213,15 @@ const StackNavigator = () => {
         <Stack.Screen
           name="audiowebscreen"
           component={ScreenWithSuspense(SermonAudioWebScreen)}
+          options={{
+            navigationBarHidden: true,
+            statusBarHidden: true,
+            // ...CardOptions,
+          }}
+        />
+        <Stack.Screen
+          name="bookmarks"
+          component={ScreenWithSuspense(BookmarksScreen)}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,

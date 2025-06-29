@@ -73,7 +73,6 @@ const Menu = () => {
   };
 
   const closeMenu = () => {
-    // You can add any close menu logic here if needed
     navigation.navigate("AllSermons");
   };
 
@@ -96,12 +95,16 @@ const Menu = () => {
             icon="book-outline"
           />
           <MenuItem
+            title="Bookmarks"
+            onPress={() => navigateTo("bookmarks")}
+            icon="bookmark-outline"
+          />
+          <MenuItem
             title="Current Sermon Info & Notes"
             onPress={() => {
               if (Platform.OS === "android") {
                 ToastAndroid.show("not functional yet 💀", ToastAndroid.SHORT);
               } else {
-                // For iOS and other platforms
                 Alert.alert("not functional yet 💀", "not functional yet 💀⛈️");
               }
             }}

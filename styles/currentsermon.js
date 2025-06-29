@@ -1,4 +1,5 @@
 import { StyleSheet, Platform, StatusBar, Dimensions } from "react-native";
+import { responsiveFontSize, horizontalScale, verticalScale, spacing } from '../Utils/responsiveUtils';
 
 const { width, height } = Dimensions.get("window");
 const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 44 : StatusBar.currentHeight;
@@ -16,7 +17,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   sermonText: {
-    lineHeight: 28,
+    // lineHeight: 28,
     marginBottom: 18,
     textAlign: "left",
     // fontSize: 16,
@@ -115,10 +116,10 @@ const styles = StyleSheet.create({
   },
   topCard: {
     position: "absolute",
-    top: STATUSBAR_HEIGHT + 70,
+    top: STATUSBAR_HEIGHT + 20,
     right: 10,
     width: width * 0.85,
-    height: height * 0.45,
+    height: height * 0.80,
     borderRadius: 20, // More receipt-like sharp corners
     backgroundColor: "white",
     // Receipt-style border pattern
@@ -159,29 +160,28 @@ const styles = StyleSheet.create({
   // Receipt Header Styles
   receiptHeader: {
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
   receiptTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    letterSpacing: 2,
-    // fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    fontSize: responsiveFontSize(14),
+    // fontWeight: "900",
+    // letterSpacing: 2,
     textAlign: "center",
   },
   receiptSubtitle: {
-    fontSize: 10,
+    fontSize: responsiveFontSize(10),
     fontWeight: "600",
     letterSpacing: 1,
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     textAlign: "center",
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   receiptDateTime: {
-    fontSize: 9,
+    fontSize: responsiveFontSize(9),
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     textAlign: "center",
-    marginTop: 4,
+    marginTop: spacing.xs,
     letterSpacing: 0.5,
   },
 
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   receiptDots: {
-    fontSize: 8,
+    fontSize: responsiveFontSize(8),
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     letterSpacing: 1,
     opacity: 0.6,
@@ -203,13 +203,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   receiptSectionHeader: {
-    fontSize: 14,
-    fontWeight: "bold",
-    letterSpacing: 1.5,
-    fontFamily: Platform.OS === "ios" ? "Courier New" : "serif",
-    marginBottom: 6,
-    // textAlign: "center",
-    textDecorationLine: "underline",
+    fontSize: responsiveFontSize(14),
+    fontFamily:"ZillaSlabsm",
+    // fontWeight: "bold",
+    marginBottom: spacing.xs,
+    textAlign: "center",
+    // letterSpacing: 1,
   },
 
   // Receipt Items
@@ -222,18 +221,14 @@ const styles = StyleSheet.create({
     // alignItems: "center",
   },
   receiptLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    fontFamily: Platform.OS === "ios" ? "serif" : "serif",
-    letterSpacing: 0.5,
-    marginBottom: 1,
+    fontSize: responsiveFontSize(14),
+    fontFamily:"ZillaSlab",
+    marginRight: spacing.xs,
   },
   receiptValue: {
-    fontSize: 12,
-    fontFamily: Platform.OS === "ios" ? "Courier New" : "",
-    paddingLeft: 8,
-    lineHeight: 12,
-    fontWeight: "900",
+    fontSize: responsiveFontSize(14),
+    fontFamily:"ZillaSlab",
+    flex: 1,
   },
 
   // Search Styles
@@ -248,8 +243,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderStyle: "dashed",
+    // borderWidth: 1,
+    // borderStyle: "dashed",
     borderRadius:10,
     paddingHorizontal: 8,
     paddingVertical: 6,
@@ -373,8 +368,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     paddingHorizontal: 6,
-    borderWidth: 1,
-    borderStyle: "dashed",
+    // borderWidth: 1,
+    // borderStyle: "dashed",
     width: "48%",
     backgroundColor: "rgba(0,0,0,0.02)",
     borderRadius:10
@@ -419,19 +414,27 @@ const styles = StyleSheet.create({
   paragraphContainer: {
     flexDirection: "row",
     marginBottom: 18,
+    borderRadius:5,
+  },
+  paragraphHeader: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  paragraphNumberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
   },
   paragraphNumber: {
-    // minWidth: 30,
-    fontWeight: "bold",
-    fontSize: 15,
-    marginRight: 8,
-    textAlign: "right",
-    paddingTop: 3,
-    marginLeft:2
+    fontSize: responsiveFontSize(14),
+    fontWeight: '500',
+    marginRight: spacing.xs,
   },
   paragraphText: {
     flex: 1,
     lineHeight: 32,
+    paddingLeft:8
+
     // fontSize: 16,
   },
 
@@ -626,6 +629,67 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     fontWeight: "500",
+  },
+
+  bookmarkButton: {
+    padding: spacing.xs,
+    marginLeft: -spacing.xs,
+  },
+  bookmarkButtonActive: {
+    transform: [{ scale: 1.1 }],
+  },
+
+  searchLoader: {
+    position: 'absolute',
+    right: spacing.sm,
+    top: '50%',
+    transform: [{ translateY: -12 }],
+  },
+
+  // Search Section Styles
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    position: 'relative',
+  },
+  searchInput: {
+    flex: 1,
+    height: verticalScale(50),
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: spacing.sm,
+    paddingRight: spacing.xl,
+    fontSize: responsiveFontSize(14),
+    marginRight: spacing.sm,
+  },
+  searchButton: {
+    height: verticalScale(40),
+    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  searchButtonText: {
+    fontSize: responsiveFontSize(12),
+    fontWeight: '600',
+  },
+  searchResultsContainer: {
+    marginTop: spacing.sm,
+  },
+  searchNavigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  searchNavigationButton: {
+    padding: spacing.xs,
+  },
+  searchResultsText: {
+    fontSize: responsiveFontSize(12),
+    marginHorizontal: spacing.sm,
   },
 });
 

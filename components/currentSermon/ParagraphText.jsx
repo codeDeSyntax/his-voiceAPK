@@ -11,6 +11,9 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
 import { useFonts } from "expo-font";
+import { Ionicons } from "@expo/vector-icons";
+import { responsiveFontSize, spacing } from '../../Utils/responsiveUtils';
+import { useAppContext } from "../../Logic/globalState";
 
 // Memoized text highlighting component for better performance
 const HighlightedText = React.memo(
@@ -27,8 +30,10 @@ const HighlightedText = React.memo(
                 fontSize: settings.fontSize,
                 fontFamily: settings.fontFamily || "ZillaSlab",
                 borderRadius: 10,
+                letterSpacing:1,
+                paddingHorizontal:5,
                 backgroundColor: theme.dark
-                  ? "white"
+                  ? "#5d3211" + "50"
                   : "rgba(59, 130, 246, 0.1)",
               },
             ]}
@@ -64,9 +69,10 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
             style={[
               styles.endnoteText,
               {
-                fontSize: settings.fontSize,
+                fontSize: responsiveFontSize(settings.fontSize),
                 fontFamily: settings.fontFamily,
                 color: theme.dark ? theme.colors.hlight : "#5d3211",
+                // lineHeight: 32,
               },
             ]}
           >
@@ -80,9 +86,10 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
             style={[
               styles.endnoteText,
               {
-                fontSize: settings.fontSize,
+                fontSize: responsiveFontSize(settings.fontSize),
                 fontFamily: settings.fontFamily,
                 color: theme.dark ? theme.colors.hlight : "#5d3211",
+                // lineHeight: 32,
               },
             ]}
           >
@@ -95,8 +102,9 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
             key={`text-${partIndex}`}
             style={{
               color: theme.colors.text,
-              fontSize: settings.fontSize,
+              fontSize: responsiveFontSize(settings.fontSize),
               fontFamily: settings.fontFamily,
+              // lineHeight: 32,
             }}
           >
             {part}
@@ -117,12 +125,20 @@ const ParagraphText = React.memo(
     onLayout,
     selectedSermon,
   }) => {
+    const { addBookmark, bookmarks } = useAppContext();
     const [fontsLoaded] = useFonts({
       ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
     });
 
     const [isCopying, setIsCopying] = useState(false);
     const lastTapTime = useRef(0);
+
+    // Check if this paragraph is bookmarked
+    const isBookmarked = useMemo(() => {
+      return bookmarks.some(
+        b => b.sermon.id === selectedSermon.id && b.paragraphIndex === index
+      );
+    }, [bookmarks, selectedSermon.id, index]);
 
     // Constants
     const DOUBLE_TAP_DELAY = 300;
@@ -136,7 +152,7 @@ const ParagraphText = React.memo(
         {
           color: theme.colors.text,
           fontFamily: settings.fontFamily || "ZillaSlab",
-          fontSize: settings.fontSize,
+          fontSize: responsiveFontSize(settings.fontSize),
         },
       ],
       [theme.colors.text, settings.fontFamily, settings.fontSize]
@@ -264,6 +280,13 @@ const ParagraphText = React.memo(
       }
     }, []);
 
+    const handleBookmarkPress = useCallback(() => {
+      if (!isBookmarked) {
+        addBookmark(selectedSermon, index, paragraph);
+        Vibration.vibrate(VIBRATION_DURATION);
+      }
+    }, [addBookmark, selectedSermon, index, paragraph, isBookmarked]);
+
     // Render text content based on type
     const renderTextContent = useCallback(() => {
       switch (processedText.type) {
@@ -292,21 +315,51 @@ const ParagraphText = React.memo(
     return (
       <TouchableOpacity
         style={containerStyle}
-        onLayout={onLayout}
+        onLayout={handleLayout}
         onLongPress={copyToClipboard}
         onPress={handleTextPress}
         delayLongPress={LONG_PRESS_DELAY}
         activeOpacity={0.7}
         disabled={isCopying} // Prevent interaction while copying
       >
-        <Text style={paragraphNumberStyle}>{index + 1}</Text>
-        <Text
-          style={textStyle}
-          selectable={true}
-          allowFontScaling={false} // Prevent accessibility font scaling issues
-        >
-          {renderTextContent()}
-        </Text>
+        <View style={styles.paragraphHeader}>
+          <View style={styles.paragraphNumberContainer}>
+            <Text style={paragraphNumberStyle}>{index + 1}</Text>
+            <TouchableOpacity
+              onPress={handleBookmarkPress}
+              style={[
+                styles.bookmarkButton,
+                isBookmarked && styles.bookmarkButtonActive,
+              ]}
+            >
+              <Ionicons
+                name={isBookmarked ? "bookmark" : "bookmark-outline"}
+                size={responsiveFontSize(20)}
+                color={theme.dark ? theme.colors.hlight : "#5d3211"}
+              />
+            </TouchableOpacity>
+          </View>
+         <Text style={[textStyle,{fontSize:responsiveFontSize(settings.fontSize),fontFamily:settings.fontFamily}]}>
+         {processedText.type === "endnote" ? (
+            <EndnoteText
+              parts={processedText.parts}
+              theme={theme}
+              settings={settings}
+            />
+          ) : processedText.type === "search" ? (
+            <HighlightedText
+              parts={processedText.parts}
+              searchPhrase={searchPhrase}
+              theme={theme}
+              settings={settings}
+            />
+          ) : (
+            <Text style={[textStyle,{fontSize:responsiveFontSize(settings.fontSize),fontFamily:settings.fontFamily}]}
+            
+            >{processedText.text}</Text>
+          )}
+         </Text>
+        </View>
       </TouchableOpacity>
     );
   }

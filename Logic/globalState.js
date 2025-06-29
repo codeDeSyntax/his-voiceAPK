@@ -24,6 +24,7 @@ const STORAGE_KEYS = {
   RECENTLY_OPENED: "recentlyOpenedSermons",
   SETTINGS: "sermonSettings",
   LAST_POSITIONS: "sermonLastPositions",
+  BOOKMARKS: "sermonBookmarks",
 };
 
 const INITIAL_SETTINGS = {
@@ -60,6 +61,7 @@ export const SermonProvider = ({ children }) => {
   const [sermonsLoaded, setSermonsLoaded] = useState(false);
   const [numberOfColumns , setNumberOfColumns] = useState(2);
   const [lastReadPositions, setLastReadPositions] = useState({});
+  const [bookmarks, setBookmarks] = useState([]);
 
   // Theme derived from isDarkMode
   const theme = useMemo(
@@ -246,6 +248,12 @@ export const SermonProvider = ({ children }) => {
       if (storedPositions) {
         setLastReadPositions(JSON.parse(storedPositions));
       }
+
+      // Load bookmarks
+      const bookmarksValue = await AsyncStorage.getItem('bookmarks');
+      if (bookmarksValue) {
+        setBookmarks(JSON.parse(bookmarksValue));
+      }
     } catch (error) {
       console.error("Failed to load stored data:", error);
     }
@@ -273,6 +281,137 @@ export const SermonProvider = ({ children }) => {
       addToRecentlyOpened(selectedSermon);
     }
   }, [selectedSermon, addToRecentlyOpened]);
+
+  // Load bookmarks from storage on app start
+  useEffect(() => {
+    const loadBookmarks = async () => {
+      try {
+        const savedBookmarks = await AsyncStorage.getItem('bookmarks');
+        if (savedBookmarks) {
+          setBookmarks(JSON.parse(savedBookmarks));
+        }
+      } catch (error) {
+        console.error('Error loading bookmarks:', error);
+      }
+    };
+    loadBookmarks();
+  }, []);
+
+  // Save bookmarks to storage whenever they change
+  useEffect(() => {
+    const saveBookmarks = async () => {
+      try {
+        await AsyncStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+      } catch (error) {
+        console.error('Error saving bookmarks:', error);
+      }
+    };
+    saveBookmarks();
+  }, [bookmarks]);
+
+  // Add bookmark
+  const addBookmark = useCallback(async (sermon, paragraphIndex, paragraphText) => {
+    try {
+      const newBookmark = {
+        id: `${sermon.id}-${paragraphIndex}-${Date.now()}`,
+        sermon,
+        paragraphIndex,
+        paragraphText,
+        date: new Date().toISOString(),
+      };
+
+      const updatedBookmarks = [...bookmarks, newBookmark];
+      setBookmarks(updatedBookmarks);
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.BOOKMARKS,
+        JSON.stringify(updatedBookmarks)
+      );
+
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Bookmark added', ToastAndroid.SHORT);
+      }
+    } catch (error) {
+      console.error("Failed to add bookmark:", error);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Failed to add bookmark', ToastAndroid.SHORT);
+      }
+    }
+  }, [bookmarks]);
+
+  // Remove bookmark
+  const removeBookmark = useCallback(async (bookmarkId) => {
+    try {
+      const updatedBookmarks = bookmarks.filter(b => b.id !== bookmarkId);
+      setBookmarks(updatedBookmarks);
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.BOOKMARKS,
+        JSON.stringify(updatedBookmarks)
+      );
+
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Bookmark removed', ToastAndroid.SHORT);
+      }
+    } catch (error) {
+      console.error("Failed to remove bookmark:", error);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Failed to remove bookmark', ToastAndroid.SHORT);
+      }
+    }
+  }, [bookmarks]);
+
+  // Load bookmarks from storage
+  const loadBookmarks = useCallback(async () => {
+    try {
+      const storedBookmarks = await AsyncStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+      if (storedBookmarks) {
+        setBookmarks(JSON.parse(storedBookmarks));
+      }
+    } catch (error) {
+      console.error("Failed to load bookmarks:", error);
+    }
+  }, []);
+
+  // Initialize app data
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Load settings
+        const storedSettings = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
+        if (storedSettings) {
+          const parsedSettings = JSON.parse(storedSettings);
+          setSettings(parsedSettings);
+          setIsDarkMode(parsedSettings.darkMode);
+        }
+
+        // Load recently opened
+        const storedRecents = await AsyncStorage.getItem(STORAGE_KEYS.RECENTLY_OPENED);
+        if (storedRecents) {
+          setRecentlyOpened(JSON.parse(storedRecents));
+        }
+
+        // Load last positions
+        const storedPositions = await AsyncStorage.getItem(STORAGE_KEYS.LAST_POSITIONS);
+        if (storedPositions) {
+          setLastReadPositions(JSON.parse(storedPositions));
+        }
+
+        // Load bookmarks
+        await loadBookmarks();
+
+        // Load sermons
+        await loadSermons();
+      } catch (error) {
+        console.error("Error initializing app:", error);
+        setError("Failed to initialize app. Please try again later.");
+      }
+    };
+
+    initializeApp();
+  }, [loadSermons, loadBookmarks]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -321,6 +460,11 @@ export const SermonProvider = ({ children }) => {
       getSermonById: (id) => {
         return allSermons.find((sermon) => sermon.id === id);
       },
+
+      // Bookmarks
+      bookmarks,
+      addBookmark,
+      removeBookmark,
     }),
     [
       selectedSermon,
@@ -344,6 +488,9 @@ export const SermonProvider = ({ children }) => {
       loadSermons,
       numberOfColumns,
       setNumberOfColumns,
+      bookmarks,
+      addBookmark,
+      removeBookmark,
     ]
   );
 
