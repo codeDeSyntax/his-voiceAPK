@@ -12,33 +12,24 @@ import {
   PanResponder,
   Dimensions,
   Platform,
-  Easing,
   Vibration,
   TouchableWithoutFeedback,
 } from "react-native";
+const { Easing } = Animated;
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useAppContext } from "../Logic/globalState";
-import { RotateInUpLeft } from "react-native-reanimated";
 
 const { width, height } = Dimensions.get("window");
 
-// Helper function to convert hex to rgba - memoized outside component
-const hexToRgba = (hex, alpha = 1) => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
 const DraggableFloatingBackButton = React.memo(
   ({
-    size = 54,
-    iconSize = 26,
+    size = 48,
+    iconSize = 20,
     iconColor = "white",
     backgroundColor = "",
-    initialPosition = { x: 40, y: 700 },
+    initialPosition = { x: 20, y: height - 140 },
     onPress,
     snapToEdge = true,
     vibrationEnabled = true,
@@ -48,86 +39,132 @@ const DraggableFloatingBackButton = React.memo(
     const route = useRoute();
     const router = useNavigation();
     const insets = useSafeAreaInsets();
-    const accentColor = route.name === "audiowebscreen" ? "#0e1fb0" : (theme.dark ? "#43270f" : "gray")
+
+    // Original theme color integration
+    const isAudioScreen = route.name === "audiowebscreen";
+    const primaryColor = isAudioScreen
+      ? theme.colors.primary
+      : theme.colors.primary;
+    const secondaryColor = isAudioScreen
+      ? theme.colors.secondary
+      : theme.colors.secondary;
 
     const safeAreaBounds = useMemo(
       () => ({
-        top: insets.top + 10,
-        bottom: height - insets.bottom - size - 10,
-        left: insets.left + 10,
-        right: width - insets.right - size - 10,
+        top: insets.top + 20,
+        bottom: height - insets.bottom - size - 20,
+        left: 20,
+        right: width - size - 20,
       }),
       [insets, size]
     );
 
-    // Pre-calculate colors to avoid runtime parsing
-    const accentRgba = useMemo(
-      () => hexToRgba(accentColor, 0.3),
-      [accentColor]
-    );
-
-    const pressedRgba = useMemo(
-      () => hexToRgba(accentColor, 0.9),
-      [accentColor]
-    );
-
     const pan = useRef(
       new Animated.ValueXY({
-        x: initialPosition.x,
+        x: Math.max(initialPosition.x, safeAreaBounds.left),
         y: Math.max(initialPosition.y, safeAreaBounds.top),
       })
     ).current;
 
     const [isPressed, setIsPressed] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
     const scaleAnim = useRef(new Animated.Value(1)).current;
-    const rippleAnim = useRef(new Animated.Value(0)).current;
+    const rotateAnim = useRef(new Animated.Value(0)).current;
+    const breatheAnim = useRef(new Animated.Value(1)).current;
+
+    // New sleek effects
+    const opacityAnim = useRef(new Animated.Value(0.9)).current;
     const blinkAnim = useRef(new Animated.Value(1)).current;
-    const pressAnim = useRef(new Animated.Value(1)).current;
-    const glowAnim = useRef(new Animated.Value(0)).current;
+    const shimmerAnim = useRef(new Animated.Value(0)).current;
 
-    // Dragging is disabled
-    const draggableEnabled = false;
+    // Sleek opacity breathing effect
+    useEffect(() => {
+      const opacityAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 0.92,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
 
-    // Enhanced blinking effect for interactivity
-  
+      opacityAnimation.start();
+      return () => opacityAnimation.stop();
+    }, []);
 
-    // Enhanced haptic feedback function
+    // Subtle blinking effect
+    useEffect(() => {
+      const blinkAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(blinkAnim, {
+            toValue: 0.85,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(blinkAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.delay(3000), // Pause between blinks
+        ])
+      );
+
+      blinkAnimation.start();
+      return () => blinkAnimation.stop();
+    }, []);
+
+    // Shimmer effect
+    useEffect(() => {
+      const shimmerAnimation = Animated.loop(
+        Animated.timing(shimmerAnim, {
+          toValue: 1,
+          duration: 2500,
+          useNativeDriver: true,
+        })
+      );
+
+      shimmerAnimation.start();
+      return () => shimmerAnimation.stop();
+    }, []);
+
+    // Breathing animation for subtle life
+    useEffect(() => {
+      const breatheAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(breatheAnim, {
+            toValue: 1.02,
+            duration: 2500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(breatheAnim, {
+            toValue: 1,
+            duration: 2500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+
+      breatheAnimation.start();
+      return () => breatheAnimation.stop();
+    }, []);
+
+    // Enhanced haptic feedback
     const triggerHapticFeedback = useCallback(
       (type = "light") => {
-        if (vibrationEnabled) {
-          try {
-            if (Platform.OS === "ios") {
-              // Enhanced iOS haptic feedback
-              import("react-native-haptic-feedback")
-                .then((HapticFeedback) => {
-                  const feedbackType =
-                    type === "press" ? "impactMedium" : "impactLight";
-                  HapticFeedback.default.trigger(feedbackType, {
-                    enableVibrateFallback: true,
-                    ignoreAndroidSystemSettings: false,
-                  });
-                })
-                .catch(() => {
-                  // Enhanced fallback vibration pattern
-                  const pattern =
-                    type === "press" ? [0, 100, 50, 100] : [0, 50];
-                  Vibration.vibrate(pattern);
-                });
-            } else {
-              // Enhanced Android vibration patterns
-              const pattern = type === "press" ? [0, 80, 40, 80] : [0, 40];
-              Vibration.vibrate(pattern);
-            }
-          } catch (error) {
-            console.warn("Vibration not available:", error);
-          }
+        if (vibrationEnabled && Platform.OS === "android") {
+          const pattern = type === "press" ? [0, 50, 30, 50] : [0, 30];
+          Vibration.vibrate(pattern);
         }
       },
       [vibrationEnabled]
     );
 
-    // Enhanced press in handler
     const handlePressIn = useCallback(() => {
       setIsPressed(true);
       triggerHapticFeedback("light");
@@ -135,34 +172,19 @@ const DraggableFloatingBackButton = React.memo(
       if (animationEnabled) {
         Animated.parallel([
           Animated.timing(scaleAnim, {
-            toValue: 0.88,
+            toValue: 0.92,
             duration: 120,
             useNativeDriver: true,
-            easing: Easing.out(Easing.cubic),
           }),
-          Animated.timing(pressAnim, {
-            toValue: 0.9,
-            duration: 120,
-            useNativeDriver: true,
-            easing: Easing.out(Easing.cubic),
-          }),
-          Animated.timing(glowAnim, {
+          Animated.timing(rotateAnim, {
             toValue: 1,
             duration: 150,
             useNativeDriver: true,
-            easing: Easing.out(Easing.ease),
-          }),
-          Animated.timing(rippleAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-            easing: Easing.out(Easing.ease),
           }),
         ]).start();
       }
     }, [animationEnabled, triggerHapticFeedback]);
 
-    // Enhanced press out handler
     const handlePressOut = useCallback(() => {
       setIsPressed(false);
 
@@ -170,183 +192,82 @@ const DraggableFloatingBackButton = React.memo(
         Animated.parallel([
           Animated.spring(scaleAnim, {
             toValue: 1,
-            tension: 300,
-            friction: 20,
+            tension: 400,
+            friction: 12,
             useNativeDriver: true,
           }),
-          Animated.spring(pressAnim, {
-            toValue: 1,
-            tension: 300,
-            friction: 20,
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowAnim, {
+          Animated.timing(rotateAnim, {
             toValue: 0,
-            duration: 200,
+            duration: 180,
             useNativeDriver: true,
-            easing: Easing.out(Easing.ease),
-          }),
-          Animated.timing(rippleAnim, {
-            toValue: 0,
-            duration: 250,
-            useNativeDriver: true,
-            easing: Easing.out(Easing.ease),
           }),
         ]).start();
       }
     }, [animationEnabled]);
 
-    // Enhanced press handler with stronger feedback
     const handlePress = useCallback(() => {
-      // Stronger haptic feedback for actual press
       triggerHapticFeedback("press");
 
-      // Visual feedback for press
       if (animationEnabled) {
         Animated.sequence([
           Animated.timing(scaleAnim, {
-            toValue: 0.85,
-            duration: 80,
+            toValue: 0.88,
+            duration: 60,
             useNativeDriver: true,
-            easing: Easing.out(Easing.cubic),
           }),
           Animated.spring(scaleAnim, {
             toValue: 1,
-            tension: 400,
-            friction: 25,
+            tension: 500,
+            friction: 10,
             useNativeDriver: true,
           }),
         ]).start();
       }
 
-      // Execute navigation
       setTimeout(() => {
         if (onPress) {
           onPress();
         } else if (router && router.canGoBack()) {
           router.goBack();
         }
-      }, 50); // Small delay to feel the feedback
+      }, 50);
     }, [onPress, router, triggerHapticFeedback, animationEnabled]);
 
-    const ensureWithinBounds = useCallback(
-      (x, y) => {
-        const boundedX = Math.min(
-          Math.max(x, safeAreaBounds.left),
-          safeAreaBounds.right
-        );
-        const boundedY = Math.min(
-          Math.max(y, safeAreaBounds.top),
-          safeAreaBounds.bottom
-        );
-        return { x: boundedX, y: boundedY };
-      },
-      [safeAreaBounds]
-    );
+    // Animation values
+    const rotateInterpolate = rotateAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["0deg", "180deg"],
+    });
 
-    const snapToNearestEdge = useCallback(
-      (x, y) => {
-        const distanceToLeft = x;
-        const distanceToRight = width - x - size;
-
-        const targetX =
-          distanceToLeft < distanceToRight
-            ? safeAreaBounds.left
-            : safeAreaBounds.right;
-
-        Animated.spring(pan, {
-          toValue: { x: targetX, y },
-          tension: 50,
-          friction: 10,
-          useNativeDriver: false,
-        }).start();
-      },
-      [pan, safeAreaBounds, size]
-    );
-
-    // Keep pan responder structure but disable it
-    const panResponder = useMemo(() => {
-      return { panHandlers: {} }; // Disabled dragging
-    }, []);
-
-    const buttonContainerStyle = useMemo(
+    const buttonStyle = useMemo(
       () => ({
         ...styles.buttonContainer,
         width: size,
         height: size,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
         borderRadius: size / 2,
-        backgroundColor: isPressed
-          ? pressedRgba
-          : route.name === "audiowebscreen"
-          ? "#0e1fb0"
-          : theme.dark
-          ? "#553103" + "90"
-          : "#dfdfdf",
-        borderColor: accentColor,
-        // borderWidth: isPressed ? 2 : 1,
-        // borderStyle:"dashed",
-        transform: [{ scale: scaleAnim }, { scale: pressAnim }],
-        shadowColor: accentColor,
-        shadowOffset: {
-          width: 0,
-          height: 0,
-        },
-        // elevation: 2,
-        shadowOpacity: glowAnim,
-        shadowRadius: 8,
-        // elevation: isPressed ? 8 : 4,
+        opacity: Animated.multiply(opacityAnim, blinkAnim),
+        transform: [{ scale: Animated.multiply(scaleAnim, breatheAnim) }],
+        ...Platform.select({
+          ios: {
+            shadowColor: theme?.colors?.text || "#1c1917",
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: isPressed ? 0.25 : 0.15,
+            shadowRadius: isPressed ? 20 : 16,
+          },
+          android: {
+            elevation: isPressed ? 8 : 6,
+          },
+        }),
       }),
       [
         size,
-        isPressed,
-        pressedRgba,
-        backgroundColor,
-        accentColor,
         scaleAnim,
-        pressAnim,
-        glowAnim,
+        breatheAnim,
+        theme?.colors?.text,
+        isPressed,
+        opacityAnim,
+        blinkAnim,
       ]
-    );
-
-    const rippleStyle = useMemo(
-      () => ({
-        ...styles.ripple,
-        width: size * 1.6,
-        height: size * 1.6,
-        borderRadius: (size * 1.6) / 2,
-        backgroundColor: accentColor,
-        opacity: rippleAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, 0.3],
-        }),
-        transform: [
-          {
-            scale: rippleAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.4, 1.8],
-            }),
-          },
-        ],
-      }),
-      [size, accentColor, rippleAnim]
-    );
-
-    const glowStyle = useMemo(
-      () => ({
-        ...styles.glow,
-        width: size * 1.3,
-        height: size * 1.3,
-        borderRadius: (size * 1.3) / 2,
-        backgroundColor: accentColor,
-        opacity: glowAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, 0.4],
-        }),
-      }),
-      [size, accentColor, glowAnim]
     );
 
     return (
@@ -355,16 +276,9 @@ const DraggableFloatingBackButton = React.memo(
           styles.container,
           {
             transform: [{ translateX: pan.x }, { translateY: pan.y }],
-            opacity: blinkAnim,
           },
         ]}
       >
-        {/* Ripple effect */}
-        <Animated.View style={rippleStyle} />
-
-        {/* Glow effect */}
-        <Animated.View style={glowStyle} />
-
         {/* Main button */}
         <TouchableWithoutFeedback
           onPressIn={handlePressIn}
@@ -373,18 +287,55 @@ const DraggableFloatingBackButton = React.memo(
           delayPressIn={0}
           delayPressOut={0}
         >
-          <Animated.View style={buttonContainerStyle}>
-            <View style={styles.button}>
-              <Ionicons
-                name="send"
-                size={iconSize}
-                color={route.dame === "audiowebscreen" ? "white" : (theme.dark  ? "#efbe9c" : "white")}
-                style={{
-                  textShadowColor: "rgba(0,0,0,0.3)",
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 2,
-                  transform: [{ rotate: "180deg" }],
-                }}
+          <Animated.View style={buttonStyle}>
+            {/* Sleek background with frosted glass effect */}
+            <View
+              style={[
+                styles.buttonSleek,
+                {
+                  backgroundColor: theme?.colors?.primary || "#fafafa",
+                  borderColor: theme?.dark
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.08)",
+                },
+              ]}
+            >
+              {/* Icon with smooth animation */}
+              <Animated.View
+                style={[
+                  styles.iconContainer,
+                  {
+                    transform: [{ rotate: rotateInterpolate }],
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="arrow-back"
+                  size={iconSize}
+                  color={theme?.colors?.text || "#1c1917"}
+                  style={styles.iconSleek}
+                />
+              </Animated.View>
+
+              {/* Shimmer overlay for premium feel */}
+              <Animated.View
+                style={[
+                  styles.shimmerSleek,
+                  {
+                    opacity: shimmerAnim.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0, 0.6, 0],
+                    }),
+                    transform: [
+                      {
+                        translateX: shimmerAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-size, size],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
               />
             </View>
           </Animated.View>
@@ -406,21 +357,49 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  button: {
-    flex: 1,
+  iconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonSleek: {
     width: "100%",
-    alignItems: "center",
+    height: "100%",
+    borderRadius: 24, // Half of default size (48/2)
     justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 0.3,
+    borderColor: "rgba(0,0,0,0.08)",
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  ripple: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
+  iconSleek: {
+    ...Platform.select({
+      ios: {
+        textShadowColor: "rgba(0,0,0,0.1)",
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+      },
+    }),
   },
-  glow: {
+  shimmerSleek: {
     position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
+    top: 0,
+    left: 0,
+    width: 12,
+    height: "100%",
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 6,
+    transform: [{ skewX: "-10deg" }],
   },
 });
 
