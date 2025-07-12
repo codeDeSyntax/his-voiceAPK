@@ -122,9 +122,7 @@ const SermonListView = React.memo(
             >
               {item.location || "Location not found"}
             </Text>
-          </View>
-
-          <View style={[styles.tableCell, { flex: 1, alignItems: "center" }]}>
+            <View style={[styles.tableCell, ]}>
             <Text
               style={[
                 styles.tableCellDate,
@@ -136,6 +134,9 @@ const SermonListView = React.memo(
               {item.date}
             </Text>
           </View>
+          </View>
+
+          
 
           <View
             style={[

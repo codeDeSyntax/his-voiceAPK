@@ -508,7 +508,7 @@ const ParagraphText = React.memo(
                 {
                   fontSize: responsiveFontSize(settings.fontSize),
                   fontFamily: settings.fontFamily,
-                  // lineHeight:2
+                  lineHeight:30
                 },
               ]}
               selectable={true}
