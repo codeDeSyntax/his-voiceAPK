@@ -13,32 +13,69 @@ import { styles } from "../styles/Allsermons";
 import { useAppContext } from "../Logic/globalState";
 import { Pressable } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
-import { responsiveFontSize, horizontalScale, spacing } from '../Utils/responsiveUtils';
+import {
+  responsiveFontSize,
+  horizontalScale,
+  spacing,
+} from "../Utils/responsiveUtils";
 
 const TableHeader = React.memo(({ theme }) => (
-  <View style={[styles.tableHeader, { 
-    backgroundColor: theme.dark ? theme.colors.primary + '20' : '#f5f5f5',
-    borderColor: theme.dark ? theme.colors.primary : '#bbb8b8',
-  }]}>
-    <Text style={[styles.tableHeaderText, { 
-      color: theme.colors.text,
-      flex: 1,
-    }]}>Title</Text>
-    <Text style={[styles.tableHeaderText, { 
-      color: theme.colors.text,
-      flex: 1,
-      textAlign: 'center'
-    }]}>Date</Text>
-    <Text style={[styles.tableHeaderText, { 
-      color: theme.colors.text,
-      // width: responsiveFontSize(20),
-      textAlign: 'center'
-    }]}>Type</Text>
+  <View
+    style={[
+      styles.tableHeader,
+      {
+        backgroundColor: theme.dark ? theme.colors.primary + "20" : "#f5f5f5",
+        borderColor: theme.dark ? theme.colors.primary : "#bbb8b8",
+      },
+    ]}
+  >
+    <Text
+      style={[
+        styles.tableHeaderText,
+        {
+          color: theme.colors.text,
+          flex: 1,
+        },
+      ]}
+    >
+      Title
+    </Text>
+    <Text
+      style={[
+        styles.tableHeaderText,
+        {
+          color: theme.colors.text,
+          flex: 1,
+          textAlign: "center",
+        },
+      ]}
+    >
+      Date
+    </Text>
+    <Text
+      style={[
+        styles.tableHeaderText,
+        {
+          color: theme.colors.text,
+          // width: responsiveFontSize(20),
+          textAlign: "center",
+        },
+      ]}
+    >
+      Type
+    </Text>
   </View>
 ));
 
 const SermonListView = React.memo(
-  ({ theme, filteredSermons, handleSermonClick, setSearchText, allSermons, setFilteredSermons }) => {
+  ({
+    theme,
+    filteredSermons,
+    handleSermonClick,
+    setSearchText,
+    allSermons,
+    setFilteredSermons,
+  }) => {
     const [fontsLoaded] = useFonts({
       ZillaSlab_smb: require("../assets/fonts/ZillaSlab-SemiBold.ttf"),
     });
@@ -50,11 +87,10 @@ const SermonListView = React.memo(
           style={[
             styles.tableRow,
             {
-              backgroundColor: theme.dark ? 'transparent' : 'transparent',
-              borderColor: theme.dark ? theme.colors.primary : '#bbb8b8',
-              borderWidth:1,
-              borderRadius:10,
-             
+              backgroundColor: theme.dark ? "transparent" : "transparent",
+              borderColor: theme.dark ? theme.colors.primary : "#bbb8b8",
+              borderWidth: 1,
+              borderRadius: 10,
             },
           ]}
           android_ripple={{
@@ -88,7 +124,7 @@ const SermonListView = React.memo(
             </Text>
           </View>
 
-          <View style={[styles.tableCell, { flex: 1, alignItems: 'center' }]}>
+          <View style={[styles.tableCell, { flex: 1, alignItems: "center" }]}>
             <Text
               style={[
                 styles.tableCellDate,
@@ -101,7 +137,12 @@ const SermonListView = React.memo(
             </Text>
           </View>
 
-          <View style={[styles.tableCell, { width: responsiveFontSize(30), alignItems: 'center' }]}>
+          <View
+            style={[
+              styles.tableCell,
+              { width: responsiveFontSize(30), alignItems: "center" },
+            ]}
+          >
             {item.type === "mp3" ? (
               <FontAwesome5
                 name="microphone"
@@ -127,8 +168,17 @@ const SermonListView = React.memo(
         <FlatList
           data={filteredSermons}
           renderItem={renderSermonItem}
-          initialNumToRender={10}
-          keyExtractor={(item) => item.id}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={21}
+          removeClippedSubviews={true}
+          updateCellsBatchingPeriod={50}
+          getItemLayout={(data, index) => ({
+            length: 70, // Approximate height of each item
+            offset: 70 * index,
+            index,
+          })}
+          keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={{ padding: spacing.lg, alignItems: "center" }}>

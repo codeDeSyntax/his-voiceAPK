@@ -82,15 +82,15 @@ const MinimalLoader = React.memo(({ theme }) => {
   const isDark = theme?.dark || theme?.name === "dark";
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
-        styles.loaderContainer, 
-        { 
+        styles.loaderContainer,
+        {
           opacity: fadeValue,
-          backgroundColor: isDark 
-            ? "rgba(28, 25, 23, 0.95)" 
-            : "rgba(255, 255, 255, 0.95)"
-        }
+          backgroundColor: isDark
+            ? "rgba(28, 25, 23, 0.95)"
+            : "rgba(255, 255, 255, 0.95)",
+        },
       ]}
     >
       <View style={styles.loaderContent}>
@@ -99,11 +99,11 @@ const MinimalLoader = React.memo(({ theme }) => {
             styles.loaderRing,
             {
               borderColor: theme?.colors?.hlight || "#d57a3e",
-              borderBottomColor: isDark 
-                ? "rgba(213, 122, 62, 0.3)" 
+              borderBottomColor: isDark
+                ? "rgba(213, 122, 62, 0.3)"
                 : "rgba(213, 122, 62, 0.2)",
-              borderLeftColor: isDark 
-                ? "rgba(213, 122, 62, 0.3)" 
+              borderLeftColor: isDark
+                ? "rgba(213, 122, 62, 0.3)"
                 : "rgba(213, 122, 62, 0.2)",
               transform: [{ rotate: spin }],
               opacity: pulseOpacity,
@@ -118,9 +118,16 @@ const MinimalLoader = React.memo(({ theme }) => {
             />
           </View>
         </Animated.View>
-        
-        <Animated.View style={[styles.loadingTextContainer, { opacity: pulseOpacity }]}>
-          <Text style={[styles.loadingText, { color: theme?.colors?.text || "#1c1917" }]}>
+
+        <Animated.View
+          style={[styles.loadingTextContainer, { opacity: pulseOpacity }]}
+        >
+          <Text
+            style={[
+              styles.loadingText,
+              { color: theme?.colors?.text || "#1c1917" },
+            ]}
+          >
             Loading audio...
           </Text>
         </Animated.View>
@@ -150,7 +157,7 @@ const CleanErrorState = React.memo(({ onRetry, theme }) => {
   }, []);
 
   const isDark = theme?.dark || theme?.name === "dark";
-  
+
   return (
     <Animated.View
       style={[
@@ -158,38 +165,38 @@ const CleanErrorState = React.memo(({ onRetry, theme }) => {
         {
           opacity: fadeValue,
           transform: [{ translateY: slideValue }],
-          backgroundColor: isDark 
-            ? "rgba(28, 25, 23, 0.95)" 
-            : "rgba(255, 255, 255, 0.95)"
+          backgroundColor: isDark
+            ? "rgba(28, 25, 23, 0.95)"
+            : "rgba(255, 255, 255, 0.95)",
         },
       ]}
     >
-      <View 
+      <View
         style={[
           styles.errorContent,
           {
-            backgroundColor: isDark 
-              ? "rgba(39, 35, 32, 0.9)" 
+            backgroundColor: isDark
+              ? "rgba(39, 35, 32, 0.9)"
               : "rgba(255, 255, 255, 0.9)",
             borderWidth: isDark ? 1 : 0,
             borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "transparent",
-          }
+          },
         ]}
       >
         <View
           style={[
             styles.errorIconContainer,
             {
-              backgroundColor: isDark 
-                ? "rgba(28, 25, 23, 0.8)" 
+              backgroundColor: isDark
+                ? "rgba(28, 25, 23, 0.8)"
                 : theme?.colors?.background || "#fafafa",
             },
           ]}
         >
-          <Icon 
-            name="wifi-off" 
-            size={40} 
-            color={isDark ? "#ef4444" : theme?.colors?.text || "#1c1917"} 
+          <Icon
+            name="wifi-off"
+            size={40}
+            color={isDark ? "#ef4444" : theme?.colors?.text || "#1c1917"}
           />
         </View>
 
@@ -205,9 +212,9 @@ const CleanErrorState = React.memo(({ onRetry, theme }) => {
         <Text
           style={[
             styles.errorMessage,
-            { 
+            {
               color: theme?.colors?.text || "#1c1917",
-              opacity: isDark ? 0.8 : 0.7
+              opacity: isDark ? 0.8 : 0.7,
             },
           ]}
         >
@@ -267,7 +274,8 @@ export default function SermonAudioWebScreen() {
 
   // Enhanced error handling for selectedSermon
   const audioUrl = selectedSermon?.audioUrl;
-  const hasValidUrl = audioUrl && typeof audioUrl === "string" && audioUrl.trim() !== "";
+  const hasValidUrl =
+    audioUrl && typeof audioUrl === "string" && audioUrl.trim() !== "";
   const isDark = theme?.dark || theme?.name === "dark";
 
   // Memoized handlers for better performance
@@ -391,19 +399,19 @@ export default function SermonAudioWebScreen() {
         barStyle={isDark ? "light-content" : "dark-content"}
         translucent={false}
       />
-      
+
       <DraggableFloatingBackButton />
 
       {/* Subtle progress indicator */}
       {loading && !error && (
-        <View 
+        <View
           style={[
             styles.progressContainer,
             {
-              backgroundColor: isDark 
-                ? "rgba(255, 255, 255, 0.1)" 
-                : "rgba(0, 0, 0, 0.05)"
-            }
+              backgroundColor: isDark
+                ? "rgba(255, 255, 255, 0.1)"
+                : "rgba(0, 0, 0, 0.05)",
+            },
           ]}
         >
           <Animated.View
@@ -425,48 +433,47 @@ export default function SermonAudioWebScreen() {
           <WebView {...webViewProps} />
         </Animated.View>
       ) : (
-        <View 
+        <View
           style={[
             styles.noSermonContainer,
             {
-              backgroundColor: isDark 
-                ? "rgba(28, 25, 23, 0.3)" 
-                : "transparent"
-            }
+              backgroundColor: isDark ? "rgba(28, 25, 23, 0.3)" : "transparent",
+            },
           ]}
         >
-          <View 
+          <View
             style={[
               styles.noSermonIconContainer,
               {
-                backgroundColor: isDark 
-                  ? "rgba(39, 35, 32, 0.7)" 
+                backgroundColor: isDark
+                  ? "rgba(39, 35, 32, 0.7)"
                   : "rgba(255, 255, 255, 0.8)",
                 borderWidth: isDark ? 1 : 0,
-                borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "transparent",
-              }
+                borderColor: isDark
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "transparent",
+              },
             ]}
           >
-            <Icon 
-              name="musical-notes-outline" 
-              size={48} 
-              color={theme?.colors?.text || "#1c1917"} 
+            <Icon
+              name="musical-notes-outline"
+              size={48}
+              color={theme?.colors?.text || "#1c1917"}
               style={{ opacity: isDark ? 0.6 : 0.3 }}
             />
           </View>
           <Text
             style={[
               styles.noSermonText,
-              { 
+              {
                 color: theme?.colors?.text || "#1c1917",
-                opacity: isDark ? 0.8 : 0.7
+                opacity: isDark ? 0.8 : 0.7,
               },
             ]}
           >
-            {selectedSermon 
-              ? "No audio available for this sermon" 
-              : "Please select a sermon to play"
-            }
+            {selectedSermon
+              ? "No audio available for this sermon"
+              : "Please select a sermon to play"}
           </Text>
         </View>
       )}

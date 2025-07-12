@@ -1,5 +1,10 @@
 import { StyleSheet, Platform, StatusBar, Dimensions } from "react-native";
-import { responsiveFontSize, horizontalScale, verticalScale, spacing } from '../Utils/responsiveUtils';
+import {
+  responsiveFontSize,
+  horizontalScale,
+  verticalScale,
+  spacing,
+} from "../Utils/responsiveUtils";
 
 const { width, height } = Dimensions.get("window");
 const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 44 : StatusBar.currentHeight;
@@ -12,15 +17,15 @@ const styles = StyleSheet.create({
     paddingTop: STATUSBAR_HEIGHT,
   },
   scrollViewContainer: {
-    paddingHorizontal: 8,
-    paddingTop: 10,
-    paddingBottom: 100,
+    paddingHorizontal: spacing.sm, // 8px consistent horizontal padding
+    paddingTop: spacing.sm, // 8px consistent top padding
+    paddingBottom: spacing.xxl * 3, // 96px for bottom sheet clearance
   },
   sermonText: {
-    // lineHeight: 28,
-    marginBottom: 18,
+    lineHeight: responsiveFontSize(20), // Tighter line height for better flow
+    marginBottom: spacing.xs / 2, // Even tighter spacing (2px) for close paragraph flow
     textAlign: "left",
-    // fontSize: 16,
+    paddingVertical: 0, // Remove vertical padding for tighter gaps
   },
   highlightedText: {
     backgroundColor: "rgba(59, 130, 246, 0.1)",
@@ -29,7 +34,7 @@ const styles = StyleSheet.create({
   },
   endnoteText: {
     textDecorationLine: "underline",
-    
+
     fontWeight: "500",
     // fontStyle: "italic",
     fontFamily: "",
@@ -37,17 +42,17 @@ const styles = StyleSheet.create({
   titleText: {
     fontFamily: "serif",
     fontWeight: "900",
-    fontSize: 20,
+    fontSize: responsiveFontSize(20),
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: spacing.sm, // 8px consistent spacing
     textDecorationLine: "underline",
   },
   locationText: {
     fontFamily: "serif",
     fontWeight: "500",
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     fontStyle: "italic",
-    marginBottom: 24,
+    marginBottom: spacing.lg, // 16px consistent spacing
     textAlign: "center",
   },
   floatingButton: {
@@ -119,7 +124,7 @@ const styles = StyleSheet.create({
     top: STATUSBAR_HEIGHT + 20,
     right: 10,
     width: width * 0.85,
-    height: height * 0.80,
+    height: height * 0.8,
     borderRadius: 20, // More receipt-like sharp corners
     backgroundColor: "white",
     // Receipt-style border pattern
@@ -204,7 +209,7 @@ const styles = StyleSheet.create({
   },
   receiptSectionHeader: {
     fontSize: responsiveFontSize(14),
-    fontFamily:"ZillaSlabsm",
+    fontFamily: "ZillaSlabsm",
     // fontWeight: "bold",
     marginBottom: spacing.xs,
     textAlign: "center",
@@ -222,12 +227,12 @@ const styles = StyleSheet.create({
   },
   receiptLabel: {
     fontSize: responsiveFontSize(14),
-    fontFamily:"ZillaSlab",
+    fontFamily: "ZillaSlab",
     marginRight: spacing.xs,
   },
   receiptValue: {
     fontSize: responsiveFontSize(14),
-    fontFamily:"ZillaSlab",
+    fontFamily: "ZillaSlab",
     flex: 1,
   },
 
@@ -245,7 +250,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     // borderWidth: 1,
     // borderStyle: "dashed",
-    borderRadius:10,
+    borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 6,
     minHeight: 32,
@@ -256,7 +261,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     letterSpacing: 0.5,
-    borderRadius:5
+    borderRadius: 5,
   },
   receiptClearButton: {
     padding: 2,
@@ -271,7 +276,7 @@ const styles = StyleSheet.create({
     width: 35,
     height: 45,
     borderWidth: 1,
-    borderRadius:10,
+    borderRadius: 10,
     borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
@@ -281,7 +286,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     letterSpacing: 0.5,
-    paddingVertical:10
+    paddingVertical: 10,
   },
 
   // Loading
@@ -297,6 +302,20 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     letterSpacing: 1,
+  },
+
+  // Loading states
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: spacing.xxl * 2,
+  },
+  loadingText: {
+    fontSize: responsiveFontSize(16),
+    fontFamily: "serif",
+    textAlign: "center",
+    opacity: 0.7,
   },
 
   // Search Results
@@ -372,7 +391,7 @@ const styles = StyleSheet.create({
     // borderStyle: "dashed",
     width: "48%",
     backgroundColor: "rgba(0,0,0,0.02)",
-    borderRadius:10
+    borderRadius: 10,
   },
   receiptActionCode: {
     fontSize: 12,
@@ -410,32 +429,92 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Paragraph styles
+  // Paragraph styles - Consistent spacing system
+  // Container: spacing.md (12px) between paragraphs
+  // Text: lineHeight 28px for optimal readability
+  // Numbers: spacing.xs (4px) margin from text
   paragraphContainer: {
     flexDirection: "row",
-    marginBottom: 18,
-    borderRadius:5,
+    marginBottom: spacing.md, // Consistent 12px spacing
+    borderRadius: 5,
   },
   paragraphHeader: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+    flexDirection: "column",
+    alignItems: "flex-start",
   },
   paragraphNumberContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.xs / 2, // Tighter spacing (2px) between number and text
   },
   paragraphNumber: {
     fontSize: responsiveFontSize(14),
-    fontWeight: '500',
+    fontWeight: "500",
     marginRight: spacing.xs,
+  },
+  paragraphNumberButton: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: 12,
+    marginRight: spacing.xs,
+    minWidth: 28,
+    alignItems: "center",
+    justifyContent: "center",
   },
   paragraphText: {
     flex: 1,
-    lineHeight: 32,
-    paddingLeft:8
+    lineHeight: 24, // Tighter line height for better reading flow
+    paddingLeft: 8,
+    marginBottom: spacing.xs / 2, // Minimal spacing (2px) between paragraphs
+    paddingVertical: 0, // Remove vertical padding for consistent gaps
+  },
+  paragraphContainer: {
+    marginBottom: spacing.xs, // Consistent 4px gap between paragraph containers
+    paddingHorizontal: 0,
+    paddingVertical: 0, // Remove container padding for tighter spacing
+  },
+  selectableTextContainer: {
+    flex: 1,
+    paddingLeft: 8,
+  },
+  selectionModeIndicator: {
+    position: "absolute",
+    top: -25,
+    right: 0,
+    backgroundColor: "rgba(59, 130, 246, 0.9)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 10,
+  },
+  selectionModeText: {
+    fontSize: responsiveFontSize(10),
+    fontWeight: "500",
+    color: "#fff",
+  },
 
-    // fontSize: 16,
+  // Selection tip styles
+  selectionTipContainer: {
+    position: "absolute",
+    bottom: 150,
+    left: 20,
+    right: 20,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "rgba(59, 130, 246, 0.3)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 80,
+  },
+  selectionTipText: {
+    fontSize: responsiveFontSize(12),
+    textAlign: "center",
+    lineHeight: 18,
+    fontWeight: "500",
   },
 
   // Controls in bottom sheet
@@ -638,20 +717,37 @@ const styles = StyleSheet.create({
   bookmarkButtonActive: {
     transform: [{ scale: 1.1 }],
   },
+  highlightButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.xs / 2,
+    borderRadius: 12,
+  },
+  highlightButtonActive: {
+    backgroundColor: "rgba(230, 195, 184, 0.1)",
+    transform: [{ scale: 1.05 }],
+  },
+  paletteOverlay: {
+    position: "absolute",
+    top: -120,
+    left: -200,
+    width: 300,
+    height: 200,
+    zIndex: 999,
+  },
 
   searchLoader: {
-    position: 'absolute',
+    position: "absolute",
     right: spacing.sm,
-    top: '50%',
+    top: "50%",
     transform: [{ translateY: -12 }],
   },
 
   // Search Section Styles
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: spacing.sm,
-    position: 'relative',
+    position: "relative",
   },
   searchInput: {
     flex: 1,
@@ -667,21 +763,21 @@ const styles = StyleSheet.create({
     height: verticalScale(40),
     paddingHorizontal: spacing.md,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
   },
   searchButtonText: {
     fontSize: responsiveFontSize(12),
-    fontWeight: '600',
+    fontWeight: "600",
   },
   searchResultsContainer: {
     marginTop: spacing.sm,
   },
   searchNavigationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: spacing.xs,
   },
   searchNavigationButton: {

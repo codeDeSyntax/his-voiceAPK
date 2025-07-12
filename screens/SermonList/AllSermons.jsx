@@ -140,9 +140,25 @@ const SermonList = React.memo(() => {
   const [isLetterModalVisible, setIsLetterModalVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
   const [filteredSermons, setFilteredSermons] = useState(allSermons);
+  const [originalSermons, setOriginalSermons] = useState(allSermons);
+  const [isOriginalOrder, setIsOriginalOrder] = useState(true);
+  const [hasActiveFilters, setHasActiveFilters] = useState(false);
+
+  // Store original order when sermons are loaded
+  useEffect(() => {
+    if (allSermons.length > 0) {
+      setOriginalSermons(allSermons);
+    }
+  }, [allSermons]);
 
   // Memoized filter function for better performance
   const applyFilters = useCallback(() => {
+    const hasFilters =
+      searchText ||
+      selectedYear !== "All Years" ||
+      selectedLetter !== "All Letters";
+    setHasActiveFilters(hasFilters);
+
     const filtered = allSermons.filter((sermon) => {
       const titleLower = sermon.title.toLowerCase();
       const searchLower = searchText.toLowerCase();
@@ -157,13 +173,29 @@ const SermonList = React.memo(() => {
       return matchesSearch && matchesYear && matchesLetter;
     });
 
-    const sorted = [...filtered].sort((a, b) => {
-      const comparison = a.title.trim().localeCompare(b.title.trim());
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
+    let sorted;
+    if (isOriginalOrder) {
+      // Maintain original order by filtering the original array
+      sorted = originalSermons.filter((sermon) =>
+        filtered.some((f) => f.id === sermon.id)
+      );
+    } else {
+      sorted = [...filtered].sort((a, b) => {
+        const comparison = a.title.trim().localeCompare(b.title.trim());
+        return sortOrder === "asc" ? comparison : -comparison;
+      });
+    }
 
     setFilteredSermons(sorted);
-  }, [allSermons, searchText, selectedYear, selectedLetter, sortOrder]);
+  }, [
+    allSermons,
+    searchText,
+    selectedYear,
+    selectedLetter,
+    sortOrder,
+    isOriginalOrder,
+    originalSermons,
+  ]);
 
   useEffect(() => {
     applyFilters();
@@ -174,19 +206,23 @@ const SermonList = React.memo(() => {
     setFilteredSermons((prev) =>
       prev.filter((sermon) => sermon.type === "text")
     );
+    setHasActiveFilters(true);
   }, []);
 
   const filterOnlyAudio = useCallback(() => {
     setFilteredSermons((prev) =>
       prev.filter((sermon) => sermon.type === "mp3")
     );
+    setHasActiveFilters(true);
   }, []);
 
   const handleSermonClick = useCallback(
     async (sermon) => {
       try {
+        // Show loading state immediately
         setSelectedSermon(sermon);
 
+        // Navigate immediately to show loading screen
         if (navigation) {
           navigation.navigate("currentsermon");
         } else {
@@ -200,7 +236,7 @@ const SermonList = React.memo(() => {
           : Alert.alert("Error", message);
       }
     },
-    [addToRecentlyOpened, setSelectedSermon, navigation]
+    [setSelectedSermon, navigation]
   );
 
   const closeDropdown = useCallback(() => {
@@ -210,6 +246,15 @@ const SermonList = React.memo(() => {
 
   const toggleSortOrder = useCallback(() => {
     setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    setIsOriginalOrder(false);
+  }, []);
+
+  const restoreOriginalOrder = useCallback(() => {
+    setIsOriginalOrder(true);
+    setSearchText("");
+    setSelectedYear("All Years");
+    setSelectedLetter("All Letters");
+    setHasActiveFilters(false);
   }, []);
 
   // Memoized components
@@ -275,6 +320,9 @@ const SermonList = React.memo(() => {
           filterOnlyText={filterOnlyText}
           filterOnlyAudio={filterOnlyAudio}
           toggleSortOrder={toggleSortOrder}
+          restoreOriginalOrder={restoreOriginalOrder}
+          isOriginalOrder={isOriginalOrder}
+          hasActiveFilters={hasActiveFilters}
         />
 
         <SearchHeader

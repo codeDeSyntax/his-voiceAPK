@@ -20,6 +20,7 @@ import {
 import { useAppContext } from "../../Logic/globalState";
 import {
   formatSermonIntoParagraphs,
+  formatSermonIntoParagraphsAsync,
   searchSermon,
 } from "../../Utils/sermonUtils";
 import ParagraphText from "../../components/currentSermon/ParagraphText";
@@ -30,6 +31,7 @@ import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
 import DownloadSermon from "../../components/currentSermon/PlaySermon";
 import CustomTopCardController from "../../components/currentSermon/BottomSheetController";
+import LoadingScreen from "../../components/Loader";
 
 const CurrentSermon = React.memo(() => {
   const {
@@ -53,15 +55,53 @@ const CurrentSermon = React.memo(() => {
   const [currentVisibleParagraph, setCurrentVisibleParagraph] = useState(0);
   const [hasScrolledToLastPosition, setHasScrolledToLastPosition] =
     useState(false);
+  const [showSelectionTip, setShowSelectionTip] = useState(false);
+  const [paragraphs, setParagraphs] = useState([]);
+  const [isLoadingParagraphs, setIsLoadingParagraphs] = useState(false);
 
   const scrollViewRef = useRef(null);
   const scrollTimeout = useRef(null);
 
-  // Format sermon into paragraphs
-  const paragraphs = useMemo(
-    () => formatSermonIntoParagraphs(selectedSermon?.sermon || ""),
-    [selectedSermon?.sermon]
-  );
+  // Show selection tip on first load
+  useEffect(() => {
+    const tipTimer = setTimeout(() => {
+      setShowSelectionTip(true);
+      // Hide tip after 4 seconds
+      setTimeout(() => setShowSelectionTip(false), 4000);
+    }, 2000);
+
+    return () => clearTimeout(tipTimer);
+  }, [selectedSermon?.id]);
+
+  // Format sermon into paragraphs asynchronously
+  useEffect(() => {
+    const loadParagraphs = async () => {
+      if (!selectedSermon?.sermon) {
+        setParagraphs([]);
+        return;
+      }
+
+      setIsLoadingParagraphs(true);
+      try {
+        // Use async formatting for better performance
+        const formattedParagraphs = await formatSermonIntoParagraphsAsync(
+          selectedSermon.sermon
+        );
+        setParagraphs(formattedParagraphs);
+      } catch (error) {
+        console.error("Error formatting paragraphs:", error);
+        // Fallback to sync formatting
+        const formattedParagraphs = formatSermonIntoParagraphs(
+          selectedSermon?.sermon || ""
+        );
+        setParagraphs(formattedParagraphs);
+      } finally {
+        setIsLoadingParagraphs(false);
+      }
+    };
+
+    loadParagraphs();
+  }, [selectedSermon?.sermon]);
 
   // Add keyboard listeners to track keyboard state
   useEffect(() => {
@@ -261,6 +301,16 @@ const CurrentSermon = React.memo(() => {
 
   // Render paragraphs with numbering
   const renderSermonText = useMemo(() => {
+    if (isLoadingParagraphs) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+            Loading sermon content...
+          </Text>
+        </View>
+      );
+    }
+
     return paragraphs.map((paragraph, index) => (
       <ParagraphText
         key={`paragraph-${index}`}
@@ -275,6 +325,7 @@ const CurrentSermon = React.memo(() => {
     ));
   }, [
     paragraphs,
+    isLoadingParagraphs,
     searchPhrase,
     theme,
     settings,
@@ -298,72 +349,98 @@ const CurrentSermon = React.memo(() => {
             <DownloadSermon />
           ) : (
             <>
-              <ScrollView
-                ref={scrollViewRef}
-                scrollEventThrottle={16}
-                onScroll={handleScroll}
-                contentContainerStyle={[
-                  styles.scrollViewContainer,
-                  { flexGrow: 1 },
-                ]}
-                onContentSizeChange={(width, height) => {
-                  setContentHeight(height);
-                }}
-              >
-                <View>
-                  <Text
-                    style={[
-                      styles.titleText,
-                      { color: theme.dark ? "#854412" : "#5d3211" },
+              {/* Show loading screen while paragraphs are being processed */}
+              {isLoadingParagraphs ? (
+                <LoadingScreen message="getting the message..." />
+              ) : (
+                <>
+                  <ScrollView
+                    ref={scrollViewRef}
+                    scrollEventThrottle={16}
+                    onScroll={handleScroll}
+                    contentContainerStyle={[
+                      styles.scrollViewContainer,
+                      { flexGrow: 1 },
                     ]}
+                    onContentSizeChange={(width, height) => {
+                      setContentHeight(height);
+                    }}
                   >
-                    {selectedSermon?.title}
-                  </Text>
-                  {selectedSermon?.location && (
-                    <Text
+                    <View>
+                      <Text
+                        style={[
+                          styles.titleText,
+                          { color: theme.dark ? "#854412" : "#5d3211" },
+                        ]}
+                      >
+                        {selectedSermon?.title}
+                      </Text>
+                      {selectedSermon?.location && (
+                        <Text
+                          style={[
+                            styles.locationText,
+                            { color: theme.colors.text },
+                          ]}
+                        >
+                          {selectedSermon?.location}
+                        </Text>
+                      )}
+
+                      <View style={{ width: "100%" }}>{renderSermonText}</View>
+                    </View>
+                  </ScrollView>
+
+                  <CustomTopCardController
+                    theme={theme}
+                    selectedSermon={selectedSermon}
+                    searchPhrase={searchPhrase}
+                    setSearchPhrase={setSearchPhrase}
+                    searchResults={searchResults}
+                    setSearchResults={setSearchResults}
+                    currentResultIndex={currentResultIndex}
+                    setCurrentResultIndex={setCurrentResultIndex}
+                    scrollToTop={scrollToTop}
+                    scrollToBottom={scrollToBottom}
+                    navigateToResult={navigateToResult}
+                    onBack={handleBack}
+                    searchSermon={searchSermon}
+                    paragraphs={paragraphs}
+                    paragraphLayouts={paragraphLayouts}
+                    scrollToParagraph={scrollToParagraph}
+                    searching={searching}
+                    setSearching={setSearching}
+                    isCardOpen={isCardOpen}
+                    setIsCardOpen={setIsCardOpen}
+                  />
+
+                  <SearchFeedback
+                    isVisible={showFeedback}
+                    message={feedbackMessage}
+                    theme={theme}
+                  />
+
+                  {/* Selection Tip */}
+                  {showSelectionTip && (
+                    <View
                       style={[
-                        styles.locationText,
-                        { color: theme.colors.text },
+                        styles.selectionTipContainer,
+                        { backgroundColor: theme.colors.background },
                       ]}
                     >
-                      {selectedSermon?.location}
-                    </Text>
+                      <Text
+                        style={[
+                          styles.selectionTipText,
+                          { color: theme.colors.text },
+                        ]}
+                      >
+                        💡 Tip: Double-tap paragraph numbers to enable text
+                        selection, then long-press text to select words or
+                        phrases
+                      </Text>
+                    </View>
                   )}
-
-                  <View style={{ width: "100%" }}>{renderSermonText}</View>
-                </View>
-              </ScrollView>
-
-              {/* <Suspense fallback={<Text>Loading...</Text>}> */}
-              <CustomTopCardController
-                theme={theme}
-                selectedSermon={selectedSermon}
-                searchPhrase={searchPhrase}
-                setSearchPhrase={setSearchPhrase}
-                searchResults={searchResults}
-                setSearchResults={setSearchResults}
-                currentResultIndex={currentResultIndex}
-                setCurrentResultIndex={setCurrentResultIndex}
-                scrollToTop={scrollToTop}
-                scrollToBottom={scrollToBottom}
-                navigateToResult={navigateToResult}
-                onBack={handleBack}
-                searchSermon={searchSermon}
-                paragraphs={paragraphs}
-                paragraphLayouts={paragraphLayouts}
-                scrollToParagraph={scrollToParagraph}
-                searching={searching}
-                setSearching={setSearching}
-                isCardOpen={isCardOpen}
-                setIsCardOpen={setIsCardOpen}
-              />
-              {/* </Suspense> */}
-
-              <SearchFeedback
-                isVisible={showFeedback}
-                message={feedbackMessage}
-                theme={theme}
-              />
+                </>
+              )}
             </>
           )}
         </View>

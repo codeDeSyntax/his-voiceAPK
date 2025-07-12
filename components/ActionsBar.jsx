@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   View,
   TouchableOpacity,
@@ -9,74 +15,84 @@ import {
   Animated,
   Easing,
 } from "react-native";
-import { Ionicons, FontAwesome, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  FontAwesome,
+  FontAwesome5,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 // Memoized action button component
-const ActionButton = React.memo(({ 
-  onPress, 
-  style, 
-  children, 
-  isHighlighted,
-  theme 
-}) => {
-  const buttonStyle = useMemo(() => [
-    styles.actionButton,
-    {
-      backgroundColor: theme.dark ? theme.colors.primary : "transparent",
-      // shadowColor: theme.colors.text,
-      borderColor: theme.dark ? "#747272" : "#4a2916",
-      borderWidth: isHighlighted ? 3 : 2,
-    },
-    style
-  ], [theme.dark, theme.colors.text, isHighlighted, style]);
+const ActionButton = React.memo(
+  ({ onPress, style, children, isHighlighted, theme }) => {
+    const buttonStyle = useMemo(
+      () => [
+        styles.actionButton,
+        {
+          backgroundColor: theme.dark ? theme.colors.primary : "transparent",
+          // shadowColor: theme.colors.text,
+          borderColor: theme.dark ? "#747272" : "#4a2916",
+          borderWidth: isHighlighted ? 3 : 2,
+        },
+        style,
+      ],
+      [theme.dark, theme.colors.text, isHighlighted, style]
+    );
 
-  return (
-    <TouchableOpacity onPress={onPress} style={buttonStyle}>
-      {children}
-    </TouchableOpacity>
-  );
-});
+    return (
+      <TouchableOpacity onPress={onPress} style={buttonStyle}>
+        {children}
+      </TouchableOpacity>
+    );
+  }
+);
 
-ActionButton.displayName = 'ActionButton';
+ActionButton.displayName = "ActionButton";
 
 // Memoized animated label component
-const AnimatedLabel = React.memo(({ 
-  showLabels, 
-  currentLabelIndex, 
-  labelOpacity, 
-  labelTranslateY, 
-  buttonLabels, 
-  theme 
-}) => {
-  const labelStyle = useMemo(() => [
-    styles.animatedLabel,
-    {
-      opacity: labelOpacity,
-      transform: [{ translateY: labelTranslateY }],
-      left: 16 + 25 + 66 * currentLabelIndex, // Optimized calculation
-      backgroundColor: theme.dark ? "#444" : "#eee",
-    },
-  ], [labelOpacity, labelTranslateY, currentLabelIndex, theme.dark]);
+const AnimatedLabel = React.memo(
+  ({
+    showLabels,
+    currentLabelIndex,
+    labelOpacity,
+    labelTranslateY,
+    buttonLabels,
+    theme,
+  }) => {
+    const labelStyle = useMemo(
+      () => [
+        styles.animatedLabel,
+        {
+          opacity: labelOpacity,
+          transform: [{ translateY: labelTranslateY }],
+          left: 16 + 25 + 66 * currentLabelIndex, // Optimized calculation
+          backgroundColor: theme.dark ? "#444" : "#eee",
+        },
+      ],
+      [labelOpacity, labelTranslateY, currentLabelIndex, theme.dark]
+    );
 
-  const textStyle = useMemo(() => ({
-    color: theme.colors.text,
-    fontSize: 12,
-    fontWeight: "bold",
-  }), [theme.colors.text]);
+    const textStyle = useMemo(
+      () => ({
+        color: theme.colors.text,
+        fontSize: 12,
+        fontWeight: "bold",
+      }),
+      [theme.colors.text]
+    );
 
-  if (!showLabels) return null;
+    if (!showLabels) return null;
 
-  return (
-    <Animated.View style={labelStyle}>
-      <Text style={textStyle}>
-        {buttonLabels[currentLabelIndex]}
-      </Text>
-    </Animated.View>
-  );
-});
+    return (
+      <Animated.View style={labelStyle}>
+        <Text style={textStyle}>{buttonLabels[currentLabelIndex]}</Text>
+      </Animated.View>
+    );
+  }
+);
 
-AnimatedLabel.displayName = 'AnimatedLabel';
+AnimatedLabel.displayName = "AnimatedLabel";
 
 const ActionsBar = ({
   theme,
@@ -85,21 +101,30 @@ const ActionsBar = ({
   filterOnlyText,
   filterOnlyAudio,
   toggleSortOrder,
+  restoreOriginalOrder,
+  isOriginalOrder,
+  hasActiveFilters,
 }) => {
   const router = useNavigation();
   const [showLabels, setShowLabels] = useState(true);
   const [currentLabelIndex, setCurrentLabelIndex] = useState(0);
 
   // Memoized button labels to prevent recreation
-  const buttonLabels = useMemo(() => [
-    "Menu",
-    "Search",
-    "Filter by letter",
-    "Filter by year",
-    "Text only",
-    "Audio only",
-    "Sort entries",
-  ], []);
+  const buttonLabels = useMemo(
+    () => [
+      "Menu",
+      "Search",
+      "Filter by letter",
+      "Filter by year",
+      "Text only",
+      "Audio only",
+      "Sort entries",
+      hasActiveFilters || !isOriginalOrder
+        ? "Restore original list"
+        : "Restore original order",
+    ],
+    [hasActiveFilters, isOriginalOrder]
+  );
 
   // Animation values with refs to prevent recreation
   const labelOpacity = useRef(new Animated.Value(0)).current;
@@ -107,51 +132,54 @@ const ActionsBar = ({
   const timeoutRef = useRef(null);
 
   // Memoized animation function
-  const animateLabels = useCallback((index) => {
-    if (index >= buttonLabels.length) {
-      setShowLabels(false);
-      return;
-    }
+  const animateLabels = useCallback(
+    (index) => {
+      if (index >= buttonLabels.length) {
+        setShowLabels(false);
+        return;
+      }
 
-    setCurrentLabelIndex(index);
+      setCurrentLabelIndex(index);
 
-    // Fade in and slide up
-    Animated.parallel([
-      Animated.timing(labelOpacity, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.ease),
-      }),
-      Animated.timing(labelTranslateY, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.ease),
-      }),
-    ]).start();
-
-    // After showing for a moment, fade out and prepare for next label
-    timeoutRef.current = setTimeout(() => {
+      // Fade in and slide up
       Animated.parallel([
         Animated.timing(labelOpacity, {
-          toValue: 0,
-          duration: 300,
+          toValue: 1,
+          duration: 400,
           useNativeDriver: true,
-          easing: Easing.in(Easing.ease),
+          easing: Easing.out(Easing.ease),
         }),
         Animated.timing(labelTranslateY, {
-          toValue: -10,
-          duration: 300,
+          toValue: 0,
+          duration: 400,
           useNativeDriver: true,
-          easing: Easing.in(Easing.ease),
+          easing: Easing.out(Easing.ease),
         }),
-      ]).start(() => {
-        labelTranslateY.setValue(10);
-        setTimeout(() => animateLabels(index + 1), 150);
-      });
-    }, 1500);
-  }, [buttonLabels.length, labelOpacity, labelTranslateY]);
+      ]).start();
+
+      // After showing for a moment, fade out and prepare for next label
+      timeoutRef.current = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(labelOpacity, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+            easing: Easing.in(Easing.ease),
+          }),
+          Animated.timing(labelTranslateY, {
+            toValue: -10,
+            duration: 300,
+            useNativeDriver: true,
+            easing: Easing.in(Easing.ease),
+          }),
+        ]).start(() => {
+          labelTranslateY.setValue(10);
+          setTimeout(() => animateLabels(index + 1), 150);
+        });
+      }, 1500);
+    },
+    [buttonLabels.length, labelOpacity, labelTranslateY]
+  );
 
   // Memoized restart animation function
   const restartAnimation = useCallback(() => {
@@ -162,9 +190,18 @@ const ActionsBar = ({
 
   // Memoized navigation handlers
   const navigateToMenu = useCallback(() => router.navigate("Menu"), [router]);
-  const navigateToSearch = useCallback(() => router.navigate("Search"), [router]);
-  const showLetterModal = useCallback(() => setIsLetterModalVisible(true), [setIsLetterModalVisible]);
-  const showYearModal = useCallback(() => setIsYearModalVisible(true), [setIsYearModalVisible]);
+  const navigateToSearch = useCallback(
+    () => router.navigate("Search"),
+    [router]
+  );
+  const showLetterModal = useCallback(
+    () => setIsLetterModalVisible(true),
+    [setIsLetterModalVisible]
+  );
+  const showYearModal = useCallback(
+    () => setIsYearModalVisible(true),
+    [setIsYearModalVisible]
+  );
 
   useEffect(() => {
     if (showLabels) {
@@ -181,7 +218,10 @@ const ActionsBar = ({
   // Memoized styles
   const scrollContainerStyle = useMemo(() => styles.actionsScrollContainer, []);
   const menuImageStyle = useMemo(() => ({ height: 30, width: 30 }), []);
-  const actionButtonContentStyle = useMemo(() => styles.actionButtonContent, []);
+  const actionButtonContentStyle = useMemo(
+    () => styles.actionButtonContent,
+    []
+  );
   const audioTextStyle = useMemo(() => ({ fontSize: 20 }), []);
 
   return (
@@ -209,15 +249,19 @@ const ActionsBar = ({
           isHighlighted={currentLabelIndex === 0 && showLabels}
           theme={theme}
         >
-          {
-            theme.dark ? 
+          {theme.dark ? (
             <Image
-            source={require("../assets/nmenu.png")}
-            style={menuImageStyle}
-            resizeMode="contain"
-          /> : 
-          <MaterialIcons name="grid-view" size={24} color={theme.dark ? theme.colors.text  : "white"}/>
-          }
+              source={require("../assets/nmenu.png")}
+              style={menuImageStyle}
+              resizeMode="contain"
+            />
+          ) : (
+            <MaterialIcons
+              name="grid-view"
+              size={24}
+              color={theme.dark ? theme.colors.text : "white"}
+            />
+          )}
           {/* <MaterialIcons name="gri" size={24} color={theme.dark ? theme.colors.text  : "white"}/> */}
         </ActionButton>
 
@@ -227,7 +271,11 @@ const ActionsBar = ({
           isHighlighted={currentLabelIndex === 1 && showLabels}
           theme={theme}
         >
-          <Ionicons name="search-outline" size={24} color={theme.dark ? theme.colors.text  : "white"} />
+          <Ionicons
+            name="search-outline"
+            size={24}
+            color={theme.dark ? theme.colors.text : "white"}
+          />
         </ActionButton>
 
         {/* Filter by letter Button */}
@@ -237,7 +285,11 @@ const ActionsBar = ({
           theme={theme}
           // style={{ borderColor: theme.dark ? "white" : "#121212" }}
         >
-          <Ionicons name="text-outline" size={24} color={theme.dark ? theme.colors.text  : "white"} />
+          <Ionicons
+            name="text-outline"
+            size={24}
+            color={theme.dark ? theme.colors.text : "white"}
+          />
         </ActionButton>
 
         {/* Filter by year Button */}
@@ -250,8 +302,44 @@ const ActionsBar = ({
           <FontAwesome5
             name="calendar-alt"
             size={24}
-            color={theme.dark ? theme.colors.text  : "white"}
+            color={theme.dark ? theme.colors.text : "white"}
           />
+        </ActionButton>
+
+        {/* Restore Original Order Button */}
+        <ActionButton
+          onPress={restoreOriginalOrder}
+          isHighlighted={currentLabelIndex === 7 && showLabels}
+          theme={theme}
+          style={{
+            opacity: !hasActiveFilters && isOriginalOrder ? 0.5 : 1,
+            borderColor:
+              !hasActiveFilters && isOriginalOrder
+                ? theme.dark
+                  ? "#555"
+                  : "#ccc"
+                : theme.dark
+                ? "#747272"
+                : "#4a2916",
+            borderWidth: hasActiveFilters || !isOriginalOrder ? 3 : 2,
+          }}
+        >
+          <MaterialIcons
+            name="restore"
+            size={24}
+            color={theme.dark ? theme.colors.text : "white"}
+          />
+          {/* Active filters indicator */}
+          {(hasActiveFilters || !isOriginalOrder) && (
+            <View
+              style={[
+                styles.filterBadge,
+                { backgroundColor: theme.dark ? "#ff6b6b" : "#e74c3c" },
+              ]}
+            >
+              <Text style={styles.filterBadgeText}>!</Text>
+            </View>
+          )}
         </ActionButton>
 
         {/* Text only Button */}
@@ -261,8 +349,16 @@ const ActionsBar = ({
           theme={theme}
         >
           <View style={actionButtonContentStyle}>
-            <Ionicons name="text" size={20} color={theme.dark ? theme.colors.text  : "white"} />
-            <Ionicons name="filter" size={16} color={theme.dark ? theme.colors.text  : "white"} />
+            <Ionicons
+              name="text"
+              size={20}
+              color={theme.dark ? theme.colors.text : "white"}
+            />
+            <Ionicons
+              name="filter"
+              size={16}
+              color={theme.dark ? theme.colors.text : "white"}
+            />
           </View>
         </ActionButton>
 
@@ -274,7 +370,11 @@ const ActionsBar = ({
         >
           <View style={actionButtonContentStyle}>
             <Text style={audioTextStyle}>🔊</Text>
-            <Ionicons name="filter" size={16} color={theme.dark ? theme.colors.text  : "white"} />
+            <Ionicons
+              name="filter"
+              size={16}
+              color={theme.dark ? theme.colors.text : "white"}
+            />
           </View>
         </ActionButton>
 
@@ -284,7 +384,11 @@ const ActionsBar = ({
           isHighlighted={currentLabelIndex === 6 && showLabels}
           theme={theme}
         >
-          <FontAwesome name="sort" size={24} color={theme.dark ? theme.colors.text  : "white"} />
+          <FontAwesome
+            name="sort"
+            size={24}
+            color={theme.dark ? theme.colors.text : "white"}
+          />
         </ActionButton>
       </ScrollView>
     </View>
@@ -332,6 +436,23 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 3,
     transform: [{ translateX: -25 }],
+  },
+  filterBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  filterBadgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 
