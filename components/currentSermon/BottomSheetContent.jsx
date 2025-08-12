@@ -43,6 +43,22 @@ const TopCardContent = ({
     ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
 
+  // Real-time search as user types (with very short debounce)
+  useEffect(() => {
+    if (searchPhrase.trim() && searchPhrase.length > 2) {
+      const timeoutId = setTimeout(() => {
+        const results = searchSermon(paragraphs, searchPhrase);
+        setSearchResults(results);
+        setCurrentResultIndex(0);
+      }, 150); // Very short debounce for real-time feel
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchResults([]);
+      setCurrentResultIndex(0);
+    }
+  }, [searchPhrase, paragraphs, searchSermon, setSearchResults, setCurrentResultIndex]);
+
   const submitSearch = useCallback(() => {
     if (searchPhrase.trim()) {
       // Set searching to true before starting the search

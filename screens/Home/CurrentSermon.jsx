@@ -82,24 +82,12 @@ const CurrentSermon = React.memo(({ route }) => {
   const [paragraphLayouts, setParagraphLayouts] = useState({});
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [searching, setSearching] = useState(false);
   const [isCardOpen, setIsCardOpen] = useState(false);
-  const [currentVisibleParagraph, setCurrentVisibleParagraph] = useState(0);
-  const [hasScrolledToLastPosition, setHasScrolledToLastPosition] =
-    useState(false);
-  const [showSelectionTip, setShowSelectionTip] = useState(false);
   const [paragraphs, setParagraphs] = useState([]);
   const [isLoadingParagraphs, setIsLoadingParagraphs] = useState(false);
 
-  // Scroll priority management
-  const [scrollPriority, setScrollPriority] = useState(null); // 'search', 'bookmark', 'lastread', 'bottomsheet'
-  const [hasHandledInitialScroll, setHasHandledInitialScroll] = useState(false);
-
   const scrollViewRef = useRef(null);
-  const scrollTimeout = useRef(null);
-  const isUserScrolling = useRef(false); // Track if user is actively scrolling
-  const userScrollTimer = useRef(null); // Timer to detect when user stops scrolling
 
   // Load fonts to ensure ZillaSlab is available
   const [fontsLoaded] = useFonts({

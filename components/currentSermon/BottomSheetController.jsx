@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { View, TouchableOpacity, Animated, Dimensions } from "react-native";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import TopCardContent from "./BottomSheetContent";
@@ -29,18 +29,15 @@ const CustomTopCardController = ({
   // Screen dimensions
   const { width, height } = Dimensions.get("window");
 
-  // State to track card visibility and animation completion
-  const [isAnimating, setIsAnimating] = useState(false);
-
   // Animation values
-  const translateY = useRef(new Animated.Value(height)).current; // Start off-screen at the bottom
+  const translateY = useRef(new Animated.Value(height)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   // Handle button animation
   useEffect(() => {
     Animated.timing(rotateAnim, {
       toValue: isCardOpen ? 1 : 0,
-      duration: 300,
+      duration: 200, // Faster animation
       useNativeDriver: true,
     }).start();
   }, [isCardOpen]);
@@ -51,35 +48,34 @@ const CustomTopCardController = ({
     outputRange: ["0deg", "180deg"],
   });
 
-  // Functions to control the card
-  const openCard = () => {
+  // Optimized functions to control the card
+  const openCard = useCallback(() => {
     setIsCardOpen(true);
-
     Animated.spring(translateY, {
       toValue: 0,
-      tension: 80,
+      tension: 100, // Snappier animation
       friction: 8,
       useNativeDriver: true,
     }).start();
-  };
+  }, [setIsCardOpen, translateY]);
 
-  const closeCard = () => {
+  const closeCard = useCallback(() => {
     setIsCardOpen(false);
-
     Animated.spring(translateY, {
       toValue: height,
-      tension: 80,
+      tension: 100,
       friction: 8,
       useNativeDriver: true,
     }).start();
-  };
-  const handleTogglePress = () => {
+  }, [setIsCardOpen, translateY, height]);
+
+  const handleTogglePress = useCallback(() => {
     if (isCardOpen) {
       closeCard();
     } else {
       openCard();
     }
-  };
+  }, [isCardOpen, closeCard, openCard]);
 
   return (
     <>
@@ -89,7 +85,6 @@ const CustomTopCardController = ({
           styles.floatingButton,
           {
             backgroundColor: theme.dark ? theme.colors.background : "#ececec",
-            // borderWidth: 1,
             borderColor: theme.dark ? "#1a1919" : "#4276b7",
           },
         ]}
@@ -116,7 +111,7 @@ const CustomTopCardController = ({
               borderColor: theme.colors.text,
             },
           ]}
-          pointerEvents={isCardOpen ? "auto" : "none"}
+          pointerEvents="auto"
         >
           {/* Close button inside card */}
           <TouchableOpacity
