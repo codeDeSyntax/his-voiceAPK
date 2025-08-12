@@ -12,17 +12,19 @@ export const formatSermonIntoParagraphsAsync = async (text) => {
   if (!text) return [];
 
   return new Promise((resolve) => {
-    // Use multiple smaller chunks for better performance on low-resource devices
+    // Use smaller chunks for better UI responsiveness
     const processInChunks = async () => {
       try {
-        // For very large texts, use worker-like approach
-        if (text.length > 50000) {
+        // For very large texts, use worker-like approach with smaller batches
+        if (text.length > 30000) {
           const result = await processLargeTextInBatches(text);
           resolve(result);
         } else {
-          // For smaller texts, use optimized direct processing
-          const result = formatSermonIntoParagraphsFast(text);
-          resolve(result);
+          // For smaller texts, use optimized direct processing with delay
+          setTimeout(() => {
+            const result = formatSermonIntoParagraphsFast(text);
+            resolve(result);
+          }, 10); // Small delay to prevent blocking
         }
       } catch (error) {
         console.error("Error processing sermon:", error);
@@ -31,8 +33,8 @@ export const formatSermonIntoParagraphsAsync = async (text) => {
       }
     };
 
-    // Process in next frame to avoid blocking UI
-    setTimeout(processInChunks, 0);
+    // Process immediately for better perceived performance
+    processInChunks();
   });
 };
 
@@ -42,7 +44,7 @@ export const formatSermonIntoParagraphsAsync = async (text) => {
  * @returns {Promise<Array>} - Array of paragraph strings
  */
 const processLargeTextInBatches = async (text) => {
-  const batchSize = 10000; // Process 10KB at a time
+  const batchSize = 5000; // Smaller batches (5KB) for better responsiveness
   const batches = [];
 
   for (let i = 0; i < text.length; i += batchSize) {
@@ -52,8 +54,8 @@ const processLargeTextInBatches = async (text) => {
   let allParagraphs = [];
 
   for (const batch of batches) {
-    // Process each batch with a small delay to prevent blocking
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    // Process each batch with minimal delay
+    await new Promise((resolve) => setTimeout(resolve, 1));
     const batchParagraphs = formatSermonIntoParagraphsFast(batch);
     allParagraphs = allParagraphs.concat(batchParagraphs);
   }

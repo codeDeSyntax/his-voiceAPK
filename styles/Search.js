@@ -5,7 +5,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backgroundContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -14,12 +14,12 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   backgroundOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    backgroundColor: "rgba(0,0,0,0.1)",
   },
   gradientContainer: {
     flex: 1,
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
     fontWeight: "600",
   },
   searchContainer: {
@@ -73,10 +73,10 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     borderRadius: 100,
-    width:50,
+    width: 50,
     height: 50,
     justifyContent: "center",
-    alignItems:"center",
+    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -92,12 +92,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultsContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   resultsCount: {
-    marginBottom: 15,
-    fontSize: 14,
+    marginBottom: 12,
+    fontSize: 13,
     fontWeight: "500",
   },
   sermonContainer: {
@@ -158,14 +158,14 @@ const styles = StyleSheet.create({
   },
   sermonContent: {
     fontFamily: "ZillaSlab",
-    fontSize: 12,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 26,
   },
   highlightedText: {
     // backgroundColor: "rgba(59, 130, 246, 0.15)",
     color: "#44cef",
-    fontWeight: "500",
-    fontSize:12,
+    fontWeight: "600",
+    fontSize: 16,
     borderRadius: 4,
     overflow: "hidden",
     paddingHorizontal: 2,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   },
   noResultsText: {
     fontSize: 18,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
     textAlign: "center",
     marginBottom: 8,
   },
@@ -244,21 +244,18 @@ const styles = StyleSheet.create({
   // Modal styles
   modalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+    backgroundColor: "rgba(0,0,0,0.95)", // Full screen overlay
   },
   modalContent: {
-    width: "100%",
-    maxHeight: "90%",
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    flex: 1,
+    borderRadius: 0, // Remove border radius for full screen
+    padding: 0, // Remove padding, will add it inside content
+    borderWidth: 0, // Remove border for full screen
+    shadowColor: "transparent", // Remove shadow for full screen
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   modalScrollIndicator: {
     position: "absolute",
@@ -274,16 +271,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(150,150,150,0.2)",
   },
   headerContent: {
     flex: 1,
   },
   modalTitle: {
     fontWeight: "700",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
     fontSize: 20,
-    marginBottom: 8,
-    lineHeight: 28,
+    marginBottom: 6,
+    lineHeight: 26,
   },
   modalMetaContainer: {
     flexDirection: "row",
@@ -304,13 +306,15 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   modalScrollView: {
-    // flex: 1,
+    flex: 1,
   },
   modalScrollContent: {
     paddingBottom: 20,
   },
   sermonContentHeader: {
-    marginBottom: 16,
+    marginBottom: 8,
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
   sermonSectionTitle: {
     fontSize: 14,
@@ -325,15 +329,91 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sermonFullContent: {
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
     fontSize: 16,
     lineHeight: 26,
-    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 0,
   },
   sermonAttribution: {
     marginTop: 30,
     paddingTop: 16,
+    paddingHorizontal: 20,
     borderTopWidth: 1,
+  },
+
+  // New sleek search result styles
+  searchResultsList: {
+    flex: 1,
+    marginTop: 8,
+  },
+  searchResultItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  resultContent: {
+    flex: 1,
+  },
+  resultHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 3,
+  },
+  resultTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 20,
+    marginRight: 10,
+  },
+  resultYearBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
+    minWidth: 40,
+    alignItems: "center",
+  },
+  resultYearText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  resultLocation: {
+    fontSize: 12,
+    marginBottom: 6,
+    opacity: 0.8,
+  },
+  contextContainer: {
+    flex: 1,
+  },
+  paragraphInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  paragraphLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    opacity: 0.7,
+  },
+  expandCaret: {
+    padding: 6,
+    marginRight: -6,
+  },
+  caretIcon: {
+    fontSize: 11,
+    opacity: 0.6,
+  },
+  resultContext: {
+    fontSize: 15,
+    lineHeight: 18,
+    paddingRight: 25,
+  },
+  resultSeparator: {
+    height: 1,
+    marginTop: 12,
+    marginHorizontal: -16,
   },
 });
 

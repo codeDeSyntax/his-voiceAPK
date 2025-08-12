@@ -24,7 +24,13 @@ import {
 } from "react-native";
 import { useAppContext } from "../../Logic/globalState";
 import { ActivityIndicator } from "react-native";
-import { AntDesign, Feather, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import {
+  AntDesign,
+  Feather,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import styles from "../../styles/Search";
 
 import earlySermons from "../../sermons/1964-1969/firstset";
@@ -49,10 +55,13 @@ const EXPANDED_CONTEXT_LENGTH = 150;
 const POPUP_CONTEXT_LENGTH = 3000;
 
 const SermonSearch = () => {
-  const { theme, searchText, setSearchText } = useAppContext();
-  const [searchPhrase, setSearchPhrase] = useState(searchText);
+  const { theme, setSelectedSermon } = useAppContext(); // Removed searchText and setSearchText
+  const navigation = useNavigation();
+  const [searchText, setSearchText] = useState(""); // Local search state for Search screen
+  const [searchPhrase, setSearchPhrase] = useState(""); // Local search phrase
   const [filteredSermons, setFilteredSermons] = useState([]);
   const [expandedSermons, setExpandedSermons] = useState(new Set());
+  const [expandedResults, setExpandedResults] = useState(new Set()); // Track expanded search results
   const [loading, setLoading] = useState(false);
   const [found, setFound] = useState(true);
   const fadeAnim = new Animated.Value(0);
@@ -62,9 +71,9 @@ const SermonSearch = () => {
   const [selectedSermonContent, setSelectedSermonContent] = useState(null);
   const [modalContentReady, setModalContentReady] = useState(false);
 
-   const [fontsLoaded] = useFonts({
-    "ZillaSlab": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-    "ZillaSlabSemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
+  const [fontsLoaded] = useFonts({
+    ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+    ZillaSlabSemiBold: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
   // Refs
   const scrollViewRef = useRef(null);
@@ -125,6 +134,7 @@ const SermonSearch = () => {
 
     setLoading(true);
     setExpandedSermons(new Set());
+    setExpandedResults(new Set()); // Clear expanded search results
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -132,62 +142,55 @@ const SermonSearch = () => {
       const filtered = sermons
         .map((sermon) => {
           const regex = new RegExp(`(${searchPhrase})`, "i");
-          const match = sermon.sermon.match(regex);
-          if (match) {
-            const brief = sermon.sermon.slice(
-              Math.max(0, match.index - CONTEXT_LENGTH),
-              Math.min(
-                sermon.sermon.length,
-                match.index + match[0].length + CONTEXT_LENGTH
-              )
-            );
+          // Split by newlines but keep the original paragraph structure
+          const paragraphs = sermon.sermon.split("\n");
 
-            const shortContext = cleanText(brief);
+          // Find all matches with paragraph numbers
+          const matches = [];
+          paragraphs.forEach((paragraph, paragraphIndex) => {
+            if (paragraph.trim()) {
+              // Only process non-empty paragraphs
+              const match = paragraph.match(regex);
+              if (match) {
+                const brief = paragraph.slice(
+                  Math.max(0, match.index - CONTEXT_LENGTH),
+                  Math.min(
+                    paragraph.length,
+                    match.index + match[0].length + CONTEXT_LENGTH
+                  )
+                );
 
-            const entire = sermon.sermon.slice(
-              Math.max(0, match.index - EXPANDED_CONTEXT_LENGTH),
-              Math.min(
-                sermon.sermon.length,
-                match.index + match[0].length + EXPANDED_CONTEXT_LENGTH
-              )
-            );
+                const shortContext = cleanText(brief);
 
-            const expandedContext = cleanText(entire);
+                matches.push({
+                  paragraphIndex: paragraphIndex + 1, // 1-based indexing
+                  context: shortContext.replace(
+                    regex,
+                    `<highlight>${match[0]}</highlight>`
+                  ),
+                  fullParagraph: paragraph,
+                });
+              }
+            }
+          });
 
-            // Add extended context for popup
-            const fullContext = sermon.sermon.slice(
-              Math.max(0, match.index - POPUP_CONTEXT_LENGTH),
-              Math.min(
-                sermon.sermon.length,
-                match.index + match[0].length + POPUP_CONTEXT_LENGTH
-              )
-            );
-
-            const popupContext = cleanText(fullContext);
+          if (matches.length > 0) {
+            // Use the first match as the primary context
+            const primaryMatch = matches[0];
 
             return {
               title: sermon.title,
               year: sermon.year,
               location: sermon.location,
-              sentence: shortContext.replace(
-                regex,
-                `<highlight>${match[0]}</highlight>`
-              ),
-              expandedSentence: expandedContext.replace(
-                regex,
-                `<highlight>${match[0]}</highlight>`
-              ),
-              popupContent: popupContext.replace(
-                regex,
-                `<highlight>${match[0]}</highlight>`
-              ),
-              sermon: sermon.sermon,
-              type: sermon.type,
-              matchIndex: match.index,
+              id: sermon.id,
+              sermon: sermon.sermon, // Keep full sermon for navigation
+              sentence: primaryMatch.context,
+              paragraphIndex: primaryMatch.paragraphIndex,
+              totalMatches: matches.length,
+              allMatches: matches, // Store all matches for potential use
             };
-          } else {
-            return null;
           }
+          return null;
         })
         .filter(Boolean);
 
@@ -222,9 +225,56 @@ const SermonSearch = () => {
     });
   };
 
+  const toggleResultExpanded = (index) => {
+    setExpandedResults((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
   const handleSermonClick = (sermon) => {
-    // Make sure we clear previous content and reset scroll before showing new content
-    setSelectedSermonContent(sermon);
+    // Instead of navigating, prepare and show modal content
+    const regex = new RegExp(`(${searchPhrase})`, "i");
+    // Use the same paragraph splitting method as search
+    const paragraphs = sermon.sermon.split("\n");
+
+    // Find the specific paragraph and create expanded content around it
+    let modalContent = "";
+    const targetParagraphIndex = sermon.paragraphIndex - 1; // Convert to 0-based
+
+    // Get context around the found paragraph (more context for modal)
+    const contextStart = Math.max(0, targetParagraphIndex - 10);
+    const contextEnd = Math.min(paragraphs.length, targetParagraphIndex + 15);
+
+    // Build the modal content with extended context - join as one continuous paragraph
+    for (let i = contextStart; i < contextEnd; i++) {
+      const paragraph = paragraphs[i];
+      if (paragraph.trim()) {
+        // Highlight search terms in all paragraphs
+        const highlightedParagraph = paragraph.replace(
+          regex,
+          `<highlight>$1</highlight>`
+        );
+        // Join paragraphs with single space to create continuous text
+        modalContent += highlightedParagraph.trim() + " ";
+      }
+    }
+
+    // Set up modal content
+    setSelectedSermonContent({
+      title: sermon.title,
+      year: sermon.year,
+      location: sermon.location,
+      paragraphIndex: sermon.paragraphIndex, // Include paragraph index for navigation
+      popupContent: modalContent.trim(),
+    });
+
+    // Show modal
     setModalVisible(true);
   };
 
@@ -233,6 +283,7 @@ const SermonSearch = () => {
     setSearchPhrase("");
     setFilteredSermons([]);
     setExpandedSermons(new Set());
+    setExpandedResults(new Set()); // Clear expanded search results
     searchInputRef.current?.focus();
   };
   const gradientColors = useMemo(
@@ -290,14 +341,16 @@ const SermonSearch = () => {
               <Text
                 key={i}
                 style={[
-                  {color: theme.dark ? "#cdc8c8" : "black",fontSize:14},
+                  { color: theme.dark ? "#cdc8c8" : "black", fontSize: 14 },
                   part.startsWith("<highlight>") &&
                   part.endsWith("</highlight>")
                     ? {
                         backgroundColor: theme.dark ? "#522c12" : "transparent",
                         ...styles.highlightedText,
-                        color: theme.dark ? theme.colors.text : theme.colors.hlight,
-                        textDecorationLine:"underline"
+                        color: theme.dark
+                          ? theme.colors.text
+                          : theme.colors.hlight,
+                        textDecorationLine: "underline",
                       }
                     : undefined,
                 ]}
@@ -343,7 +396,7 @@ const SermonSearch = () => {
                 { color: theme.colors.text },
               ]}
             >
-              Open Sermon
+              View Extract
             </Text>
             <AntDesign
               name="right"
@@ -369,12 +422,13 @@ const SermonSearch = () => {
               {
                 color: theme.dark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)",
                 fontFamily: "ZillaSlabSemiBold",
+                fontSize: 14,
+                marginBottom: 4,
               },
             ]}
           >
             Sermon Extract
           </Text>
-          <View style={styles.divider} />
         </View>
 
         <Text
@@ -385,7 +439,8 @@ const SermonSearch = () => {
               fontFamily: "ZillaSlab",
               fontSize: 16,
               lineHeight: 24,
-              marginBottom: 20,
+              marginBottom: 16,
+              textAlign: "justify",
             },
           ]}
           selectable={true}
@@ -398,48 +453,88 @@ const SermonSearch = () => {
                 part.startsWith("<highlight>") && part.endsWith("</highlight>");
               const text = part.replace(/<\/?highlight>/g, "");
 
-              return (
-                <Text
-                  key={i}
-                  style={
-                    isHighlight
-                      ? {
-                           fontFamily: "ZillaSlab",
-                          backgroundColor: "#FFD700",
-                          color: "#000000",
-                          fontWeight: "bold",
-                        }
-                      : undefined
-                  }
-                >
-                  {text}
-                </Text>
-              );
+              if (isHighlight) {
+                return (
+                  <Text
+                    key={i}
+                    style={{
+                      fontFamily: "ZillaSlab",
+                      backgroundColor: theme.dark
+                        ? "#5d3211" + "70"
+                        : "#5d3211" + "30",
+                      color: theme.dark ? "#fff" : "#5d3211",
+                      fontWeight: "600",
+                      paddingHorizontal: 4,
+                      paddingVertical: 2,
+                      borderRadius: 6,
+                    }}
+                  >
+                    {text}
+                  </Text>
+                );
+              } else {
+                return text; // Return plain text, not wrapped in Text component
+              }
             })}
         </Text>
 
-        <View
+        {/* View Full Sermon Button */}
+        <TouchableOpacity
           style={[
-            styles.sermonAttribution,
             {
-              borderTopColor: theme.dark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)",
-              paddingTop: 15,
-              marginTop: 10,
+              backgroundColor: theme.colors.primary,
+              paddingHorizontal: 24,
+              paddingVertical: 16,
+              borderRadius: 12,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 3,
+              marginTop: 20,
+              marginHorizontal: 20,
             },
           ]}
+          onPress={() => {
+            // Close modal first
+            setModalVisible(false);
+
+            // Find the sermon data from the selectedSermonContent
+            const fullSermon = sermons.find(
+              (s) =>
+                s.title === selectedSermonContent.title &&
+                s.year === selectedSermonContent.year
+            );
+
+            if (fullSermon) {
+              setSelectedSermon(fullSermon);
+
+              // Navigate to full sermon with search context
+              navigation.navigate("currentsermon", {
+                source: "search",
+                sermon: fullSermon,
+                searchPhrase: searchPhrase,
+                initialParagraph: selectedSermonContent.paragraphIndex - 1,
+              });
+            }
+          }}
         >
           <Text
             style={{
-              fontStyle: "italic",
-              fontSize: 12,
-              color: theme.dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
+              color: "#fff",
+              fontWeight: "600",
+              fontFamily: "ZillaSlab",
+              fontSize: 16,
+              marginRight: 10,
             }}
           >
-            From "{selectedSermonContent.title}" ({selectedSermonContent.year})
+            View Full Sermon
           </Text>
-        </View>
+          <AntDesign name="arrowright" size={18} color="#fff" />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -477,7 +572,11 @@ const SermonSearch = () => {
           <Text
             style={[
               styles.headerTitle,
-              { color: theme.dark ? theme.colors.text : "white",fontWeight:"bold", textDecorationLine:"underline" },
+              {
+                color: theme.dark ? theme.colors.text : "white",
+                fontWeight: "bold",
+                textDecorationLine: "underline",
+              },
             ]}
           >
             Sermon Search
@@ -489,7 +588,7 @@ const SermonSearch = () => {
             style={[
               styles.inputWrapper,
               {
-                borderWidth:theme.dark ? 0 : 0,
+                borderWidth: theme.dark ? 0 : 0,
                 backgroundColor: theme.dark
                   ? "rgba(255,255,255,0.08)"
                   : "#f3f0f090",
@@ -512,7 +611,7 @@ const SermonSearch = () => {
                 {
                   color: theme.dark ? theme.colors.text : "black",
                   fontFamily: "serif",
-                  fontSize:14
+                  fontSize: 14,
                 },
               ]}
               placeholder="Search sermons..."
@@ -525,7 +624,6 @@ const SermonSearch = () => {
               placeholderTextColor={
                 theme.dark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"
               }
-              
               selectionColor={theme.dark ? theme.colors.text : "#5d3211"}
               returnKeyType="search"
               onSubmitEditing={handleSearch}
@@ -554,7 +652,11 @@ const SermonSearch = () => {
             ]}
             onPress={handleSearch}
           >
-            <MaterialIcons name="search" style={styles.searchButtonText} size={20}/>
+            <MaterialIcons
+              name="search"
+              style={styles.searchButtonText}
+              size={20}
+            />
           </TouchableOpacity>
         </View>
 
@@ -599,6 +701,7 @@ const SermonSearch = () => {
                     color: theme.dark
                       ? "rgba(255,255,255,0.6)"
                       : "rgba(0,0,0,0.6)",
+                    fontFamily: "ZillaSlab",
                   },
                 ]}
               >
@@ -606,87 +709,192 @@ const SermonSearch = () => {
                 {filteredSermons.length !== 1 ? "s" : ""}
               </Text>
 
-              {filteredSermons.map((sermon, index) => (
-                <Pressable
-                  key={index}
-                  style={[styles.sermonContainer]}
-                  android_ripple={{
-                    color: theme.dark
-                      ? "rgba(255,255,255,0.1)"
-                      : "rgba(0,0,0,0.05)",
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.sermonCard,
-                      {
-                        backgroundColor: theme.dark
-                          ? theme.colors.background
-                          : "white",
-                        borderColor: theme.dark
-                          ? "rgba(255,255,255,0.1)"
-                          : "rgba(0,0,0,0.05)",
-                      },
-                    ]}
-                  >
-                    <View style={styles.sermonHeader}>
-                      <View style={styles.sermonTitleContainer}>
-                        <Text
-                          style={[
-                            styles.sermonTitle,
-                            {
-                              color: theme.dark ? theme.colors.text : "#3d220f",
-                              fontSize: 15,
-                              fontFamily:"ZillaSlab",
-                              textDecorationLine: "underline",
-                            },
-                          ]}
-                          numberOfLines={2}
-                        >
-                          {sermon.title.trim()}
-                        </Text>
-                        <View
-                          style={[
-                            styles.yearBadge,
-                            // { backgroundColor: theme.colors.primary },
-                          ]}
-                        >
-                          <Text style={styles.sermonYear}>{sermon.year}</Text>
+              {/* New sleek search results without cards */}
+              <View style={styles.searchResultsList}>
+                {filteredSermons.map((sermon, index) => {
+                  const showExpanded = expandedResults.has(index);
+
+                  return (
+                    <TouchableOpacity
+                      key={`search-result-${index}`}
+                      style={styles.searchResultItem}
+                      onPress={() => handleSermonClick(sermon)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.resultContent}>
+                        {/* Title and Year */}
+                        <View style={styles.resultHeader}>
+                          <Text
+                            style={[
+                              styles.resultTitle,
+                              {
+                                color: theme.colors.text,
+                                fontFamily: "ZillaSlab",
+                              },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {sermon.title.trim()}
+                          </Text>
+                          <View
+                            style={[
+                              styles.resultYearBadge,
+                              { backgroundColor: theme.colors.primary },
+                            ]}
+                          >
+                            <Text
+                              style={[styles.resultYearText, { color: "#fff" }]}
+                            >
+                              {sermon.year}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Search context with paragraph info */}
+                        <View style={styles.contextContainer}>
+                          <View style={styles.paragraphInfo}>
+                            <Text
+                              style={[
+                                styles.paragraphLabel,
+                                {
+                                  color: theme.colors.text,
+                                  fontFamily: "ZillaSlab",
+                                },
+                              ]}
+                            >
+                              📍Paragraph {sermon.paragraphIndex}
+                              {sermon.totalMatches > 1 && (
+                                <Text style={{ opacity: 0.7, fontSize: 12 }}>
+                                  {/* {" "} */}
+                                  (+{sermon.totalMatches - 1} more)
+                                </Text>
+                              )}
+                            </Text>
+
+                            {/* Show more caret */}
+                            <TouchableOpacity
+                              style={styles.expandCaret}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                toggleResultExpanded(index);
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  styles.caretIcon,
+                                  { color: theme.colors.text },
+                                ]}
+                              >
+                                {showExpanded ? "▲" : "▼"}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+
+                          <Text
+                            style={[
+                              styles.resultContext,
+                              {
+                                color: theme.dark
+                                  ? "rgba(255,255,255,0.8)"
+                                  : "#5d3211",
+                                fontFamily: "ZillaSlab",
+                              },
+                            ]}
+                            numberOfLines={showExpanded ? undefined : 2}
+                          >
+                            {/* Show first match or all matches if expanded */}
+                            {showExpanded && sermon.totalMatches > 1
+                              ? // Show all matches when expanded as continuous text
+                                sermon.allMatches
+                                  .map((match, matchIndex) => {
+                                    // Create paragraph label and content
+                                    const paragraphLabel = `Para ${match.paragraphIndex}: `;
+                                    return paragraphLabel + match.context;
+                                  })
+                                  .join(" ... ")
+                                  .split(/(<highlight>.*?<\/highlight>)/g)
+                                  .map((part, i) => {
+                                    const isHighlight =
+                                      part.startsWith("<highlight>") &&
+                                      part.endsWith("</highlight>");
+                                    const text = part.replace(
+                                      /<\/?highlight>/g,
+                                      ""
+                                    );
+
+                                    return (
+                                      <Text
+                                        key={`expanded-${i}`}
+                                        style={[
+                                          isHighlight
+                                            ? {
+                                                backgroundColor: theme.dark
+                                                  ? "#5d3211" + "70"
+                                                  : "#5d3211" + "30",
+                                                color: theme.dark
+                                                  ? "#fff"
+                                                  : "#5d3211",
+                                                fontWeight: "600",
+                                              }
+                                            : undefined,
+                                        ]}
+                                      >
+                                        {text}
+                                      </Text>
+                                    );
+                                  })
+                              : // Show only first match when not expanded
+                                sermon.sentence
+                                  .split(/(<highlight>.*?<\/highlight>)/g)
+                                  .map((part, i) => {
+                                    const isHighlight =
+                                      part.startsWith("<highlight>") &&
+                                      part.endsWith("</highlight>");
+                                    const text = part.replace(
+                                      /<\/?highlight>/g,
+                                      ""
+                                    );
+
+                                    return (
+                                      <Text
+                                        key={`context-${i}`}
+                                        style={[
+                                          isHighlight
+                                            ? {
+                                                backgroundColor: theme.dark
+                                                  ? "#5d3211" + "70"
+                                                  : "#5d3211" + "30",
+                                                color: theme.dark
+                                                  ? "#fff"
+                                                  : "#5d3211",
+                                                fontWeight: "600",
+                                              }
+                                            : undefined,
+                                        ]}
+                                      >
+                                        {text}
+                                      </Text>
+                                    );
+                                  })}
+                          </Text>
                         </View>
                       </View>
-                    </View>
 
-                    {sermon.location && (
-                      <View style={styles.locationContainer}>
-                        <Feather
-                          name="map-pin"
-                          size={12}
-                          color={
-                            theme.dark
-                              ? "rgba(255,255,255,0.4)"
-                              : "rgba(0,0,0,0.4)"
-                          }
-                          style={{ marginRight: 4 }}
-                        />
-                        <Text
-                          style={[
-                            styles.sermonLocation,
-                            {
-                              color: theme.dark
-                                ? "rgba(255,255,255,0.4)"
-                                : "rgba(0,0,0,0.4)",
-                            },
-                          ]}
-                        >
-                          {sermon.location}
-                        </Text>
-                      </View>
-                    )}
-
-                    {renderSermonText(sermon, index)}
-                  </View>
-                </Pressable>
-              ))}
+                      {/* Bottom separator line */}
+                      <View
+                        style={[
+                          styles.resultSeparator,
+                          {
+                            backgroundColor: theme.dark
+                              ? "rgba(255,255,255,0.1)"
+                              : "rgba(0,0,0,0.1)",
+                          },
+                        ]}
+                      />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
           ) : (
             <View style={styles.noResultsContainer}>
@@ -778,7 +986,6 @@ const SermonSearch = () => {
         {/* Sermon Content Modal */}
         <Modal
           animationType="slide"
-          
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
@@ -798,10 +1005,6 @@ const SermonSearch = () => {
                 styles.modalContent,
                 {
                   backgroundColor: theme.dark ? theme.colors.primary : "#fff",
-                  borderColor: theme.dark
-                    ? "rgba(255,255,255,0.1)"
-                    : "rgba(0,0,0,0.05)",
-                  maxHeight: windowHeight * 1.0, // Set maximum height to prevent overflow
                 },
               ]}
             >
@@ -818,39 +1021,22 @@ const SermonSearch = () => {
                   >
                     {selectedSermonContent?.title}
                   </Text>
+                  <Text
+                    style={{
+                      fontStyle: "italic",
+                      fontSize: 14,
+                      color: theme.dark
+                        ? "rgba(255,255,255,0.6)"
+                        : "rgba(0,0,0,0.6)",
+                      marginBottom: 8,
+                      fontFamily: "ZillaSlab",
+                    }}
+                  >
+                    {selectedSermonContent?.year} •{" "}
+                    {selectedSermonContent?.location}
+                  </Text>
                   <View style={styles.modalMetaContainer}>
-                    <View style={[styles.yearBadge, { marginRight: 8 }]}>
-                      <Text style={styles.sermonYear}>
-                        {selectedSermonContent?.year}
-                      </Text>
-                    </View>
-
-                    {selectedSermonContent?.location && (
-                      <View style={styles.locationContainer}>
-                        <Feather
-                          name="map-pin"
-                          size={12}
-                          color={
-                            theme.dark
-                              ? "rgba(255,255,255,0.4)"
-                              : "rgba(0,0,0,0.4)"
-                          }
-                          style={{ marginRight: 4 }}
-                        />
-                        <Text
-                          style={[
-                            styles.modalLocation,
-                            {
-                              color: theme.dark
-                                ? "rgba(255,255,255,0.4)"
-                                : "rgba(0,0,0,0.4)",
-                            },
-                          ]}
-                        >
-                          {selectedSermonContent?.location}
-                        </Text>
-                      </View>
-                    )}
+                    {/* Sermon details now shown above */}
                   </View>
                 </View>
                 <TouchableOpacity
@@ -869,12 +1055,9 @@ const SermonSearch = () => {
 
               <ScrollView
                 ref={modalScrollViewRef}
-                style={[
-                  styles.modalScrollView,
-                  { maxHeight: windowHeight * 0.7 }, // Limit scroll view height
-                ]}
+                style={styles.modalScrollView}
                 showsVerticalScrollIndicator={true}
-                contentContainerStyle={{ paddingBottom: 30 }}
+                contentContainerStyle={styles.modalScrollContent}
               >
                 {selectedSermonContent && renderModalContent()}
               </ScrollView>

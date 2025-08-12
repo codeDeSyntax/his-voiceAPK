@@ -10,14 +10,14 @@ const HighlightColorPalette = ({
   theme,
   currentColor,
 }) => {
-  // Define highlight colors that work well in both light and dark themes
+  // Define highlight colors that work well for text highlighting in both light and dark themes
   const highlightColors = [
-    { name: "yellow", light: "#FEF08A", dark: "#FBBF24" }, // Bright yellow
-    { name: "green", light: "#BBF7D0", dark: "#34D399" }, // Bright green
-    { name: "blue", light: "#BFDBFE", dark: "#60A5FA" }, // Bright blue
-    { name: "purple", light: "#DDD6FE", dark: "#C084FC" }, // Bright purple
-    { name: "pink", light: "#FBCFE8", dark: "#F472B6" }, // Bright pink
-    { name: "orange", light: "#FED7AA", dark: "#FB923C" }, // Bright orange
+    { name: "yellow", light: "#F59E0B", dark: "#FCD34D" }, // Amber for text
+    { name: "green", light: "#059669", dark: "#34D399" }, // Emerald for text
+    { name: "brown", light: "#8B4513", dark: "#D2B48C" }, // Brown for text (matches theme)
+    { name: "purple", light: "#7C3AED", dark: "#C084FC" }, // Violet for text
+    { name: "pink", light: "#DB2777", dark: "#F472B6" }, // Pink for text
+    { name: "orange", light: "#EA580C", dark: "#FB923C" }, // Orange for text
   ];
 
   if (!isVisible) return null;
@@ -107,7 +107,6 @@ const styles = StyleSheet.create({
     // flexWrap: "wrap",
     // width: 160,
     justifyContent: "flex-start",
-    
   },
   colorOption: {
     width: 32,

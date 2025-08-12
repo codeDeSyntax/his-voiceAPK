@@ -6,7 +6,8 @@ import { styles } from "../../styles/currentsermon";
 
 const CustomTopCardController = ({
   theme,
-  isCardOpen, setIsCardOpen,
+  isCardOpen,
+  setIsCardOpen,
   selectedSermon,
   searchSermon,
   paragraphs,
@@ -28,13 +29,12 @@ const CustomTopCardController = ({
   // Screen dimensions
   const { width, height } = Dimensions.get("window");
 
-  // State to track card visibility
-  // const [isCardOpen, setIsCardOpen] = useState(false);
+  // State to track card visibility and animation completion
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Animation values
-  const translateX = useRef(new Animated.Value(width * 0.8)).current; // Start off-screen to the right
+  const translateY = useRef(new Animated.Value(height)).current; // Start off-screen at the bottom
   const rotateAnim = useRef(new Animated.Value(0)).current;
-  const overlayOpacity = useRef(new Animated.Value(0)).current;
 
   // Handle button animation
   useEffect(() => {
@@ -55,39 +55,24 @@ const CustomTopCardController = ({
   const openCard = () => {
     setIsCardOpen(true);
 
-    Animated.parallel([
-      Animated.spring(translateX, {
-        toValue: 0,
-        tension: 80,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-      Animated.timing(overlayOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.spring(translateY, {
+      toValue: 0,
+      tension: 80,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
   };
 
   const closeCard = () => {
     setIsCardOpen(false);
 
-    Animated.parallel([
-      Animated.spring(translateX, {
-        toValue: width * 0.8,
-        tension: 80,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-      Animated.timing(overlayOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.spring(translateY, {
+      toValue: height,
+      tension: 80,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
   };
-
   const handleTogglePress = () => {
     if (isCardOpen) {
       closeCard();
@@ -98,23 +83,6 @@ const CustomTopCardController = ({
 
   return (
     <>
-      {/* Semi-transparent overlay */}
-      <Animated.View
-        style={[
-          styles.topCardOverlay,
-          {
-            opacity: isCardOpen ? 1 : 0
-          },
-        ]}
-        pointerEvents={isCardOpen ? "auto" : "none"}
-      >
-        <TouchableOpacity
-          style={{ flex: 1 }}
-          activeOpacity={1}
-          onPress={closeCard}
-        />
-      </Animated.View>
-
       {/* Toggle button */}
       <TouchableOpacity
         style={[
@@ -143,7 +111,7 @@ const CustomTopCardController = ({
           style={[
             styles.topCard,
             {
-              transform: [{ translateX: translateX }],
+              transform: [{ translateY: translateY }],
               backgroundColor: theme.colors.background,
               borderColor: theme.colors.text,
             },

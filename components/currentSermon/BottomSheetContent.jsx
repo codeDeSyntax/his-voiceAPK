@@ -37,43 +37,46 @@ const TopCardContent = ({
 }) => {
   const scrollViewRef = useRef(null);
   const router = useNavigation();
-// add ZillaSlab font family to the search input
-const [fontsLoaded] = useFonts({
-  ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-  ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
-});
+  // add ZillaSlab font family to the search input
+  const [fontsLoaded] = useFonts({
+    ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+    ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
+  });
 
-const submitSearch = useCallback(() => {
-  if (searchPhrase.trim()) {
-    // Set searching to true before starting the search
-    setSearching(true);
-    
-    // Simulate a more realistic search delay (remove for production if search is actually slow)
-    setTimeout(() => {
-      const results = searchSermon(paragraphs, searchPhrase);
-      setSearchResults(results);
-      setCurrentResultIndex(0);
+  const submitSearch = useCallback(() => {
+    if (searchPhrase.trim()) {
+      // Set searching to true before starting the search
+      setSearching(true);
 
-      if (results.length > 0 && paragraphLayouts[results[0]]) {
-        scrollToParagraph(results[0]);
-      }
-      
-      // Set searching to false once search is complete
-      setSearching(false);
-    }, 100); // 500ms delay to show loading indicator
-  } else {
-    setSearchResults([]);
-  }
-}, [
-  searchPhrase,
-  searchSermon,
-  paragraphs,
-  setSearchResults,
-  setCurrentResultIndex,
-  paragraphLayouts,
-  scrollToParagraph,
-  setSearching, // Add this dependency
-]);
+      // Simulate a more realistic search delay (remove for production if search is actually slow)
+      setTimeout(() => {
+        const results = searchSermon(paragraphs, searchPhrase);
+        setSearchResults(results);
+        setCurrentResultIndex(0);
+
+        // Note: Scroll handling is now managed by CurrentSermon component to avoid conflicts
+        // The main component will handle scrolling based on priority system
+
+        // Clear the search input after successful search
+        setSearchPhrase("");
+
+        // Set searching to false once search is complete
+        setSearching(false);
+      }, 100); // 500ms delay to show loading indicator
+    } else {
+      setSearchResults([]);
+    }
+  }, [
+    searchPhrase,
+    searchSermon,
+    paragraphs,
+    setSearchResults,
+    setCurrentResultIndex,
+    paragraphLayouts,
+    scrollToParagraph,
+    setSearching,
+    setSearchPhrase, // Add this dependency
+  ]);
 
   const clearSearch = useCallback(() => {
     setSearchPhrase("");
@@ -150,20 +153,31 @@ const submitSearch = useCallback(() => {
         {/* Sermon Information Section */}
         <View style={styles.receiptSection}>
           <Text
-            style={[styles.receiptSectionHeader, { color: theme.colors.text,fontFamily:"ZillaSlabsm" }]}
+            style={[
+              styles.receiptSectionHeader,
+              { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
+            ]}
           >
             CURRENT SERMON
           </Text>
 
           <View style={styles.receiptItem}>
-            <Text style={[styles.receiptLabel, { color: "#5d3211",fontFamily:"ZillaSlab"   }]}>
-              <MaterialIcons
-               name="book-online"
-               size={16}
-               />
+            <Text
+              style={[
+                styles.receiptLabel,
+                { color: "#5d3211", fontFamily: "ZillaSlab" },
+              ]}
+            >
+              <MaterialIcons name="book-online" size={16} />
             </Text>
             <Text
-              style={[styles.receiptValue, { color: theme.dark ? "white" :"#5d3211",fontFamily:"ZillaSlab" }]}
+              style={[
+                styles.receiptValue,
+                {
+                  color: theme.dark ? "white" : "#5d3211",
+                  fontFamily: "ZillaSlab",
+                },
+              ]}
               numberOfLines={3}
             >
               {selectedSermon?.title || "N/A"}
@@ -172,13 +186,20 @@ const submitSearch = useCallback(() => {
 
           {selectedSermon?.date && (
             <View style={styles.receiptItem}>
-              <Text style={[styles.receiptLabel, { color: theme.colors.text,fontFamily:"ZillaSlab" }]}>
-                <MaterialIcons
-               name="date-range"
-               size={16}
-               />
+              <Text
+                style={[
+                  styles.receiptLabel,
+                  { color: theme.colors.text, fontFamily: "ZillaSlab" },
+                ]}
+              >
+                <MaterialIcons name="date-range" size={16} />
               </Text>
-              <Text style={[styles.receiptValue, { color: theme.colors.text,fontFamily:"ZillaSlab" }]}>
+              <Text
+                style={[
+                  styles.receiptValue,
+                  { color: theme.colors.text, fontFamily: "ZillaSlab" },
+                ]}
+              >
                 {selectedSermon.date}
               </Text>
             </View>
@@ -186,11 +207,13 @@ const submitSearch = useCallback(() => {
 
           {selectedSermon?.location && (
             <View style={styles.receiptItem}>
-              <Text style={[styles.receiptLabel, { color: theme.colors.text,fontFamily:"ZillaSlab" }]}>
-                <MaterialIcons
-               name="location-on"
-               size={16}
-               />
+              <Text
+                style={[
+                  styles.receiptLabel,
+                  { color: theme.colors.text, fontFamily: "ZillaSlab" },
+                ]}
+              >
+                <MaterialIcons name="location-on" size={16} />
               </Text>
               <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
                 {selectedSermon.location}
@@ -204,7 +227,10 @@ const submitSearch = useCallback(() => {
         {/* Search Section */}
         <View style={styles.receiptSection}>
           <Text
-            style={[styles.receiptSectionHeader, { color: theme.colors.text,fontFamily:"ZillaSlabsm" }]}
+            style={[
+              styles.receiptSectionHeader,
+              { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
+            ]}
           >
             TEXT SEARCH
           </Text>
@@ -216,23 +242,28 @@ const submitSearch = useCallback(() => {
                 {
                   color: theme.colors.text,
                   borderColor: theme.dark ? theme.colors.primary : "#bbb8b8",
-                  fontFamily:"ZillaSlab",
+                  fontFamily: "ZillaSlab",
                 },
               ]}
               placeholder="Search paragraph or phrase..."
-              placeholderTextColor={theme.dark ? theme.colors.text + "50" : "#5d321190"}
+              placeholderTextColor={
+                theme.dark ? theme.colors.text + "50" : "#5d321190"
+              }
               value={searchPhrase}
               onChangeText={setSearchPhrase}
               returnKeyType="search"
             />
             {searching ? (
-              <ActivityIndicator 
+              <ActivityIndicator
                 style={styles.searchLoader}
                 color={theme.dark ? theme.colors.hlight : "#5d3211"}
                 size="small"
               />
             ) : searchPhrase ? (
-              <TouchableOpacity onPress={clearSearch} style={styles.searchLoader}>
+              <TouchableOpacity
+                onPress={clearSearch}
+                style={styles.searchLoader}
+              >
                 <Feather
                   name="x"
                   size={24}
@@ -246,7 +277,9 @@ const submitSearch = useCallback(() => {
               style={[
                 styles.searchButton,
                 {
-                  backgroundColor: theme.dark ? theme.colors.primary : "#5d3211",
+                  backgroundColor: theme.dark
+                    ? theme.colors.primary
+                    : "#5d3211",
                   borderColor: theme.dark ? theme.colors.primary : "#5d3211",
                 },
               ]}
@@ -331,7 +364,10 @@ const submitSearch = useCallback(() => {
         {/* Actions Section */}
         <View style={styles.receiptSection}>
           <Text
-            style={[styles.receiptSectionHeader, { color: theme.colors.text,fontFamily:"ZillaSlabsm" }]}
+            style={[
+              styles.receiptSectionHeader,
+              { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
+            ]}
           >
             QUICK ACTIONS
           </Text>
@@ -340,7 +376,12 @@ const submitSearch = useCallback(() => {
             <TouchableOpacity
               style={[
                 styles.receiptActionButton,
-                { borderColor: theme.colors.text,backgroundColor:theme.dark ? theme.colors.primary + '90' : '#f5f5f5' },
+                {
+                  borderColor: theme.colors.text,
+                  backgroundColor: theme.dark
+                    ? theme.colors.primary + "90"
+                    : "#f5f5f5",
+                },
               ]}
               onPress={onScrollToTop}
               activeOpacity={0.8}
@@ -360,7 +401,12 @@ const submitSearch = useCallback(() => {
             <TouchableOpacity
               style={[
                 styles.receiptActionButton,
-                { borderColor: theme.colors.text,backgroundColor:theme.dark ? theme.colors.primary + '90' : '#f5f5f5' },
+                {
+                  borderColor: theme.colors.text,
+                  backgroundColor: theme.dark
+                    ? theme.colors.primary + "90"
+                    : "#f5f5f5",
+                },
               ]}
               onPress={onScrollToBottom}
               activeOpacity={0.8}
@@ -380,7 +426,12 @@ const submitSearch = useCallback(() => {
             <TouchableOpacity
               style={[
                 styles.receiptActionButton,
-                { borderColor: theme.colors.text,backgroundColor:theme.dark ? theme.colors.primary + '90' : '#f5f5f5' },
+                {
+                  borderColor: theme.colors.text,
+                  backgroundColor: theme.dark
+                    ? theme.colors.primary + "90"
+                    : "#f5f5f5",
+                },
               ]}
               onPress={onBack}
               activeOpacity={0.8}
@@ -400,7 +451,12 @@ const submitSearch = useCallback(() => {
             <TouchableOpacity
               style={[
                 styles.receiptActionButton,
-                { borderColor: theme.colors.text,backgroundColor:theme.dark ? theme.colors.primary + '90' : '#f5f5f5' },
+                {
+                  borderColor: theme.colors.text,
+                  backgroundColor: theme.dark
+                    ? theme.colors.primary + "90"
+                    : "#f5f5f5",
+                },
               ]}
               onPress={() => router.push("Settings")}
               activeOpacity={0.8}

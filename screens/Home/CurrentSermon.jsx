@@ -16,6 +16,8 @@ import {
   Keyboard,
   ToastAndroid,
   Alert,
+  ImageBackground,
+  StyleSheet,
 } from "react-native";
 import { useAppContext } from "../../Logic/globalState";
 import {
@@ -31,9 +33,31 @@ import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
 import DownloadSermon from "../../components/currentSermon/PlaySermon";
 import CustomTopCardController from "../../components/currentSermon/BottomSheetController";
-import LoadingScreen from "../../components/Loader";
+import LoadingScreen, { SermonSkeletonLoader } from "../../components/Loader";
+import { useFonts } from "expo-font";
+import { LinearGradient } from "expo-linear-gradient";
+import { styles as globalStyles } from "../../styles/Allsermons";
 
-const CurrentSermon = React.memo(() => {
+const AnimatedBackground = React.memo(({ theme }) => (
+  <View style={globalStyles.backgroundContainer}>
+    <ImageBackground
+      source={require("../../assets/gradbg.png")}
+      style={globalStyles.backgroundImage}
+      blurRadius={4}
+      resizeMode="cover"
+    >
+      <LinearGradient
+        colors={[
+          theme.dark ? "rgba(28, 25, 23, 0.47)" : "rgba(250, 250, 250, 0.87)",
+          theme.dark ? "rgba(28, 25, 23, 0.45)" : "rgba(250, 250, 250, 0.95)",
+        ]}
+        style={StyleSheet.absoluteFill}
+      />
+    </ImageBackground>
+  </View>
+));
+
+const CurrentSermon = React.memo(({ route }) => {
   const {
     selectedSermon,
     settings,
@@ -42,7 +66,17 @@ const CurrentSermon = React.memo(() => {
     updateLastReadPosition,
   } = useAppContext();
   const router = useNavigation();
-  const [searchPhrase, setSearchPhrase] = useState(searchText || "");
+
+  // Get navigation parameters
+  const initialParagraph = route?.params?.initialParagraph || 0;
+  const searchPhraseFromNav = route?.params?.searchPhrase || "";
+  const navigationSource = route?.params?.source; // 'recent', 'search', etc.
+  const resumeToParagraph = route?.params?.resumeToParagraph;
+  const scrollToParagraphFromBookmark = route?.params?.scrollToParagraph; // From bookmarks
+
+  const [searchPhrase, setSearchPhrase] = useState(
+    searchPhraseFromNav || searchText || ""
+  );
   const [searchResults, setSearchResults] = useState([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
@@ -59,8 +93,20 @@ const CurrentSermon = React.memo(() => {
   const [paragraphs, setParagraphs] = useState([]);
   const [isLoadingParagraphs, setIsLoadingParagraphs] = useState(false);
 
+  // Scroll priority management
+  const [scrollPriority, setScrollPriority] = useState(null); // 'search', 'lastread', 'bottomsheet'
+  const [hasHandledInitialScroll, setHasHandledInitialScroll] = useState(false);
+
   const scrollViewRef = useRef(null);
   const scrollTimeout = useRef(null);
+  const isUserScrolling = useRef(false); // Track if user is actively scrolling
+  const userScrollTimer = useRef(null); // Timer to detect when user stops scrolling
+
+  // Load fonts to ensure ZillaSlab is available
+  const [fontsLoaded] = useFonts({
+    ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+    ZillaSlabSemiBold: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
+  });
 
   // Show selection tip on first load
   useEffect(() => {
@@ -130,10 +176,21 @@ const CurrentSermon = React.memo(() => {
     (event) => {
       const scrollY = event.nativeEvent.contentOffset.y;
 
-      // Clear existing timeout
+      // Mark that user is actively scrolling
+      isUserScrolling.current = true;
+
+      // Clear existing timers
       if (scrollTimeout.current) {
         clearTimeout(scrollTimeout.current);
       }
+      if (userScrollTimer.current) {
+        clearTimeout(userScrollTimer.current);
+      }
+
+      // Reset user scrolling flag after user stops - moderate delay for safety
+      userScrollTimer.current = setTimeout(() => {
+        isUserScrolling.current = false;
+      }, 500); // Reduced from 1000ms to 500ms for better responsiveness
 
       // Set a new timeout to update position after user stops scrolling
       scrollTimeout.current = setTimeout(() => {
@@ -161,43 +218,172 @@ const CurrentSermon = React.memo(() => {
     [paragraphLayouts, selectedSermon, updateLastReadPosition]
   );
 
-  // Scroll to last read position when sermon loads
+  // Scroll to initial paragraph from search navigation (HIGHEST PRIORITY)
+  useEffect(() => {
+    if (
+      initialParagraph > 0 &&
+      paragraphLayouts[initialParagraph] &&
+      route?.params?.initialParagraph !== undefined &&
+      !hasHandledInitialScroll &&
+      (navigationSource === "search" || route?.params?.source === "search") // Ensure this is search navigation
+    ) {
+      setScrollPriority("search");
+      setTimeout(() => {
+        scrollToParagraph(initialParagraph, true); // Force this scroll - highest priority
+
+        // Show toast message
+        const message = `Found in paragraph ${initialParagraph + 1}`;
+        if (Platform.OS === "android") {
+          ToastAndroid.show(message, ToastAndroid.SHORT);
+        } else {
+          Alert.alert("Search Result", message);
+        }
+
+        setHasHandledInitialScroll(true);
+        // Clear priority after successful scroll
+        setTimeout(() => setScrollPriority(null), 2000);
+      }, 1200); // Delay to ensure layouts are ready
+    }
+  }, [
+    initialParagraph,
+    paragraphLayouts,
+    scrollToParagraph,
+    route?.params,
+    hasHandledInitialScroll,
+    navigationSource,
+  ]);
+
+  // Scroll to resume paragraph from recent navigation (HIGH-MEDIUM PRIORITY)
+  useEffect(() => {
+    if (
+      navigationSource === "recent" &&
+      resumeToParagraph !== undefined &&
+      resumeToParagraph > 0 &&
+      paragraphLayouts[resumeToParagraph] &&
+      !hasHandledInitialScroll && // Don't interfere with search navigation
+      scrollPriority === null // Don't interfere with higher priority operations
+    ) {
+      setScrollPriority("recent");
+      setTimeout(() => {
+        scrollToParagraph(resumeToParagraph, true); // Force this scroll - user chose to resume
+
+        // Show toast message
+        const message = `Resuming from paragraph ${resumeToParagraph + 1}`;
+        if (Platform.OS === "android") {
+          ToastAndroid.show(message, ToastAndroid.SHORT);
+        } else {
+          Alert.alert("Resuming", message);
+        }
+
+        setHasScrolledToLastPosition(true); // Mark as handled to prevent default scroll
+        // Clear priority after successful scroll
+        setTimeout(() => setScrollPriority(null), 2000);
+      }, 1000); // Delay to ensure layouts are ready
+    }
+  }, [
+    navigationSource,
+    resumeToParagraph,
+    paragraphLayouts,
+    hasHandledInitialScroll,
+    scrollPriority,
+    scrollToParagraph,
+  ]);
+
+  // Scroll to bookmark paragraph (HIGH-MEDIUM PRIORITY)
+  useEffect(() => {
+    if (
+      scrollToParagraphFromBookmark !== undefined &&
+      scrollToParagraphFromBookmark >= 0 &&
+      paragraphLayouts[scrollToParagraphFromBookmark] &&
+      !hasHandledInitialScroll && // Don't interfere with search navigation
+      scrollPriority === null && // Don't interfere with higher priority operations
+      (navigationSource === "bookmark" || route?.params?.source === "bookmark") // Ensure this is bookmark navigation
+    ) {
+      setScrollPriority("bookmark");
+      setTimeout(() => {
+        scrollToParagraph(scrollToParagraphFromBookmark, true); // Force this scroll - user chose bookmark
+
+        // Show toast message
+        const message = `Jumped to bookmarked paragraph ${
+          scrollToParagraphFromBookmark + 1
+        }`;
+        if (Platform.OS === "android") {
+          ToastAndroid.show(message, ToastAndroid.SHORT);
+        } else {
+          Alert.alert("Bookmark", message);
+        }
+
+        setHasScrolledToLastPosition(true); // Mark as handled to prevent default scroll
+        // Clear priority after successful scroll
+        setTimeout(() => setScrollPriority(null), 2000);
+      }, 1000); // Delay to ensure layouts are ready
+    }
+  }, [
+    scrollToParagraphFromBookmark,
+    paragraphLayouts,
+    hasHandledInitialScroll,
+    scrollPriority,
+    scrollToParagraph,
+    navigationSource,
+    route?.params?.source,
+  ]);
+
+  // Scroll to last read position when sermon loads (LOWEST PRIORITY)
   useEffect(() => {
     if (
       selectedSermon?.lastReadParagraph !== undefined &&
       paragraphLayouts[selectedSermon.lastReadParagraph] &&
-      !hasScrolledToLastPosition
+      !hasScrolledToLastPosition &&
+      !hasHandledInitialScroll && // Don't interfere with search navigation
+      navigationSource !== "recent" && // Don't interfere with recent navigation
+      scrollToParagraphFromBookmark === undefined && // Don't interfere with bookmark navigation
+      scrollPriority === null && // Don't interfere with other scroll operations
+      route?.params?.initialParagraph === undefined && // Don't auto-scroll if coming from search
+      !isUserScrolling.current // CRITICAL: Don't interfere with user scrolling
     ) {
+      setScrollPriority("lastread");
       setTimeout(() => {
-        scrollToParagraph(selectedSermon.lastReadParagraph);
+        // Double-check user isn't scrolling before executing
+        if (!isUserScrolling.current) {
+          scrollToParagraph(selectedSermon.lastReadParagraph, true); // Force this scroll
 
-        // Show toast message
-        const message = `You reached paragraph ${
-          selectedSermon.lastReadParagraph + 1
-        } the last time`;
-        if (Platform.OS === "android") {
-          ToastAndroid.show(message, ToastAndroid.LONG);
-        } else {
-          Alert.alert("Last Position", message);
+          // Show toast message
+          const message = `You reached paragraph ${
+            selectedSermon.lastReadParagraph + 1
+          } the last time`;
+          if (Platform.OS === "android") {
+            ToastAndroid.show(message, ToastAndroid.LONG);
+          } else {
+            Alert.alert("Last Position", message);
+          }
+
+          setHasScrolledToLastPosition(true);
+          // Clear priority after successful scroll
+          setTimeout(() => setScrollPriority(null), 2000);
         }
-
-        setHasScrolledToLastPosition(true);
-      }, 1000); // Delay to ensure layouts are ready
+      }, 1500); // Increased delay to ensure user has settled
     }
   }, [
     selectedSermon,
     paragraphLayouts,
     hasScrolledToLastPosition,
+    hasHandledInitialScroll,
+    navigationSource,
+    scrollToParagraphFromBookmark,
+    scrollPriority,
     scrollToParagraph,
+    route?.params,
   ]);
 
   // Reset scroll state when sermon changes
   useEffect(() => {
     setHasScrolledToLastPosition(false);
     setCurrentVisibleParagraph(0);
+    setHasHandledInitialScroll(false);
+    setScrollPriority(null);
   }, [selectedSermon?.id]);
 
-  // Update search results when search phrase changes
+  // Update search results when search phrase changes (MEDIUM PRIORITY)
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (searchPhrase) {
@@ -208,8 +394,17 @@ const CurrentSermon = React.memo(() => {
           setSearching(false);
           setCurrentResultIndex(0);
 
-          if (results.length > 0 && paragraphLayouts[results[0]]) {
+          // Only auto-scroll if not interfering with higher priority operations
+          if (
+            results.length > 0 &&
+            paragraphLayouts[results[0]] &&
+            scrollPriority !== "search" && // Don't interfere with external search navigation
+            !hasHandledInitialScroll // Don't interfere with initial search scroll
+          ) {
+            setScrollPriority("bottomsheet");
             scrollToParagraph(results[0]);
+            // Clear priority after scroll
+            setTimeout(() => setScrollPriority(null), 1500);
           }
         } catch (error) {
           console.log(error);
@@ -222,7 +417,14 @@ const CurrentSermon = React.memo(() => {
     const timeout = setTimeout(fetchSearchResults, 300); // Debounce delay
 
     return () => clearTimeout(timeout);
-  }, [searchPhrase, paragraphs, paragraphLayouts, scrollToParagraph]);
+  }, [
+    searchPhrase,
+    paragraphs,
+    paragraphLayouts,
+    scrollToParagraph,
+    scrollPriority,
+    hasHandledInitialScroll,
+  ]);
 
   // Store paragraph layout information for scrolling
   const handleParagraphLayout = useCallback((index, event) => {
@@ -244,8 +446,44 @@ const CurrentSermon = React.memo(() => {
 
   // Scroll to specific paragraph by index
   const scrollToParagraph = useCallback(
-    (index) => {
+    (index, forcePriority = false) => {
       if (paragraphLayouts[index] && scrollViewRef.current) {
+        // CRITICAL: Only block auto-scroll for low-priority operations when user is scrolling
+        // Allow forced navigation scrolls (search, bookmark, recent) to proceed
+        if (
+          !forcePriority &&
+          isUserScrolling.current &&
+          scrollPriority === "lastread"
+        ) {
+          console.log(
+            "User is actively scrolling, cancelling low-priority auto-scroll"
+          );
+          return;
+        }
+
+        // Check if we should respect priority system (unless forced)
+        if (!forcePriority && scrollPriority) {
+          // Priority order: search > recent/bookmark > bottomsheet > lastread
+          const priorityOrder = [
+            "search",
+            "recent",
+            "bookmark",
+            "bottomsheet",
+            "lastread",
+          ];
+          const currentPriorityIndex = priorityOrder.indexOf(scrollPriority);
+
+          // Don't scroll if a higher or equal priority operation is in progress
+          // bottomsheet can be overridden by search, recent, or bookmark
+          if (
+            scrollPriority === "search" ||
+            scrollPriority === "recent" ||
+            scrollPriority === "bookmark"
+          ) {
+            return;
+          }
+        }
+
         // Calculate position to scroll to, with some padding to see context
         const scrollPosition = Math.max(0, paragraphLayouts[index].y - 100);
 
@@ -255,34 +493,52 @@ const CurrentSermon = React.memo(() => {
         });
       }
     },
-    [paragraphLayouts]
+    [paragraphLayouts, scrollPriority]
   );
 
   // Scroll to top of sermon
   const scrollToTop = useCallback(() => {
+    // Clear any ongoing priority operations for manual navigation
+    setScrollPriority(null);
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
   // Scroll to bottom of sermon
   const scrollToBottom = useCallback(() => {
+    // Clear any ongoing priority operations for manual navigation
+    setScrollPriority(null);
     scrollViewRef.current?.scrollTo({ y: contentHeight, animated: true });
   }, [contentHeight]);
 
   // Navigate to a search result
   const navigateToResult = useCallback(
     (paragraphIndex) => {
-      scrollToParagraph(paragraphIndex);
+      // Only allow navigation if user isn't actively scrolling
+      if (isUserScrolling.current) {
+        console.log("User is scrolling, deferring navigation");
+        return;
+      }
 
-      // Show feedback
-      setFeedbackMessage(`Navigated to paragraph ${paragraphIndex + 1}`);
-      setShowFeedback(true);
+      // Clear any low priority operations and set medium priority for manual navigation
+      if (scrollPriority === "lastread") {
+        setScrollPriority("bottomsheet");
+      }
 
-      // Hide feedback after delay
+      // Add a small delay to prevent conflicts with user gestures
       setTimeout(() => {
-        setShowFeedback(false);
-      }, 2000);
+        scrollToParagraph(paragraphIndex, true); // Force this scroll - user-initiated action
+
+        // Show feedback
+        setFeedbackMessage(`Navigated to paragraph ${paragraphIndex + 1}`);
+        setShowFeedback(true);
+
+        // Hide feedback after delay
+        setTimeout(() => {
+          setShowFeedback(false);
+        }, 2000);
+      }, 100); // Small delay to ensure smooth interaction
     },
-    [scrollToParagraph]
+    [scrollToParagraph, scrollPriority]
   );
 
   // Navigate back to all sermons
@@ -296,10 +552,13 @@ const CurrentSermon = React.memo(() => {
       if (scrollTimeout.current) {
         clearTimeout(scrollTimeout.current);
       }
+      if (userScrollTimer.current) {
+        clearTimeout(userScrollTimer.current);
+      }
     };
   }, []);
 
-  // Render paragraphs with numbering
+  // Render paragraphs with numbering - Optimized with partial virtualization
   const renderSermonText = useMemo(() => {
     if (isLoadingParagraphs) {
       return (
@@ -311,18 +570,58 @@ const CurrentSermon = React.memo(() => {
       );
     }
 
-    return paragraphs.map((paragraph, index) => (
-      <ParagraphText
-        key={`paragraph-${index}`}
-        paragraph={paragraph}
-        index={index}
-        searchPhrase={searchPhrase}
-        theme={theme}
-        settings={settings}
-        onLayout={(event) => handleParagraphLayout(index, event)}
-        selectedSermon={selectedSermon}
-      />
-    ));
+    // Only render visible paragraphs + buffer for performance
+    const BUFFER_SIZE = 8;
+    const visibleStart = Math.max(0, currentVisibleParagraph - BUFFER_SIZE);
+    const visibleEnd = Math.min(
+      paragraphs.length,
+      currentVisibleParagraph + BUFFER_SIZE + 15
+    );
+
+    const elements = [];
+
+    // Add spacer for skipped paragraphs at the start
+    if (visibleStart > 0) {
+      elements.push(
+        <View
+          key="spacer-start"
+          style={{ height: visibleStart * 80 }} // Approximate paragraph height
+        />
+      );
+    }
+
+    // Render visible paragraphs
+    elements.push(
+      ...paragraphs
+        .slice(visibleStart, visibleEnd)
+        .map((paragraph, relativeIndex) => {
+          const actualIndex = visibleStart + relativeIndex;
+          return (
+            <ParagraphText
+              key={`paragraph-${actualIndex}`}
+              paragraph={paragraph}
+              index={actualIndex}
+              searchPhrase={searchPhrase}
+              theme={theme}
+              settings={settings}
+              onLayout={(event) => handleParagraphLayout(actualIndex, event)}
+              selectedSermon={selectedSermon}
+            />
+          );
+        })
+    );
+
+    // Add spacer for skipped paragraphs at the end
+    if (visibleEnd < paragraphs.length) {
+      elements.push(
+        <View
+          key="spacer-end"
+          style={{ height: (paragraphs.length - visibleEnd) * 80 }}
+        />
+      );
+    }
+
+    return elements;
   }, [
     paragraphs,
     isLoadingParagraphs,
@@ -331,10 +630,12 @@ const CurrentSermon = React.memo(() => {
     settings,
     handleParagraphLayout,
     selectedSermon,
+    currentVisibleParagraph,
   ]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.primary }}>
+    <View style={[globalStyles.container, { flex: 1 }]}>
+      <AnimatedBackground theme={theme} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "padding"}
@@ -342,22 +643,43 @@ const CurrentSermon = React.memo(() => {
         enabled={keyboardVisible}
       >
         <DraggableFloatingBackButton />
-        <View
-          style={[styles.container, { backgroundColor: theme.colors.primary }]}
-        >
+        <View style={[styles.container, { backgroundColor: "transparent" }]}>
           {selectedSermon?.type === "mp3" ? (
             <DownloadSermon />
           ) : (
             <>
-              {/* Show loading screen while paragraphs are being processed */}
-              {isLoadingParagraphs ? (
-                <LoadingScreen message="getting the message..." />
+              {/* Show skeleton loader while paragraphs are being processed or fonts are loading */}
+              {isLoadingParagraphs || !fontsLoaded ? (
+                <SermonSkeletonLoader
+                  message={
+                    !fontsLoaded ? "Loading fonts..." : "getting the message..."
+                  }
+                />
               ) : (
                 <>
                   <ScrollView
                     ref={scrollViewRef}
                     scrollEventThrottle={16}
                     onScroll={handleScroll}
+                    onScrollBeginDrag={() => {
+                      // User started scrolling - set flag but be selective about clearing priorities
+                      isUserScrolling.current = true;
+                      // Only clear low-priority auto-scroll operations
+                      if (scrollPriority === "lastread") {
+                        setScrollPriority(null);
+                      }
+                      // Don't interfere with navigation priorities (search, recent, bookmark)
+                    }}
+                    onMomentumScrollBegin={() => {
+                      // Momentum scrolling started - user is still considered active
+                      isUserScrolling.current = true;
+                    }}
+                    onMomentumScrollEnd={() => {
+                      // Momentum scrolling ended - shorter delay before allowing auto-scroll
+                      setTimeout(() => {
+                        isUserScrolling.current = false;
+                      }, 300); // Reduced from 500ms to 300ms
+                    }}
                     contentContainerStyle={[
                       styles.scrollViewContainer,
                       { flexGrow: 1 },
@@ -370,7 +692,10 @@ const CurrentSermon = React.memo(() => {
                       <Text
                         style={[
                           styles.titleText,
-                          { color: theme.dark ? "#854412" : "#5d3211" },
+                          {
+                            color: theme.dark ? "#854412" : "#5d3211",
+                            fontFamily: settings.fontFamily || "ZillaSlab",
+                          },
                         ]}
                       >
                         {selectedSermon?.title}
@@ -379,7 +704,10 @@ const CurrentSermon = React.memo(() => {
                         <Text
                           style={[
                             styles.locationText,
-                            { color: theme.colors.text },
+                            {
+                              color: theme.colors.text,
+                              fontFamily: settings.fontFamily || "ZillaSlab",
+                            },
                           ]}
                         >
                           {selectedSermon?.location}

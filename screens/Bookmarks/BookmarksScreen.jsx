@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -9,29 +9,34 @@ import {
   Platform,
   StatusBar,
   StyleSheet,
-} from 'react-native';
-import { useAppContext } from '../../Logic/globalState';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { responsiveFontSize, horizontalScale, verticalScale, spacing } from '../../Utils/responsiveUtils';
-import { styles } from '../../styles/Allsermons';
-import { LinearGradient } from 'expo-linear-gradient';
-import DraggableFloatingBackButton from '../../components/FloatButton';
+} from "react-native";
+import { useAppContext } from "../../Logic/globalState";
+import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import {
+  responsiveFontSize,
+  horizontalScale,
+  verticalScale,
+  spacing,
+} from "../../Utils/responsiveUtils";
+import { styles } from "../../styles/Allsermons";
+import { LinearGradient } from "expo-linear-gradient";
+import DraggableFloatingBackButton from "../../components/FloatButton";
 
-const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 44 : StatusBar.currentHeight;
+const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 44 : StatusBar.currentHeight;
 
 const AnimatedBackground = React.memo(({ theme }) => (
   <View style={styles.backgroundContainer}>
     <ImageBackground
-      source={require('../../assets/lib2.jpg')}
+      source={require("../../assets/gradbg.png")}
       style={styles.backgroundImage}
       blurRadius={4}
-      resizeMode="repeat"
+      resizeMode="cover"
     >
       <LinearGradient
         colors={[
-        theme.dark ? 'rgba(28, 25, 23, 0.97)' : 'rgba(250, 250, 250, 0.87)',
-          theme.dark ? 'rgba(28, 25, 23, 0.95)' : 'rgba(250, 250, 250, 0.95)',
+          theme.dark ? "rgba(28, 25, 23, 0.47)" : "rgba(250, 250, 250, 0.87)",
+          theme.dark ? "rgba(28, 25, 23, 0.45)" : "rgba(250, 250, 250, 0.95)",
         ]}
         style={StyleSheet.absoluteFill}
       />
@@ -40,50 +45,78 @@ const AnimatedBackground = React.memo(({ theme }) => (
 ));
 
 const TableHeader = React.memo(({ theme }) => (
-  <View style={[styles.tableHeader, { 
-    backgroundColor: theme.dark ? theme.colors.primary + '20' : '#f5f5f5',
-    borderColor: theme.dark ? theme.colors.primary : '#bbb8b8',
-  }]}>
-    <Text style={[styles.tableHeaderText, { 
-      color: theme.colors.text,
-      flex: 1,
-    }]}>Title & Paragraph</Text>
-    <Text style={[styles.tableHeaderText, { 
-      color: theme.colors.text,
-      flex: 1,
-      textAlign: 'center'
-    }]}>Date</Text>
-    <Text style={[styles.tableHeaderText, { 
-      color: theme.colors.text,
-      textAlign: 'center'
-    }]}>Actions</Text>
+  <View
+    style={[
+      styles.tableHeader,
+      {
+        backgroundColor: theme.dark ? theme.colors.primary + "20" : "#f5f5f5",
+        borderColor: theme.dark ? theme.colors.primary : "#bbb8b8",
+      },
+    ]}
+  >
+    <Text
+      style={[
+        styles.tableHeaderText,
+        {
+          color: theme.colors.text,
+          flex: 1,
+        },
+      ]}
+    >
+      Title & Paragraph
+    </Text>
+    <Text
+      style={[
+        styles.tableHeaderText,
+        {
+          color: theme.colors.text,
+          flex: 1,
+          textAlign: "center",
+        },
+      ]}
+    >
+      Date
+    </Text>
+    <Text
+      style={[
+        styles.tableHeaderText,
+        {
+          color: theme.colors.text,
+          textAlign: "center",
+        },
+      ]}
+    >
+      Actions
+    </Text>
   </View>
 ));
 
 const BookmarksScreen = () => {
-  const { theme, bookmarks, removeBookmark, setSelectedSermon } = useAppContext();
+  const { theme, bookmarks, removeBookmark, setSelectedSermon } =
+    useAppContext();
   const navigation = useNavigation();
 
   const handleBookmarkPress = (bookmark) => {
     setSelectedSermon(bookmark.sermon);
-    navigation.navigate('currentsermon', {
-      scrollToParagraph: bookmark.paragraphIndex
+    navigation.navigate("currentsermon", {
+      source: "bookmark", // Add source to identify bookmark navigation
+      scrollToParagraph: bookmark.paragraphIndex,
     });
   };
 
   const handleDeleteBookmark = (bookmarkId) => {
     Alert.alert(
-      'Delete Bookmark',
-      'Are you sure you want to delete this bookmark?',
+      "Delete Bookmark",
+      "Are you sure you want to delete this bookmark?",
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Delete',
+          text: "Delete",
           onPress: () => removeBookmark(bookmarkId),
-          style: 'destructive',
+          style: "destructive",
         },
       ]
     );
@@ -94,8 +127,8 @@ const BookmarksScreen = () => {
       style={[
         styles.tableRow,
         {
-          backgroundColor: theme.dark ? 'transparent' : 'transparent',
-          borderColor: theme.dark ? theme.colors.primary : '#bbb8b8',
+          backgroundColor: theme.dark ? "transparent" : "transparent",
+          borderColor: theme.dark ? theme.colors.primary : "#bbb8b8",
           borderWidth: 1,
           borderRadius: 10,
         },
@@ -128,7 +161,7 @@ const BookmarksScreen = () => {
         </Text>
       </View>
 
-      <View style={[styles.tableCell, { flex: 1, alignItems: 'center' }]}>
+      <View style={[styles.tableCell, { flex: 1, alignItems: "center" }]}>
         <Text
           style={[
             styles.tableCellDate,
@@ -141,7 +174,12 @@ const BookmarksScreen = () => {
         </Text>
       </View>
 
-      <View style={[styles.tableCell, { width: responsiveFontSize(30), alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.tableCell,
+          { width: responsiveFontSize(30), alignItems: "center" },
+        ]}
+      >
         <TouchableOpacity
           onPress={() => handleDeleteBookmark(item.id)}
           style={styles.deleteButton}
@@ -149,7 +187,7 @@ const BookmarksScreen = () => {
           <Ionicons
             name="trash-outline"
             size={responsiveFontSize(16)}
-            color={theme.dark ? theme.colors.hlight : '#5d3211'}
+            color={theme.dark ? theme.colors.hlight : "#5d3211"}
           />
         </TouchableOpacity>
       </View>
@@ -158,21 +196,26 @@ const BookmarksScreen = () => {
 
   return (
     <View style={[styles.container, { paddingTop: STATUSBAR_HEIGHT }]}>
-        <DraggableFloatingBackButton/>
+      <DraggableFloatingBackButton />
       <AnimatedBackground theme={theme} />
       <View style={styles.contentContainer}>
         {bookmarks.length === 0 ? (
-          <View style={[styles.emptyContainer,{justifyContent:"center",alignItems:"center",height:"80%"}]}>
+          <View
+            style={[
+              styles.emptyContainer,
+              { justifyContent: "center", alignItems: "center", height: "80%" },
+            ]}
+          >
             <Ionicons
               name="bookmark-outline"
               size={responsiveFontSize(50)}
-              color={theme.dark ? theme.colors.text + '50' : '#5d321150'}
+              color={theme.dark ? theme.colors.text + "50" : "#5d321150"}
             />
             <Text
               style={[
                 styles.emptyText,
                 {
-                  color: theme.dark ? theme.colors.text + '80' : '#5d3211',
+                  color: theme.dark ? theme.colors.text + "80" : "#5d3211",
                 },
               ]}
             >
@@ -195,4 +238,4 @@ const BookmarksScreen = () => {
   );
 };
 
-export default BookmarksScreen; 
+export default BookmarksScreen;

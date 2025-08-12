@@ -1,5 +1,10 @@
 import { StyleSheet } from "react-native";
-import { responsiveFontSize, horizontalScale, verticalScale, spacing } from '../Utils/responsiveUtils';
+import {
+  responsiveFontSize,
+  horizontalScale,
+  verticalScale,
+  spacing,
+} from "../Utils/responsiveUtils";
 
 export const styles = StyleSheet.create({
   container: {
@@ -11,8 +16,8 @@ export const styles = StyleSheet.create({
   },
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   contentContainer: {
     flex: 1,
@@ -24,31 +29,31 @@ export const styles = StyleSheet.create({
   },
   // Table styles
   tableHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     marginHorizontal: spacing.md,
     marginBottom: spacing.xs,
     borderBottomWidth: 1,
-    borderStyle: 'solid',
+    borderStyle: "solid",
   },
   tableHeaderText: {
     fontSize: responsiveFontSize(14),
-    fontFamily: 'ZillaSlab_smb',
-    fontWeight: '600',
+    fontFamily: "ZillaSlab_smb",
+    fontWeight: "600",
   },
   tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     marginBottom: spacing.xs,
     borderBottomWidth: 1,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
   tableCell: {
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   tableCellTitle: {
     fontSize: responsiveFontSize(16),
@@ -56,13 +61,13 @@ export const styles = StyleSheet.create({
   },
   tableCellLocation: {
     fontSize: responsiveFontSize(12),
-    fontStyle: 'italic',
-    fontFamily: 'serif',
+    fontStyle: "italic",
+    fontFamily: "ZillaSlab",
   },
   tableCellDate: {
     fontSize: responsiveFontSize(14),
-    fontStyle: 'italic',
-    fontFamily: 'serif',
+    fontStyle: "italic",
+    fontFamily: "ZillaSlab",
   },
   // Modal styles
   modalOverlay: {
@@ -134,25 +139,25 @@ export const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     height: verticalScale(50),
     borderRadius: horizontalScale(8),
     paddingHorizontal: spacing.sm,
-    position: 'relative',
+    position: "relative",
   },
   placeholderContainer: {
-    position: 'absolute',
+    position: "absolute",
     paddingHorizontal: spacing.xs,
     zIndex: 1,
   },
   placeholderText: {
-    fontStyle: 'italic',
+    fontStyle: "italic",
     fontSize: responsiveFontSize(14),
   },
   searchInput: {
     flex: 1,
-    height: '100%',
+    height: "100%",
     fontSize: responsiveFontSize(14),
   },
   searchButton: {

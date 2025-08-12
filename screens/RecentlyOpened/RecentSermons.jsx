@@ -22,12 +22,37 @@ import {
   Easing,
   ToastAndroid,
   Alert,
+  ImageBackground,
+  StatusBar,
 } from "react-native";
 import { FontAwesome, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import DraggableFloatingBackButton from "../../components/FloatButton";
+import { LinearGradient } from "expo-linear-gradient";
+import { styles as globalStyles } from "../../styles/Allsermons";
+
+const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 44 : StatusBar.currentHeight;
+
+const AnimatedBackground = React.memo(({ theme }) => (
+  <View style={globalStyles.backgroundContainer}>
+    <ImageBackground
+      source={require("../../assets/lib2.jpg")}
+      style={globalStyles.backgroundImage}
+      blurRadius={4}
+      resizeMode="repeat"
+    >
+      <LinearGradient
+        colors={[
+          theme.dark ? "rgba(28, 25, 23, 0.97)" : "rgba(250, 250, 250, 0.87)",
+          theme.dark ? "rgba(28, 25, 23, 0.95)" : "rgba(250, 250, 250, 0.95)",
+        ]}
+        style={StyleSheet.absoluteFill}
+      />
+    </ImageBackground>
+  </View>
+));
 
 const years = Array.from({ length: 10 }, (_, i) => (1973 - i).toString());
 const alphabet = Array.from({ length: 26 }, (_, i) =>
@@ -99,8 +124,11 @@ const RecentlyOpenedSermons = () => {
         // Set the selected sermon with position
         setSelectedSermon(sermonWithPosition);
 
-        // Navigate to current sermon
-        navigation?.navigate("currentsermon");
+        // Navigate to current sermon with source information for proper scroll prioritization
+        navigation?.navigate("currentsermon", {
+          source: "recent",
+          resumeToParagraph: lastReadParagraph, // Pass the paragraph to resume to
+        });
 
         // Optional: Show toast with last position info
         if (lastReadParagraph > 0) {
@@ -326,310 +354,329 @@ const RecentlyOpenedSermons = () => {
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <View style={[globalStyles.container, { paddingTop: STATUSBAR_HEIGHT }]}>
       <DraggableFloatingBackButton />
-      <View style={styles.searchContainer}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            Recents
-          </Text>
-        </View>
-        {recentlyOpened.length > 0 && (
-          <View
-            style={[
-              styles.searchInputContainer,
-              {
-                backgroundColor: theme.dark ? "#212121" : "#f9fafb",
-                borderColor: "silver",
-              },
-            ]}
-          >
-            <TextInput
+      <AnimatedBackground theme={theme} />
+      <KeyboardAvoidingView
+        style={globalStyles.contentContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.searchContainer}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              Recents
+            </Text>
+          </View>
+          {recentlyOpened.length > 0 && (
+            <View
               style={[
-                styles.searchInput,
+                styles.searchInputContainer,
                 {
-                  color: "gray",
-                  backgroundColor: theme.dark
-                    ? theme.colors.primary
-                    : "#f1f1f1",
-                  fontStyle: "italic",
+                  backgroundColor: theme.dark ? "#212121" : "#f9fafb",
+                  borderColor: "silver",
                 },
               ]}
-              placeholder="Search Sermons"
-              value={searchText}
-              onChangeText={setSearchText}
-              placeholderTextColor={theme.colors.text}
-              selectionColor={theme.dark === true ? theme.colors.text : "gray"}
-            />
+            >
+              <TextInput
+                style={[
+                  styles.searchInput,
+                  {
+                    color: "gray",
+                    backgroundColor: theme.dark
+                      ? theme.colors.primary
+                      : "#f1f1f1",
+                    fontStyle: "italic",
+                  },
+                ]}
+                placeholder="Search Sermons"
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholderTextColor={theme.colors.text}
+                selectionColor={
+                  theme.dark === true ? theme.colors.text : "gray"
+                }
+              />
+              <Pressable
+                style={[
+                  styles.searchButton,
+                  {
+                    backgroundColor: theme.dark
+                      ? theme.colors.hlight
+                      : "#492f24",
+                  },
+                ]}
+                android_ripple={{
+                  color: theme.dark
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgb(73, 40, 9)",
+                }}
+                onPress={() => {
+                  /* Implement search action */
+                }}
+              >
+                <MaterialIcons name="search" size={20} color="#fff" />
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        {recentlyOpened.length > 0 && (
+          <View style={styles.filtersContainer}>
             <Pressable
+              onPress={() => setIsLetterModalVisible(true)}
               style={[
-                styles.searchButton,
+                styles.filterButton,
                 {
-                  backgroundColor: theme.dark ? theme.colors.hlight : "#492f24",
+                  borderColor: theme.colors.text,
+                  backgroundColor: "transparent",
                 },
+                borderStyle,
               ]}
               android_ripple={{
                 color: theme.dark
                   ? "rgba(255,255,255,0.1)"
-                  : "rgb(73, 40, 9)",
-              }}
-              onPress={() => {
-                /* Implement search action */
+                  : "rgba(0,0,0,0.05)",
               }}
             >
-              <MaterialIcons name="search" size={20} color="#fff" />
+              <MaterialIcons
+                name="text-format"
+                size={24}
+                color={theme.colors.text}
+                style={styles.dropdownIcon}
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => setIsYearModalVisible(true)}
+              style={[
+                styles.filterButton,
+                {
+                  borderColor: theme.colors.text,
+                  backgroundColor: "transparent",
+                },
+                borderStyle,
+              ]}
+              android_ripple={{
+                color: theme.dark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+              }}
+            >
+              <FontAwesome5
+                name="calendar-alt"
+                color={theme.colors.text}
+                size={24}
+              />
+            </Pressable>
+            <Pressable
+              style={[
+                styles.filterButton,
+                {
+                  borderColor: theme.colors.text,
+                  backgroundColor: "transparent",
+                },
+                borderStyle,
+              ]}
+              onPress={toggleSortOrder}
+              android_ripple={{
+                color: theme.dark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+              }}
+            >
+              <FontAwesome name="sort" size={20} color={theme.colors.text} />
+            </Pressable>
+
+            <Pressable
+              onPress={clearAll}
+              style={[
+                styles.filterButton,
+                {
+                  borderColor: theme.colors.text,
+                  backgroundColor: "transparent",
+                },
+                borderStyle,
+              ]}
+              android_ripple={{
+                color: theme.dark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+              }}
+            >
+              <MaterialIcons
+                name="format-clear"
+                size={20}
+                color={theme.colors.text}
+              />
             </Pressable>
           </View>
         )}
-      </View>
 
-      {recentlyOpened.length > 0 && (
-        <View style={styles.filtersContainer}>
-          <Pressable
-            onPress={() => setIsLetterModalVisible(true)}
-            style={[
-              styles.filterButton,
-              {
-                borderColor: theme.colors.text,
-                backgroundColor: "transparent",
-              },
-              borderStyle,
-            ]}
-            android_ripple={{
-              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+        {recentlyOpened.length > 0 ? (
+          <FlatList
+            data={sortedSermons}
+            renderItem={renderSermonItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+          />
+        ) : (
+          <View
+            style={{
+              padding: 20,
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            <MaterialIcons
-              name="text-format"
-              size={24}
-              color={theme.colors.text}
-              style={styles.dropdownIcon}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => setIsYearModalVisible(true)}
-            style={[
-              styles.filterButton,
-              {
-                borderColor: theme.colors.text,
-                backgroundColor: "transparent",
-              },
-              borderStyle,
-            ]}
-            android_ripple={{
-              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
-            }}
-          >
-            <FontAwesome5
-              name="calendar-alt"
-              color={theme.colors.text}
-              size={24}
-            />
-          </Pressable>
-          <Pressable
-            style={[
-              styles.filterButton,
-              {
-                borderColor: theme.colors.text,
-                backgroundColor: "transparent",
-              },
-              borderStyle,
-            ]}
-            onPress={toggleSortOrder}
-            android_ripple={{
-              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
-            }}
-          >
-            <FontAwesome name="sort" size={20} color={theme.colors.text} />
-          </Pressable>
+            <Text
+              style={{
+                color: theme.dark === true ? theme.colors.text : "gray",
+              }}
+            >
+              No sermons in recents
+            </Text>
+          </View>
+        )}
 
-          <Pressable
-            onPress={clearAll}
-            style={[
-              styles.filterButton,
-              {
-                borderColor: theme.colors.text,
-                backgroundColor: "transparent",
-              },
-              borderStyle,
-            ]}
-            android_ripple={{
-              color: theme.dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
-            }}
-          >
-            <MaterialIcons
-              name="format-clear"
-              size={20}
-              color={theme.colors.text}
-            />
-          </Pressable>
-        </View>
-      )}
-
-      {recentlyOpened.length > 0 ? (
-        <FlatList
-          data={sortedSermons}
-          renderItem={renderSermonItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-        />
-      ) : (
-        <View
-          style={{
-            padding: 20,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+        {/* Year Modal */}
+        <Modal
+          transparent={true}
+          visible={isYearModalVisible}
+          onRequestClose={closeDropdown}
         >
-          <Text
-            style={{ color: theme.dark === true ? theme.colors.text : "gray" }}
-          >
-            No sermons in recents
-          </Text>
-        </View>
-      )}
-
-      {/* Year Modal */}
-      <Modal
-        transparent={true}
-        visible={isYearModalVisible}
-        onRequestClose={closeDropdown}
-      >
-        <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
-          <View
-            style={[
-              styles.modalContent,
-              {
-                backgroundColor: theme.colors.secondary,
-              },
-            ]}
-          >
-            <FlatList
-              data={years}
-              renderItem={({ item, index }) => (
-                <Pressable
-                  style={[
-                    styles.gridItem,
-                    {
-                      elevation: 3,
-                      backgroundColor: theme.dark
-                        ? parseInt(index) % 2 === 0
-                          ? theme.colors.primary
-                          : theme.colors.primary
-                        : "#fafafa",
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedYear(item);
-                    closeDropdown();
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.gridItemText,
-                      {
-                        color: theme.dark === true ? theme.colors.text : "gray",
-                      },
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </Pressable>
-              )}
-              numColumns={3}
-              keyExtractor={(item) => item}
-              contentContainerStyle={styles.gridContainer}
-            />
-            <Pressable
+          <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
+            <View
               style={[
-                styles.allYearsOption,
+                styles.modalContent,
                 {
-                  backgroundColor: theme.colors.primary,
+                  backgroundColor: theme.colors.secondary,
                 },
               ]}
-              onPress={() => {
-                setSelectedYear("All Years");
-                closeDropdown();
-              }}
             >
-              <Text style={styles.gridBtnText}>All Years</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Letter Modal */}
-      <Modal
-        transparent={true}
-        visible={isLetterModalVisible}
-        onRequestClose={closeDropdown}
-      >
-        <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
-          <View
-            style={[
-              styles.modalContent,
-              {
-                backgroundColor: theme.colors.secondary,
-              },
-            ]}
-          >
-            <FlatList
-              data={alphabet}
-              renderItem={({ item, index }) => (
-                <Pressable
-                  style={[
-                    styles.gridItem,
-                    {
-                      elevation: 3,
-                      backgroundColor: theme.dark
-                        ? parseInt(index) % 2 === 0
-                          ? theme.colors.primary
-                          : theme.colors.primary
-                        : "#fafafa",
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedLetter(item);
-                    closeDropdown();
-                  }}
-                >
-                  <Text
+              <FlatList
+                data={years}
+                renderItem={({ item, index }) => (
+                  <Pressable
                     style={[
-                      styles.gridItemText,
+                      styles.gridItem,
                       {
-                        color: theme.dark === true ? theme.colors.text : "gray",
+                        elevation: 3,
+                        backgroundColor: theme.dark
+                          ? parseInt(index) % 2 === 0
+                            ? theme.colors.primary
+                            : theme.colors.primary
+                          : "#fafafa",
                       },
                     ]}
+                    onPress={() => {
+                      setSelectedYear(item);
+                      closeDropdown();
+                    }}
                   >
-                    {item}
-                  </Text>
-                </Pressable>
-              )}
-              numColumns={5}
-              keyExtractor={(item) => item}
-              contentContainerStyle={styles.gridContainer}
-            />
-            <Pressable
+                    <Text
+                      style={[
+                        styles.gridItemText,
+                        {
+                          color:
+                            theme.dark === true ? theme.colors.text : "gray",
+                        },
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </Pressable>
+                )}
+                numColumns={3}
+                keyExtractor={(item) => item}
+                contentContainerStyle={styles.gridContainer}
+              />
+              <Pressable
+                style={[
+                  styles.allYearsOption,
+                  {
+                    backgroundColor: theme.colors.primary,
+                  },
+                ]}
+                onPress={() => {
+                  setSelectedYear("All Years");
+                  closeDropdown();
+                }}
+              >
+                <Text style={styles.gridBtnText}>All Years</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
+
+        {/* Letter Modal */}
+        <Modal
+          transparent={true}
+          visible={isLetterModalVisible}
+          onRequestClose={closeDropdown}
+        >
+          <Pressable style={styles.modalOverlay} onPress={closeDropdown}>
+            <View
               style={[
-                styles.allLettersOption,
+                styles.modalContent,
                 {
-                  backgroundColor: theme.colors.primary,
+                  backgroundColor: theme.colors.secondary,
                 },
               ]}
-              onPress={() => {
-                setSelectedLetter("All Letters");
-                closeDropdown();
-              }}
             >
-              <Text style={styles.gridBtnText}>All Letters</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-    </KeyboardAvoidingView>
+              <FlatList
+                data={alphabet}
+                renderItem={({ item, index }) => (
+                  <Pressable
+                    style={[
+                      styles.gridItem,
+                      {
+                        elevation: 3,
+                        backgroundColor: theme.dark
+                          ? parseInt(index) % 2 === 0
+                            ? theme.colors.primary
+                            : theme.colors.primary
+                          : "#fafafa",
+                      },
+                    ]}
+                    onPress={() => {
+                      setSelectedLetter(item);
+                      closeDropdown();
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.gridItemText,
+                        {
+                          color:
+                            theme.dark === true ? theme.colors.text : "gray",
+                        },
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </Pressable>
+                )}
+                numColumns={5}
+                keyExtractor={(item) => item}
+                contentContainerStyle={styles.gridContainer}
+              />
+              <Pressable
+                style={[
+                  styles.allLettersOption,
+                  {
+                    backgroundColor: theme.colors.primary,
+                  },
+                ]}
+                onPress={() => {
+                  setSelectedLetter("All Letters");
+                  closeDropdown();
+                }}
+              >
+                <Text style={styles.gridBtnText}>All Letters</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 

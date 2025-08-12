@@ -16,38 +16,71 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
-import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 import { responsiveFontSize, spacing } from "../../Utils/responsiveUtils";
 import { useAppContext } from "../../Logic/globalState";
 import HighlightColorPalette from "./HighlightColorPalette";
 
-// Memoized text highlighting component for better performance
+// Pre-calculate common values to avoid recalculations
+const DOUBLE_TAP_DELAY = 300;
+const LONG_PRESS_DELAY = 500;
+const VIBRATION_DURATION = 50;
+const DEBOUNCE_DELAY = 100; // Debounce rapid consecutive actions
+
+// Debounce utility for rapid state changes
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  };
+};
+
+// Memoized highlight colors - calculate once
+const HIGHLIGHT_COLORS = {
+  yellow: { light: "#FEF08A", dark: "#FBBF2499" },
+  green: { light: "#BBF7D0", dark: "#34D39999" },
+  brown: { light: "#D2B48C", dark: "#8B7355" }, // Changed from blue to brown
+  purple: { light: "#DDD6FE", dark: "#C084FC99" },
+  pink: { light: "#FBCFE8", dark: "#F472B699" },
+  orange: { light: "#FED7AA", dark: "#FB923C99" },
+};
+
+// Memoized text highlighting component for search results - using text color instead of background
 const HighlightedText = React.memo(
   ({ parts, searchPhrase, theme, settings }) => (
     <>
       {parts.map((part, partIndex) =>
         part.toLowerCase() === searchPhrase.toLowerCase() ? (
           <Text
-            key={`highlight-${partIndex}`}
-            style={[
-              {
-                color: theme.dark ? "white" : "black",
-                fontSize: settings.fontSize,
-                fontFamily: settings.fontFamily || "ZillaSlab",
-                borderRadius: 10,
-                letterSpacing: 1,
-                paddingHorizontal: 5,
-                backgroundColor: theme.dark
-                  ? "#5d3211" + "50"
-                  : "rgba(59, 130, 246, 0.1)",
-              },
-            ]}
+            key={`highlight-${partIndex}-${part.slice(0, 10)}`}
+            style={{
+              color: theme.dark ? "#FCD34D" : "#F59E0B", // Use amber color for search highlights
+              fontSize: responsiveFontSize(settings.fontSize),
+              fontFamily: settings.fontFamily || "ZillaSlab",
+              fontWeight: "600", // Make search highlights bold
+              // Consistent spacing - no extra padding or margins
+              lineHeight: Math.round(
+                responsiveFontSize(settings.fontSize) * 1.4
+              ),
+            }}
           >
             {part}
           </Text>
         ) : (
-          part // Return plain text for non-highlighted parts
+          <Text
+            key={`text-${partIndex}-${part.slice(0, 10)}`}
+            style={{
+              fontSize: responsiveFontSize(settings.fontSize),
+              fontFamily: settings.fontFamily || "ZillaSlab",
+              color: theme.colors.text,
+              lineHeight: Math.round(
+                responsiveFontSize(settings.fontSize) * 1.4
+              ),
+            }}
+          >
+            {part}
+          </Text>
         )
       )}
     </>
@@ -62,16 +95,17 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
       if (lowerPart === "endnote") {
         return (
           <Text
-            key={`endnote-${partIndex}`}
-            style={[
-              {
-                fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: settings.fontFamily,
-                color: theme.dark ? theme.colors.hlight : "#5d3211",
-                textDecorationLine: "underline",
-                fontWeight: "500",
-              },
-            ]}
+            key={`endnote-${partIndex}-${part.slice(0, 10)}`}
+            style={{
+              fontSize: responsiveFontSize(settings.fontSize),
+              fontFamily: settings.fontFamily || "ZillaSlab",
+              color: theme.dark ? theme.colors.hlight : "#5d3211",
+              textDecorationLine: "underline",
+              fontWeight: "500",
+              lineHeight: Math.round(
+                responsiveFontSize(settings.fontSize) * 1.4
+              ),
+            }}
           >
             {part}
           </Text>
@@ -79,26 +113,133 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
       } else if (lowerPart === "reference") {
         return (
           <Text
-            key={`reference-${partIndex}`}
-            style={[
-              {
-                fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: settings.fontFamily,
-                color: theme.dark ? theme.colors.hlight : "#5d3211",
-                textDecorationLine: "underline",
-                fontWeight: "500",
-              },
-            ]}
+            key={`reference-${partIndex}-${part.slice(0, 10)}`}
+            style={{
+              fontSize: responsiveFontSize(settings.fontSize),
+              fontFamily: settings.fontFamily || "ZillaSlab",
+              color: theme.dark ? theme.colors.hlight : "#5d3211",
+              textDecorationLine: "underline",
+              fontWeight: "500",
+              lineHeight: Math.round(
+                responsiveFontSize(settings.fontSize) * 1.4
+              ),
+            }}
           >
             {part}
           </Text>
         );
       } else {
-        return part; // Return plain text for non-endnote parts
+        return (
+          <Text
+            key={`text-${partIndex}-${part.slice(0, 10)}`}
+            style={{
+              fontSize: responsiveFontSize(settings.fontSize),
+              fontFamily: settings.fontFamily || "ZillaSlab",
+              color: theme.colors.text,
+              lineHeight: Math.round(
+                responsiveFontSize(settings.fontSize) * 1.4
+              ),
+            }}
+          >
+            {part}
+          </Text>
+        ); // Return styled text for non-endnote parts
       }
     })}
   </>
 ));
+
+// Memoized endnote with title component - handles title text between Endnote and William Marrion Branham
+const EndnoteWithTitleText = React.memo(({ parts, theme, settings }) => {
+  let isTitle = false; // Track if we're in the title section
+
+  return (
+    <>
+      {parts.map((part, partIndex) => {
+        const lowerPart = part.toLowerCase();
+
+        if (lowerPart === "endnote") {
+          isTitle = true; // Start title section after Endnote
+          return (
+            <Text
+              key={`endnote-${partIndex}-${part.slice(0, 10)}`}
+              style={{
+                fontSize: responsiveFontSize(settings.fontSize),
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                color: theme.dark ? theme.colors.hlight : "#5d3211",
+                textDecorationLine: "underline",
+                fontWeight: "500",
+                lineHeight: Math.round(
+                  responsiveFontSize(settings.fontSize) * 1.4
+                ),
+              }}
+            >
+              {part}
+            </Text>
+          );
+        } else if (lowerPart === "william marrion branham") {
+          const titleText = (
+            <Text
+              key={`title-${partIndex}-${part.slice(0, 10)}`}
+              style={{
+                fontSize: responsiveFontSize(settings.fontSize),
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                color: theme.dark ? theme.colors.hlight : "#5d3211",
+                textDecorationLine: "underline",
+                fontWeight: "500",
+                fontStyle: "italic", // Add italics for the title including the name
+                lineHeight: Math.round(
+                  responsiveFontSize(settings.fontSize) * 1.4
+                ),
+              }}
+            >
+              {part}
+            </Text>
+          );
+          isTitle = false; // End title section
+          return titleText;
+        } else if (isTitle && part.trim()) {
+          // This is title text between Endnote and William Marrion Branham
+          return (
+            <Text
+              key={`title-${partIndex}-${part.slice(0, 10)}`}
+              style={{
+                fontSize: responsiveFontSize(settings.fontSize),
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                color: theme.dark ? theme.colors.hlight : "#5d3211",
+                textDecorationLine: "underline",
+                fontWeight: "500",
+                fontStyle: "italic", // Add italics for title text
+                lineHeight: Math.round(
+                  responsiveFontSize(settings.fontSize) * 1.4
+                ),
+              }}
+            >
+              {part}
+            </Text>
+          );
+        } else {
+          // Regular text (before Endnote or after William Marrion Branham)
+          return (
+            <Text
+              key={`text-${partIndex}-${part.slice(0, 10)}`}
+              style={{
+                fontSize: responsiveFontSize(settings.fontSize),
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                color: theme.colors.text,
+                lineHeight: Math.round(
+                  responsiveFontSize(settings.fontSize) * 1.4
+                ),
+              }}
+            >
+              {part}
+            </Text>
+          );
+        }
+      })}
+    </>
+  );
+});
 
 const ParagraphText = React.memo(
   ({
@@ -112,95 +253,82 @@ const ParagraphText = React.memo(
   }) => {
     const {
       addBookmark,
+      removeBookmark,
       bookmarks,
       addHighlight,
       removeHighlight,
       getHighlight,
     } = useAppContext();
-    const [fontsLoaded] = useFonts({
-      ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-    });
 
     const [isCopying, setIsCopying] = useState(false);
     const [showColorPalette, setShowColorPalette] = useState(false);
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
     const lastTapTime = useRef(0);
 
-    // Check if this paragraph is bookmarked
+    // Check if this paragraph is bookmarked - optimized with unique key
     const isBookmarked = useMemo(() => {
+      const bookmarkKey = `${selectedSermon.id}-${index}`;
       return bookmarks.some(
-        (b) => b.sermon.id === selectedSermon.id && b.paragraphIndex === index
+        (b) => `${b.sermon.id}-${b.paragraphIndex}` === bookmarkKey
       );
-    }, [bookmarks, selectedSermon.id, index]);
+    }, [bookmarks, selectedSermon.id, index]); // More specific dependencies
 
-    // Check if this paragraph is highlighted
+    // Check if this paragraph is highlighted - optimized
     const currentHighlight = useMemo(() => {
+      const highlightKey = `${selectedSermon.id}-${index}`;
       return getHighlight(selectedSermon.id, index);
-    }, [getHighlight, selectedSermon.id, index]);
+    }, [selectedSermon.id, index, getHighlight]); // Keep getHighlight for reactivity
 
-    // Constants
-    const DOUBLE_TAP_DELAY = 300;
-    const LONG_PRESS_DELAY = 500;
-    const VIBRATION_DURATION = 50;
+    // Simplified and optimized text style with highlight color support
+    const textStyle = useMemo(() => {
+      const baseSize = responsiveFontSize(settings?.fontSize || 22);
+      const fontFamily = settings?.fontFamily || "ZillaSlab";
 
-    // Memoize expensive computations
-    const textStyle = useMemo(
-      () => [
+      // Determine text color - use highlight color if paragraph is highlighted
+      let textColor = theme.colors.text;
+      if (currentHighlight) {
+        const highlightColorData = HIGHLIGHT_COLORS[currentHighlight];
+        if (highlightColorData) {
+          // Use vibrant highlight colors for text
+          const highlightColors = {
+            yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
+            green: theme.dark ? "#34D399" : "#059669", // Emerald
+            brown: theme.dark ? "#D2B48C" : "#8B4513", // Brown instead of blue
+            purple: theme.dark ? "#C084FC" : "#7C3AED", // Violet
+            pink: theme.dark ? "#F472B6" : "#DB2777", // Pink
+            orange: theme.dark ? "#FB923C" : "#EA580C", // Orange
+          };
+          textColor = highlightColors[currentHighlight] || theme.colors.text;
+        }
+      }
+
+      return [
         styles.paragraphText,
         {
-          color: theme.colors.text,
-          fontFamily: settings.fontFamily || "ZillaSlab",
-          fontSize: responsiveFontSize(settings.fontSize),
-          // Ensure text remains readable on highlighted backgrounds
-          textShadowColor:
-            currentHighlight && theme.dark ? "rgba(0,0,0,0.3)" : "transparent",
-          textShadowOffset:
-            currentHighlight && theme.dark
-              ? { width: 0, height: 1 }
-              : { width: 0, height: 0 },
-          textShadowRadius: currentHighlight && theme.dark ? 1 : 0,
+          color: textColor,
+          fontFamily: fontFamily,
+          fontSize: baseSize,
+          lineHeight: Math.round(baseSize * 1.4), // Consistent line height calculation
         },
-      ],
-      [
-        theme.colors.text,
-        settings.fontFamily,
-        settings.fontSize,
-        currentHighlight,
-        theme.dark,
-      ]
-    );
+      ];
+    }, [
+      theme.colors.text,
+      theme.dark,
+      currentHighlight,
+      settings?.fontFamily,
+      settings?.fontSize,
+    ]);
 
     const paragraphNumberStyle = useMemo(
       () => [styles.paragraphNumber, { color: theme.colors.text }],
       [theme.colors.text]
     );
 
-    // Enhanced container style with selection mode and highlight
+    // Enhanced container style with selection mode - text color highlighting instead of background
     const containerStyle = useMemo(() => {
       const baseStyle = [styles.paragraphContainer];
 
-      // Add highlight background if paragraph is highlighted
-      if (currentHighlight) {
-        const highlightColors = {
-          yellow: { light: "#FEF08A", dark: "#FBBF2499" }, // 60% opacity
-          green: { light: "#BBF7D0", dark: "#34D39999" },
-          blue: { light: "#BFDBFE", dark: "#60A5FA99" },
-          purple: { light: "#DDD6FE", dark: "#C084FC99" },
-          pink: { light: "#FBCFE8", dark: "#F472B699" },
-          orange: { light: "#FED7AA", dark: "#FB923C99" },
-        };
-
-        const highlightColor = highlightColors[currentHighlight];
-        if (highlightColor) {
-          baseStyle.push({
-            backgroundColor: theme.dark
-              ? highlightColor.dark
-              : highlightColor.light,
-            borderRadius: 8,
-            padding: spacing.xs,
-            marginVertical: spacing.xs / 2,
-          });
-        }
-      }
+      // Note: Highlight color is now applied to text, not background
 
       // Add visual indicator if this is the last read paragraph
       if (selectedSermon?.lastReadParagraph === index) {
@@ -208,11 +336,9 @@ const ParagraphText = React.memo(
           borderLeftWidth: 2,
           paddingLeft: 2,
           borderLeftColor: theme.dark ? theme.colors.hlight : "#5d3211",
-          backgroundColor: currentHighlight
-            ? undefined
-            : theme.dark
-            ? theme.colors.hlight + "10"
-            : "rgba(251, 114, 16, 0.05)",
+          backgroundColor: theme.dark
+            ? theme.colors.hlight + "20"
+            : "#5d321120",
         });
       }
 
@@ -224,12 +350,10 @@ const ParagraphText = React.memo(
       if (isSelectionMode) {
         baseStyle.push({
           backgroundColor: theme.dark
-            ? "rgba(59, 130, 246, 0.1)"
-            : "rgba(59, 130, 246, 0.05)",
+            ? theme.colors.hlight + "20"
+            : "#5d321120",
           borderWidth: 1,
-          borderColor: theme.dark
-            ? "rgba(59, 130, 246, 0.3)"
-            : "rgba(59, 130, 246, 0.2)",
+          borderColor: theme.dark ? theme.colors.hlight + "50" : "#5d321150",
           borderRadius: 8,
           paddingHorizontal: 4,
         });
@@ -237,20 +361,28 @@ const ParagraphText = React.memo(
 
       return baseStyle;
     }, [
-      isCopying,
+      currentHighlight,
+      theme.dark,
+      theme.colors.hlight,
       selectedSermon?.lastReadParagraph,
       index,
-      theme,
+      isCopying,
       isSelectionMode,
-      currentHighlight,
     ]);
 
-    // Memoize text processing for search and endnotes
+    // Memoize text processing for search, endnotes, and titles
     const processedText = useMemo(() => {
       const hasEndnote = paragraph.includes("Endnote");
+      const hasWilliamBranham = paragraph.includes("William Marrion Branham");
       const hasSearch = searchPhrase && searchPhrase.length > 0;
 
-      if (hasEndnote) {
+      if (hasEndnote && hasWilliamBranham) {
+        // Split by Endnote and William Marrion Branham to identify title
+        return {
+          type: "endnote_with_title",
+          parts: paragraph.split(/(Endnote|William Marrion Branham)/gi),
+        };
+      } else if (hasEndnote) {
         return {
           type: "endnote",
           parts: paragraph.split(/(Endnote)/gi),
@@ -354,8 +486,6 @@ const ParagraphText = React.memo(
       }
     }, []);
 
-    const [isSelectionMode, setIsSelectionMode] = useState(false);
-
     // Reset selection mode after a delay
     useEffect(() => {
       if (isSelectionMode) {
@@ -366,27 +496,70 @@ const ParagraphText = React.memo(
       }
     }, [isSelectionMode]);
 
+    // Debounced bookmark handlers to prevent rapid consecutive calls
+    const debouncedAddBookmark = useMemo(
+      () => debounce(addBookmark, DEBOUNCE_DELAY),
+      [addBookmark]
+    );
+
+    const debouncedRemoveBookmark = useMemo(
+      () => debounce(removeBookmark, DEBOUNCE_DELAY),
+      [removeBookmark]
+    );
+
     const handleBookmarkPress = useCallback(() => {
-      if (!isBookmarked) {
-        addBookmark(selectedSermon, index, paragraph);
+      // Provide immediate haptic feedback
+      if (Platform.OS === "ios") {
         Vibration.vibrate(VIBRATION_DURATION);
       }
-    }, [addBookmark, selectedSermon, index, paragraph, isBookmarked]);
+
+      if (isBookmarked) {
+        // Remove bookmark if already bookmarked
+        debouncedRemoveBookmark(selectedSermon, index);
+      } else {
+        // Add bookmark if not bookmarked
+        debouncedAddBookmark(selectedSermon, index, paragraph);
+      }
+    }, [
+      debouncedAddBookmark,
+      debouncedRemoveBookmark,
+      selectedSermon,
+      index,
+      paragraph,
+      isBookmarked,
+    ]);
 
     const handleHighlightPress = useCallback(() => {
-      setShowColorPalette(!showColorPalette);
-      Vibration.vibrate(VIBRATION_DURATION);
-    }, [showColorPalette]);
+      // Toggle color palette with immediate response
+      setShowColorPalette((prev) => !prev);
+
+      // Provide immediate haptic feedback
+      if (Platform.OS === "ios") {
+        Vibration.vibrate(VIBRATION_DURATION);
+      }
+    }, []);
 
     const handleColorSelect = useCallback(
       (color) => {
-        if (color) {
-          addHighlight(selectedSermon.id, index, color);
-        } else {
-          removeHighlight(selectedSermon.id, index);
-        }
+        // Debounced highlight operations to prevent rapid calls
+        const debouncedHighlightAction = debounce(() => {
+          if (color) {
+            addHighlight(selectedSermon.id, index, color);
+          } else {
+            removeHighlight(selectedSermon.id, index);
+          }
+        }, DEBOUNCE_DELAY);
+
+        // Execute debounced action
+        debouncedHighlightAction();
+
+        // Close palette immediately for responsive UI
         setShowColorPalette(false);
-        Vibration.vibrate(VIBRATION_DURATION);
+
+        // Provide immediate haptic feedback
+        if (Platform.OS === "ios") {
+          Vibration.vibrate(VIBRATION_DURATION);
+        }
       },
       [addHighlight, removeHighlight, selectedSermon.id, index]
     );
@@ -394,6 +567,14 @@ const ParagraphText = React.memo(
     // Render text content based on type
     const renderTextContent = useCallback(() => {
       switch (processedText.type) {
+        case "endnote_with_title":
+          return (
+            <EndnoteWithTitleText
+              parts={processedText.parts}
+              theme={theme}
+              settings={settings}
+            />
+          );
         case "endnote":
           return (
             <EndnoteText
@@ -503,16 +684,12 @@ const ParagraphText = React.memo(
           {/* Selectable Text Container */}
           <View style={styles.selectableTextContainer}>
             <Text
-              style={[
-                textStyle,
-                {
-                  fontSize: responsiveFontSize(settings.fontSize),
-                  fontFamily: settings.fontFamily,
-                  lineHeight:30
-                },
-              ]}
+              style={textStyle} // Use pre-calculated style
               selectable={true}
               selectTextOnFocus={false}
+              selectionColor={
+                theme.dark ? theme.colors.hlight + "60" : "#5d321160"
+              }
               onLongPress={copyToClipboard}
               dataDetectorType="none"
               allowFontScaling={false}
@@ -532,22 +709,129 @@ const ParagraphText = React.memo(
                 }
               }}
             >
-              {processedText.type === "endnote" ? (
-                <EndnoteText
-                  parts={processedText.parts}
-                  theme={theme}
-                  settings={settings}
-                />
-              ) : processedText.type === "search" ? (
-                <HighlightedText
-                  parts={processedText.parts}
-                  searchPhrase={searchPhrase}
-                  theme={theme}
-                  settings={settings}
-                />
-              ) : (
-                processedText.text
-              )}
+              {processedText.type === "endnote_with_title"
+                ? processedText.parts.map((part, partIndex) => {
+                    const lowerPart = part.toLowerCase();
+                    let isTitle = false;
+
+                    // Check if this part is in title position (after endnote, before or including William Marrion Branham)
+                    if (partIndex > 0) {
+                      const prevParts = processedText.parts.slice(0, partIndex);
+                      const endnoteIndex = prevParts.findIndex(
+                        (p) => p.toLowerCase() === "endnote"
+                      );
+                      const branhamIndex = processedText.parts.findIndex(
+                        (p) => p.toLowerCase() === "william marrion branham"
+                      );
+                      isTitle =
+                        endnoteIndex !== -1 &&
+                        (branhamIndex === -1 || partIndex <= branhamIndex);
+                    }
+
+                    if (lowerPart === "endnote") {
+                      return (
+                        <Text
+                          key={`endnote-${partIndex}-${part.slice(0, 10)}`}
+                          style={{
+                            color: theme.dark ? theme.colors.hlight : "#5d3211",
+                            textDecorationLine: "underline",
+                            fontWeight: "500",
+                            fontFamily: settings?.fontFamily || "ZillaSlab",
+                            fontSize: responsiveFontSize(
+                              settings?.fontSize || 22
+                            ),
+                          }}
+                        >
+                          {part}
+                        </Text>
+                      );
+                    } else if (lowerPart === "william marrion branham") {
+                      return (
+                        <Text
+                          key={`branham-${partIndex}-${part.slice(0, 10)}`}
+                          style={{
+                            color: theme.dark ? theme.colors.hlight : "#5d3211",
+                            textDecorationLine: "underline",
+                            fontWeight: "500",
+                            fontStyle: "italic",
+                            fontFamily: settings?.fontFamily || "ZillaSlab",
+                            fontSize: responsiveFontSize(
+                              settings?.fontSize || 22
+                            ),
+                          }}
+                        >
+                          {part}
+                        </Text>
+                      );
+                    } else if (isTitle && part.trim()) {
+                      return (
+                        <Text
+                          key={`title-${partIndex}-${part.slice(0, 10)}`}
+                          style={{
+                            color: theme.dark ? theme.colors.hlight : "#5d3211",
+                            textDecorationLine: "underline",
+                            fontWeight: "500",
+                            fontStyle: "italic",
+                            fontFamily: settings?.fontFamily || "ZillaSlab",
+                            fontSize: responsiveFontSize(
+                              settings?.fontSize || 22
+                            ),
+                          }}
+                        >
+                          {part}
+                        </Text>
+                      );
+                    } else {
+                      return part;
+                    }
+                  })
+                : processedText.type === "endnote"
+                ? processedText.parts.map((part, partIndex) => {
+                    const lowerPart = part.toLowerCase();
+                    if (lowerPart === "endnote" || lowerPart === "reference") {
+                      return (
+                        <Text
+                          key={`${lowerPart}-${partIndex}-${part.slice(0, 10)}`}
+                          style={{
+                            color: theme.dark ? theme.colors.hlight : "#5d3211",
+                            textDecorationLine: "underline",
+                            fontWeight: "500",
+                            fontFamily: settings?.fontFamily || "ZillaSlab",
+                            fontSize: responsiveFontSize(
+                              settings?.fontSize || 22
+                            ),
+                            // Inherit lineHeight from parent to maintain consistent spacing
+                          }}
+                        >
+                          {part}
+                        </Text>
+                      );
+                    } else {
+                      return part;
+                    }
+                  })
+                : processedText.type === "search"
+                ? processedText.parts.map((part, partIndex) =>
+                    part.toLowerCase() === searchPhrase.toLowerCase() ? (
+                      <Text
+                        key={`highlight-${partIndex}-${part.slice(0, 10)}`}
+                        style={{
+                          color: theme.dark ? "#FCD34D" : "#F59E0B", // Use amber color for search highlights
+                          fontWeight: "600", // Make search highlights bold
+                          fontFamily: settings?.fontFamily || "ZillaSlab",
+                          fontSize: responsiveFontSize(
+                            settings?.fontSize || 22
+                          ),
+                          // Inherit lineHeight from parent to maintain consistent spacing
+                        }}
+                      >
+                        {part}
+                      </Text>
+                    ) : (
+                      part
+                    )
+                  )
+                : processedText.text}
             </Text>
           </View>
         </View>
@@ -559,8 +843,8 @@ const ParagraphText = React.memo(
               styles.selectionModeIndicator,
               {
                 backgroundColor: theme.dark
-                  ? "rgba(59, 130, 246, 0.9)"
-                  : "rgba(59, 130, 246, 0.8)",
+                  ? theme.colors.hlight + "E0"
+                  : "#5d3211E0",
               },
             ]}
           >

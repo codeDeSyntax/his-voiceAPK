@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     fontFamily: "",
   },
   titleText: {
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab", // Use ZillaSlab instead of serif
     fontWeight: "900",
     fontSize: responsiveFontSize(20),
     textAlign: "center",
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   locationText: {
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab", // Use ZillaSlab instead of serif
     fontWeight: "500",
     fontSize: responsiveFontSize(14),
     fontStyle: "italic",
@@ -110,50 +110,45 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 
-  topCardOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    zIndex: 90,
-  },
   topCard: {
     position: "absolute",
-    top: STATUSBAR_HEIGHT + 20,
-    right: 10,
-    width: width * 0.85,
-    height: height * 0.8,
-    borderRadius: 20, // More receipt-like sharp corners
+    top: 0,
+    right: 0,
+    left: 0,
+    bottom: -50, // Extend beyond bottom to ensure full coverage
+    width: "100%",
+    height: "110%", // Slightly larger than 100% to ensure complete coverage
+    borderRadius: 0, // Remove border radius for full screen
     backgroundColor: "white",
-    // Receipt-style border pattern
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "#333",
-    shadowColor: "#000",
-    shadowOffset: { width: -3, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 12,
+    // Receipt-style border pattern removed for full screen
+    borderWidth: 0,
+    shadowColor: "transparent", // Remove shadow for full screen
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0, // Remove elevation for full screen
     zIndex: 95,
   },
   topCardContainer: {
     flex: 1,
-    paddingTop: 8,
+    paddingTop: STATUSBAR_HEIGHT + 50, // Add top padding for status bar and header space
     paddingHorizontal: 4,
+    paddingBottom: 0, // Remove any bottom padding to ensure full screen
+    marginBottom: 0, // Ensure no bottom margin
   },
   topCardScrollContent: {
     paddingHorizontal: 12,
-    paddingBottom: 16,
+    paddingBottom: 50, // Add bottom padding only for content visibility, not layout spacing
+    flexGrow: 1, // Ensure content grows to fill available space
+    minHeight: "100%", // Ensure minimum height covers full container
   },
   topCardCloseButton: {
     position: "absolute",
-    top: 6,
-    right: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: STATUSBAR_HEIGHT + 10, // Position below status bar
+    right: 16, // Move away from edge
+    width: 36, // Make it slightly larger for better touch target
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 100,
@@ -313,7 +308,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: responsiveFontSize(16),
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
     textAlign: "center",
     opacity: 0.7,
   },
@@ -430,12 +425,12 @@ const styles = StyleSheet.create({
   },
 
   // Paragraph styles - Consistent spacing system
-  // Container: spacing.md (12px) between paragraphs
-  // Text: lineHeight 28px for optimal readability
+  // Container: spacing.xs (4px) between paragraphs for tight reading flow
+  // Text: lineHeight 24px for optimal readability
   // Numbers: spacing.xs (4px) margin from text
   paragraphContainer: {
     flexDirection: "row",
-    marginBottom: spacing.md, // Consistent 12px spacing
+    marginBottom: spacing.xs, // Consistent 4px spacing between paragraphs
     borderRadius: 5,
   },
   paragraphHeader: {
@@ -463,15 +458,15 @@ const styles = StyleSheet.create({
   },
   paragraphText: {
     flex: 1,
-    lineHeight: 24, // Tighter line height for better reading flow
+    lineHeight: 24, // Consistent line height for all text rendering
     paddingLeft: 8,
-    marginBottom: spacing.xs / 2, // Minimal spacing (2px) between paragraphs
+    marginBottom: spacing.xs, // Consistent 4px spacing between paragraphs
     paddingVertical: 0, // Remove vertical padding for consistent gaps
   },
   paragraphContainer: {
     marginBottom: spacing.xs, // Consistent 4px gap between paragraph containers
     paddingHorizontal: 0,
-    paddingVertical: 0, // Remove container padding for tighter spacing
+    paddingVertical: 0, // Remove container padding for consistent spacing
   },
   selectableTextContainer: {
     flex: 1,
@@ -588,7 +583,7 @@ const styles = StyleSheet.create({
   matchesText: {
     fontSize: 14,
     color: "#555",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
 
   // Sermon info section
@@ -602,12 +597,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 8,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   sermonInfoText: {
     fontSize: 14,
     marginBottom: 4,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
 
   // Top bar styles
@@ -643,8 +638,7 @@ const styles = StyleSheet.create({
   topBarTitle: {
     fontSize: 18,
     fontWeight: "600",
-    fontFamily: "serif",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   topBarButtonsContainer: {
     flexDirection: "row",
@@ -675,7 +669,7 @@ const styles = StyleSheet.create({
   feedbackText: {
     color: "white",
     fontWeight: "bold",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   copyingParagraph: {
     backgroundColor: "rgba(0, 0, 0, 0.05)",
@@ -712,19 +706,27 @@ const styles = StyleSheet.create({
 
   bookmarkButton: {
     padding: spacing.xs,
-    marginLeft: -spacing.xs,
+    marginLeft: spacing.xs / 2,
+    minWidth: 32,
+    minHeight: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
   bookmarkButtonActive: {
-    transform: [{ scale: 1.1 }],
+    // Remove scale transform to prevent layout shifts
   },
   highlightButton: {
     padding: spacing.xs,
     marginLeft: spacing.xs / 2,
     borderRadius: 12,
+    minWidth: 32,
+    minHeight: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
   highlightButtonActive: {
     backgroundColor: "rgba(230, 195, 184, 0.1)",
-    transform: [{ scale: 1.05 }],
+    // Remove scale transform to prevent layout shifts
   },
   paletteOverlay: {
     position: "absolute",

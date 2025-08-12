@@ -329,7 +329,7 @@ export const SermonProvider = ({ children }) => {
     saveBookmarks();
   }, [bookmarks]);
 
-  // Add bookmark
+  // Add bookmark with optimistic updates
   const addBookmark = useCallback(
     async (sermon, paragraphIndex, paragraphText) => {
       try {
@@ -341,18 +341,31 @@ export const SermonProvider = ({ children }) => {
           date: new Date().toISOString(),
         };
 
+        // Optimistic update - update UI immediately
         const updatedBookmarks = [...bookmarks, newBookmark];
         setBookmarks(updatedBookmarks);
 
-        // Save to AsyncStorage
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.BOOKMARKS,
-          JSON.stringify(updatedBookmarks)
-        );
-
+        // Show immediate feedback
         if (Platform.OS === "android") {
           ToastAndroid.show("Bookmark added", ToastAndroid.SHORT);
         }
+
+        // Save to AsyncStorage asynchronously (non-blocking)
+        setTimeout(async () => {
+          try {
+            await AsyncStorage.setItem(
+              STORAGE_KEYS.BOOKMARKS,
+              JSON.stringify(updatedBookmarks)
+            );
+          } catch (storageError) {
+            console.error("Failed to save bookmark to storage:", storageError);
+            // Revert optimistic update if storage fails
+            setBookmarks(bookmarks);
+            if (Platform.OS === "android") {
+              ToastAndroid.show("Failed to save bookmark", ToastAndroid.SHORT);
+            }
+          }
+        }, 0);
       } catch (error) {
         console.error("Failed to add bookmark:", error);
         if (Platform.OS === "android") {
@@ -363,22 +376,41 @@ export const SermonProvider = ({ children }) => {
     [bookmarks]
   );
 
-  // Remove bookmark
+  // Remove bookmark with optimistic updates
   const removeBookmark = useCallback(
     async (bookmarkId) => {
       try {
+        // Optimistic update - update UI immediately
         const updatedBookmarks = bookmarks.filter((b) => b.id !== bookmarkId);
         setBookmarks(updatedBookmarks);
 
-        // Save to AsyncStorage
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.BOOKMARKS,
-          JSON.stringify(updatedBookmarks)
-        );
-
+        // Show immediate feedback
         if (Platform.OS === "android") {
           ToastAndroid.show("Bookmark removed", ToastAndroid.SHORT);
         }
+
+        // Save to AsyncStorage asynchronously (non-blocking)
+        setTimeout(async () => {
+          try {
+            await AsyncStorage.setItem(
+              STORAGE_KEYS.BOOKMARKS,
+              JSON.stringify(updatedBookmarks)
+            );
+          } catch (storageError) {
+            console.error(
+              "Failed to remove bookmark from storage:",
+              storageError
+            );
+            // Revert optimistic update if storage fails
+            setBookmarks(bookmarks);
+            if (Platform.OS === "android") {
+              ToastAndroid.show(
+                "Failed to remove bookmark",
+                ToastAndroid.SHORT
+              );
+            }
+          }
+        }, 0);
       } catch (error) {
         console.error("Failed to remove bookmark:", error);
         if (Platform.OS === "android") {
@@ -403,7 +435,7 @@ export const SermonProvider = ({ children }) => {
     }
   }, []);
 
-  // Highlight management functions
+  // Highlight management functions with optimistic updates
   const addHighlight = useCallback(
     async (sermonId, paragraphIndex, color) => {
       try {
@@ -413,13 +445,22 @@ export const SermonProvider = ({ children }) => {
           [highlightKey]: color,
         };
 
+        // Optimistic update - update UI immediately
         setHighlights(updatedHighlights);
 
-        // Save to AsyncStorage
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.HIGHLIGHTS,
-          JSON.stringify(updatedHighlights)
-        );
+        // Save to AsyncStorage asynchronously (non-blocking)
+        setTimeout(async () => {
+          try {
+            await AsyncStorage.setItem(
+              STORAGE_KEYS.HIGHLIGHTS,
+              JSON.stringify(updatedHighlights)
+            );
+          } catch (storageError) {
+            console.error("Failed to save highlight to storage:", storageError);
+            // Revert optimistic update if storage fails
+            setHighlights(highlights);
+          }
+        }, 0);
       } catch (error) {
         console.error("Failed to add highlight:", error);
       }
@@ -434,13 +475,25 @@ export const SermonProvider = ({ children }) => {
         const updatedHighlights = { ...highlights };
         delete updatedHighlights[highlightKey];
 
+        // Optimistic update - update UI immediately
         setHighlights(updatedHighlights);
 
-        // Save to AsyncStorage
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.HIGHLIGHTS,
-          JSON.stringify(updatedHighlights)
-        );
+        // Save to AsyncStorage asynchronously (non-blocking)
+        setTimeout(async () => {
+          try {
+            await AsyncStorage.setItem(
+              STORAGE_KEYS.HIGHLIGHTS,
+              JSON.stringify(updatedHighlights)
+            );
+          } catch (storageError) {
+            console.error(
+              "Failed to remove highlight from storage:",
+              storageError
+            );
+            // Revert optimistic update if storage fails
+            setHighlights(highlights);
+          }
+        }, 0);
       } catch (error) {
         console.error("Failed to remove highlight:", error);
       }
