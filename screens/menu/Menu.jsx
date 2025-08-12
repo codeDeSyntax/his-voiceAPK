@@ -80,7 +80,7 @@ const Menu = () => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <DraggableFloatingBackButton/>
+      <DraggableFloatingBackButton />
       <View style={styles.header}>
         <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
           <Ionicons name="close" size={32} color={theme.colors.text} />
@@ -161,11 +161,6 @@ const Menu = () => {
             title="Search"
             onPress={() => navigateTo("Search")}
             icon="search-outline"
-          />
-          <MenuItem
-            title="Recent"
-            onPress={() => navigateTo("Recent")}
-            icon="time-outline"
           />
           <MenuItem
             title="About"

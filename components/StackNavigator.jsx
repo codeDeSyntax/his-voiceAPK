@@ -8,7 +8,6 @@ import About from "../screens/About/About";
 import Welcome from "../screens/Welcome/Welcome";
 import UpdateScreen from "../screens/LoadingScreen";
 import SermonList from "../screens/SermonList/AllSermons";
-import RecentlyOpenedSermons from "../screens/RecentlyOpened/RecentSermons";
 import SermonSearch from "../screens/Search/Search";
 import Settings from "../screens/settings/Settings";
 import CurrentSermon from "../screens/Home/CurrentSermon";
@@ -159,15 +158,6 @@ const StackNavigator = () => {
         <Stack.Screen
           name="AllSermons"
           component={ScreenWithSuspense(SermonList)}
-          options={{
-            navigationBarHidden: true,
-            statusBarHidden: true,
-            // ...CardOptions,
-          }}
-        />
-        <Stack.Screen
-          name="Recent"
-          component={ScreenWithSuspense(RecentlyOpenedSermons)}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,

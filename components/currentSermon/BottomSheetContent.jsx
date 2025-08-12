@@ -48,21 +48,21 @@ const TopCardContent = ({
       // Set searching to true before starting the search
       setSearching(true);
 
-      // Simulate a more realistic search delay (remove for production if search is actually slow)
-      setTimeout(() => {
-        const results = searchSermon(paragraphs, searchPhrase);
-        setSearchResults(results);
-        setCurrentResultIndex(0);
+      // Use immediate search without timeout for better responsiveness
+      const results = searchSermon(paragraphs, searchPhrase);
+      setSearchResults(results);
+      setCurrentResultIndex(0);
 
-        // Note: Scroll handling is now managed by CurrentSermon component to avoid conflicts
-        // The main component will handle scrolling based on priority system
+      // Navigate to first result immediately if found
+      if (results.length > 0) {
+        onNavigateToResult(0);
+      }
 
-        // Clear the search input after successful search
-        setSearchPhrase("");
+      // Don't clear the search input - keep it for editing
+      // setSearchPhrase("");
 
-        // Set searching to false once search is complete
-        setSearching(false);
-      }, 100); // 500ms delay to show loading indicator
+      // Set searching to false once search is complete
+      setSearching(false);
     } else {
       setSearchResults([]);
     }
@@ -72,10 +72,8 @@ const TopCardContent = ({
     paragraphs,
     setSearchResults,
     setCurrentResultIndex,
-    paragraphLayouts,
-    scrollToParagraph,
+    onNavigateToResult,
     setSearching,
-    setSearchPhrase, // Add this dependency
   ]);
 
   const clearSearch = useCallback(() => {
@@ -252,6 +250,10 @@ const TopCardContent = ({
               value={searchPhrase}
               onChangeText={setSearchPhrase}
               returnKeyType="search"
+              onSubmitEditing={submitSearch}
+              autoCorrect={false}
+              autoCapitalize="none"
+              selectTextOnFocus={true}
             />
             {searching ? (
               <ActivityIndicator

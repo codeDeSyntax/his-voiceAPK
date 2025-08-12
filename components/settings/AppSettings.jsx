@@ -4,9 +4,15 @@ import { View, Text, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { styles } from "../../styles/settings";
 
-const AppSettings = ({ theme, router }) => {
+const AppSettings = ({ theme, router, compact = false }) => {
   const getSettingItemStyle = (disabled) => {
-    return [styles.settingItem, { opacity: disabled ? 0.5 : 1 }];
+    return [
+      styles.settingItem,
+      {
+        opacity: disabled ? 0.5 : 1,
+        paddingVertical: compact ? 12 : 20,
+      },
+    ];
   };
 
   const getIconContainerStyle = () => {
@@ -20,16 +26,15 @@ const AppSettings = ({ theme, router }) => {
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: theme.dark ? 0.3 : 0.1,
         shadowRadius: 4,
+        width: compact ? 32 : 44,
+        height: compact ? 32 : 44,
       },
     ];
   };
 
   return (
     <View
-      style={[
-        styles.settingsGroup,
-        { backgroundColor: theme.colors.primary },
-      ]}
+      style={[styles.settingsGroup, { backgroundColor: theme.colors.primary }]}
     >
       <TouchableOpacity
         style={styles.settingItem}

@@ -130,8 +130,7 @@ const AnimatedBackground = React.memo(({ theme }) => {
 
 const SermonList = React.memo(() => {
   const navigation = useNavigation();
-  const { setSelectedSermon, allSermons, addToRecentlyOpened, theme } =
-    useAppContext();
+  const { setSelectedSermon, allSermons, theme } = useAppContext();
 
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");

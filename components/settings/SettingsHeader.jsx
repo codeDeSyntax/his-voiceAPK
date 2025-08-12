@@ -6,7 +6,7 @@ import { styles } from "../../styles/settings";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-const SettingsHeader = ({ theme, accentColor }) => {
+const SettingsHeader = ({ theme, accentColor, compact = false }) => {
   const router = useNavigation();
   const getIconContainerStyle = () => {
     return [
@@ -22,17 +22,30 @@ const SettingsHeader = ({ theme, accentColor }) => {
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: theme.dark ? 0.3 : 0.1,
         shadowRadius: 4,
+        width: compact ? 36 : 44,
+        height: compact ? 36 : 44,
       },
     ];
   };
 
   return (
-    <View style={styles.headerContainer}>
+    <View
+      style={[
+        styles.headerContainer,
+        {
+          paddingBottom: compact ? 12 : 24,
+          paddingHorizontal: compact ? 16 : 20,
+        },
+      ]}
+    >
       <View>
         <Text
           style={[
             styles.headerTitle,
-            { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
+            {
+              color: theme.dark ? "#FFFFFF" : "#1A1A1A",
+              fontSize: compact ? 18 : 20,
+            },
           ]}
         >
           Settings
@@ -40,10 +53,13 @@ const SettingsHeader = ({ theme, accentColor }) => {
         <Text
           style={[
             styles.headerSubtitle,
-            { color: theme.dark ? theme.colors.hlight : "#666666" },
+            {
+              color: theme.dark ? theme.colors.hlight : "#666666",
+              fontSize: compact ? 12 : 14,
+            },
           ]}
         >
-          Customize {"\n"}your experience
+          Customize {compact ? "your experience" : "\n"}{"\n"}your experience
         </Text>
       </View>
       <View style={{ gap: 4, flexDirection: "row" }}>

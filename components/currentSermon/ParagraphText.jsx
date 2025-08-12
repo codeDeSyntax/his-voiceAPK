@@ -46,7 +46,49 @@ const HIGHLIGHT_COLORS = {
   orange: { light: "#FED7AA", dark: "#FB923C99" },
 };
 
-// Memoized text highlighting component for search results - using text color instead of background
+// Helper function to render text with styled numbers
+const renderTextWithStyledNumbers = (text, theme, settings, key = "") => {
+  // Split text by numbers (including decimals, dates, times, etc.)
+  const numberRegex = /(\d+(?:\.\d+)?(?::\d+)?(?:\s*(?:AM|PM|am|pm))?)/g;
+  const parts = text.split(numberRegex);
+
+  return parts.map((part, index) => {
+    const isNumber = numberRegex.test(part);
+
+    if (isNumber) {
+      return (
+        <Text
+          key={`${key}-number-${index}-${part.slice(0, 5)}`}
+          style={{
+            fontSize: responsiveFontSize(settings.fontSize),
+            fontFamily:  "ZillaSlab",
+            color: theme.dark ? "#b37407" : "#36240f", // Amber/orange color for numbers
+            // fontWeight: "700", // Bold numbers
+            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
+          }}
+        >
+          {part}
+        </Text>
+      );
+    } else {
+      return (
+        <Text
+          key={`${key}-text-${index}-${part.slice(0, 10)}`}
+          style={{
+            fontSize: responsiveFontSize(settings.fontSize),
+            fontFamily: settings.fontFamily || "ZillaSlab",
+            color: theme.colors.text,
+            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
+          }}
+        >
+          {part}
+        </Text>
+      );
+    }
+  });
+};
+
+// Memoized text highlighting component for search results - with number styling
 const HighlightedText = React.memo(
   ({ parts, searchPhrase, theme, settings }) => (
     <>
@@ -68,26 +110,19 @@ const HighlightedText = React.memo(
             {part}
           </Text>
         ) : (
-          <Text
-            key={`text-${partIndex}-${part.slice(0, 10)}`}
-            style={{
-              fontSize: responsiveFontSize(settings.fontSize),
-              fontFamily: settings.fontFamily || "ZillaSlab",
-              color: theme.colors.text,
-              lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4
-              ),
-            }}
-          >
-            {part}
-          </Text>
+          renderTextWithStyledNumbers(
+            part,
+            theme,
+            settings,
+            `highlight-${partIndex}`
+          )
         )
       )}
     </>
   )
 );
 
-// Memoized endnote text component
+// Memoized endnote text component - with number styling
 const EndnoteText = React.memo(({ parts, theme, settings }) => (
   <>
     {parts.map((part, partIndex) => {
@@ -129,27 +164,18 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
           </Text>
         );
       } else {
-        return (
-          <Text
-            key={`text-${partIndex}-${part.slice(0, 10)}`}
-            style={{
-              fontSize: responsiveFontSize(settings.fontSize),
-              fontFamily: settings.fontFamily || "ZillaSlab",
-              color: theme.colors.text,
-              lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4
-              ),
-            }}
-          >
-            {part}
-          </Text>
-        ); // Return styled text for non-endnote parts
+        return renderTextWithStyledNumbers(
+          part,
+          theme,
+          settings,
+          `endnote-${partIndex}`
+        );
       }
     })}
   </>
 ));
 
-// Memoized endnote with title component - handles title text between Endnote and William Marrion Branham
+// Memoized endnote with title component - handles title text between Endnote and William Marrion Branham with number styling
 const EndnoteWithTitleText = React.memo(({ parts, theme, settings }) => {
   let isTitle = false; // Track if we're in the title section
 
@@ -165,7 +191,7 @@ const EndnoteWithTitleText = React.memo(({ parts, theme, settings }) => {
               key={`endnote-${partIndex}-${part.slice(0, 10)}`}
               style={{
                 fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: settings.fontFamily || "ZillaSlab",
+                fontFamily: "serif",
                 color: theme.dark ? theme.colors.hlight : "#5d3211",
                 textDecorationLine: "underline",
                 fontWeight: "500",
@@ -182,9 +208,9 @@ const EndnoteWithTitleText = React.memo(({ parts, theme, settings }) => {
             <Text
               key={`title-${partIndex}-${part.slice(0, 10)}`}
               style={{
-                fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: settings.fontFamily || "ZillaSlab",
-                color: theme.dark ? theme.colors.hlight : "#5d3211",
+                fontSize: responsiveFontSize(16),
+                fontFamily: "serif",
+                color: theme.dark ? "#FFFFFF" : "#000000",
                 textDecorationLine: "underline",
                 fontWeight: "500",
                 fontStyle: "italic", // Add italics for the title including the name
@@ -200,40 +226,19 @@ const EndnoteWithTitleText = React.memo(({ parts, theme, settings }) => {
           return titleText;
         } else if (isTitle && part.trim()) {
           // This is title text between Endnote and William Marrion Branham
-          return (
-            <Text
-              key={`title-${partIndex}-${part.slice(0, 10)}`}
-              style={{
-                fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: settings.fontFamily || "ZillaSlab",
-                color: theme.dark ? theme.colors.hlight : "#5d3211",
-                textDecorationLine: "underline",
-                fontWeight: "500",
-                fontStyle: "italic", // Add italics for title text
-                lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4
-                ),
-              }}
-            >
-              {part}
-            </Text>
+          return renderTextWithStyledNumbers(
+            part,
+            theme,
+            settings,
+            `title-${partIndex}`
           );
         } else {
           // Regular text (before Endnote or after William Marrion Branham)
-          return (
-            <Text
-              key={`text-${partIndex}-${part.slice(0, 10)}`}
-              style={{
-                fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: settings.fontFamily || "ZillaSlab",
-                color: theme.colors.text,
-                lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4
-                ),
-              }}
-            >
-              {part}
-            </Text>
+          return renderTextWithStyledNumbers(
+            part,
+            theme,
+            settings,
+            `regular-${partIndex}`
           );
         }
       })}
@@ -336,9 +341,7 @@ const ParagraphText = React.memo(
           borderLeftWidth: 2,
           paddingLeft: 2,
           borderLeftColor: theme.dark ? theme.colors.hlight : "#5d3211",
-          backgroundColor: theme.dark
-            ? theme.colors.hlight + "20"
-            : "#5d321120",
+          backgroundColor: theme.dark ? theme.colors.hlight + "20" : "#ecedee",
         });
       }
 
@@ -750,14 +753,12 @@ const ParagraphText = React.memo(
                         <Text
                           key={`branham-${partIndex}-${part.slice(0, 10)}`}
                           style={{
-                            color: theme.dark ? theme.colors.hlight : "#5d3211",
+                            color: theme.dark ? "#FFFFFF" : "#000000",
                             textDecorationLine: "underline",
-                            fontWeight: "500",
+                            fontWeight: "bold",
                             fontStyle: "italic",
-                            fontFamily: settings?.fontFamily || "ZillaSlab",
-                            fontSize: responsiveFontSize(
-                              settings?.fontSize || 22
-                            ),
+                            fontFamily: "serif",
+                            fontSize: responsiveFontSize(15),
                           }}
                         >
                           {part}
@@ -770,12 +771,10 @@ const ParagraphText = React.memo(
                           style={{
                             color: theme.dark ? theme.colors.hlight : "#5d3211",
                             textDecorationLine: "underline",
-                            fontWeight: "500",
+                            fontWeight: "bold",
                             fontStyle: "italic",
-                            fontFamily: settings?.fontFamily || "ZillaSlab",
-                            fontSize: responsiveFontSize(
-                              settings?.fontSize || 22
-                            ),
+                            fontFamily: "serif",
+                            fontSize: responsiveFontSize(15),
                           }}
                         >
                           {part}
@@ -828,10 +827,20 @@ const ParagraphText = React.memo(
                         {part}
                       </Text>
                     ) : (
-                      part
+                      renderTextWithStyledNumbers(
+                        part,
+                        theme,
+                        settings,
+                        `search-${partIndex}`
+                      )
                     )
                   )
-                : processedText.text}
+                : renderTextWithStyledNumbers(
+                    processedText.text,
+                    theme,
+                    settings,
+                    "normal"
+                  )}
             </Text>
           </View>
         </View>

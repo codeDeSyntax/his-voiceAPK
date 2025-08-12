@@ -44,18 +44,22 @@ export const formatSermonIntoParagraphsAsync = async (text) => {
  * @returns {Promise<Array>} - Array of paragraph strings
  */
 const processLargeTextInBatches = async (text) => {
-  const batchSize = 5000; // Smaller batches (5KB) for better responsiveness
-  const batches = [];
+  // For very large texts, we need to be smarter about batching
+  // to maintain paragraph coherence across batches
 
-  for (let i = 0; i < text.length; i += batchSize) {
-    batches.push(text.substring(i, i + batchSize));
-  }
+  // First, split by major paragraph boundaries
+  const majorParagraphs = text
+    .split(/\n\s*\n/)
+    .filter((p) => p.trim().length > 0);
 
   let allParagraphs = [];
+  const batchSize = 3; // Process 3 major paragraphs at a time
 
-  for (const batch of batches) {
+  for (let i = 0; i < majorParagraphs.length; i += batchSize) {
     // Process each batch with minimal delay
     await new Promise((resolve) => setTimeout(resolve, 1));
+
+    const batch = majorParagraphs.slice(i, i + batchSize).join("\n\n");
     const batchParagraphs = formatSermonIntoParagraphsFast(batch);
     allParagraphs = allParagraphs.concat(batchParagraphs);
   }
@@ -64,7 +68,89 @@ const processLargeTextInBatches = async (text) => {
 };
 
 /**
- * Optimized fast formatter for sermon texts - Enhanced for low-resource devices
+ * Creates equal-volume paragraphs ensuring words are never broken
+ * @param {string} text - Text to split into equal-volume paragraphs
+ * @returns {Array} - Array of balanced paragraph strings
+ */
+const createEqualVolumeParagraphs = (text) => {
+  if (!text || text.length < 200) {
+    return [text];
+  }
+
+  // Target words per paragraph (adjustable based on content length)
+  const minWordsPerParagraph = 300;
+  const maxWordsPerParagraph = 450;
+  const targetWordsPerParagraph = 375;
+
+  // Split text into words while preserving sentence boundaries
+  const sentences = text
+    .split(/(?<=[.!?])\s+/)
+    .filter((s) => s.trim().length > 0);
+
+  if (sentences.length <= 2) {
+    return [text]; // Too few sentences to split meaningfully
+  }
+
+  // Calculate total words and estimate optimal paragraph count
+  const totalWords = text.split(/\s+/).length;
+  const estimatedParagraphs = Math.ceil(totalWords / targetWordsPerParagraph);
+  const targetWordsPerParagraphAdjusted = Math.floor(
+    totalWords / estimatedParagraphs
+  );
+
+  const result = [];
+  let currentParagraph = "";
+  let currentWordCount = 0;
+
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i].trim();
+    const sentenceWordCount = sentence.split(/\s+/).length;
+
+    // Check if adding this sentence would exceed our target
+    const wouldExceedTarget =
+      currentWordCount + sentenceWordCount > targetWordsPerParagraphAdjusted;
+    const hasMinimumWords = currentWordCount >= minWordsPerParagraph;
+    const isLastSentence = i === sentences.length - 1;
+
+    if (wouldExceedTarget && hasMinimumWords && !isLastSentence) {
+      // Current paragraph is complete, start a new one
+      if (currentParagraph.trim()) {
+        result.push(currentParagraph.trim());
+      }
+      currentParagraph = sentence;
+      currentWordCount = sentenceWordCount;
+    } else {
+      // Add sentence to current paragraph
+      currentParagraph += (currentParagraph ? " " : "") + sentence;
+      currentWordCount += sentenceWordCount;
+    }
+
+    // Handle oversized paragraphs by splitting at natural breaks
+    if (currentWordCount > maxWordsPerParagraph && !isLastSentence) {
+      if (currentParagraph.trim()) {
+        result.push(currentParagraph.trim());
+      }
+      currentParagraph = "";
+      currentWordCount = 0;
+    }
+  }
+
+  // Add the last paragraph if it has content
+  if (currentParagraph.trim()) {
+    // If the last paragraph is too small, try to merge with previous
+    if (currentWordCount < minWordsPerParagraph / 2 && result.length > 0) {
+      const lastParagraph = result.pop();
+      result.push(lastParagraph + " " + currentParagraph.trim());
+    } else {
+      result.push(currentParagraph.trim());
+    }
+  }
+
+  return result.length > 0 ? result : [text];
+};
+
+/**
+ * Optimized fast formatter for sermon texts - Enhanced for equal-volume paragraphs
  * @param {string} text - Raw sermon text
  * @returns {Array} - Array of paragraph strings
  */
@@ -84,42 +170,20 @@ const formatSermonIntoParagraphsFast = (text) => {
     .split(/\n\s*\n/)
     .filter((p) => p.trim().length > 5); // Lower threshold for faster processing
 
-  // Simplified processing for better performance
+  // Process using equal-volume algorithm
   const result = [];
-  const maxLength = 1000; // Slightly larger to reduce processing overhead
 
   for (const paragraph of paragraphs) {
     const trimmed = paragraph.trim();
-
-    if (trimmed.length <= maxLength) {
-      result.push(trimmed);
-    } else {
-      // Simplified sentence splitting - avoid complex regex
-      const parts = trimmed.split(". ");
-      let current = "";
-
-      for (const part of parts) {
-        const testLength = current.length + part.length + 2; // +2 for ". "
-
-        if (testLength > maxLength && current) {
-          result.push(current.trim());
-          current = part;
-        } else {
-          current += (current ? ". " : "") + part;
-        }
-      }
-
-      if (current.trim()) {
-        result.push(current.trim());
-      }
-    }
+    const equalVolumeParagraphs = createEqualVolumeParagraphs(trimmed);
+    result.push(...equalVolumeParagraphs);
   }
 
   return result;
 };
 
 /**
- * Formats sermon text into properly sized paragraphs (optimized)
+ * Formats sermon text into properly sized paragraphs (optimized for equal volume)
  * @param {string} text - Raw sermon text
  * @returns {Array} - Array of paragraph strings
  */
@@ -139,44 +203,20 @@ export const formatSermonIntoParagraphs = (text) => {
     .split(/\n\s*\n/)
     .filter((p) => p.trim().length > 0);
 
-  // Process paragraphs more efficiently
+  // Process paragraphs using equal-volume algorithm
   const formattedParagraphs = [];
-  const maxLength = 800;
 
   for (let i = 0; i < paragraphs.length; i++) {
     const paragraph = paragraphs[i].trim();
-
-    if (paragraph.length <= maxLength) {
-      formattedParagraphs.push(paragraph);
-    } else {
-      // Split long paragraphs more efficiently
-      const sentences = paragraph.split(/(?<=[.!?])\s+/);
-      let currentParagraph = "";
-
-      for (const sentence of sentences) {
-        const trimmedSentence = sentence.trim();
-
-        if (currentParagraph.length + trimmedSentence.length > maxLength) {
-          if (currentParagraph.trim()) {
-            formattedParagraphs.push(currentParagraph.trim());
-          }
-          currentParagraph = trimmedSentence;
-        } else {
-          currentParagraph += (currentParagraph ? " " : "") + trimmedSentence;
-        }
-      }
-
-      if (currentParagraph.trim()) {
-        formattedParagraphs.push(currentParagraph.trim());
-      }
-    }
+    const equalVolumeParagraphs = createEqualVolumeParagraphs(paragraph);
+    formattedParagraphs.push(...equalVolumeParagraphs);
   }
 
   return formattedParagraphs;
 };
 
 /**
- * Optimized search for text in paragraphs or by paragraph number
+ * Enhanced search for text in paragraphs with better performance
  * @param {Array} paragraphs - Array of paragraph strings
  * @param {string} searchPhrase - Text to search for or paragraph number
  * @returns {Array} - Array of search result indices
@@ -187,23 +227,42 @@ export const searchSermon = (paragraphs, searchPhrase) => {
   }
 
   const searchResults = [];
-  const lowerSearchPhrase = searchPhrase.toLowerCase();
+  const trimmedSearchPhrase = searchPhrase.trim();
+  const lowerSearchPhrase = trimmedSearchPhrase.toLowerCase();
 
   // Check if search phrase is a paragraph number
-  const paragraphNumberMatch = searchPhrase.match(/^#?(\d+)$/);
+  const paragraphNumberMatch = trimmedSearchPhrase.match(/^#?(\d+)$/);
   if (paragraphNumberMatch) {
     const paragraphNumber = parseInt(paragraphNumberMatch[1]);
     if (paragraphNumber > 0 && paragraphNumber <= paragraphs.length) {
       return [paragraphNumber - 1]; // Convert to zero-based index
     }
+    return []; // Invalid paragraph number
   }
 
-  // Optimized text search using forEach instead of filter/map
-  paragraphs.forEach((paragraph, index) => {
-    if (paragraph.toLowerCase().includes(lowerSearchPhrase)) {
-      searchResults.push(index);
+  // For very short search terms (1-2 characters), require exact word boundaries
+  const isShortSearch = trimmedSearchPhrase.length <= 2;
+  
+  // Optimized text search
+  for (let i = 0; i < paragraphs.length; i++) {
+    const paragraph = paragraphs[i];
+    if (!paragraph) continue;
+    
+    const lowerParagraph = paragraph.toLowerCase();
+    
+    if (isShortSearch) {
+      // For short searches, look for word boundaries to avoid too many matches
+      const wordRegex = new RegExp(`\\b${lowerSearchPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (wordRegex.test(paragraph)) {
+        searchResults.push(i);
+      }
+    } else {
+      // For longer searches, use simple includes for better performance
+      if (lowerParagraph.includes(lowerSearchPhrase)) {
+        searchResults.push(i);
+      }
     }
-  });
+  }
 
   return searchResults;
 };

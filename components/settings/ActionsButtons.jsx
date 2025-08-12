@@ -1,19 +1,38 @@
 // File: components/ActionButtons.js
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { styles } from "../../styles/settings"
+import { styles } from "../../styles/settings";
 
-const ActionButtons = ({ theme, accentColor, saveSettings, restoreDefault }) => {
+const ActionButtons = ({
+  theme,
+  accentColor,
+  saveSettings,
+  restoreDefault,
+  compact = false,
+}) => {
   return (
-    <View style={styles.buttonsContainer}>
+    <View
+      style={[
+        styles.buttonsContainer,
+        {
+          marginTop: compact ? 12 : 24,
+          marginBottom: compact ? 8 : 24,
+        },
+      ]}
+    >
       <TouchableOpacity
         style={[
           styles.saveButton,
-          { backgroundColor: theme.dark ? "#150b04" : "#432815" },
+          {
+            backgroundColor: theme.dark ? "#150b04" : "#432815",
+            paddingVertical: compact ? 12 : 16,
+          },
         ]}
         onPress={saveSettings}
       >
-        <Text style={styles.saveButtonText}>Save Settings</Text>
+        <Text style={[styles.saveButtonText, { fontSize: compact ? 14 : 16 }]}>
+          Save Settings
+        </Text>
       </TouchableOpacity>
 
       {/* <TouchableOpacity

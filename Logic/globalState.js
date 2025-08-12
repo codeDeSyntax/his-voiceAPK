@@ -21,7 +21,6 @@ const SERMON_MODULES = {
 
 // Storage keys in constants to avoid typos
 const STORAGE_KEYS = {
-  RECENTLY_OPENED: "recentlyOpenedSermons",
   SETTINGS: "sermonSettings",
   LAST_POSITIONS: "sermonLastPositions",
   BOOKMARKS: "sermonBookmarks",
@@ -53,7 +52,6 @@ export const SermonProvider = ({ children }) => {
   const [selectedSermon, setSelectedSermon] = useState(null);
   const [allSermons, setAllSermons] = useState([]);
   const [textSermons, setTextSermons] = useState([]);
-  const [recentlyOpened, setRecentlyOpened] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -142,47 +140,6 @@ export const SermonProvider = ({ children }) => {
     [getLastReadPosition]
   );
 
-  // Add sermon to recently opened
-  const addToRecentlyOpened = useCallback(
-    (sermon) => {
-      if (!sermon) return;
-
-      setRecentlyOpened((prevRecents) => {
-        // Remove if already exists
-        // dont allow for duplicates
-        const sermonExists = prevRecents.some(
-          (s) => s.id === sermon.id && s.title === sermon.title
-        );
-        if (sermonExists) {
-          return prevRecents;
-        }
-        const filteredRecents = prevRecents.filter((s) => s.id !== sermon.id);
-        // Add to beginning of array with last read position
-        const newRecents = [
-          {
-            id: sermon.id,
-            title: sermon.title,
-            date: sermon.date,
-            location: sermon?.location,
-            type: sermon.type,
-            year: sermon.year,
-            lastReadParagraph: getLastReadPosition(sermon.id),
-          },
-          ...filteredRecents,
-        ].slice(0, 20); // Limit to 20 items
-
-        // Save to storage
-        AsyncStorage.setItem(
-          STORAGE_KEYS.RECENTLY_OPENED,
-          JSON.stringify(newRecents)
-        ).catch((err) => console.error("Error saving recents:", err));
-
-        return newRecents;
-      });
-    },
-    [getLastReadPosition]
-  );
-
   // Load sermons from modules
   const loadSermons = useCallback(async () => {
     try {
@@ -245,14 +202,6 @@ export const SermonProvider = ({ children }) => {
   // Load data from storage
   const loadStoredData = useCallback(async () => {
     try {
-      // Load recents
-      const recentsValue = await AsyncStorage.getItem(
-        STORAGE_KEYS.RECENTLY_OPENED
-      );
-      if (recentsValue) {
-        setRecentlyOpened(JSON.parse(recentsValue));
-      }
-
       // Load settings
       const storedSettings = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (storedSettings) {
@@ -294,13 +243,6 @@ export const SermonProvider = ({ children }) => {
       handleRandomSermons();
     }
   }, [sermonsLoaded, textSermons, handleRandomSermons, selectedSermon]);
-
-  // Update recently opened when sermon changes
-  useEffect(() => {
-    if (selectedSermon) {
-      addToRecentlyOpened(selectedSermon);
-    }
-  }, [selectedSermon, addToRecentlyOpened]);
 
   // Load bookmarks from storage on app start
   useEffect(() => {
@@ -523,14 +465,6 @@ export const SermonProvider = ({ children }) => {
           setIsDarkMode(parsedSettings.darkMode);
         }
 
-        // Load recently opened
-        const storedRecents = await AsyncStorage.getItem(
-          STORAGE_KEYS.RECENTLY_OPENED
-        );
-        if (storedRecents) {
-          setRecentlyOpened(JSON.parse(storedRecents));
-        }
-
         // Load last positions
         const storedPositions = await AsyncStorage.getItem(
           STORAGE_KEYS.LAST_POSITIONS
@@ -569,9 +503,6 @@ export const SermonProvider = ({ children }) => {
       setSelectedSermon: setSelectedSermonWithPosition,
       allSermons,
       textSermons,
-      recentlyOpened,
-      addToRecentlyOpened,
-      setRecentlyOpened,
 
       // UI state
       searchText,
@@ -631,7 +562,6 @@ export const SermonProvider = ({ children }) => {
       setSelectedSermonWithPosition,
       allSermons,
       textSermons,
-      recentlyOpened,
       searchText,
       setSearchText,
       error,

@@ -8,6 +8,9 @@ import {
   Image,
   Animated,
   Easing,
+  Dimensions,
+  Platform,
+  Vibration,
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
@@ -22,6 +25,8 @@ import {
   spacing,
 } from "../../Utils/responsiveUtils";
 
+const { width: screenWidth } = Dimensions.get("window");
+
 const Welcome = () => {
   const navigation = useNavigation();
   const { theme } = useAppContext();
@@ -29,28 +34,88 @@ const Welcome = () => {
     "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
   });
 
-  // Animation values
+  // Enhanced animation values with better performance
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const logoRotateAnim = useRef(new Animated.Value(0)).current;
   const buttonPulseAnim = useRef(new Animated.Value(1)).current;
 
-  // Slider animation values
+  // Enhanced slider animation values
   const slideX = useRef(new Animated.Value(0)).current;
   const sliderOpacity = useRef(new Animated.Value(0.8)).current;
   const textOpacity = useRef(new Animated.Value(1)).current;
   const backgroundWidth = useRef(new Animated.Value(0)).current;
+  const thumbScale = useRef(new Animated.Value(1)).current;
+  const glowIntensity = useRef(new Animated.Value(0)).current;
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const rippleScale = useRef(new Animated.Value(0)).current;
 
-  const sliderWidth = horizontalScale(250);
-  const thumbSize = horizontalScale(50);
-  const maxSlideDistance = sliderWidth - thumbSize - 8; // 8 for padding
+  // Responsive slider dimensions
+  const sliderWidth = Math.min(horizontalScale(280), screenWidth * 0.8);
+  const thumbSize = horizontalScale(56);
+  const maxSlideDistance = sliderWidth - thumbSize - 8;
 
-  // Reset slider to initial state
+  // Haptic feedback helper
+  const triggerHaptic = (type = "impactMedium") => {
+    if (Platform.OS === "ios") {
+      switch (type) {
+        case "impactLight":
+          Vibration.vibrate(10);
+          break;
+        case "impactMedium":
+          Vibration.vibrate(20);
+          break;
+        case "impactHeavy":
+          Vibration.vibrate(30);
+          break;
+        case "success":
+          Vibration.vibrate([0, 50, 50, 50]);
+          break;
+      }
+    } else {
+      Vibration.vibrate(50);
+    }
+  };
+
+  // Enhanced reset slider with micro-animations
   const resetSlider = () => {
-    slideX.setValue(0);
-    backgroundWidth.setValue(0);
-    textOpacity.setValue(1);
+    Animated.parallel([
+      Animated.spring(slideX, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 150,
+        friction: 8,
+      }),
+      Animated.timing(backgroundWidth, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+        easing: Easing.out(Easing.ease),
+      }),
+      Animated.timing(textOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(thumbScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 200,
+        friction: 8,
+      }),
+      Animated.timing(glowIntensity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rippleScale, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     sliderOpacity.setValue(0.8);
   };
 
@@ -61,62 +126,62 @@ const Welcome = () => {
     }, [])
   );
 
-  // Reset slider position when component mounts
+  // Enhanced initialization with micro-interactions
   useEffect(() => {
-    // Reset all slider-related animations to initial state
+    // Reset all animations to initial state
     resetSlider();
-
-    // Reset entrance animations
     fadeAnim.setValue(0);
     slideAnim.setValue(50);
     scaleAnim.setValue(0.8);
     logoRotateAnim.setValue(0);
+    shimmerAnim.setValue(0);
 
-    // Staggered entrance animations
+    // Staggered entrance animations with better physics
     Animated.sequence([
-      // Logo entrance with rotation
+      // Logo entrance with enhanced rotation and scale
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 800,
+          duration: 900,
           useNativeDriver: true,
           easing: Easing.out(Easing.ease),
         }),
-        Animated.timing(logoRotateAnim, {
+        Animated.spring(logoRotateAnim, {
           toValue: 1,
-          duration: 1000,
           useNativeDriver: true,
-          easing: Easing.out(Easing.back(1.2)),
+          tension: 100,
+          friction: 8,
+          velocity: 0,
         }),
       ]),
-      // Content slide up and scale in
+      // Content slide up with spring physics
       Animated.parallel([
-        Animated.timing(slideAnim, {
+        Animated.spring(slideAnim, {
           toValue: 0,
-          duration: 600,
           useNativeDriver: true,
-          easing: Easing.out(Easing.ease),
+          tension: 120,
+          friction: 8,
         }),
-        Animated.timing(scaleAnim, {
+        Animated.spring(scaleAnim, {
           toValue: 1,
-          duration: 600,
           useNativeDriver: true,
-          easing: Easing.out(Easing.ease),
+          tension: 100,
+          friction: 8,
         }),
       ]),
     ]).start();
 
-    // Button pulse animation
-    const pulseAnimation = Animated.loop(
+    // Enhanced shimmer effect for slider
+    const shimmerAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(sliderOpacity, {
+        Animated.timing(shimmerAnim, {
           toValue: 1,
           duration: 2000,
           useNativeDriver: true,
           easing: Easing.inOut(Easing.ease),
         }),
-        Animated.timing(sliderOpacity, {
-          toValue: 0.8,
+        Animated.timing(shimmerAnim, {
+          toValue: 0,
           duration: 2000,
           useNativeDriver: true,
           easing: Easing.inOut(Easing.ease),
@@ -124,67 +189,167 @@ const Welcome = () => {
       ])
     );
 
-    // Start pulse animation after initial animations
+    // Breathing pulse animation for slider
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(sliderOpacity, {
+          toValue: 1,
+          duration: 2500,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        Animated.timing(sliderOpacity, {
+          toValue: 0.7,
+          duration: 2500,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        }),
+      ])
+    );
+
+    // Start animations with delay
     setTimeout(() => {
+      shimmerAnimation.start();
       pulseAnimation.start();
     }, 1500);
 
     return () => {
+      shimmerAnimation.stop();
       pulseAnimation.stop();
     };
   }, []);
 
+  // Enhanced gesture handling with haptic feedback
   const onGestureEvent = Animated.event(
     [{ nativeEvent: { translationX: slideX } }],
-    { useNativeDriver: true }
+    {
+      useNativeDriver: true,
+      listener: (event) => {
+        const { translationX } = event.nativeEvent;
+
+        // Progressive glow effect based on slide progress
+        const progress = Math.min(
+          Math.max(translationX / maxSlideDistance, 0),
+          1
+        );
+        glowIntensity.setValue(progress);
+
+        // Scale effect on thumb
+        const scaleValue = 1 + progress * 0.1;
+        thumbScale.setValue(scaleValue);
+
+        // Haptic feedback at 50% progress
+        if (progress > 0.5 && progress < 0.55) {
+          triggerHaptic("impactLight");
+        }
+      },
+    }
   );
 
   const onHandlerStateChange = (event) => {
-    if (event.nativeEvent.oldState === State.ACTIVE) {
-      const { translationX } = event.nativeEvent;
+    const { state, translationX } = event.nativeEvent;
 
-      if (translationX > maxSlideDistance * 0.7) {
-        // Complete the slide animation
+    if (state === State.BEGAN) {
+      // Start gesture feedback
+      triggerHaptic("impactLight");
+      Animated.timing(rippleScale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+
+    if (state === State.ACTIVE) {
+      const progress = translationX / maxSlideDistance;
+
+      // Update background width in real-time
+      backgroundWidth.setValue(progress);
+
+      // Text fade out based on progress
+      const textOpacityValue = Math.max(0, 1 - progress * 2);
+      textOpacity.setValue(textOpacityValue);
+    }
+
+    if (state === State.END || state === State.CANCELLED) {
+      const progress = translationX / maxSlideDistance;
+
+      if (progress > 0.75) {
+        // Success - Complete the slide with enhanced feedback
+        triggerHaptic("success");
+
         Animated.parallel([
-          Animated.timing(slideX, {
+          Animated.spring(slideX, {
             toValue: maxSlideDistance,
-            duration: 200,
             useNativeDriver: true,
-            easing: Easing.out(Easing.ease),
+            tension: 200,
+            friction: 8,
           }),
           Animated.timing(backgroundWidth, {
             toValue: 1,
-            duration: 200,
+            duration: 300,
             useNativeDriver: false,
+            easing: Easing.out(Easing.ease),
           }),
           Animated.timing(textOpacity, {
             toValue: 0,
-            duration: 150,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.spring(thumbScale, {
+            toValue: 1.2,
+            useNativeDriver: true,
+            tension: 150,
+            friction: 6,
+          }),
+          Animated.timing(glowIntensity, {
+            toValue: 1,
+            duration: 200,
             useNativeDriver: true,
           }),
         ]).start(() => {
           // Navigate after animation completes
           setTimeout(() => {
             navigation?.navigate("AllSermons");
-          }, 100);
+          }, 150);
         });
       } else {
-        // Snap back to start
+        // Snap back with spring physics
+        triggerHaptic("impactMedium");
+
         Animated.parallel([
           Animated.spring(slideX, {
             toValue: 0,
             useNativeDriver: true,
-            tension: 100,
-            friction: 8,
+            tension: 180,
+            friction: 10,
+            velocity: -translationX * 0.1,
           }),
           Animated.timing(backgroundWidth, {
             toValue: 0,
-            duration: 200,
+            duration: 400,
             useNativeDriver: false,
+            easing: Easing.out(Easing.ease),
           }),
-          Animated.timing(textOpacity, {
+          Animated.spring(textOpacity, {
             toValue: 1,
-            duration: 200,
+            useNativeDriver: true,
+            tension: 150,
+            friction: 8,
+          }),
+          Animated.spring(thumbScale, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 200,
+            friction: 8,
+          }),
+          Animated.timing(glowIntensity, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rippleScale, {
+            toValue: 0,
+            duration: 300,
             useNativeDriver: true,
           }),
         ]).start();
@@ -192,6 +357,7 @@ const Welcome = () => {
     }
   };
 
+  // Enhanced interpolations for smoother animations
   const clampedSlideX = slideX.interpolate({
     inputRange: [0, maxSlideDistance],
     outputRange: [0, maxSlideDistance],
@@ -201,11 +367,32 @@ const Welcome = () => {
   const backgroundWidthInterpolate = backgroundWidth.interpolate({
     inputRange: [0, 1],
     outputRange: [0, sliderWidth],
+    extrapolate: "clamp",
   });
 
   const logoRotation = logoRotateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["-10deg", "0deg"],
+    outputRange: ["-5deg", "0deg"],
+  });
+
+  const shimmerTranslate = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-sliderWidth, sliderWidth],
+  });
+
+  const glowOpacity = glowIntensity.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.6],
+  });
+
+  const rippleScaleInterpolate = rippleScale.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 2],
+  });
+
+  const rippleOpacity = rippleScale.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.3, 0.1, 0],
   });
 
   // if (!fontsLoaded) {
@@ -285,7 +472,7 @@ const Welcome = () => {
               </Text>
             </Animated.View>
 
-            {/* Slider Section */}
+            {/* Enhanced Slider Section with Glassmorphism */}
             <Animated.View
               style={[
                 styles.sliderContainer,
@@ -295,7 +482,19 @@ const Welcome = () => {
                 },
               ]}
             >
+              {/* Ripple Effect */}
+              <Animated.View
+                style={[
+                  styles.rippleEffect,
+                  {
+                    transform: [{ scale: rippleScaleInterpolate }],
+                    opacity: rippleOpacity,
+                  },
+                ]}
+              />
+
               <View style={styles.sliderTrack}>
+                {/* Enhanced Background with Gradient */}
                 <Animated.View
                   style={[
                     styles.sliderBackground,
@@ -303,7 +502,43 @@ const Welcome = () => {
                       width: backgroundWidthInterpolate,
                     },
                   ]}
-                />
+                >
+                  <LinearGradient
+                    colors={[
+                      "rgba(230, 195, 184, 0.1)",
+                      "rgba(230, 195, 184, 0.25)",
+                      "rgba(230, 195, 184, 0.15)",
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.backgroundGradient}
+                  />
+                </Animated.View>
+
+                {/* Shimmer Effect */}
+                <Animated.View
+                  style={[
+                    styles.shimmerOverlay,
+                    {
+                      transform: [{ translateX: shimmerTranslate }],
+                    },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={[
+                      "transparent",
+                      "rgba(255, 255, 255, 0.1)",
+                      "rgba(255, 255, 255, 0.2)",
+                      "rgba(255, 255, 255, 0.1)",
+                      "transparent",
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.shimmerGradient}
+                  />
+                </Animated.View>
+
+                {/* Enhanced Slide Text */}
                 <Animated.Text
                   style={[
                     styles.sliderText,
@@ -314,6 +549,8 @@ const Welcome = () => {
                 >
                   Slide to enter
                 </Animated.Text>
+
+                {/* Enhanced Thumb with Glow */}
                 <PanGestureHandler
                   onGestureEvent={onGestureEvent}
                   onHandlerStateChange={onHandlerStateChange}
@@ -322,27 +559,36 @@ const Welcome = () => {
                     style={[
                       styles.sliderThumb,
                       {
-                        transform: [{ translateX: clampedSlideX }],
+                        transform: [
+                          { translateX: clampedSlideX },
+                          { scale: thumbScale },
+                        ],
                       },
                     ]}
                   >
-                    <LinearGradient
-                      colors={[
-                        "rgba(230, 195, 184, 0.9)",
-                        "rgba(230, 195, 184, 0.7)",
-                        "rgba(230, 195, 184, 0.9)",
+                    {/* Glow Effect */}
+                    <Animated.View
+                      style={[
+                        styles.thumbGlow,
+                        {
+                          opacity: glowOpacity,
+                        },
                       ]}
-                      style={styles.thumbGradient}
-                    >
-                      <Ionicons
-                        name="arrow-forward"
-                        size={responsiveFontSize(20)}
-                        color="rgba(28, 25, 23, 0.8)"
-                      />
-                    </LinearGradient>
+                    />
+
+                    <Image
+                      source={require("../../assets/pyramid.png")}
+                      style={styles.thumbImage}
+                      resizeMode="contain"
+                    />
                   </Animated.View>
                 </PanGestureHandler>
               </View>
+
+              {/* Instruction Text */}
+              <Text style={styles.instructionText}>
+                Swipe right to begin your journey
+              </Text>
             </Animated.View>
           </Animated.View>
         </LinearGradient>
@@ -449,62 +695,125 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     marginTop: spacing.md,
   },
-  buttonContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
   sliderContainer: {
     alignItems: "center",
     justifyContent: "center",
     marginTop: spacing.xl,
+    position: "relative",
+  },
+  rippleEffect: {
+    position: "absolute",
+    width: horizontalScale(300),
+    height: horizontalScale(300),
+    borderRadius: horizontalScale(150),
+    backgroundColor: "rgba(230, 195, 184, 0.1)",
+    zIndex: 0,
   },
   sliderTrack: {
-    width: horizontalScale(250),
-    height: verticalScale(60),
-    borderRadius: horizontalScale(30),
-    borderWidth: 2,
-    borderColor: "rgba(230, 195, 184, 0.3)",
+    width: horizontalScale(280),
+    height: verticalScale(64),
+    borderRadius: horizontalScale(32),
+    borderWidth: 1.5,
+    borderColor: "rgba(230, 195, 184, 0.25)",
     backgroundColor: "rgba(28, 25, 23, 0.4)",
+    backdropFilter: "blur(10px)",
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1,
   },
   sliderBackground: {
     position: "absolute",
     left: 0,
     top: 0,
     height: "100%",
-    backgroundColor: "rgba(230, 195, 184, 0.15)",
-    borderRadius: horizontalScale(30),
+    borderRadius: horizontalScale(32),
+    overflow: "hidden",
+  },
+  backgroundGradient: {
+    flex: 1,
+    borderRadius: horizontalScale(32),
+  },
+  shimmerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: -horizontalScale(100),
+    right: -horizontalScale(100),
+    height: "100%",
+    zIndex: 1,
+  },
+  shimmerGradient: {
+    flex: 1,
+    width: horizontalScale(100),
   },
   sliderText: {
     fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(14),
-    color: "rgba(255, 255, 255, 0.6)",
-    fontWeight: "300",
-    letterSpacing: 1,
+    fontSize: responsiveFontSize(15),
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: "400",
+    letterSpacing: 1.2,
     position: "absolute",
-    zIndex: 1,
+    zIndex: 2,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   sliderThumb: {
     position: "absolute",
-    left: 4,
-    width: horizontalScale(50),
-    height: verticalScale(50),
-    borderRadius: horizontalScale(25),
-    zIndex: 2,
+    left: horizontalScale(4),
+    width: horizontalScale(56),
+    height: verticalScale(56),
+    borderRadius: horizontalScale(28),
+    zIndex: 3,
     shadowColor: "#e6c3b8",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: horizontalScale(4),
-    elevation: 5,
-  },
-  thumbGradient: {
-    flex: 1,
-    borderRadius: horizontalScale(25),
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: horizontalScale(8),
+    elevation: 12,
     justifyContent: "center",
     alignItems: "center",
+  },
+  thumbGlow: {
+    position: "absolute",
+    top: -horizontalScale(4),
+    left: -horizontalScale(4),
+    right: -horizontalScale(4),
+    bottom: -horizontalScale(4),
+    borderRadius: horizontalScale(32),
+    backgroundColor: "rgba(230, 195, 184, 0.3)",
+    shadowColor: "#e6c3b8",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: horizontalScale(12),
+    elevation: 8,
+  },
+  thumbImage: {
+    width: horizontalScale(56),
+    height: verticalScale(56),
+    borderRadius: horizontalScale(28),
+    borderWidth: 2,
+    borderColor: "rgba(230, 195, 184, 0.4)",
+    opacity: 0.95,
+  },
+  instructionText: {
+    fontFamily: "ZillaSlab-Regular",
+    fontSize: responsiveFontSize(12),
+    color: "rgba(255, 255, 255, 0.5)",
+    fontWeight: "300",
+    letterSpacing: 0.8,
+    marginTop: spacing.md,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  buttonContainer: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonIcon: {
     marginBottom: spacing.xs,

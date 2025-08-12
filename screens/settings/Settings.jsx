@@ -238,14 +238,24 @@ const Settings = React.memo(() => {
   }
 
   return (
-    <View style={{backgroundColor:theme.colors.background,flex:1}}>
+    <View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
       <DraggableFloatingBackButton />
-      <ScrollView style={containerStyle} showsVerticalScrollIndicator={false}>
-        <SettingsHeader theme={theme} accentColor={accentColor} />
+      <View style={[containerStyle, { paddingTop: 40 }]}>
+        <SettingsHeader
+          theme={theme}
+          accentColor={accentColor}
+          compact={true}
+        />
 
-        <ProfileSection theme={theme} accentColor={FIXED_ACCENT_COLOR} />
+        <ProfileSection
+          theme={theme}
+          accentColor={FIXED_ACCENT_COLOR}
+          compact={true}
+        />
 
-        <Text style={sectionHeaderStyle}>DISPLAY</Text>
+        <Text style={[sectionHeaderStyle, { fontSize: 14, marginBottom: 8 }]}>
+          DISPLAY
+        </Text>
 
         <DisplaySettings
           theme={theme}
@@ -256,27 +266,43 @@ const Settings = React.memo(() => {
           setFontSize={setFontSize}
           fontFamily={fontFamily}
           setFontFamily={setFontFamily}
+          compact={true}
         />
 
-        <Text style={[sectionHeaderStyle, { marginTop: 24 }]}>APP</Text>
+        <Text
+          style={[
+            sectionHeaderStyle,
+            { marginTop: 16, fontSize: 14, marginBottom: 8 },
+          ]}
+        >
+          APP
+        </Text>
 
-        <AppSettings theme={theme} router={router} />
-
-        <Text style={versionTextStyle}>Version 1.0.0 • Build 2025.05.09</Text>
+        <AppSettings theme={theme} router={router} compact={true} />
 
         <ActionButtons
           theme={theme}
           accentColor={FIXED_ACCENT_COLOR}
           saveSettings={saveSettings}
           restoreDefault={restoreDefault}
+          compact={true}
         />
+
+        <Text
+          style={[
+            versionTextStyle,
+            { textAlign: "center", fontSize: 10, marginTop: 8 },
+          ]}
+        >
+          Version 1.0.0 • Build 2025.05.09
+        </Text>
 
         <SavingModal
           visible={savingTheme}
           theme={theme}
           accentColor={FIXED_ACCENT_COLOR}
         />
-      </ScrollView>
+      </View>
     </View>
   );
 });

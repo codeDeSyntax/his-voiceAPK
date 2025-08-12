@@ -18,7 +18,6 @@
 
 // // Lazy load components
 // const SermonList = React.lazy(() => import("../screens/SermonList/AllSermons"));
-// import RecentlyOpenedSermons from "../screens/RecentlyOpened/RecentSermons";
 // import SermonSearch from "../screens/Search/Search";
 // import Home from "../screens/Home/CurrentSermon";
 // import Settings from "../screens/settings/Settings";
@@ -26,7 +25,7 @@
 // const Tab = createBottomTabNavigator();
 
 // function TabNavigator() {
-//   const { recentlyOpened, theme } = useAppContext()
+//   const { theme } = useAppContext()
 
 //   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -57,7 +56,7 @@
 //       // Clean up listeners on component unmount
 //       keyboardDidHideListener.remove();
 //       keyboardDidShowListener.remove();
-//       backHandler.remove(); 
+//       backHandler.remove();
 //     };
 //   }, []);
 
@@ -97,31 +96,6 @@
 //                     color={color}
 //                     style={styles.tabIcon}
 //                   />
-//                 );
-//                 break;
-//               case "Recent":
-//                 icon = (
-//                   <View>
-//                     {/* <Ionicons 
-//                       name={focused ? "time" : "time-outline"} 
-//                       size={.size} 
-//                       color={color}
-//                       style={styeles.tabIcon} 
-//                     /> */}
-//                     <Image
-//                       source={require("../assets/notebook.gif")}
-//                       height={50}
-//                       width={50}
-//                       style={[styles.icon, { borderRadius: 100 }]}
-//                     />
-//                     {recentlyOpened.length > 0 && (
-//                       <View style={styles.badgeContainer}>
-//                         <Text style={styles.badgeText}>
-//                           {recentlyOpened.length}
-//                         </Text>
-//                       </View>
-//                     )}
-//                   </View>
 //                 );
 //                 break;
 //               case "Settings":
@@ -191,13 +165,6 @@
 //           {() => (
 //             <Suspense fallback={<LoadingScreen />}>
 //               <SermonList />
-//             </Suspense>
-//           )}
-//         </Tab.Screen>
-//         <Tab.Screen name="Recent">
-//           {() => (
-//             <Suspense fallback={<LoadingScreen />}>
-//               <RecentlyOpenedSermons />
 //             </Suspense>
 //           )}
 //         </Tab.Screen>
