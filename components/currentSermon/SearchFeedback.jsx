@@ -5,52 +5,39 @@ const SearchFeedback = ({
   isVisible,
   message = 'Paragraph found',
   theme,
-  duration = 1500, // Reduced from 2000 for snappier feel
+  duration = 2000,
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const isMounted = useRef(false);
 
   useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+
     if (isVisible) {
-      // Reset animations
-      fadeAnim.setValue(0);
-      scaleAnim.setValue(0.8);
+      fadeAnim.setValue(0); // Reset first to avoid glitches
 
-      // Faster, more responsive animations
-      const fadeIn = Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 150, // Faster fade in
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 300,
-          friction: 10,
-          useNativeDriver: true,
-        })
-      ]);
+      const fadeIn = Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      });
 
-      const fadeOut = Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200, // Faster fade out
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 0.8,
-          duration: 200,
-          useNativeDriver: true,
-        })
-      ]);
+      const fadeOut = Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      });
 
       Animated.sequence([
         fadeIn,
-        Animated.delay(duration - 350), // Adjusted delay
+        Animated.delay(duration - 600),
         fadeOut,
       ]).start();
     }
-  }, [isVisible, duration]);
+  }, [isVisible]);
 
   if (!isVisible) return null;
 
@@ -58,7 +45,6 @@ const SearchFeedback = ({
     opacity: fadeAnim,
     backgroundColor: theme?.colors?.primary || '#000',
     transform: [
-      { scale: scaleAnim },
       {
         translateY: fadeAnim.interpolate({
           inputRange: [0, 1],
@@ -80,22 +66,20 @@ const SearchFeedback = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 120, // Moved up a bit from the bottom
+    bottom: 100,
     alignSelf: 'center',
-    paddingHorizontal: 20, // Increased padding
-    paddingVertical: 12,
-    borderRadius: 12, // More rounded
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    minWidth: 120, // Minimum width for better appearance
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   message: {
     fontSize: 14,
-    fontWeight: '600', // Slightly bolder
-    textAlign: 'center',
+    fontWeight: '500',
   },
 });
 

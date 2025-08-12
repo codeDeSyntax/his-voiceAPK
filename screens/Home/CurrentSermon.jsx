@@ -82,12 +82,24 @@ const CurrentSermon = React.memo(({ route }) => {
   const [paragraphLayouts, setParagraphLayouts] = useState({});
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [searching, setSearching] = useState(false);
   const [isCardOpen, setIsCardOpen] = useState(false);
+  const [currentVisibleParagraph, setCurrentVisibleParagraph] = useState(0);
+  const [hasScrolledToLastPosition, setHasScrolledToLastPosition] =
+    useState(false);
+  const [showSelectionTip, setShowSelectionTip] = useState(false);
   const [paragraphs, setParagraphs] = useState([]);
   const [isLoadingParagraphs, setIsLoadingParagraphs] = useState(false);
 
+  // Scroll priority management
+  const [scrollPriority, setScrollPriority] = useState(null); // 'search', 'bookmark', 'lastread', 'bottomsheet'
+  const [hasHandledInitialScroll, setHasHandledInitialScroll] = useState(false);
+
   const scrollViewRef = useRef(null);
+  const scrollTimeout = useRef(null);
+  const isUserScrolling = useRef(false); // Track if user is actively scrolling
+  const userScrollTimer = useRef(null); // Timer to detect when user stops scrolling
 
   // Load fonts to ensure ZillaSlab is available
   const [fontsLoaded] = useFonts({
@@ -333,23 +345,48 @@ const CurrentSermon = React.memo(({ route }) => {
     setScrollPriority(null);
   }, [selectedSermon?.id]);
 
-  // Simplified search effect - remove debouncing and complex priority management
+  // Update search results when search phrase changes (MEDIUM PRIORITY)
   useEffect(() => {
-    if (searchPhrase && paragraphs.length > 0) {
-      try {
-        setSearching(true);
-        const results = searchSermon(paragraphs, searchPhrase);
-        setSearchResults(results);
-        setCurrentResultIndex(0);
-        setSearching(false);
-      } catch (error) {
-        console.log(error);
-        setSearching(false);
+    const fetchSearchResults = async () => {
+      if (searchPhrase) {
+        try {
+          setSearching(true);
+          const results = searchSermon(paragraphs, searchPhrase);
+          setSearchResults(results);
+          setSearching(false);
+          setCurrentResultIndex(0);
+
+          // Only auto-scroll if not interfering with higher priority operations
+          if (
+            results.length > 0 &&
+            paragraphLayouts[results[0]] &&
+            scrollPriority !== "search" && // Don't interfere with external search navigation
+            !hasHandledInitialScroll // Don't interfere with initial search scroll
+          ) {
+            setScrollPriority("bottomsheet");
+            scrollToParagraph(results[0]);
+            // Clear priority after scroll
+            setTimeout(() => setScrollPriority(null), 1500);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      } else {
+        setSearchResults([]);
       }
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchPhrase, paragraphs]);
+    };
+
+    const timeout = setTimeout(fetchSearchResults, 300); // Debounce delay
+
+    return () => clearTimeout(timeout);
+  }, [
+    searchPhrase,
+    paragraphs,
+    paragraphLayouts,
+    scrollToParagraph,
+    scrollPriority,
+    hasHandledInitialScroll,
+  ]);
 
   // Store paragraph layout information for scrolling
   const handleParagraphLayout = useCallback((index, event) => {
@@ -369,10 +406,41 @@ const CurrentSermon = React.memo(({ route }) => {
     setParagraphLayouts({});
   }, [selectedSermon?.sermon]);
 
-  // Simplified scroll to paragraph function
+  // Scroll to specific paragraph by index
   const scrollToParagraph = useCallback(
-    (index) => {
+    (index, forcePriority = false) => {
       if (paragraphLayouts[index] && scrollViewRef.current) {
+        // CRITICAL: Only block auto-scroll for low-priority operations when user is scrolling
+        // Allow forced navigation scrolls (search, bookmark) to proceed
+        if (
+          !forcePriority &&
+          isUserScrolling.current &&
+          scrollPriority === "lastread"
+        ) {
+          console.log(
+            "User is actively scrolling, cancelling low-priority auto-scroll"
+          );
+          return;
+        }
+
+        // Check if we should respect priority system (unless forced)
+        if (!forcePriority && scrollPriority) {
+          // Priority order: search > bookmark > bottomsheet > lastread
+          const priorityOrder = [
+            "search",
+            "bookmark",
+            "bottomsheet",
+            "lastread",
+          ];
+          const currentPriorityIndex = priorityOrder.indexOf(scrollPriority);
+
+          // Don't scroll if a higher or equal priority operation is in progress
+          // bottomsheet can be overridden by search or bookmark
+          if (scrollPriority === "search" || scrollPriority === "bookmark") {
+            return;
+          }
+        }
+
         // Calculate position to scroll to, with some padding to see context
         const scrollPosition = Math.max(0, paragraphLayouts[index].y - 100);
 
@@ -382,39 +450,52 @@ const CurrentSermon = React.memo(({ route }) => {
         });
       }
     },
-    [paragraphLayouts]
+    [paragraphLayouts, scrollPriority]
   );
 
   // Scroll to top of sermon
   const scrollToTop = useCallback(() => {
+    // Clear any ongoing priority operations for manual navigation
+    setScrollPriority(null);
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
   // Scroll to bottom of sermon
   const scrollToBottom = useCallback(() => {
+    // Clear any ongoing priority operations for manual navigation
+    setScrollPriority(null);
     scrollViewRef.current?.scrollTo({ y: contentHeight, animated: true });
   }, [contentHeight]);
 
-  // Simplified navigate to search result
+  // Navigate to a search result
   const navigateToResult = useCallback(
-    (resultIndex) => {
-      setCurrentResultIndex(resultIndex);
-      
-      if (searchResults[resultIndex] !== undefined) {
-        const paragraphIndex = searchResults[resultIndex];
-        scrollToParagraph(paragraphIndex);
+    (paragraphIndex) => {
+      // Only allow navigation if user isn't actively scrolling
+      if (isUserScrolling.current) {
+        console.log("User is scrolling, deferring navigation");
+        return;
+      }
+
+      // Clear any low priority operations and set medium priority for manual navigation
+      if (scrollPriority === "lastread") {
+        setScrollPriority("bottomsheet");
+      }
+
+      // Add a small delay to prevent conflicts with user gestures
+      setTimeout(() => {
+        scrollToParagraph(paragraphIndex, true); // Force this scroll - user-initiated action
 
         // Show feedback
-        setFeedbackMessage(`Result ${resultIndex + 1} of ${searchResults.length}`);
+        setFeedbackMessage(`Navigated to paragraph ${paragraphIndex + 1}`);
         setShowFeedback(true);
 
         // Hide feedback after delay
         setTimeout(() => {
           setShowFeedback(false);
         }, 2000);
-      }
+      }, 100); // Small delay to ensure smooth interaction
     },
-    [searchResults, scrollToParagraph]
+    [scrollToParagraph, scrollPriority]
   );
 
   // Navigate back to all sermons

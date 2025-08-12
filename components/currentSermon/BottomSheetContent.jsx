@@ -43,42 +43,26 @@ const TopCardContent = ({
     ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
 
-  // Real-time search as user types (with very short debounce)
-  useEffect(() => {
-    if (searchPhrase.trim() && searchPhrase.length > 2) {
-      const timeoutId = setTimeout(() => {
-        const results = searchSermon(paragraphs, searchPhrase);
-        setSearchResults(results);
-        setCurrentResultIndex(0);
-      }, 150); // Very short debounce for real-time feel
-
-      return () => clearTimeout(timeoutId);
-    } else {
-      setSearchResults([]);
-      setCurrentResultIndex(0);
-    }
-  }, [searchPhrase, paragraphs, searchSermon, setSearchResults, setCurrentResultIndex]);
-
   const submitSearch = useCallback(() => {
     if (searchPhrase.trim()) {
       // Set searching to true before starting the search
       setSearching(true);
 
-      // Use immediate search without timeout for better responsiveness
-      const results = searchSermon(paragraphs, searchPhrase);
-      setSearchResults(results);
-      setCurrentResultIndex(0);
+      // Simulate a more realistic search delay (remove for production if search is actually slow)
+      setTimeout(() => {
+        const results = searchSermon(paragraphs, searchPhrase);
+        setSearchResults(results);
+        setCurrentResultIndex(0);
 
-      // Navigate to first result immediately if found
-      if (results.length > 0) {
-        onNavigateToResult(0);
-      }
+        // Note: Scroll handling is now managed by CurrentSermon component to avoid conflicts
+        // The main component will handle scrolling based on priority system
 
-      // Don't clear the search input - keep it for editing
-      // setSearchPhrase("");
+        // Clear the search input after successful search
+        setSearchPhrase("");
 
-      // Set searching to false once search is complete
-      setSearching(false);
+        // Set searching to false once search is complete
+        setSearching(false);
+      }, 100); // 500ms delay to show loading indicator
     } else {
       setSearchResults([]);
     }
@@ -88,8 +72,10 @@ const TopCardContent = ({
     paragraphs,
     setSearchResults,
     setCurrentResultIndex,
-    onNavigateToResult,
+    paragraphLayouts,
+    scrollToParagraph,
     setSearching,
+    setSearchPhrase, // Add this dependency
   ]);
 
   const clearSearch = useCallback(() => {
@@ -266,10 +252,6 @@ const TopCardContent = ({
               value={searchPhrase}
               onChangeText={setSearchPhrase}
               returnKeyType="search"
-              onSubmitEditing={submitSearch}
-              autoCorrect={false}
-              autoCapitalize="none"
-              selectTextOnFocus={true}
             />
             {searching ? (
               <ActivityIndicator

@@ -216,7 +216,7 @@ export const formatSermonIntoParagraphs = (text) => {
 };
 
 /**
- * Enhanced search for text in paragraphs with better performance
+ * Optimized search for text in paragraphs or by paragraph number
  * @param {Array} paragraphs - Array of paragraph strings
  * @param {string} searchPhrase - Text to search for or paragraph number
  * @returns {Array} - Array of search result indices
@@ -227,42 +227,23 @@ export const searchSermon = (paragraphs, searchPhrase) => {
   }
 
   const searchResults = [];
-  const trimmedSearchPhrase = searchPhrase.trim();
-  const lowerSearchPhrase = trimmedSearchPhrase.toLowerCase();
+  const lowerSearchPhrase = searchPhrase.toLowerCase();
 
   // Check if search phrase is a paragraph number
-  const paragraphNumberMatch = trimmedSearchPhrase.match(/^#?(\d+)$/);
+  const paragraphNumberMatch = searchPhrase.match(/^#?(\d+)$/);
   if (paragraphNumberMatch) {
     const paragraphNumber = parseInt(paragraphNumberMatch[1]);
     if (paragraphNumber > 0 && paragraphNumber <= paragraphs.length) {
       return [paragraphNumber - 1]; // Convert to zero-based index
     }
-    return []; // Invalid paragraph number
   }
 
-  // For very short search terms (1-2 characters), require exact word boundaries
-  const isShortSearch = trimmedSearchPhrase.length <= 2;
-  
-  // Optimized text search
-  for (let i = 0; i < paragraphs.length; i++) {
-    const paragraph = paragraphs[i];
-    if (!paragraph) continue;
-    
-    const lowerParagraph = paragraph.toLowerCase();
-    
-    if (isShortSearch) {
-      // For short searches, look for word boundaries to avoid too many matches
-      const wordRegex = new RegExp(`\\b${lowerSearchPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      if (wordRegex.test(paragraph)) {
-        searchResults.push(i);
-      }
-    } else {
-      // For longer searches, use simple includes for better performance
-      if (lowerParagraph.includes(lowerSearchPhrase)) {
-        searchResults.push(i);
-      }
+  // Optimized text search using forEach instead of filter/map
+  paragraphs.forEach((paragraph, index) => {
+    if (paragraph.toLowerCase().includes(lowerSearchPhrase)) {
+      searchResults.push(index);
     }
-  }
+  });
 
   return searchResults;
 };
