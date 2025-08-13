@@ -12,7 +12,6 @@ import SettingsHeader from "../../components/settings/SettingsHeader";
 import ProfileSection from "../../components/settings/ProfileSection";
 import DisplaySettings from "../../components/settings/DisplaySettings";
 import AppSettings from "../../components/settings/AppSettings";
-import ActionButtons from "../../components/settings/ActionsButtons";
 import SavingModal from "../../components/settings/SavingModal";
 
 import DraggableFloatingBackButton from "../../components/FloatButton";
@@ -148,11 +147,7 @@ const Settings = React.memo(() => {
       };
 
       setIsDarkMode(newMode);
-      setSettings(updatedSettings);
-      await AsyncStorage.setItem(
-        "sermonSettings",
-        JSON.stringify(updatedSettings)
-      );
+      await updateSettings(updatedSettings);
 
       // Slightly delayed to show animation
       setTimeout(() => {
@@ -171,10 +166,46 @@ const Settings = React.memo(() => {
     accentColor,
     numberOfColumns,
     setIsDarkMode,
-    setSettings,
+    updateSettings,
   ]);
 
-  // Optimized save settings function with useCallback
+  // Auto-save font size changes
+  useEffect(() => {
+    if (settings.fontSize !== fontSize) {
+      const autoSaveFontSize = async () => {
+        try {
+          const updatedSettings = {
+            ...settings,
+            fontSize,
+          };
+          await updateSettings(updatedSettings);
+        } catch (error) {
+          console.error("Error auto-saving font size:", error);
+        }
+      };
+      autoSaveFontSize();
+    }
+  }, [fontSize, settings, updateSettings]);
+
+  // Auto-save font family changes
+  useEffect(() => {
+    if (settings.fontFamily !== fontFamily) {
+      const autoSaveFontFamily = async () => {
+        try {
+          const updatedSettings = {
+            ...settings,
+            fontFamily,
+          };
+          await updateSettings(updatedSettings);
+        } catch (error) {
+          console.error("Error auto-saving font family:", error);
+        }
+      };
+      autoSaveFontFamily();
+    }
+  }, [fontFamily, settings, updateSettings]);
+
+  // Optimized save settings function with useCallback (for theme and other settings)
   const saveSettings = useCallback(async () => {
     try {
       setSavingTheme(true);
@@ -221,12 +252,7 @@ const Settings = React.memo(() => {
       setAccentColor(DEFAULT_SETTINGS.accentColor);
       setBackgroundColor(DEFAULT_SETTINGS.backgroundColor);
       setIsDarkMode(DEFAULT_SETTINGS.darkMode);
-      setSettings(DEFAULT_SETTINGS);
-
-      await AsyncStorage.setItem(
-        "sermonSettings",
-        JSON.stringify(DEFAULT_SETTINGS)
-      );
+      await updateSettings(DEFAULT_SETTINGS);
 
       setTimeout(() => {
         setSavingTheme(false);
@@ -235,7 +261,7 @@ const Settings = React.memo(() => {
       console.error("Error restoring settings:", error);
       setSavingTheme(false);
     }
-  }, [setSettings, setIsDarkMode]);
+  }, [updateSettings, setIsDarkMode]);
 
   // Early return for updating state
   if (isUpdating) {
@@ -285,18 +311,10 @@ const Settings = React.memo(() => {
 
         <AppSettings theme={theme} router={router} compact={true} />
 
-        <ActionButtons
-          theme={theme}
-          accentColor={FIXED_ACCENT_COLOR}
-          saveSettings={saveSettings}
-          restoreDefault={restoreDefault}
-          compact={true}
-        />
-
         <Text
           style={[
             versionTextStyle,
-            { textAlign: "center", fontSize: 10, marginTop: 8 },
+            { textAlign: "center", fontSize: 10, marginTop: 16 },
           ]}
         >
           Version 1.0.0 • Build 2025.05.09

@@ -47,7 +47,63 @@ const HIGHLIGHT_COLORS = {
 };
 
 // Helper function to render text with styled numbers
-const renderTextWithStyledNumbers = (text, theme, settings, key = "") => {
+const renderTextWithStyledNumbers = (
+  text,
+  theme,
+  settings,
+  key = "",
+  searchPhrase = ""
+) => {
+  // If there's a search phrase, first highlight it
+  if (searchPhrase && searchPhrase.trim()) {
+    const regex = new RegExp(
+      `(${searchPhrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "gi"
+    );
+    const parts = text.split(regex);
+
+    return parts.map((part, partIndex) => {
+      const isMatch = regex.test(part);
+
+      if (isMatch) {
+        // This is the search match - render with text color highlight
+        return (
+          <Text
+            key={`${key}-search-${partIndex}-${part.slice(0, 5)}`}
+            style={{
+              fontSize: responsiveFontSize(settings.fontSize),
+              fontFamily: settings.fontFamily || "ZillaSlab",
+              color: theme.dark ? "#FBBF24" : "#D97706", // Bright amber/orange text
+              // fontWeight: "700", // Bold text
+              textShadowColor: theme.dark ? "#00000050" : "#FFFFFF80", // Subtle shadow for visibility
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 2,
+              lineHeight: Math.round(
+                responsiveFontSize(settings.fontSize) * 1.4
+              ),
+            }}
+          >
+            {part}
+          </Text>
+        );
+      } else {
+        // Regular text - apply number styling
+        return renderTextWithStyledNumbersOnly(
+          part,
+          theme,
+          settings,
+          `${key}-${partIndex}`
+        );
+      }
+    });
+  } else {
+    // No search phrase - use original function
+    return renderTextWithStyledNumbersOnly(text, theme, settings, key);
+  }
+};
+
+// Original function renamed for internal use
+const renderTextWithStyledNumbersOnly = (text, theme, settings, key = "") => {
   // Split text by numbers (including decimals, dates, times, etc.)
   const numberRegex = /(\d+(?:\.\d+)?(?::\d+)?(?:\s*(?:AM|PM|am|pm))?)/g;
   const parts = text.split(numberRegex);
@@ -61,7 +117,7 @@ const renderTextWithStyledNumbers = (text, theme, settings, key = "") => {
           key={`${key}-number-${index}-${part.slice(0, 5)}`}
           style={{
             fontSize: responsiveFontSize(settings.fontSize),
-            fontFamily: "ZillaSlab",
+            fontFamily: settings.fontFamily || "ZillaSlab",
             color: theme.dark ? "#b37407" : "#36240f", // Amber/orange color for numbers
             // fontWeight: "700", // Bold numbers
             lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
@@ -88,8 +144,8 @@ const renderTextWithStyledNumbers = (text, theme, settings, key = "") => {
   });
 };
 
-// Memoized endnote text component - with number styling
-const EndnoteText = React.memo(({ parts, theme, settings }) => (
+// Memoized endnote text component - with number styling and search highlighting
+const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
   <>
     {parts.map((part, partIndex) => {
       const lowerPart = part.toLowerCase();
@@ -134,86 +190,99 @@ const EndnoteText = React.memo(({ parts, theme, settings }) => (
           part,
           theme,
           settings,
-          `endnote-${partIndex}`
+          `endnote-${partIndex}`,
+          searchPhrase
         );
       }
     })}
   </>
 ));
 
-// Memoized endnote with title component - handles title text between Endnote and William Marrion Branham with number styling
-const EndnoteWithTitleText = React.memo(({ parts, theme, settings }) => {
-  let isTitle = false; // Track if we're in the title section
+// Memoized endnote with title component - handles title text between Endnote and William Marrion Branham with number styling and search highlighting
+const EndnoteWithTitleText = React.memo(
+  ({ parts, theme, settings, searchPhrase }) => {
+    let isTitle = false; // Track if we're in the title section
 
-  return (
-    <>
-      {parts.map((part, partIndex) => {
-        const lowerPart = part.toLowerCase();
+    return (
+      <>
+        {parts.map((part, partIndex) => {
+          const lowerPart = part.toLowerCase();
 
-        if (lowerPart === "endnote") {
-          isTitle = true; // Start title section after Endnote
-          return (
-            <Text
-              key={`endnote-${partIndex}-${part.slice(0, 10)}`}
-              style={{
-                fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: "serif",
-                color: theme.dark ? theme.colors.hlight : "#5d3211",
-                textDecorationLine: "underline",
-                fontWeight: "500",
-                lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4
-                ),
-              }}
-            >
-              {part}
-            </Text>
-          );
-        } else if (lowerPart === "william marrion branham") {
-          const titleText = (
-            <Text
-              key={`title-${partIndex}-${part.slice(0, 10)}`}
-              style={{
-                fontSize: responsiveFontSize(16),
-                fontFamily: "serif",
-                color: theme.dark ? "#FFFFFF" : "#000000",
-                textDecorationLine: "underline",
-                fontWeight: "500",
-                fontStyle: "italic", // Add italics for the title including the name
-                lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4
-                ),
-              }}
-            >
-              {part}
-            </Text>
-          );
-          isTitle = false; // End title section
-          return titleText;
-        } else if (isTitle && part.trim()) {
-          // This is title text between Endnote and William Marrion Branham
-          return renderTextWithStyledNumbers(
-            part,
-            theme,
-            settings,
-            `title-${partIndex}`
-          );
-        } else {
-          // Regular text (before Endnote or after William Marrion Branham)
-          return renderTextWithStyledNumbers(
-            part,
-            theme,
-            settings,
-            `regular-${partIndex}`
-          );
-        }
-      })}
-    </>
-  );
-});
+          if (lowerPart === "endnote") {
+            isTitle = true; // Start title section after Endnote
+            return (
+              <Text
+                key={`endnote-${partIndex}-${part.slice(0, 10)}`}
+                style={{
+                  fontSize: responsiveFontSize(settings.fontSize),
+                  fontFamily: settings.fontFamily || "ZillaSlab",
+                  color: theme.dark ? theme.colors.hlight : "#5d3211",
+                  textDecorationLine: "underline",
+                  fontWeight: "500",
+                  lineHeight: Math.round(
+                    responsiveFontSize(settings.fontSize) * 1.4
+                  ),
+                }}
+              >
+                {part}
+              </Text>
+            );
+          } else if (lowerPart === "william marrion branham") {
+            const titleText = (
+              <Text
+                key={`title-${partIndex}-${part.slice(0, 10)}`}
+                style={{
+                  fontSize: responsiveFontSize(16),
+                  fontFamily: "serif",
+                  color: theme.dark ? "#FFFFFF" : "#000000",
+                  textDecorationLine: "underline",
+                  fontWeight: "500",
+                  fontStyle: "italic", // Add italics for the title including the name
+                  lineHeight: Math.round(
+                    responsiveFontSize(settings.fontSize) * 1.4
+                  ),
+                }}
+              >
+                {part}
+              </Text>
+            );
+            isTitle = false; // End title section
+            return titleText;
+          } else if (isTitle && part.trim()) {
+            // This is title text between Endnote and William Marrion Branham
+            return renderTextWithStyledNumbers(
+              part,
+              theme,
+              settings,
+              `title-${partIndex}`,
+              searchPhrase
+            );
+          } else {
+            // Regular text (before Endnote or after William Marrion Branham)
+            return renderTextWithStyledNumbers(
+              part,
+              theme,
+              settings,
+              `regular-${partIndex}`,
+              searchPhrase
+            );
+          }
+        })}
+      </>
+    );
+  }
+);
 
 const ParagraphText = React.memo(
-  ({ paragraph, index, theme, settings, onLayout, selectedSermon }) => {
+  ({
+    paragraph,
+    index,
+    theme,
+    settings,
+    onLayout,
+    selectedSermon,
+    searchPhrase,
+  }) => {
     const {
       addBookmark,
       removeBookmark,
@@ -297,7 +366,7 @@ const ParagraphText = React.memo(
           borderLeftWidth: 2,
           paddingLeft: 3,
           borderLeftColor: theme.dark ? theme.colors.hlight + "50" : "#5d3211",
-          borderStyle:"dashed"
+          borderStyle: "dashed",
           // backgroundColor: theme.dark ? theme.colors.hlight + "10" : "#ecedee",
         });
       }
@@ -528,6 +597,7 @@ const ParagraphText = React.memo(
               parts={processedText.parts}
               theme={theme}
               settings={settings}
+              searchPhrase={searchPhrase}
             />
           );
         case "endnote":
@@ -536,12 +606,13 @@ const ParagraphText = React.memo(
               parts={processedText.parts}
               theme={theme}
               settings={settings}
+              searchPhrase={searchPhrase}
             />
           );
         default:
           return processedText.text;
       }
-    }, [processedText, theme, settings]);
+    }, [processedText, theme, settings, searchPhrase]);
 
     return (
       <View style={containerStyle} onLayout={handleLayout}>
@@ -751,7 +822,8 @@ const ParagraphText = React.memo(
                     processedText.text,
                     theme,
                     settings,
-                    "normal"
+                    "normal",
+                    searchPhrase
                   )}
             </Text>
           </View>

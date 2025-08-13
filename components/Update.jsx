@@ -6,363 +6,236 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
+  Dimensions,
+  Animated,
+  Image,
 } from "react-native";
 import * as Updates from "expo-updates";
-import AppStatusBar from "./StatusBar";
-import { useTheme } from "@react-navigation/native";
-import { useAppContext } from "../Logic/globalState";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+
+const { width, height } = Dimensions.get("window");
 
 export default function UpdateScreen() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
-
-  const { theme } = useAppContext();
+  const [progress] = useState(new Animated.Value(0));
 
   useEffect(() => {
     checkForOTAUpdate();
+    // Animate progress bar for visual effect
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 2000,
+      useNativeDriver: false,
+    }).start();
+
+    // 🧪 FOR TESTING UPDATE UI IN DEVELOPMENT:
+    // Uncomment the line below to test the update screen in Expo Go
+    // setTimeout(() => showUpdateModalForTesting(), 1000);
   }, []);
 
   const checkForOTAUpdate = async () => {
     try {
+      // Check if we're running in Expo Go (development)
+      if (__DEV__ || !Updates.isEnabled) {
+        console.log(
+          "Running in development mode or Expo Go - Updates not supported"
+        );
+        console.log("For testing, you can uncomment the line below:");
+        // setModalVisible(true); // Uncomment this line to test the update UI
+        return;
+      }
+
+      console.log("Checking for updates...");
       const update = await Updates.checkForUpdateAsync();
+      console.log("Update check result:", update);
+
       if (update.isAvailable) {
+        console.log("Update available, downloading...");
         const downloaded = await Updates.fetchUpdateAsync();
+        console.log("Update downloaded:", downloaded);
+
         setUpdateAvailable(true);
+        setIsDownloaded(true);
         setModalVisible(true); // show the modal when update is ready
+      } else {
+        console.log("No update available");
       }
     } catch (error) {
-      console.log("Update check failed:", error);
+      console.error("Update check failed:", error);
+
     }
   };
 
   const handleUpdate = async () => {
-    setModalVisible(false);
-    await Updates.reloadAsync(); // restart app with new update
+    try {
+      console.log("Applying update and restarting...");
+      setModalVisible(false);
+
+      // Check if we're in development mode
+      if (__DEV__ || !Updates.isEnabled) {
+        console.log("In development mode - would restart app in production");
+        return;
+      }
+
+      // Small delay to ensure modal closes before restart
+      setTimeout(async () => {
+        await Updates.reloadAsync();
+      }, 100);
+    } catch (error) {
+      console.error("Error applying update:", error);
+      setModalVisible(false);
+    }
   };
 
-  const getCurrentTimestamp = () => {
-    const now = new Date();
-    return {
-      date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString(),
-      transactionId: now.getTime().toString().slice(-6),
-    };
+  // For testing purposes - you can call this manually to see the update UI
+  const showUpdateModalForTesting = () => {
+    console.log("🧪 Showing update modal for testing purposes");
+    setModalVisible(true);
+    setUpdateAvailable(true);
+    setIsDownloaded(true);
   };
 
-  const timestamp = getCurrentTimestamp();
 
   return (
-    <View style={[styles.container]}>
-      {/* <AppStatusBar/> */}
-      <StatusBar translucent backgroundColor="white" barStyle="dark-content" />
-      <Modal
-        visible={modalVisible}
-        transparent={true}
-        backdropColor={theme.colors.background}
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={[styles.modalContainer,{backgroundColor:theme.colors.background}]}>
-          <View
-            style={[
-              styles.receiptContainer,
-              { backgroundColor: theme.colors.primary },
-            ]}
-          >
-            {/* Receipt Header */}
-            <View style={styles.receiptHeader}>
-              <Text style={[styles.companyName, { color: theme.colors.text }]}>
-                SYSTEM UPDATE
-              </Text>
-              <Text
-                style={[styles.headerSubtext, { color: theme.colors.text }]}
-              >
-                VERSION CONTROL
-              </Text>
-              <View style={styles.dashedLine} />
-            </View>
-
-            {/* Receipt Body */}
-            <View style={styles.receiptBody}>
-              <View style={styles.transactionRow}>
-                <Text
-                  style={[styles.receiptLabel, { color: theme.colors.text }]}
-                >
-                  DATE:
-                </Text>
-                <Text style={styles.receiptValue}>{timestamp.date}</Text>
-              </View>
-
-              <View style={styles.transactionRow}>
-                <Text
-                  style={[styles.receiptLabel, { color: theme.colors.text }]}
-                >
-                  TIME:
-                </Text>
-                <Text style={styles.receiptValue}>{timestamp.time}</Text>
-              </View>
-
-              <View style={styles.dashedLine} />
-
-              {/* Main Item */}
-              <View style={styles.itemSection}>
-                <Text style={[styles.itemName, { color: theme.colors.text }]}>
-                  APP UPDATE AVAILABLE
-                </Text>
-                <Text
-                  style={[styles.itemDescription, { color: theme.colors.text }]}
-                >
-                  NEW VERSION READY
-                </Text>
-                <View style={styles.itemRow}>
-                  <Text
-                    style={[styles.itemLabel, { color: theme.colors.text }]}
-                  >
-                    STATUS:
-                  </Text>
-                  <Text
-                    style={[styles.itemValue, { color: theme.colors.text }]}
-                  >
-                    {isDownloaded ? "DOWNLOADED" : "NOT DOWNLOADED"}
-                  </Text>
-                </View>
-                <View style={styles.itemRow}>
-                  <Text
-                    style={[styles.itemLabel, { color: theme.colors.text }]}
-                  >
-                    ACTION:
-                  </Text>
-                  <Text
-                    style={[styles.itemValue, { color: theme.colors.text }]}
-                  >
-                    RESTART REQ.
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.dashedLine} />
-
-              {/* Message */}
-              <View style={styles.messageSection}>
-                <Text
-                  style={[styles.receiptMessage, { color: theme.colors.text }]}
-                >
-                  A NEW VERSION IS READY.{"\n"}
-                  RESTART TO APPLY UPDATE?
-                </Text>
-              </View>
-
-              <View style={styles.dashedLine} />
-            </View>
-
-            {/* Receipt Actions */}
-            <View style={styles.actionsSection}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.laterButton]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.laterButtonText}>[ LATER ]</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.restartButton]}
-                onPress={handleUpdate}
-              >
-                <Text style={styles.restartButtonText}>[ RESTART NOW ]</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Receipt Footer */}
-            <View style={styles.receiptFooter}>
-              <Text style={styles.footerText}>THANK YOU</Text>
-              <View style={styles.tearLine}>
-                {Array.from({ length: 15 }).map((_, i) => (
-                  <View key={i} style={styles.tearDot} />
-                ))}
-              </View>
-            </View>
-          </View>
+    <Modal
+      visible={modalVisible}
+      transparent={false}
+      animationType="fade"
+      onRequestClose={() => setModalVisible(false)}
+      statusBarTranslucent={true}
+    >
+      <StatusBar
+        backgroundColor="#000000"
+        barStyle="light-content"
+        translucent={true}
+      />
+      <View style={styles.fullScreenContainer}>
+        {/* Simple Update Message */}
+        <View>
+          <Text style={styles.message}>
+            Update Available.{"\n"}RESTART TO APPLY UPDATE?
+          </Text>
         </View>
-      </Modal>
-    </View>
+
+        {/* App icon image */}
+        <View style={{ alignItems: "center", marginBottom: 20 }}>
+          <MaterialIcons name="cloud" size={200} color="#7e5619" />
+        </View>
+        {/* Action Buttons */}
+        <View style={styles.actionSection}>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleUpdate}>
+            <MaterialIcons name="refresh" size={24} color="#000000" />
+            <Text style={styles.primaryButtonText}>[ RESTART NOW ]</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => setModalVisible(false)}
+          >
+            <Text style={styles.secondaryButtonText}>[ LATER ]</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>His Voice APK • Version 1.0.0</Text>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: "#000000",
+    paddingTop: 0,
+    justifyContent: "center",
+  },
+  centerSection: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    position: 'absolute',
-    top: 0,
-    // paddingTop:40
+    paddingHorizontal: 30,
   },
-  modalContainer: {
-    flex: 1,
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    letterSpacing: 2,
+    // marginBottom: 16,
+    textAlign: "center",
+    fontFamily: "ZillaSlab-SemiBold",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#D4AF37",
+    letterSpacing: 1,
+    textAlign: "center",
+    // marginBottom: 40,
+    fontFamily: "ZillaSlab-Regular",
+  },
+  message: {
+    fontSize: 18,
+    color: "#FFFFFF",
+    textAlign: "center",
+    lineHeight: 24,
+    fontFamily: "ZillaSlab-Regular",
+    letterSpacing: 1,
+    paddingVertical: 12,
+  },
+  actionSection: {
+    paddingHorizontal: 30,
+    paddingBottom: 60,
+    gap: 16,
+  },
+  primaryButton: {
+    backgroundColor: "#271c0f",
+    paddingVertical: 18,
+    borderRadius: 12,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    // backgroundColor: "rgba(0,0,0,0.7)",
-  },
-  receiptContainer: {
-    // backgroundColor: '#101010',
-    width: 320,
-    maxWidth: "90%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: "#D4AF37",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-    borderRadius: 20,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  receiptHeader: {
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 15,
-    alignItems: "center",
-  },
-  companyName: {
-    fontFamily: "serif",
+  primaryButtonText: {
+    color: "#f9f8f8",
     fontSize: 16,
     fontWeight: "bold",
-    letterSpacing: 2,
-    color: "#c8c6c6",
-    textAlign: "center",
-  },
-  headerSubtext: {
-    fontFamily: "serif",
-    fontSize: 12,
-    color: "#bdbbbb",
+    marginLeft: 8,
     letterSpacing: 1,
-    marginTop: 2,
+    fontFamily: "ZillaSlab-SemiBold",
   },
-  receiptBody: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+  secondaryButton: {
+    backgroundColor: "transparent",
+    paddingVertical: 18,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  transactionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 2,
-  },
-  receiptLabel: {
-    fontFamily: "serif",
-    fontSize: 11,
-    color: "#bdbbbb",
-    letterSpacing: 0.5,
-  },
-  receiptValue: {
-    fontFamily: "serif",
-    fontSize: 11,
-    color: "#bdbbbb",
-    fontWeight: "bold",
-  },
-  itemSection: {
-    marginVertical: 10,
-  },
-  itemName: {
-    fontFamily: "serif",
+  secondaryButtonText: {
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "bold",
-    color: "#bdbbbb",
-    marginBottom: 2,
-  },
-  itemDescription: {
-    fontFamily: "serif",
-    fontSize: 11,
-    color: "#bdbbbb",
-    marginBottom: 8,
-  },
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 1,
-  },
-  itemLabel: {
-    fontFamily: "serif",
-    fontSize: 11,
-    color: "#bdbbbb",
-  },
-  itemValue: {
-    fontFamily: "serif",
-    fontSize: 11,
-    color: "#bdbbbb",
-    fontWeight: "bold",
-  },
-  messageSection: {
-    marginVertical: 10,
-    alignItems: "center",
-  },
-  receiptMessage: {
-    fontFamily: "serif",
-    fontSize: 12,
-    color: "#bdbbbb",
-    textAlign: "center",
-    lineHeight: 16,
-  },
-  dashedLine: {
-    borderTopWidth: 1,
-    borderTopColor: "#ddd",
-    borderStyle: "dashed",
-    marginVertical: 10,
-    marginHorizontal: -20,
-  },
-  actionsSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    gap: 10,
-  },
-  actionButton: {
-    paddingVertical: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 20,
-  },
-  laterButton: {
-    borderColor: "#ddd",
-    backgroundColor: "#f9f9f9",
-    color: "black",
-  },
-  restartButton: {
-    borderColor: "#333",
-    backgroundColor: "#333",
-  },
-  laterButtonText: {
-    fontFamily: "serif",
-    fontSize: 12,
-    color: "black",
-    fontWeight: "bold",
     letterSpacing: 1,
+    fontFamily: "ZillaSlab-SemiBold",
   },
-  restartButtonText: {
-    fontFamily: "serif",
-    fontSize: 12,
-    color: "#fff",
-    fontWeight: "bold",
-    letterSpacing: 1,
-  },
-  receiptFooter: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+  footer: {
     alignItems: "center",
+    paddingBottom: 30,
   },
   footerText: {
-    fontFamily: "serif",
-    fontSize: 11,
-    color: "#999",
-    letterSpacing: 2,
-    marginBottom: 10,
-  },
-  tearLine: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    paddingHorizontal: 10,
-  },
-  tearDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: "#ddd",
+    color: "rgba(255, 255, 255, 0.5)",
+    fontSize: 12,
+    letterSpacing: 1,
+    fontFamily: "ZillaSlab-Regular",
   },
 });

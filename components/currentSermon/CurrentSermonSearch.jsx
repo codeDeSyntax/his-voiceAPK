@@ -129,10 +129,10 @@ const CurrentSermonSearch = ({
 
   const handleResultPress = useCallback(
     (result) => {
-      onNavigateToResult(result.index);
+      onNavigateToResult(result.index, searchPhrase);
       onClose();
     },
-    [onNavigateToResult, onClose]
+    [onNavigateToResult, onClose, searchPhrase]
   );
 
   const clearSearch = useCallback(() => {

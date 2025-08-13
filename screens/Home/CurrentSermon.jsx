@@ -88,6 +88,9 @@ const CurrentSermon = React.memo(({ route }) => {
   const [paragraphs, setParagraphs] = useState([]);
   const [isLoadingParagraphs, setIsLoadingParagraphs] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [currentSearchPhrase, setCurrentSearchPhrase] = useState(""); // For highlighting search results
+
+  // Scroll management
 
   // Scroll priority management
   const [scrollPriority, setScrollPriority] = useState(null); // 'search', 'bookmark', 'lastread', 'bottomsheet'
@@ -443,9 +446,17 @@ const CurrentSermon = React.memo(({ route }) => {
 
   // Handle navigating to search result from fullscreen search
   const handleSearchNavigateToResult = useCallback(
-    (paragraphIndex) => {
+    (paragraphIndex, searchPhrase) => {
       scrollToParagraph(paragraphIndex);
       setIsSearchVisible(false);
+
+      // Store the search phrase temporarily for highlighting
+      setCurrentSearchPhrase(searchPhrase || "");
+
+      // Clear the search phrase after a delay to remove highlighting
+      setTimeout(() => {
+        setCurrentSearchPhrase("");
+      }, 5000); // Clear after 5 seconds
     },
     [scrollToParagraph]
   );
@@ -509,6 +520,7 @@ const CurrentSermon = React.memo(({ route }) => {
               settings={settings}
               onLayout={(event) => handleParagraphLayout(actualIndex, event)}
               selectedSermon={selectedSermon}
+              searchPhrase={currentSearchPhrase}
             />
           );
         })

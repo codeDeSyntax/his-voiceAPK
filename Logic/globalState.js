@@ -218,7 +218,7 @@ export const SermonProvider = ({ children }) => {
     }
   }, []);
 
-  // Navigation History Management
+  // Navigation History Management - Optimized for performance
   const addToNavigationHistory = useCallback(
     async (screenName) => {
       try {
@@ -241,10 +241,19 @@ export const SermonProvider = ({ children }) => {
         }
 
         setNavigationHistory(newHistory);
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.NAVIGATION_HISTORY,
-          JSON.stringify(newHistory)
-        );
+
+        // Save to AsyncStorage asynchronously without blocking UI
+        setTimeout(async () => {
+          try {
+            await AsyncStorage.setItem(
+              STORAGE_KEYS.NAVIGATION_HISTORY,
+              JSON.stringify(newHistory)
+            );
+          } catch (storageError) {
+            console.error("Failed to save navigation history:", storageError);
+          }
+        }, 0);
+
         console.log("Navigation history updated:", newHistory);
       } catch (error) {
         console.error("Failed to save navigation history:", error);
@@ -262,23 +271,34 @@ export const SermonProvider = ({ children }) => {
     return "AllSermons";
   }, [navigationHistory]);
 
+  // Optimized goBack - separates sync navigation from async storage
   const goBack = useCallback(async () => {
     try {
-      const newHistory = [...navigationHistory];
+      const previousScreen = getPreviousScreen();
 
-      // Remove the current screen (last item)
+      // Update state immediately for responsive UI
+      const newHistory = [...navigationHistory];
       if (newHistory.length > 0) {
         newHistory.pop();
       }
-
       setNavigationHistory(newHistory);
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.NAVIGATION_HISTORY,
-        JSON.stringify(newHistory)
-      );
 
-      // Return the previous screen to navigate to
-      return getPreviousScreen();
+      // Save to storage asynchronously without blocking
+      setTimeout(async () => {
+        try {
+          await AsyncStorage.setItem(
+            STORAGE_KEYS.NAVIGATION_HISTORY,
+            JSON.stringify(newHistory)
+          );
+        } catch (storageError) {
+          console.error(
+            "Failed to update navigation history storage:",
+            storageError
+          );
+        }
+      }, 0);
+
+      return previousScreen;
     } catch (error) {
       console.error("Failed to update navigation history on back:", error);
       return "AllSermons";

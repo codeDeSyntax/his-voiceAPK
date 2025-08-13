@@ -35,7 +35,7 @@ const DraggableFloatingBackButton = React.memo(
     vibrationEnabled = true,
     animationEnabled = true,
   }) => {
-    const { theme, goBack, getPreviousScreen } = useAppContext();
+    const { theme, goBack } = useAppContext();
     const route = useRoute();
     const router = useNavigation();
     const insets = useSafeAreaInsets();
@@ -76,75 +76,21 @@ const DraggableFloatingBackButton = React.memo(
     const blinkAnim = useRef(new Animated.Value(1)).current;
     const shimmerAnim = useRef(new Animated.Value(0)).current;
 
-    // Sleek opacity breathing effect
+    // Simplified animations for maximum performance - only essential animations
     useEffect(() => {
-      const opacityAnimation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(opacityAnim, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacityAnim, {
-            toValue: 0.92,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ])
-      );
+      if (!animationEnabled) return;
 
-      opacityAnimation.start();
-      return () => opacityAnimation.stop();
-    }, []);
-
-    // Subtle blinking effect
-    useEffect(() => {
-      const blinkAnimation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(blinkAnim, {
-            toValue: 0.85,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(blinkAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.delay(3000), // Pause between blinks
-        ])
-      );
-
-      blinkAnimation.start();
-      return () => blinkAnimation.stop();
-    }, []);
-
-    // Shimmer effect
-    useEffect(() => {
-      const shimmerAnimation = Animated.loop(
-        Animated.timing(shimmerAnim, {
-          toValue: 1,
-          duration: 2500,
-          useNativeDriver: true,
-        })
-      );
-
-      shimmerAnimation.start();
-      return () => shimmerAnimation.stop();
-    }, []);
-
-    // Breathing animation for subtle life
-    useEffect(() => {
+      // Single breathing animation for subtle life indication
       const breatheAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(breatheAnim, {
-            toValue: 1.02,
-            duration: 2500,
+            toValue: 1.005, // Very subtle scale
+            duration: 4000, // Very slow for minimal CPU usage
             useNativeDriver: true,
           }),
           Animated.timing(breatheAnim, {
             toValue: 1,
-            duration: 2500,
+            duration: 4000,
             useNativeDriver: true,
           }),
         ])
@@ -152,7 +98,7 @@ const DraggableFloatingBackButton = React.memo(
 
       breatheAnimation.start();
       return () => breatheAnimation.stop();
-    }, []);
+    }, [animationEnabled]);
 
     // Enhanced haptic feedback
     const triggerHapticFeedback = useCallback(
@@ -205,6 +151,24 @@ const DraggableFloatingBackButton = React.memo(
       }
     }, [animationEnabled]);
 
+    // Performance optimization - create static handlers when animations disabled
+    const handlePressInOptimized = useMemo(() => {
+      if (!animationEnabled) {
+        return () => {
+          setIsPressed(true);
+          triggerHapticFeedback("light");
+        };
+      }
+      return handlePressIn;
+    }, [animationEnabled, triggerHapticFeedback, handlePressIn]);
+
+    const handlePressOutOptimized = useMemo(() => {
+      if (!animationEnabled) {
+        return () => setIsPressed(false);
+      }
+      return handlePressOut;
+    }, [animationEnabled, handlePressOut]);
+
     const handlePress = useCallback(() => {
       triggerHapticFeedback("press");
 
@@ -224,56 +188,60 @@ const DraggableFloatingBackButton = React.memo(
         ]).start();
       }
 
-      setTimeout(() => {
-        if (onPress) {
-          onPress();
-        } else {
-          // Use our custom navigation history instead of router.goBack()
-          const handleBackNavigation = async () => {
-            const previousScreen = await goBack();
-            if (router) {
-              router.navigate(previousScreen);
-            }
-          };
-          handleBackNavigation();
-        }
-      }, 50);
+      // Ultra-fast navigation - navigate immediately without any processing
+      if (onPress) {
+        onPress();
+      } else if (router) {
+        // Just use router.goBack() for instant navigation
+        router.goBack();
+
+        // Update our custom history asynchronously after navigation (optional)
+        setTimeout(() => {
+          goBack().catch(console.error);
+        }, 0);
+      }
     }, [onPress, router, goBack, triggerHapticFeedback, animationEnabled]);
 
-    // Animation values
-    const rotateInterpolate = rotateAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: ["0deg", "180deg"],
-    });
+    // Optimized animation values with memoization
+    const rotateInterpolate = useMemo(
+      () =>
+        rotateAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ["0deg", "180deg"],
+        }),
+      [rotateAnim]
+    );
 
+    // Simplified button style for maximum performance
     const buttonStyle = useMemo(
       () => ({
         ...styles.buttonContainer,
         width: size,
         height: size,
         borderRadius: size / 2,
-        opacity: Animated.multiply(opacityAnim, blinkAnim),
-        transform: [{ scale: Animated.multiply(scaleAnim, breatheAnim) }],
+        opacity: 0.95, // Static opacity for better performance
+        transform: animationEnabled
+          ? [{ scale: Animated.multiply(scaleAnim, breatheAnim) }]
+          : [{ scale: 1 }],
         ...Platform.select({
           ios: {
             shadowColor: theme?.colors?.text || "#1c1917",
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: isPressed ? 0.25 : 0.15,
-            shadowRadius: isPressed ? 20 : 16,
+            shadowOffset: { width: 0, height: isPressed ? 2 : 4 },
+            shadowOpacity: isPressed ? 0.1 : 0.08,
+            shadowRadius: isPressed ? 8 : 6,
           },
           android: {
-            elevation: isPressed ? 8 : 6,
+            elevation: isPressed ? 2 : 3,
           },
         }),
       }),
       [
         size,
+        animationEnabled,
         scaleAnim,
         breatheAnim,
         theme?.colors?.text,
         isPressed,
-        opacityAnim,
-        blinkAnim,
       ]
     );
 
@@ -288,8 +256,8 @@ const DraggableFloatingBackButton = React.memo(
       >
         {/* Main button */}
         <TouchableWithoutFeedback
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
+          onPressIn={handlePressInOptimized}
+          onPressOut={handlePressOutOptimized}
           onPress={handlePress}
           delayPressIn={0}
           delayPressOut={0}
@@ -307,11 +275,11 @@ const DraggableFloatingBackButton = React.memo(
                 },
               ]}
             >
-              {/* Icon with smooth animation */}
+              {/* Icon with optimized animation */}
               <Animated.View
                 style={[
                   styles.iconContainer,
-                  {
+                  animationEnabled && {
                     transform: [{ rotate: rotateInterpolate }],
                   },
                 ]}
@@ -324,26 +292,17 @@ const DraggableFloatingBackButton = React.memo(
                 />
               </Animated.View>
 
-              {/* Shimmer overlay for premium feel */}
-              <Animated.View
-                style={[
-                  styles.shimmerSleek,
-                  {
-                    opacity: shimmerAnim.interpolate({
-                      inputRange: [0, 0.5, 1],
-                      outputRange: [0, 0.6, 0],
-                    }),
-                    transform: [
-                      {
-                        translateX: shimmerAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [-size, size],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              />
+              {/* Conditional shimmer overlay - simplified for performance */}
+              {animationEnabled && (
+                <Animated.View
+                  style={[
+                    styles.shimmerSleek,
+                    {
+                      opacity: 0.3, // Static opacity for better performance
+                    },
+                  ]}
+                />
+              )}
             </View>
           </Animated.View>
         </TouchableWithoutFeedback>

@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   paragraphText: {
     flex: 1,
-    lineHeight: 24, // Consistent line height for all text rendering
+    // lineHeight removed - will be set dynamically based on user settings
     paddingLeft: 8,
     marginBottom: spacing.xs, // Consistent 4px spacing between paragraphs
     paddingVertical: 0, // Remove vertical padding for consistent gaps
