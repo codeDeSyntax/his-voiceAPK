@@ -78,8 +78,8 @@ const createEqualVolumeParagraphs = (text) => {
   }
 
   // Target words per paragraph (adjustable based on content length)
-  const minWordsPerParagraph = 300;
-  const maxWordsPerParagraph = 450;
+  const minWordsPerParagraph = 250;
+  const maxWordsPerParagraph = 300;
   const targetWordsPerParagraph = 375;
 
   // Split text into words while preserving sentence boundaries

@@ -41,11 +41,11 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontFamily: "ZillaSlab", // Use ZillaSlab instead of serif
-    fontWeight: "900",
+    // fontWeight: "900",
     fontSize: responsiveFontSize(20),
     textAlign: "center",
     marginBottom: spacing.sm, // 8px consistent spacing
-    textDecorationLine: "underline",
+    // textDecorationLine: "underline",
   },
   locationText: {
     fontFamily: "ZillaSlab", // Use ZillaSlab instead of serif

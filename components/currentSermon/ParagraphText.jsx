@@ -52,8 +52,24 @@ const renderTextWithStyledNumbers = (
   theme,
   settings,
   key = "",
-  searchPhrase = ""
+  searchPhrase = "",
+  highlightColor = null
 ) => {
+  // Pre-calculated highlight colors for better performance
+  const highlightTextColors = {
+    yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
+    green: theme.dark ? "#34D399" : "#059669", // Emerald
+    brown: theme.dark ? "#D2B48C" : "#8B4513", // Brown
+    purple: theme.dark ? "#C084FC" : "#7C3AED", // Violet
+    pink: theme.dark ? "#F472B6" : "#DB2777", // Pink
+    orange: theme.dark ? "#FB923C" : "#EA580C", // Orange
+  };
+
+  // Determine text color based on highlight
+  const baseTextColor = highlightColor
+    ? highlightTextColors[highlightColor] || theme.colors.text
+    : theme.colors.text;
+
   // If there's a search phrase, first highlight it
   if (searchPhrase && searchPhrase.trim()) {
     const regex = new RegExp(
@@ -87,23 +103,39 @@ const renderTextWithStyledNumbers = (
           </Text>
         );
       } else {
-        // Regular text - apply number styling
+        // Regular text - apply number styling with highlight consideration
         return renderTextWithStyledNumbersOnly(
           part,
           theme,
           settings,
-          `${key}-${partIndex}`
+          `${key}-${partIndex}`,
+          highlightColor
         );
       }
     });
   } else {
-    // No search phrase - use original function
-    return renderTextWithStyledNumbersOnly(text, theme, settings, key);
+    // No search phrase - use original function with highlight color
+    return renderTextWithStyledNumbersOnly(text, theme, settings, key, highlightColor);
   }
 };
 
 // Original function renamed for internal use
-const renderTextWithStyledNumbersOnly = (text, theme, settings, key = "") => {
+const renderTextWithStyledNumbersOnly = (text, theme, settings, key = "", highlightColor = null) => {
+  // Pre-calculated highlight colors for better performance
+  const highlightTextColors = {
+    yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
+    green: theme.dark ? "#34D399" : "#059669", // Emerald
+    brown: theme.dark ? "#D2B48C" : "#8B4513", // Brown
+    purple: theme.dark ? "#C084FC" : "#7C3AED", // Violet
+    pink: theme.dark ? "#F472B6" : "#DB2777", // Pink
+    orange: theme.dark ? "#FB923C" : "#EA580C", // Orange
+  };
+
+  // Determine text color based on highlight
+  const baseTextColor = highlightColor
+    ? highlightTextColors[highlightColor] || theme.colors.text
+    : theme.colors.text;
+
   // Split text by numbers (including decimals, dates, times, etc.)
   const numberRegex = /(\d+(?:\.\d+)?(?::\d+)?(?:\s*(?:AM|PM|am|pm))?)/g;
   const parts = text.split(numberRegex);
@@ -118,7 +150,9 @@ const renderTextWithStyledNumbersOnly = (text, theme, settings, key = "") => {
           style={{
             fontSize: responsiveFontSize(settings.fontSize),
             fontFamily: settings.fontFamily || "ZillaSlab",
-            color: theme.dark ? "#b37407" : "#36240f", // Amber/orange color for numbers
+            color: highlightColor 
+              ? baseTextColor 
+              : (theme.dark ? "#b37407" : "#36240f"), // Use highlight color or default amber/orange for numbers
             // fontWeight: "700", // Bold numbers
             lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
           }}
@@ -133,7 +167,7 @@ const renderTextWithStyledNumbersOnly = (text, theme, settings, key = "") => {
           style={{
             fontSize: responsiveFontSize(settings.fontSize),
             fontFamily: settings.fontFamily || "ZillaSlab",
-            color: theme.colors.text,
+            color: baseTextColor, // Use highlight color or default text color
             lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
           }}
         >
@@ -191,7 +225,8 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
           theme,
           settings,
           `endnote-${partIndex}`,
-          searchPhrase
+          searchPhrase,
+          null // No highlight color for endnotes
         );
       }
     })}
@@ -255,7 +290,8 @@ const EndnoteWithTitleText = React.memo(
               theme,
               settings,
               `title-${partIndex}`,
-              searchPhrase
+              searchPhrase,
+              null // No highlight color for title sections
             );
           } else {
             // Regular text (before Endnote or after William Marrion Branham)
@@ -264,7 +300,8 @@ const EndnoteWithTitleText = React.memo(
               theme,
               settings,
               `regular-${partIndex}`,
-              searchPhrase
+              searchPhrase,
+              null // No highlight color for endnote sections
             );
           }
         })}
@@ -290,6 +327,7 @@ const ParagraphText = React.memo(
       addHighlight,
       removeHighlight,
       getHighlight,
+      highlights,
     } = useAppContext();
 
     const [isCopying, setIsCopying] = useState(false);
@@ -305,11 +343,13 @@ const ParagraphText = React.memo(
       );
     }, [bookmarks, selectedSermon.id, index]); // More specific dependencies
 
-    // Check if this paragraph is highlighted - optimized
+    // Check if this paragraph is highlighted - optimized with direct highlights access
     const currentHighlight = useMemo(() => {
       const highlightKey = `${selectedSermon.id}-${index}`;
-      return getHighlight(selectedSermon.id, index);
-    }, [selectedSermon.id, index, getHighlight]); // Keep getHighlight for reactivity
+      // Direct access to highlights from context instead of using getHighlight
+      const highlight = highlights[highlightKey] || null;
+      return highlight;
+    }, [selectedSermon.id, index, highlights]); // Use highlights directly for better reactivity
 
     // Optimized text style with highlight color support - memoized for performance
     const textStyle = useMemo(() => {
@@ -823,7 +863,8 @@ const ParagraphText = React.memo(
                     theme,
                     settings,
                     "normal",
-                    searchPhrase
+                    searchPhrase,
+                    currentHighlight
                   )}
             </Text>
           </View>

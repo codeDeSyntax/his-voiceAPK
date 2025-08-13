@@ -26,6 +26,7 @@ import {
   formatSermonIntoParagraphs,
   formatSermonIntoParagraphsAsync,
 } from "../../Utils/sermonUtils";
+import { responsiveFontSize } from "../../Utils/responsiveUtils";
 import ParagraphText from "../../components/currentSermon/ParagraphText";
 import CustomBottomSheetController from "../../components/currentSermon/BottomSheetController";
 import DraggableFloatingBackButton from "../../components/FloatButton";
@@ -611,17 +612,170 @@ const CurrentSermon = React.memo(({ route }) => {
                     }}
                   >
                     <View>
-                      <Text
-                        style={[
-                          styles.titleText,
-                          {
-                            color: theme.dark ? "#854412" : "#5d3211",
-                            fontFamily: "impact",
-                          },
-                        ]}
-                      >
-                        {selectedSermon?.title}
-                      </Text>
+                      <View style={{ alignItems: "center", marginBottom: 20 }}>
+                        <Text
+                          style={[
+                            styles.titleText,
+                            {
+                              color: theme.dark
+                                ? theme.colors.hlight +"90"
+                                : "#5d3211",
+                              fontFamily: "ZillaSlab",
+                              fontSize: responsiveFontSize(24),
+                              // fontWeight: "900",
+                              textAlign: "center",
+                              marginBottom: 8,
+                              letterSpacing: 1.5,
+                              lineHeight: responsiveFontSize(28),
+                              textShadowColor: theme.dark
+                                ? "#00000080"
+                                : "#FFFFFF60",
+                              textShadowOffset: { width: 0, height: 2 },
+                              textShadowRadius: 4,
+                            },
+                          ]}
+                        >
+                          {selectedSermon?.title}
+                        </Text>
+
+                        {/* Highly Decorative Underline */}
+                        <View style={{ alignItems: "center", width: "90%" }}>
+                          {/* Top ornamental border */}
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              width: "100%",
+                              marginBottom: 3,
+                            }}
+                          >
+                            {/* Left ornament */}
+                            <View
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: theme.dark
+                                  ? theme.colors.hlight
+                                  : "#5d3211",
+                                marginRight: 8,
+                              }}
+                            />
+                            {/* Main decorative line with gradient effect */}
+                            <View style={{ flex: 1, alignItems: "center" }}>
+                              <View
+                                style={{
+                                  height: 2,
+                                  width: "100%",
+                                  backgroundColor: theme.dark
+                                    ? theme.colors.hlight + "40"
+                                    : "#5d321140",
+                                  borderRadius: 1,
+                                }}
+                              />
+                            </View>
+                            {/* Right ornament */}
+                            <View
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: 4,
+                                backgroundColor: theme.dark
+                                  ? theme.colors.hlight
+                                  : "#5d3211",
+                                marginLeft: 8,
+                              }}
+                            />
+                          </View>
+
+                          {/* Main thick decorative line with embossed effect */}
+                          <View
+                            style={{
+                              height: 4,
+                              width: "85%",
+                              backgroundColor: theme.dark
+                                ? theme.colors.hlight + "20"
+                                : "#5d3211",
+                              borderRadius: 3,
+                              marginBottom: 3,
+                              shadowColor: theme.dark
+                                ? theme.colors.hlight +"20"
+                                : "#5d3211",
+                              shadowOffset: { width: 0, height: 2 },
+                              shadowOpacity: 0.6,
+                              shadowRadius: 3,
+                              elevation: 4,
+                              // Embossed effect
+                              borderTopWidth: 0.5,
+                              borderTopColor: theme.dark
+                                ? theme.colors.hlight + "80"
+                                : "#5d321180",
+                              borderBottomWidth: 0.5,
+                              borderBottomColor: theme.dark
+                                ? "#00000040"
+                                : "#FFFFFF60",
+                            }}
+                          />
+
+                    
+
+                          {/* Decorative center ornament with surrounding dots */}
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginTop: 2,
+                              width: "100%",
+                            }}
+                          >
+                          
+                        
+                          
+                          </View>
+
+                          {/* Bottom ornamental flourish */}
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              // marginTop: 3,
+                              gap: 6,
+                            }}
+                          >
+                            {[1, 2, 3, 4, 5].map((flourish, index) => (
+                              <View
+                                key={flourish}
+                                style={{
+                                  width:
+                                    index === 2
+                                      ? 6
+                                      : index === 1 || index === 3
+                                      ? 4
+                                      : 2,
+                                  height:
+                                    index === 2
+                                      ? 6
+                                      : index === 1 || index === 3
+                                      ? 4
+                                      : 2,
+                                  borderRadius:
+                                    index === 2
+                                      ? 3
+                                      : index === 1 || index === 3
+                                      ? 2
+                                      : 1,
+                                  backgroundColor: theme.dark
+                                    ? theme.colors.hlight +
+                                      (index === 2 ? "" : "80")
+                                    : "#5d3211" + (index === 2 ? "" : "80"),
+                                }}
+                              />
+                            ))}
+                          </View>
+                        </View>
+                      </View>
                       {selectedSermon?.location && (
                         <Text
                           style={[

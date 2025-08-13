@@ -191,6 +191,22 @@ const TopCardContent = ({
                 </Text>
               </View>
             )}
+
+            {/* Total Paragraphs Count */}
+            <View style={styles.modernInfoRow}>
+              <View style={styles.infoIconContainer}>
+                <MaterialIcons
+                  name="format-list-numbered"
+                  size={16}
+                  color={theme.colors.text + "80"}
+                />
+              </View>
+              <Text
+                style={[styles.modernInfoText, { color: theme.colors.text }]}
+              >
+                {paragraphs?.length || 0} paragraphs
+              </Text>
+            </View>
           </View>
         </View>
 
