@@ -35,7 +35,7 @@ const DraggableFloatingBackButton = React.memo(
     vibrationEnabled = true,
     animationEnabled = true,
   }) => {
-    const { theme } = useAppContext();
+    const { theme, goBack, getPreviousScreen } = useAppContext();
     const route = useRoute();
     const router = useNavigation();
     const insets = useSafeAreaInsets();
@@ -227,11 +227,18 @@ const DraggableFloatingBackButton = React.memo(
       setTimeout(() => {
         if (onPress) {
           onPress();
-        } else if (router && router.canGoBack()) {
-          router.goBack();
+        } else {
+          // Use our custom navigation history instead of router.goBack()
+          const handleBackNavigation = async () => {
+            const previousScreen = await goBack();
+            if (router) {
+              router.navigate(previousScreen);
+            }
+          };
+          handleBackNavigation();
         }
       }, 50);
-    }, [onPress, router, triggerHapticFeedback, animationEnabled]);
+    }, [onPress, router, goBack, triggerHapticFeedback, animationEnabled]);
 
     // Animation values
     const rotateInterpolate = rotateAnim.interpolate({

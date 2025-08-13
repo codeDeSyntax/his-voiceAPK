@@ -27,6 +27,7 @@ const STORAGE_KEYS = {
   HIGHLIGHTS: "sermonHighlights",
   LAST_SERMON: "lastOpenedSermon", // Store reference to last opened sermon
   LAST_SCREEN: "lastVisitedScreen", // Store the last visited screen
+  NAVIGATION_HISTORY: "navigationHistory", // Store navigation history stack
 };
 
 const INITIAL_SETTINGS = {
@@ -65,6 +66,7 @@ export const SermonProvider = ({ children }) => {
   const [bookmarks, setBookmarks] = useState([]);
   const [highlights, setHighlights] = useState({}); // Store paragraph highlights
   const [lastVisitedScreen, setLastVisitedScreen] = useState(null); // Track last visited screen
+  const [navigationHistory, setNavigationHistory] = useState([]); // Track navigation history
 
   // Theme derived from isDarkMode
   const theme = useMemo(
@@ -186,15 +188,21 @@ export const SermonProvider = ({ children }) => {
   );
 
   // Last visited screen management
-  const updateLastVisitedScreen = useCallback(async (screenName) => {
-    try {
-      setLastVisitedScreen(screenName);
-      await AsyncStorage.setItem(STORAGE_KEYS.LAST_SCREEN, screenName);
-      console.log("Last visited screen updated:", screenName);
-    } catch (error) {
-      console.error("Failed to save last visited screen:", error);
-    }
-  }, []);
+  const updateLastVisitedScreen = useCallback(
+    async (screenName) => {
+      try {
+        setLastVisitedScreen(screenName);
+        await AsyncStorage.setItem(STORAGE_KEYS.LAST_SCREEN, screenName);
+        console.log("Last visited screen updated:", screenName);
+
+        // Also add to navigation history
+        await addToNavigationHistory(screenName);
+      } catch (error) {
+        console.error("Failed to save last visited screen:", error);
+      }
+    },
+    [addToNavigationHistory]
+  );
 
   const getLastVisitedScreen = useCallback(async () => {
     try {
@@ -207,6 +215,100 @@ export const SermonProvider = ({ children }) => {
     } catch (error) {
       console.error("Failed to load last visited screen:", error);
       return null;
+    }
+  }, []);
+
+  // Navigation History Management
+  const addToNavigationHistory = useCallback(
+    async (screenName) => {
+      try {
+        const newHistory = [...navigationHistory];
+
+        // Remove the screen if it already exists in history to avoid duplicates
+        const existingIndex = newHistory.findIndex(
+          (screen) => screen === screenName
+        );
+        if (existingIndex !== -1) {
+          newHistory.splice(existingIndex, 1);
+        }
+
+        // Add to the end of the array (most recent)
+        newHistory.push(screenName);
+
+        // Keep only the last 10 screens to prevent memory issues
+        if (newHistory.length > 10) {
+          newHistory.shift();
+        }
+
+        setNavigationHistory(newHistory);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.NAVIGATION_HISTORY,
+          JSON.stringify(newHistory)
+        );
+        console.log("Navigation history updated:", newHistory);
+      } catch (error) {
+        console.error("Failed to save navigation history:", error);
+      }
+    },
+    [navigationHistory]
+  );
+
+  const getPreviousScreen = useCallback(() => {
+    // Return the second-to-last screen in history (previous screen)
+    if (navigationHistory.length >= 2) {
+      return navigationHistory[navigationHistory.length - 2];
+    }
+    // If no previous screen, default to AllSermons
+    return "AllSermons";
+  }, [navigationHistory]);
+
+  const goBack = useCallback(async () => {
+    try {
+      const newHistory = [...navigationHistory];
+
+      // Remove the current screen (last item)
+      if (newHistory.length > 0) {
+        newHistory.pop();
+      }
+
+      setNavigationHistory(newHistory);
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.NAVIGATION_HISTORY,
+        JSON.stringify(newHistory)
+      );
+
+      // Return the previous screen to navigate to
+      return getPreviousScreen();
+    } catch (error) {
+      console.error("Failed to update navigation history on back:", error);
+      return "AllSermons";
+    }
+  }, [navigationHistory, getPreviousScreen]);
+
+  const loadNavigationHistory = useCallback(async () => {
+    try {
+      const savedHistory = await AsyncStorage.getItem(
+        STORAGE_KEYS.NAVIGATION_HISTORY
+      );
+      if (savedHistory) {
+        const parsedHistory = JSON.parse(savedHistory);
+        setNavigationHistory(parsedHistory);
+        return parsedHistory;
+      }
+      return [];
+    } catch (error) {
+      console.error("Failed to load navigation history:", error);
+      return [];
+    }
+  }, []);
+
+  const clearNavigationHistory = useCallback(async () => {
+    try {
+      setNavigationHistory([]);
+      await AsyncStorage.removeItem(STORAGE_KEYS.NAVIGATION_HISTORY);
+      console.log("Navigation history cleared");
+    } catch (error) {
+      console.error("Failed to clear navigation history:", error);
     }
   }, []);
 
@@ -580,6 +682,9 @@ export const SermonProvider = ({ children }) => {
         // Load last visited screen
         await getLastVisitedScreen();
 
+        // Load navigation history
+        await loadNavigationHistory();
+
         // Load sermons
         await loadSermons();
       } catch (error) {
@@ -589,7 +694,7 @@ export const SermonProvider = ({ children }) => {
     };
 
     initializeApp();
-  }, [loadSermons, loadBookmarks, getLastVisitedScreen]);
+  }, [loadSermons, loadBookmarks, getLastVisitedScreen, loadNavigationHistory]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -652,6 +757,14 @@ export const SermonProvider = ({ children }) => {
       lastVisitedScreen,
       updateLastVisitedScreen,
       getLastVisitedScreen,
+
+      // Navigation history management
+      navigationHistory,
+      addToNavigationHistory,
+      getPreviousScreen,
+      goBack,
+      loadNavigationHistory,
+      clearNavigationHistory,
     }),
     [
       selectedSermon,
@@ -685,6 +798,12 @@ export const SermonProvider = ({ children }) => {
       lastVisitedScreen,
       updateLastVisitedScreen,
       getLastVisitedScreen,
+      navigationHistory,
+      addToNavigationHistory,
+      getPreviousScreen,
+      goBack,
+      loadNavigationHistory,
+      clearNavigationHistory,
     ]
   );
 

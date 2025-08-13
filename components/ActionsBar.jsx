@@ -30,10 +30,19 @@ const ActionButton = React.memo(
       () => [
         styles.actionButton,
         {
-          backgroundColor: theme.dark ? theme.colors.primary : "transparent",
-          // shadowColor: theme.colors.text,
-          borderColor: theme.dark ? "#747272" : "#4a2916",
-          borderWidth: isHighlighted ? 3 : 2,
+          backgroundColor: theme.dark 
+            ? (isHighlighted ? "rgba(255, 255, 255, 0.15)" : "rgba(80, 61, 49, 0.8)") 
+            : (isHighlighted ? "rgba(93, 50, 17, 0.15)" : "rgba(255, 255, 255, 0.9)"),
+          borderColor: theme.dark 
+            ? (isHighlighted ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.2)") 
+            : (isHighlighted ? "rgba(93, 50, 17, 0.4)" : "rgba(93, 50, 17, 0.2)"),
+          borderWidth: isHighlighted ? 2 : 1,
+          shadowColor: theme.dark ? "#000" : "#5d3211",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: theme.dark ? 0.3 : 0.1,
+          shadowRadius: isHighlighted ? 6 : 3,
+          elevation: isHighlighted ? 5 : 3,
+          transform: [{ scale: isHighlighted ? 1.05 : 1 }],
         },
         style,
       ],
@@ -225,7 +234,16 @@ const ActionsBar = ({
   const audioTextStyle = useMemo(() => ({ fontSize: 20 }), []);
 
   return (
-    <View>
+    <View style={{
+      backgroundColor: theme.dark 
+        ? "rgba(62, 45, 32, 0.4)" 
+        : "rgba(255, 255, 255, 0.85)",
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.dark 
+        ? "rgba(255, 255, 255, 0.1)" 
+        : "rgba(93, 50, 17, 0.1)",
+    }}>
       <AnimatedLabel
         showLabels={showLabels}
         currentLabelIndex={currentLabelIndex}
@@ -238,7 +256,10 @@ const ActionsBar = ({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={scrollContainerStyle}
+        contentContainerStyle={[scrollContainerStyle, {
+          paddingHorizontal: 20,
+          gap: 12,
+        }]}
         onTouchStart={restartAnimation}
         removeClippedSubviews={true}
         scrollEventThrottle={16}
@@ -297,7 +318,7 @@ const ActionsBar = ({
           onPress={showYearModal}
           isHighlighted={currentLabelIndex === 3 && showLabels}
           theme={theme}
-          // style={{ borderColor: theme.dark ? "white" : "#121212" }}
+          // style={{ borderColor: theme.dark ? "white" : "#12212" }}
         >
           <FontAwesome5
             name="calendar-alt"

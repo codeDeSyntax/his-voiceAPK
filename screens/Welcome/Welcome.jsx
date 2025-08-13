@@ -29,7 +29,13 @@ const { width: screenWidth } = Dimensions.get("window");
 
 const Welcome = () => {
   const navigation = useNavigation();
-  const { theme, getLastVisitedScreen, lastVisitedScreen } = useAppContext();
+  const {
+    theme,
+    getLastVisitedScreen,
+    lastVisitedScreen,
+    clearNavigationHistory,
+    addToNavigationHistory,
+  } = useAppContext();
   const [fontsLoaded] = useFonts({
     "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
   });
@@ -126,6 +132,9 @@ const Welcome = () => {
     if (lastScreen) {
       console.log("Last visited screen:", lastScreen);
 
+      // Clear navigation history since we're starting fresh from Welcome
+      await clearNavigationHistory();
+
       switch (lastScreen) {
         case "AllSermons":
           navigation?.navigate("AllSermons");
@@ -148,6 +157,7 @@ const Welcome = () => {
       }
     } else {
       // No last screen recorded, navigate to default
+      await clearNavigationHistory();
       navigation?.navigate("AllSermons");
     }
   }; // Reset slider when screen comes into focus

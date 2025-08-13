@@ -1,66 +1,121 @@
 import React from "react";
+// import {  TextInput, TouchableOpacity } from "react-native";
+// import Ionicons from "react-native-vector-icons/Ionicons";
+// import { styles } from "../styles/Allsermons";
+// import { MaterialIcons } from "@expo/vector-icons";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { styles } from "../styles/Allsermons";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Feather } from "@expo/vector-icons";
 
 const SearchHeader = ({ theme, searchText, setSearchText }) => {
   return (
-    <View style={styles.searchContainer}>
+    <View style={{
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      backgroundColor: theme.dark 
+        ? "rgba(62, 45, 32, 0.3)" 
+        : "rgba(255, 255, 255, 0.8)",
+    }}>
       <View
         style={[
           styles.searchInputContainer,
           {
-            backgroundColor: theme.dark ? "transparent" : "#ffffff95",
-
-            borderColor: theme.dark ? "#636262" : theme.colors.text,
-            borderWidth: theme.dark ? 1 : 0,
-            borderRadius: 100,
-            borderStyle: "dotted",
+            backgroundColor: theme.dark 
+              ? "rgba(80, 61, 49, 0.4)" 
+              : "rgba(255, 255, 255, 0.95)",
+            borderColor: theme.dark 
+              ? "rgba(255, 255, 255, 0.2)" 
+              : "rgba(93, 50, 17, 0.2)",
+            borderWidth: 1,
+            borderRadius: 16,
+            shadowColor: theme.dark ? "#000" : "#5d3211",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: theme.dark ? 0.3 : 0.1,
+            shadowRadius: 8,
+            elevation: 4,
+            paddingHorizontal: 16,
+            paddingVertical: 4,
+            flexDirection: "row",
+            alignItems: "center",
           },
         ]}
       >
+        <Feather
+          name="search"
+          size={18}
+          color={theme.dark 
+            ? "rgba(255, 255, 255, 0.6)" 
+            : "rgba(93, 50, 17, 0.6)"}
+          style={{ marginRight: 12 }}
+        />
+        
         <TextInput
           style={[
             styles.searchInput,
             {
-              borderColor: theme.dark ? theme.colors.primary : "#f3f3f3",
-              color: theme.dark === true ? theme.colors.text : "#000000",
+              flex: 1,
+              color: theme.dark ? theme.colors.text : "#5d3211",
               fontFamily: "serif",
-              // fontStyle: "italic",
-              borderRadius: 100,
+              fontSize: 16,
+              paddingVertical: 12,
+              borderWidth: 0,
             },
           ]}
-          placeholder="Search Sermons"
+          placeholder="Search sermons..."
           value={searchText}
           onChangeText={setSearchText}
-          placeholderTextColor={theme.dark ? "gray" : "#00000080"}
-          selectionColor={theme.dark === true ? theme.colors.text : "gray"}
+          placeholderTextColor={theme.dark 
+            ? "rgba(255, 255, 255, 0.5)" 
+            : "rgba(93, 50, 17, 0.5)"}
+          selectionColor={theme.dark ? theme.colors.text : "#5d3211"}
           spellCheck={false}
           autoCorrect={false}
           keyboardAppearance={theme.dark ? "dark" : "light"}
-          
         />
+        
+        {searchText.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSearchText("")}
+            style={{
+              padding: 4,
+              borderRadius: 12,
+              backgroundColor: theme.dark 
+                ? "rgba(255, 255, 255, 0.1)" 
+                : "rgba(93, 50, 17, 0.1)",
+            }}
+          >
+            <Feather
+              name="x"
+              size={14}
+              color={theme.dark 
+                ? "rgba(255, 255, 255, 0.6)" 
+                : "rgba(93, 50, 17, 0.6)"}
+            />
+          </TouchableOpacity>
+        )}
+        
         <TouchableOpacity
-          style={[
-            styles.searchButton,
-            {
-              backgroundColor: theme.dark ? theme.colors.text : "#5d3211",
-              borderRadius: 100,
-            },
-          ]}
+          style={{
+            backgroundColor: theme.dark ? theme.colors.text : "#5d3211",
+            borderRadius: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            marginLeft: 8,
+            shadowColor: theme.dark ? "#000" : "#5d3211",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+            elevation: 3,
+          }}
           onPress={() => {
             /* Implement search action */
           }}
         >
           <MaterialIcons
             name="search"
-            size={20}
+            size={18}
             color={theme.dark ? "#5d3211" : "white"}
-            style={{
-              shadowColor: "black",
-              elevation: 3,
-            }}
           />
         </TouchableOpacity>
       </View>
