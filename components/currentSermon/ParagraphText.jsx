@@ -61,7 +61,7 @@ const renderTextWithStyledNumbers = (text, theme, settings, key = "") => {
           key={`${key}-number-${index}-${part.slice(0, 5)}`}
           style={{
             fontSize: responsiveFontSize(settings.fontSize),
-            fontFamily:  "ZillaSlab",
+            fontFamily: "ZillaSlab",
             color: theme.dark ? "#b37407" : "#36240f", // Amber/orange color for numbers
             // fontWeight: "700", // Bold numbers
             lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
@@ -87,40 +87,6 @@ const renderTextWithStyledNumbers = (text, theme, settings, key = "") => {
     }
   });
 };
-
-// Memoized text highlighting component for search results - with number styling
-const HighlightedText = React.memo(
-  ({ parts, searchPhrase, theme, settings }) => (
-    <>
-      {parts.map((part, partIndex) =>
-        part.toLowerCase() === searchPhrase.toLowerCase() ? (
-          <Text
-            key={`highlight-${partIndex}-${part.slice(0, 10)}`}
-            style={{
-              color: theme.dark ? "#FCD34D" : "#F59E0B", // Use amber color for search highlights
-              fontSize: responsiveFontSize(settings.fontSize),
-              fontFamily: settings.fontFamily || "ZillaSlab",
-              fontWeight: "600", // Make search highlights bold
-              // Consistent spacing - no extra padding or margins
-              lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4
-              ),
-            }}
-          >
-            {part}
-          </Text>
-        ) : (
-          renderTextWithStyledNumbers(
-            part,
-            theme,
-            settings,
-            `highlight-${partIndex}`
-          )
-        )
-      )}
-    </>
-  )
-);
 
 // Memoized endnote text component - with number styling
 const EndnoteText = React.memo(({ parts, theme, settings }) => (
@@ -247,15 +213,7 @@ const EndnoteWithTitleText = React.memo(({ parts, theme, settings }) => {
 });
 
 const ParagraphText = React.memo(
-  ({
-    paragraph,
-    index,
-    searchPhrase = "",
-    theme,
-    settings,
-    onLayout,
-    selectedSermon,
-  }) => {
+  ({ paragraph, index, theme, settings, onLayout, selectedSermon }) => {
     const {
       addBookmark,
       removeBookmark,
@@ -284,28 +242,26 @@ const ParagraphText = React.memo(
       return getHighlight(selectedSermon.id, index);
     }, [selectedSermon.id, index, getHighlight]); // Keep getHighlight for reactivity
 
-    // Simplified and optimized text style with highlight color support
+    // Optimized text style with highlight color support - memoized for performance
     const textStyle = useMemo(() => {
       const baseSize = responsiveFontSize(settings?.fontSize || 22);
       const fontFamily = settings?.fontFamily || "ZillaSlab";
+      const lineHeight = Math.round(baseSize * 1.4);
 
-      // Determine text color - use highlight color if paragraph is highlighted
-      let textColor = theme.colors.text;
-      if (currentHighlight) {
-        const highlightColorData = HIGHLIGHT_COLORS[currentHighlight];
-        if (highlightColorData) {
-          // Use vibrant highlight colors for text
-          const highlightColors = {
-            yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
-            green: theme.dark ? "#34D399" : "#059669", // Emerald
-            brown: theme.dark ? "#D2B48C" : "#8B4513", // Brown instead of blue
-            purple: theme.dark ? "#C084FC" : "#7C3AED", // Violet
-            pink: theme.dark ? "#F472B6" : "#DB2777", // Pink
-            orange: theme.dark ? "#FB923C" : "#EA580C", // Orange
-          };
-          textColor = highlightColors[currentHighlight] || theme.colors.text;
-        }
-      }
+      // Pre-calculated highlight colors for better performance
+      const highlightTextColors = {
+        yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
+        green: theme.dark ? "#34D399" : "#059669", // Emerald
+        brown: theme.dark ? "#D2B48C" : "#8B4513", // Brown
+        purple: theme.dark ? "#C084FC" : "#7C3AED", // Violet
+        pink: theme.dark ? "#F472B6" : "#DB2777", // Pink
+        orange: theme.dark ? "#FB923C" : "#EA580C", // Orange
+      };
+
+      // Use highlight color if available, otherwise default text color
+      const textColor = currentHighlight
+        ? highlightTextColors[currentHighlight] || theme.colors.text
+        : theme.colors.text;
 
       return [
         styles.paragraphText,
@@ -313,7 +269,7 @@ const ParagraphText = React.memo(
           color: textColor,
           fontFamily: fontFamily,
           fontSize: baseSize,
-          lineHeight: Math.round(baseSize * 1.4), // Consistent line height calculation
+          lineHeight: lineHeight,
         },
       ];
     }, [
@@ -340,8 +296,8 @@ const ParagraphText = React.memo(
         baseStyle.push({
           borderLeftWidth: 2,
           paddingLeft: 2,
-          borderLeftColor: theme.dark ? theme.colors.hlight : "#5d3211",
-          backgroundColor: theme.dark ? theme.colors.hlight + "20" : "#ecedee",
+          borderLeftColor: theme.dark ? theme.colors.hlight + "20" : "#5d3211",
+          backgroundColor: theme.dark ? theme.colors.hlight + "10" : "#ecedee",
         });
       }
 
@@ -373,11 +329,10 @@ const ParagraphText = React.memo(
       isSelectionMode,
     ]);
 
-    // Memoize text processing for search, endnotes, and titles
+    // Memoize text processing for endnotes and titles (search removed)
     const processedText = useMemo(() => {
       const hasEndnote = paragraph.includes("Endnote");
       const hasWilliamBranham = paragraph.includes("William Marrion Branham");
-      const hasSearch = searchPhrase && searchPhrase.length > 0;
 
       if (hasEndnote && hasWilliamBranham) {
         // Split by Endnote and William Marrion Branham to identify title
@@ -390,18 +345,13 @@ const ParagraphText = React.memo(
           type: "endnote",
           parts: paragraph.split(/(Endnote)/gi),
         };
-      } else if (hasSearch) {
-        return {
-          type: "search",
-          parts: paragraph.split(new RegExp(`(${searchPhrase})`, "gi")),
-        };
       } else {
         return {
           type: "normal",
           text: paragraph,
         };
       }
-    }, [paragraph, searchPhrase]);
+    }, [paragraph]);
 
     // Enhanced layout handler to also track paragraph positioning
     const handleLayout = useCallback(
@@ -532,37 +482,38 @@ const ParagraphText = React.memo(
       isBookmarked,
     ]);
 
+    // Optimized highlight button press handler
     const handleHighlightPress = useCallback(() => {
-      // Toggle color palette with immediate response
-      setShowColorPalette((prev) => !prev);
-
       // Provide immediate haptic feedback
       if (Platform.OS === "ios") {
         Vibration.vibrate(VIBRATION_DURATION);
       }
+
+      // Use requestAnimationFrame for smooth state transition
+      requestAnimationFrame(() => {
+        setShowColorPalette((prev) => !prev);
+      });
     }, []);
 
+    // Optimized color selection handler with immediate UI feedback
     const handleColorSelect = useCallback(
       (color) => {
-        // Debounced highlight operations to prevent rapid calls
-        const debouncedHighlightAction = debounce(() => {
-          if (color) {
-            addHighlight(selectedSermon.id, index, color);
-          } else {
-            removeHighlight(selectedSermon.id, index);
-          }
-        }, DEBOUNCE_DELAY);
-
-        // Execute debounced action
-        debouncedHighlightAction();
-
-        // Close palette immediately for responsive UI
+        // Immediate UI feedback - close palette first for responsive feel
         setShowColorPalette(false);
 
         // Provide immediate haptic feedback
         if (Platform.OS === "ios") {
           Vibration.vibrate(VIBRATION_DURATION);
         }
+
+        // Use requestAnimationFrame for smooth state updates
+        requestAnimationFrame(() => {
+          if (color) {
+            addHighlight(selectedSermon.id, index, color);
+          } else {
+            removeHighlight(selectedSermon.id, index);
+          }
+        });
       },
       [addHighlight, removeHighlight, selectedSermon.id, index]
     );
@@ -586,19 +537,10 @@ const ParagraphText = React.memo(
               settings={settings}
             />
           );
-        case "search":
-          return (
-            <HighlightedText
-              parts={processedText.parts}
-              searchPhrase={searchPhrase}
-              theme={theme}
-              settings={settings}
-            />
-          );
         default:
           return processedText.text;
       }
-    }, [processedText, theme, settings, searchPhrase]);
+    }, [processedText, theme, settings]);
 
     return (
       <View style={containerStyle} onLayout={handleLayout}>
@@ -664,14 +606,9 @@ const ParagraphText = React.memo(
                 />
               </TouchableOpacity>
 
-              {/* Highlight Color Palette */}
+              {/* Optimized Highlight Color Palette with better positioning */}
               {showColorPalette && (
-                <>
-                  <TouchableOpacity
-                    style={styles.paletteOverlay}
-                    onPress={() => setShowColorPalette(false)}
-                    activeOpacity={1}
-                  />
+                <View style={styles.paletteContainer}>
                   <HighlightColorPalette
                     isVisible={showColorPalette}
                     onColorSelect={handleColorSelect}
@@ -679,7 +616,7 @@ const ParagraphText = React.memo(
                     theme={theme}
                     currentColor={currentHighlight}
                   />
-                </>
+                </View>
               )}
             </View>
           </View>
@@ -809,32 +746,6 @@ const ParagraphText = React.memo(
                       return part;
                     }
                   })
-                : processedText.type === "search"
-                ? processedText.parts.map((part, partIndex) =>
-                    part.toLowerCase() === searchPhrase.toLowerCase() ? (
-                      <Text
-                        key={`highlight-${partIndex}-${part.slice(0, 10)}`}
-                        style={{
-                          color: theme.dark ? "#FCD34D" : "#F59E0B", // Use amber color for search highlights
-                          fontWeight: "600", // Make search highlights bold
-                          fontFamily: settings?.fontFamily || "ZillaSlab",
-                          fontSize: responsiveFontSize(
-                            settings?.fontSize || 22
-                          ),
-                          // Inherit lineHeight from parent to maintain consistent spacing
-                        }}
-                      >
-                        {part}
-                      </Text>
-                    ) : (
-                      renderTextWithStyledNumbers(
-                        part,
-                        theme,
-                        settings,
-                        `search-${partIndex}`
-                      )
-                    )
-                  )
                 : renderTextWithStyledNumbers(
                     processedText.text,
                     theme,

@@ -60,13 +60,13 @@ const Settings = React.memo(() => {
 
   const {
     settings,
-    setSettings,
     updateSettings,
     theme,
-    setIsDarkMode,
     isDarkMode,
+    setIsDarkMode,
     numberOfColumns,
     setNumberOfColumns,
+    updateLastVisitedScreen,
   } = useAppContext();
 
   // Memoized initial values to prevent unnecessary recalculations
@@ -97,6 +97,11 @@ const Settings = React.memo(() => {
   const animation = useMemo(() => new Animated.Value(isDarkMode ? 1 : 0), []);
 
   const router = useNavigation();
+
+  // Track that user visited Settings screen
+  useEffect(() => {
+    updateLastVisitedScreen("Settings");
+  }, [updateLastVisitedScreen]);
 
   // Memoized container style
   const containerStyle = useMemo(

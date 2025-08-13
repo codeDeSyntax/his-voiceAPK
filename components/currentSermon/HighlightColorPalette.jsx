@@ -1,39 +1,36 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { responsiveFontSize, spacing } from "../../Utils/responsiveUtils";
 
-const HighlightColorPalette = ({
-  isVisible,
-  onColorSelect,
-  onClose,
-  theme,
-  currentColor,
-}) => {
-  // Define highlight colors that work well for text highlighting in both light and dark themes
-  const highlightColors = [
-    { name: "yellow", light: "#F59E0B", dark: "#FCD34D" }, // Amber for text
-    { name: "green", light: "#059669", dark: "#34D399" }, // Emerald for text
-    { name: "brown", light: "#8B4513", dark: "#D2B48C" }, // Brown for text (matches theme)
-    { name: "purple", light: "#7C3AED", dark: "#C084FC" }, // Violet for text
-    { name: "pink", light: "#DB2777", dark: "#F472B6" }, // Pink for text
-    { name: "orange", light: "#EA580C", dark: "#FB923C" }, // Orange for text
-  ];
+// Pre-defined colors for better performance - moved outside component
+const HIGHLIGHT_COLORS = [
+  { name: "yellow", light: "#F59E0B", dark: "#FCD34D" },
+  { name: "green", light: "#059669", dark: "#34D399" },
+  { name: "brown", light: "#8B4513", dark: "#D2B48C" },
+  { name: "purple", light: "#7C3AED", dark: "#C084FC" },
+  { name: "pink", light: "#DB2777", dark: "#F472B6" },
+  { name: "orange", light: "#EA580C", dark: "#FB923C" },
+];
 
-  if (!isVisible) return null;
-
-  return (
-    <Animated.View
-      style={[
+const HighlightColorPalette = React.memo(
+  ({ isVisible, onColorSelect, onClose, theme, currentColor }) => {
+    // Memoized container style for performance
+    const containerStyle = useMemo(
+      () => [
         styles.container,
         {
           backgroundColor: theme.colors.background,
           borderColor: theme.colors.text + "20",
         },
-      ]}
-    >
-      <View style={styles.colorGrid}>
-        {highlightColors.map((color) => {
+      ],
+      [theme.colors.background, theme.colors.text]
+    );
+
+    // Memoized color options for better performance
+    const colorOptions = useMemo(
+      () =>
+        HIGHLIGHT_COLORS.map((color) => {
           const backgroundColor = theme.dark ? color.dark : color.light;
           const isSelected = currentColor === color.name;
 
@@ -51,6 +48,7 @@ const HighlightColorPalette = ({
                 },
               ]}
               onPress={() => onColorSelect(color.name)}
+              activeOpacity={0.7}
             >
               {isSelected && (
                 <Ionicons
@@ -61,9 +59,13 @@ const HighlightColorPalette = ({
               )}
             </TouchableOpacity>
           );
-        })}
+        }),
+      [theme.dark, theme.colors.text, currentColor, onColorSelect]
+    );
 
-        {/* Remove highlight option */}
+    // Memoized remove option
+    const removeOption = useMemo(
+      () => (
         <TouchableOpacity
           style={[
             styles.colorOption,
@@ -74,6 +76,7 @@ const HighlightColorPalette = ({
             },
           ]}
           onPress={() => onColorSelect(null)}
+          activeOpacity={0.7}
         >
           <Ionicons
             name="close"
@@ -81,10 +84,22 @@ const HighlightColorPalette = ({
             color={theme.colors.text}
           />
         </TouchableOpacity>
-      </View>
-    </Animated.View>
-  );
-};
+      ),
+      [theme.colors.text, onColorSelect]
+    );
+
+    if (!isVisible) return null;
+
+    return (
+      <Animated.View style={containerStyle}>
+        <View style={styles.colorGrid}>
+          {colorOptions}
+          {removeOption}
+        </View>
+      </Animated.View>
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   container: {

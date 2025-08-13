@@ -92,9 +92,19 @@ const TableHeader = React.memo(({ theme }) => (
 ));
 
 const BookmarksScreen = () => {
-  const { theme, bookmarks, removeBookmark, setSelectedSermon } =
-    useAppContext();
+  const {
+    theme,
+    bookmarks,
+    removeBookmark,
+    setSelectedSermon,
+    updateLastVisitedScreen,
+  } = useAppContext();
   const navigation = useNavigation();
+
+  // Track that user visited BookmarksScreen
+  React.useEffect(() => {
+    updateLastVisitedScreen("BookmarksScreen");
+  }, [updateLastVisitedScreen]);
 
   const handleBookmarkPress = (bookmark) => {
     setSelectedSermon(bookmark.sermon);
@@ -186,7 +196,7 @@ const BookmarksScreen = () => {
         >
           <Ionicons
             name="trash-outline"
-            size={responsiveFontSize(16)}
+            size={responsiveFontSize(24)}
             color={theme.dark ? theme.colors.hlight : "#5d3211"}
           />
         </TouchableOpacity>

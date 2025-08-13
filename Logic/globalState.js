@@ -25,6 +25,8 @@ const STORAGE_KEYS = {
   LAST_POSITIONS: "sermonLastPositions",
   BOOKMARKS: "sermonBookmarks",
   HIGHLIGHTS: "sermonHighlights",
+  LAST_SERMON: "lastOpenedSermon", // Store reference to last opened sermon
+  LAST_SCREEN: "lastVisitedScreen", // Store the last visited screen
 };
 
 const INITIAL_SETTINGS = {
@@ -62,6 +64,7 @@ export const SermonProvider = ({ children }) => {
   const [lastReadPositions, setLastReadPositions] = useState({});
   const [bookmarks, setBookmarks] = useState([]);
   const [highlights, setHighlights] = useState({}); // Store paragraph highlights
+  const [lastVisitedScreen, setLastVisitedScreen] = useState(null); // Track last visited screen
 
   // Theme derived from isDarkMode
   const theme = useMemo(
@@ -110,35 +113,102 @@ export const SermonProvider = ({ children }) => {
     [lastReadPositions]
   );
 
+  // Load last opened sermon
+  const loadLastOpenedSermon = useCallback(async () => {
+    try {
+      const storedLastSermon = await AsyncStorage.getItem(
+        STORAGE_KEYS.LAST_SERMON
+      );
+      if (storedLastSermon && textSermons.length > 0) {
+        const lastSermonRef = JSON.parse(storedLastSermon);
+
+        // Find the full sermon object from our loaded sermons
+        const fullSermon = textSermons.find(
+          (sermon) => sermon.id === lastSermonRef.id
+        );
+
+        if (fullSermon) {
+          console.log("Loading last opened sermon:", fullSermon.title);
+          setSelectedSermonWithPosition(fullSermon);
+          return true; // Successfully loaded last sermon
+        } else {
+          console.log("Last opened sermon not found, will load random sermon");
+        }
+      }
+      return false; // No last sermon found or failed to load
+    } catch (error) {
+      console.error("Failed to load last opened sermon:", error);
+      return false;
+    }
+  }, [textSermons, setSelectedSermonWithPosition]);
+
   // Handle selecting a random sermon
   const handleRandomSermons = useCallback(() => {
     if (textSermons.length > 0) {
       const randomIndex = Math.floor(Math.random() * textSermons.length);
       const randomSermon = textSermons[randomIndex];
-      // Add last read position to sermon
-      const sermonWithPosition = {
-        ...randomSermon,
-        lastReadParagraph: getLastReadPosition(randomSermon.id),
-      };
-      setSelectedSermon(sermonWithPosition);
+      console.log("Loading random sermon:", randomSermon.title);
+      setSelectedSermonWithPosition(randomSermon);
     }
-  }, [textSermons, getLastReadPosition]);
+  }, [textSermons, setSelectedSermonWithPosition]);
 
-  // Enhanced setSelectedSermon to include last read position
+  // Enhanced setSelectedSermon to include last read position and save as last opened
   const setSelectedSermonWithPosition = useCallback(
-    (sermon) => {
+    async (sermon) => {
       if (sermon) {
         const sermonWithPosition = {
           ...sermon,
           lastReadParagraph: getLastReadPosition(sermon.id),
         };
         setSelectedSermon(sermonWithPosition);
+
+        // Save as last opened sermon (store only essential data)
+        try {
+          const sermonReference = {
+            id: sermon.id,
+            title: sermon.title,
+            date: sermon.date,
+            type: sermon.type,
+            // Don't store the full sermon content, just enough to identify it
+          };
+          await AsyncStorage.setItem(
+            STORAGE_KEYS.LAST_SERMON,
+            JSON.stringify(sermonReference)
+          );
+        } catch (error) {
+          console.error("Failed to save last opened sermon:", error);
+        }
       } else {
         setSelectedSermon(null);
       }
     },
     [getLastReadPosition]
   );
+
+  // Last visited screen management
+  const updateLastVisitedScreen = useCallback(async (screenName) => {
+    try {
+      setLastVisitedScreen(screenName);
+      await AsyncStorage.setItem(STORAGE_KEYS.LAST_SCREEN, screenName);
+      console.log("Last visited screen updated:", screenName);
+    } catch (error) {
+      console.error("Failed to save last visited screen:", error);
+    }
+  }, []);
+
+  const getLastVisitedScreen = useCallback(async () => {
+    try {
+      const savedScreen = await AsyncStorage.getItem(STORAGE_KEYS.LAST_SCREEN);
+      if (savedScreen) {
+        setLastVisitedScreen(savedScreen);
+        return savedScreen;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to load last visited screen:", error);
+      return null;
+    }
+  }, []);
 
   // Load sermons from modules
   const loadSermons = useCallback(async () => {
@@ -237,12 +307,31 @@ export const SermonProvider = ({ children }) => {
     initializeApp();
   }, [loadSermons, loadStoredData]);
 
-  // Select random sermon after sermons are loaded
+  // Try to load last opened sermon, fallback to random if not found
   useEffect(() => {
-    if (sermonsLoaded && textSermons.length > 0 && !selectedSermon) {
-      handleRandomSermons();
-    }
-  }, [sermonsLoaded, textSermons, handleRandomSermons, selectedSermon]);
+    const initializeSelectedSermon = async () => {
+      if (sermonsLoaded && textSermons.length > 0 && !selectedSermon) {
+        console.log("Initializing sermon selection...");
+
+        // First try to load the last opened sermon
+        const lastSermonLoaded = await loadLastOpenedSermon();
+
+        // If no last sermon found or failed to load, select random sermon
+        if (!lastSermonLoaded) {
+          console.log("No last sermon found, selecting random sermon");
+          handleRandomSermons();
+        }
+      }
+    };
+
+    initializeSelectedSermon();
+  }, [
+    sermonsLoaded,
+    textSermons,
+    selectedSermon,
+    loadLastOpenedSermon,
+    handleRandomSermons,
+  ]);
 
   // Load bookmarks from storage on app start
   useEffect(() => {
@@ -377,32 +466,34 @@ export const SermonProvider = ({ children }) => {
     }
   }, []);
 
-  // Highlight management functions with optimistic updates
+  // Optimized highlight management functions for better performance
   const addHighlight = useCallback(
     async (sermonId, paragraphIndex, color) => {
       try {
         const highlightKey = `${sermonId}-${paragraphIndex}`;
+
+        // Early return if color is the same to prevent unnecessary updates
+        if (highlights[highlightKey] === color) {
+          return;
+        }
+
         const updatedHighlights = {
           ...highlights,
           [highlightKey]: color,
         };
 
-        // Optimistic update - update UI immediately
+        // Batch state update for better performance
         setHighlights(updatedHighlights);
 
-        // Save to AsyncStorage asynchronously (non-blocking)
-        setTimeout(async () => {
-          try {
-            await AsyncStorage.setItem(
-              STORAGE_KEYS.HIGHLIGHTS,
-              JSON.stringify(updatedHighlights)
-            );
-          } catch (storageError) {
-            console.error("Failed to save highlight to storage:", storageError);
-            // Revert optimistic update if storage fails
-            setHighlights(highlights);
-          }
-        }, 0);
+        // Use immediate storage write without setTimeout for better responsiveness
+        AsyncStorage.setItem(
+          STORAGE_KEYS.HIGHLIGHTS,
+          JSON.stringify(updatedHighlights)
+        ).catch((storageError) => {
+          console.error("Failed to save highlight to storage:", storageError);
+          // Revert only on storage failure
+          setHighlights(highlights);
+        });
       } catch (error) {
         console.error("Failed to add highlight:", error);
       }
@@ -414,28 +505,30 @@ export const SermonProvider = ({ children }) => {
     async (sermonId, paragraphIndex) => {
       try {
         const highlightKey = `${sermonId}-${paragraphIndex}`;
+
+        // Early return if highlight doesn't exist
+        if (!highlights[highlightKey]) {
+          return;
+        }
+
         const updatedHighlights = { ...highlights };
         delete updatedHighlights[highlightKey];
 
-        // Optimistic update - update UI immediately
+        // Batch state update for better performance
         setHighlights(updatedHighlights);
 
-        // Save to AsyncStorage asynchronously (non-blocking)
-        setTimeout(async () => {
-          try {
-            await AsyncStorage.setItem(
-              STORAGE_KEYS.HIGHLIGHTS,
-              JSON.stringify(updatedHighlights)
-            );
-          } catch (storageError) {
-            console.error(
-              "Failed to remove highlight from storage:",
-              storageError
-            );
-            // Revert optimistic update if storage fails
-            setHighlights(highlights);
-          }
-        }, 0);
+        // Use immediate storage write without setTimeout for better responsiveness
+        AsyncStorage.setItem(
+          STORAGE_KEYS.HIGHLIGHTS,
+          JSON.stringify(updatedHighlights)
+        ).catch((storageError) => {
+          console.error(
+            "Failed to remove highlight from storage:",
+            storageError
+          );
+          // Revert only on storage failure
+          setHighlights(highlights);
+        });
       } catch (error) {
         console.error("Failed to remove highlight:", error);
       }
@@ -484,6 +577,9 @@ export const SermonProvider = ({ children }) => {
           setHighlights(JSON.parse(storedHighlights));
         }
 
+        // Load last visited screen
+        await getLastVisitedScreen();
+
         // Load sermons
         await loadSermons();
       } catch (error) {
@@ -493,7 +589,7 @@ export const SermonProvider = ({ children }) => {
     };
 
     initializeApp();
-  }, [loadSermons, loadBookmarks]);
+  }, [loadSermons, loadBookmarks, getLastVisitedScreen]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -525,6 +621,7 @@ export const SermonProvider = ({ children }) => {
 
       // Actions
       handleRandomSermons,
+      loadLastOpenedSermon,
       updateSettings,
       refreshSermons: loadSermons,
       numberOfColumns,
@@ -551,11 +648,10 @@ export const SermonProvider = ({ children }) => {
       removeHighlight,
       getHighlight,
 
-      // Highlights
-      highlights,
-      addHighlight,
-      removeHighlight,
-      getHighlight,
+      // Last visited screen management
+      lastVisitedScreen,
+      updateLastVisitedScreen,
+      getLastVisitedScreen,
     }),
     [
       selectedSermon,
@@ -574,6 +670,7 @@ export const SermonProvider = ({ children }) => {
       updateLastReadPosition,
       getLastReadPosition,
       handleRandomSermons,
+      loadLastOpenedSermon,
       updateSettings,
       loadSermons,
       numberOfColumns,
@@ -585,6 +682,9 @@ export const SermonProvider = ({ children }) => {
       addHighlight,
       removeHighlight,
       getHighlight,
+      lastVisitedScreen,
+      updateLastVisitedScreen,
+      getLastVisitedScreen,
     ]
   );
 

@@ -11,12 +11,12 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
         style={[
           styles.searchInputContainer,
           {
-            backgroundColor:theme.dark ? "transparent" : "#ffffff95",
+            backgroundColor: theme.dark ? "transparent" : "#ffffff95",
 
             borderColor: theme.dark ? "#636262" : theme.colors.text,
             borderWidth: theme.dark ? 1 : 0,
             borderRadius: 100,
-            borderStyle:"dotted"
+            borderStyle: "dotted",
           },
         ]}
       >
@@ -34,10 +34,12 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
           placeholder="Search Sermons"
           value={searchText}
           onChangeText={setSearchText}
-          placeholderTextColor={theme.dark  ? "gray" : "#00000080"}
+          placeholderTextColor={theme.dark ? "gray" : "#00000080"}
           selectionColor={theme.dark === true ? theme.colors.text : "gray"}
           spellCheck={false}
           autoCorrect={false}
+          keyboardAppearance={theme.dark ? "dark" : "light"}
+          
         />
         <TouchableOpacity
           style={[

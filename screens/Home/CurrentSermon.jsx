@@ -18,17 +18,19 @@ import {
   Alert,
   ImageBackground,
   StyleSheet,
+  TouchableOpacity,
 } from "react-native";
 import { useAppContext } from "../../Logic/globalState";
+import { Feather } from "@expo/vector-icons";
 import {
   formatSermonIntoParagraphs,
   formatSermonIntoParagraphsAsync,
-  searchSermon,
 } from "../../Utils/sermonUtils";
 import ParagraphText from "../../components/currentSermon/ParagraphText";
 import CustomBottomSheetController from "../../components/currentSermon/BottomSheetController";
 import DraggableFloatingBackButton from "../../components/FloatButton";
 import SearchFeedback from "../../components/currentSermon/SearchFeedback";
+import CurrentSermonSearch from "../../components/currentSermon/CurrentSermonSearch";
 import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
 import DownloadSermon from "../../components/currentSermon/PlaySermon";
@@ -64,26 +66,20 @@ const CurrentSermon = React.memo(({ route }) => {
     theme,
     searchText,
     updateLastReadPosition,
+    updateLastVisitedScreen,
   } = useAppContext();
   const router = useNavigation();
 
   // Get navigation parameters
   const initialParagraph = route?.params?.initialParagraph || 0;
-  const searchPhraseFromNav = route?.params?.searchPhrase || "";
   const navigationSource = route?.params?.source; // 'search', etc.
   const scrollToParagraphFromBookmark = route?.params?.scrollToParagraph; // From bookmarks
 
-  const [searchPhrase, setSearchPhrase] = useState(
-    searchPhraseFromNav || searchText || ""
-  );
-  const [searchResults, setSearchResults] = useState([]);
-  const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   const [paragraphLayouts, setParagraphLayouts] = useState({});
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [searching, setSearching] = useState(false);
   const [isCardOpen, setIsCardOpen] = useState(false);
   const [currentVisibleParagraph, setCurrentVisibleParagraph] = useState(0);
   const [hasScrolledToLastPosition, setHasScrolledToLastPosition] =
@@ -91,6 +87,7 @@ const CurrentSermon = React.memo(({ route }) => {
   const [showSelectionTip, setShowSelectionTip] = useState(false);
   const [paragraphs, setParagraphs] = useState([]);
   const [isLoadingParagraphs, setIsLoadingParagraphs] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   // Scroll priority management
   const [scrollPriority, setScrollPriority] = useState(null); // 'search', 'bookmark', 'lastread', 'bottomsheet'
@@ -106,6 +103,11 @@ const CurrentSermon = React.memo(({ route }) => {
     ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
     ZillaSlabSemiBold: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
+
+  // Track that user visited CurrentSermon screen
+  useEffect(() => {
+    updateLastVisitedScreen("CurrentSermon");
+  }, [updateLastVisitedScreen]);
 
   // Show selection tip on first load
   useEffect(() => {
@@ -345,49 +347,6 @@ const CurrentSermon = React.memo(({ route }) => {
     setScrollPriority(null);
   }, [selectedSermon?.id]);
 
-  // Update search results when search phrase changes (MEDIUM PRIORITY)
-  useEffect(() => {
-    const fetchSearchResults = async () => {
-      if (searchPhrase) {
-        try {
-          setSearching(true);
-          const results = searchSermon(paragraphs, searchPhrase);
-          setSearchResults(results);
-          setSearching(false);
-          setCurrentResultIndex(0);
-
-          // Only auto-scroll if not interfering with higher priority operations
-          if (
-            results.length > 0 &&
-            paragraphLayouts[results[0]] &&
-            scrollPriority !== "search" && // Don't interfere with external search navigation
-            !hasHandledInitialScroll // Don't interfere with initial search scroll
-          ) {
-            setScrollPriority("bottomsheet");
-            scrollToParagraph(results[0]);
-            // Clear priority after scroll
-            setTimeout(() => setScrollPriority(null), 1500);
-          }
-        } catch (error) {
-          console.log(error);
-        }
-      } else {
-        setSearchResults([]);
-      }
-    };
-
-    const timeout = setTimeout(fetchSearchResults, 300); // Debounce delay
-
-    return () => clearTimeout(timeout);
-  }, [
-    searchPhrase,
-    paragraphs,
-    paragraphLayouts,
-    scrollToParagraph,
-    scrollPriority,
-    hasHandledInitialScroll,
-  ]);
-
   // Store paragraph layout information for scrolling
   const handleParagraphLayout = useCallback((index, event) => {
     const layout = event.nativeEvent.layout;
@@ -467,41 +426,29 @@ const CurrentSermon = React.memo(({ route }) => {
     scrollViewRef.current?.scrollTo({ y: contentHeight, animated: true });
   }, [contentHeight]);
 
-  // Navigate to a search result
-  const navigateToResult = useCallback(
-    (paragraphIndex) => {
-      // Only allow navigation if user isn't actively scrolling
-      if (isUserScrolling.current) {
-        console.log("User is scrolling, deferring navigation");
-        return;
-      }
-
-      // Clear any low priority operations and set medium priority for manual navigation
-      if (scrollPriority === "lastread") {
-        setScrollPriority("bottomsheet");
-      }
-
-      // Add a small delay to prevent conflicts with user gestures
-      setTimeout(() => {
-        scrollToParagraph(paragraphIndex, true); // Force this scroll - user-initiated action
-
-        // Show feedback
-        setFeedbackMessage(`Navigated to paragraph ${paragraphIndex + 1}`);
-        setShowFeedback(true);
-
-        // Hide feedback after delay
-        setTimeout(() => {
-          setShowFeedback(false);
-        }, 2000);
-      }, 100); // Small delay to ensure smooth interaction
-    },
-    [scrollToParagraph, scrollPriority]
-  );
-
   // Navigate back to all sermons
   const handleBack = useCallback(() => {
     router?.navigate("AllSermons");
   }, [router]);
+
+  // Handle opening the fullscreen search
+  const handleOpenSearch = useCallback(() => {
+    setIsSearchVisible(true);
+  }, []);
+
+  // Handle closing the fullscreen search
+  const handleCloseSearch = useCallback(() => {
+    setIsSearchVisible(false);
+  }, []);
+
+  // Handle navigating to search result from fullscreen search
+  const handleSearchNavigateToResult = useCallback(
+    (paragraphIndex) => {
+      scrollToParagraph(paragraphIndex);
+      setIsSearchVisible(false);
+    },
+    [scrollToParagraph]
+  );
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -558,7 +505,6 @@ const CurrentSermon = React.memo(({ route }) => {
               key={`paragraph-${actualIndex}`}
               paragraph={paragraph}
               index={actualIndex}
-              searchPhrase={searchPhrase}
               theme={theme}
               settings={settings}
               onLayout={(event) => handleParagraphLayout(actualIndex, event)}
@@ -582,7 +528,6 @@ const CurrentSermon = React.memo(({ route }) => {
   }, [
     paragraphs,
     isLoadingParagraphs,
-    searchPhrase,
     theme,
     settings,
     handleParagraphLayout,
@@ -634,8 +579,16 @@ const CurrentSermon = React.memo(({ route }) => {
                     onMomentumScrollEnd={() => {
                       // Momentum scrolling ended - shorter delay before allowing auto-scroll
                       setTimeout(() => {
+                        if (!isUserScrolling.current) return; // Already cleared
                         isUserScrolling.current = false;
-                      }, 300); // Reduced from 500ms to 300ms
+                      }, 200); // Reduced from 300ms for better responsiveness
+                    }}
+                    onScrollEndDrag={() => {
+                      // User lifted finger - allow auto-scroll after a brief delay
+                      setTimeout(() => {
+                        if (!isUserScrolling.current) return; // Already cleared
+                        isUserScrolling.current = false;
+                      }, 150); // Quick response for direct scrolling
                     }}
                     contentContainerStyle={[
                       styles.scrollViewContainer,
@@ -678,25 +631,34 @@ const CurrentSermon = React.memo(({ route }) => {
                   <CustomTopCardController
                     theme={theme}
                     selectedSermon={selectedSermon}
-                    searchPhrase={searchPhrase}
-                    setSearchPhrase={setSearchPhrase}
-                    searchResults={searchResults}
-                    setSearchResults={setSearchResults}
-                    currentResultIndex={currentResultIndex}
-                    setCurrentResultIndex={setCurrentResultIndex}
                     scrollToTop={scrollToTop}
                     scrollToBottom={scrollToBottom}
-                    navigateToResult={navigateToResult}
                     onBack={handleBack}
-                    searchSermon={searchSermon}
                     paragraphs={paragraphs}
                     paragraphLayouts={paragraphLayouts}
                     scrollToParagraph={scrollToParagraph}
-                    searching={searching}
-                    setSearching={setSearching}
                     isCardOpen={isCardOpen}
                     setIsCardOpen={setIsCardOpen}
                   />
+
+                  {/* Search Icon positioned above bottom sheet */}
+                  <TouchableOpacity
+                    style={[
+                      styles.searchIconContainer,
+                      {
+                        backgroundColor: theme.dark ? "#5d321190" : "#f6d8c1",
+                        borderColor: theme.colors.primary + "30",
+                      },
+                    ]}
+                    onPress={handleOpenSearch}
+                    activeOpacity={0.8}
+                  >
+                    <Feather
+                      name="search"
+                      size={22}
+                      color={theme.dark ? "#f8e3d5" : "#5d3211"}
+                    />
+                  </TouchableOpacity>
 
                   <SearchFeedback
                     isVisible={showFeedback}
@@ -730,6 +692,15 @@ const CurrentSermon = React.memo(({ route }) => {
           )}
         </View>
       </KeyboardAvoidingView>
+
+      {/* Fullscreen Search Modal */}
+      <CurrentSermonSearch
+        visible={isSearchVisible}
+        onClose={handleCloseSearch}
+        paragraphs={paragraphs}
+        onNavigateToResult={handleSearchNavigateToResult}
+        selectedSermon={selectedSermon}
+      />
     </View>
   );
 });

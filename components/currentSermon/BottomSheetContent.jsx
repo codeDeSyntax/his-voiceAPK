@@ -1,9 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   ActivityIndicator,
   Image,
@@ -17,19 +22,9 @@ import { useFonts } from "expo-font";
 const TopCardContent = ({
   theme,
   selectedSermon,
-  searchPhrase,
-  setSearchPhrase,
-  searchResults,
-  setSearchResults,
-  searching,
-  setSearching,
-  currentResultIndex,
-  setCurrentResultIndex,
   onScrollToTop,
   onScrollToBottom,
-  onNavigateToResult,
   onBack,
-  searchSermon,
   paragraphs,
   paragraphLayouts,
   scrollToParagraph,
@@ -37,52 +32,12 @@ const TopCardContent = ({
 }) => {
   const scrollViewRef = useRef(null);
   const router = useNavigation();
-  // add ZillaSlab font family to the search input
+
+  // add ZillaSlab font family
   const [fontsLoaded] = useFonts({
     ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
     ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
-
-  const submitSearch = useCallback(() => {
-    if (searchPhrase.trim()) {
-      // Set searching to true before starting the search
-      setSearching(true);
-
-      // Simulate a more realistic search delay (remove for production if search is actually slow)
-      setTimeout(() => {
-        const results = searchSermon(paragraphs, searchPhrase);
-        setSearchResults(results);
-        setCurrentResultIndex(0);
-
-        // Note: Scroll handling is now managed by CurrentSermon component to avoid conflicts
-        // The main component will handle scrolling based on priority system
-
-        // Clear the search input after successful search
-        setSearchPhrase("");
-
-        // Set searching to false once search is complete
-        setSearching(false);
-      }, 100); // 500ms delay to show loading indicator
-    } else {
-      setSearchResults([]);
-    }
-  }, [
-    searchPhrase,
-    searchSermon,
-    paragraphs,
-    setSearchResults,
-    setCurrentResultIndex,
-    paragraphLayouts,
-    scrollToParagraph,
-    setSearching,
-    setSearchPhrase, // Add this dependency
-  ]);
-
-  const clearSearch = useCallback(() => {
-    setSearchPhrase("");
-    setSearchResults([]);
-    setCurrentResultIndex(0);
-  }, [setSearchPhrase, setSearchResults, setCurrentResultIndex]);
 
   // Receipt-style separator component
   const ReceiptSeparator = () => (
@@ -128,346 +83,234 @@ const TopCardContent = ({
         bounces={true}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Receipt Header */}
+        {/* Modern Receipt Header */}
         <View style={styles.receiptHeader}>
-          <Image
-            source={require("../../assets/roundedLam.jpg")}
-            style={{ height: 40, width: 40 }}
-          />
-          <Text
-            style={[
-              styles.receiptTitle,
-              { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
-            ]}
-          >
-            Search paragraph or phrase
-          </Text>
-
-          <Text style={[styles.receiptDateTime, { color: theme.colors.text }]}>
-            {currentDate} {currentTime}
-          </Text>
-        </View>
-
-        <ReceiptSeparator />
-
-        {/* Sermon Information Section */}
-        <View style={styles.receiptSection}>
-          <Text
-            style={[
-              styles.receiptSectionHeader,
-              { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
-            ]}
-          >
-            CURRENT SERMON
-          </Text>
-
-          <View style={styles.receiptItem}>
-            <Text
-              style={[
-                styles.receiptLabel,
-                { color: "#5d3211", fontFamily: "ZillaSlab" },
-              ]}
-            >
-              <MaterialIcons name="book-online" size={16} />
-            </Text>
-            <Text
-              style={[
-                styles.receiptValue,
-                {
-                  color: theme.dark ? "white" : "#5d3211",
-                  fontFamily: "ZillaSlab",
-                },
-              ]}
-              numberOfLines={3}
-            >
-              {selectedSermon?.title || "N/A"}
-            </Text>
-          </View>
-
-          {selectedSermon?.date && (
-            <View style={styles.receiptItem}>
-              <Text
-                style={[
-                  styles.receiptLabel,
-                  { color: theme.colors.text, fontFamily: "ZillaSlab" },
-                ]}
-              >
-                <MaterialIcons name="date-range" size={16} />
-              </Text>
-              <Text
-                style={[
-                  styles.receiptValue,
-                  { color: theme.colors.text, fontFamily: "ZillaSlab" },
-                ]}
-              >
-                {selectedSermon.date}
-              </Text>
-            </View>
-          )}
-
-          {selectedSermon?.location && (
-            <View style={styles.receiptItem}>
-              <Text
-                style={[
-                  styles.receiptLabel,
-                  { color: theme.colors.text, fontFamily: "ZillaSlab" },
-                ]}
-              >
-                <MaterialIcons name="location-on" size={16} />
-              </Text>
-              <Text style={[styles.receiptValue, { color: theme.colors.text }]}>
-                {selectedSermon.location}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <ReceiptSeparator />
-
-        {/* Search Section */}
-        <View style={styles.receiptSection}>
-          <Text
-            style={[
-              styles.receiptSectionHeader,
-              { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
-            ]}
-          >
-            TEXT SEARCH
-          </Text>
-
-          <View style={styles.searchInputContainer}>
-            <TextInput
-              style={[
-                styles.searchInput,
-                {
-                  color: theme.colors.text,
-                  borderColor: theme.dark ? theme.colors.primary : "#bbb8b8",
-                  fontFamily: "ZillaSlab",
-                },
-              ]}
-              placeholder="Search paragraph or phrase..."
-              placeholderTextColor={
-                theme.dark ? theme.colors.text + "50" : "#5d321190"
-              }
-              value={searchPhrase}
-              onChangeText={setSearchPhrase}
-              returnKeyType="search"
-            />
-            {searching ? (
-              <ActivityIndicator
-                style={styles.searchLoader}
-                color={theme.dark ? theme.colors.hlight : "#5d3211"}
-                size="small"
+          <View style={styles.modernHeaderContent}>
+            <View style={styles.iconBadge}>
+              <MaterialIcons
+                name="menu-book"
+                size={24}
+                color={theme.dark ? "#f2cdb4" : "#5d3211"}
               />
-            ) : searchPhrase ? (
-              <TouchableOpacity
-                onPress={clearSearch}
-                style={styles.searchLoader}
-              >
-                <Feather
-                  name="x"
-                  size={24}
-                  color={theme.dark ? theme.colors.text : "#5d3211"}
-                />
-              </TouchableOpacity>
-            ) : null}
-
-            <TouchableOpacity
-              onPress={submitSearch}
-              style={[
-                styles.searchButton,
-                {
-                  backgroundColor: theme.dark
-                    ? theme.colors.primary
-                    : "#5d3211",
-                  borderColor: theme.dark ? theme.colors.primary : "#5d3211",
-                },
-              ]}
-            >
+            </View>
+            <View style={styles.headerTextContainer}>
               <Text
                 style={[
-                  styles.searchButtonText,
+                  styles.modernTitle,
+                  { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
+                ]}
+              >
+                Sermon Controls
+              </Text>
+              <Text
+                style={[
+                  styles.modernSubtitle,
+                  { color: theme.colors.text + "70" },
+                ]}
+              >
+                Quick actions & information
+              </Text>
+            </View>
+            <View style={styles.timestampBadge}>
+              <Text
+                style={[
+                  styles.receiptDateTime,
+                  { color: theme.colors.text + "90" },
+                ]}
+              >
+                {currentTime}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <ReceiptSeparator />
+
+        {/* Modern Sermon Information Section */}
+        <View style={styles.receiptSection}>
+          <Text
+            style={[
+              styles.modernSectionHeader,
+              { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
+            ]}
+          >
+            📖 CURRENT READING
+          </Text>
+
+          <View style={styles.modernInfoCard}>
+            <View style={styles.sermonTitleContainer}>
+              <MaterialIcons
+                name="auto-stories"
+                size={20}
+                color={theme.dark ? theme.colors.hlight : "#5d3211"}
+              />
+              <Text
+                style={[
+                  styles.modernSermonTitle,
                   {
-                    color: theme.dark ? theme.colors.text : "#fff",
+                    color: theme.dark ? "white" : "#5d3211",
+                    fontFamily: "ZillaSlab",
                   },
                 ]}
+                numberOfLines={2}
               >
-                GO
+                {selectedSermon?.title || "No sermon selected"}
               </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Search Results Section */}
-          {searchResults.length > 0 && (
-            <View style={styles.searchResultsContainer}>
-              <Text
-                style={[
-                  styles.receiptSectionHeader,
-                  { color: theme.colors.text },
-                ]}
-              >
-                {`${searchResults.length} ${
-                  searchResults.length === 1 ? "MATCH" : "MATCHES"
-                } FOUND`}
-              </Text>
-
-              <View style={styles.searchNavigationContainer}>
-                <TouchableOpacity
-                  onPress={() =>
-                    onNavigateToResult(
-                      currentResultIndex > 0
-                        ? currentResultIndex - 1
-                        : searchResults.length - 1
-                    )
-                  }
-                  style={styles.searchNavigationButton}
-                >
-                  <MaterialIcons
-                    name="keyboard-arrow-up"
-                    size={24}
-                    color={theme.dark ? theme.colors.text : "#5d3211"}
-                  />
-                </TouchableOpacity>
-
-                <Text
-                  style={[
-                    styles.searchResultsText,
-                    { color: theme.colors.text },
-                  ]}
-                >
-                  {`${currentResultIndex + 1} of ${searchResults.length}`}
-                </Text>
-
-                <TouchableOpacity
-                  onPress={() =>
-                    onNavigateToResult(
-                      currentResultIndex < searchResults.length - 1
-                        ? currentResultIndex + 1
-                        : 0
-                    )
-                  }
-                  style={styles.searchNavigationButton}
-                >
-                  <MaterialIcons
-                    name="keyboard-arrow-down"
-                    size={24}
-                    color={theme.dark ? theme.colors.text : "#5d3211"}
-                  />
-                </TouchableOpacity>
-              </View>
             </View>
-          )}
+
+            {selectedSermon?.date && (
+              <View style={styles.modernInfoRow}>
+                <View style={styles.infoIconContainer}>
+                  <MaterialIcons
+                    name="calendar-today"
+                    size={16}
+                    color={theme.colors.text + "80"}
+                  />
+                </View>
+                <Text
+                  style={[styles.modernInfoText, { color: theme.colors.text }]}
+                >
+                  {selectedSermon.date}
+                </Text>
+              </View>
+            )}
+
+            {selectedSermon?.location && (
+              <View style={styles.modernInfoRow}>
+                <View style={styles.infoIconContainer}>
+                  <MaterialIcons
+                    name="place"
+                    size={16}
+                    color={theme.colors.text + "80"}
+                  />
+                </View>
+                <Text
+                  style={[styles.modernInfoText, { color: theme.colors.text }]}
+                >
+                  {selectedSermon.location}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
         <ReceiptSeparator />
 
-        {/* Actions Section */}
+        {/* Modern Actions Section */}
         <View style={styles.receiptSection}>
           <Text
             style={[
-              styles.receiptSectionHeader,
+              styles.modernSectionHeader,
               { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
             ]}
           >
-            QUICK ACTIONS
+            ⚡ QUICK ACTIONS
           </Text>
 
-          <View style={styles.receiptActionsGrid}>
+          <View style={styles.modernActionsGrid}>
             <TouchableOpacity
               style={[
-                styles.receiptActionButton,
+                styles.modernActionCard,
                 {
-                  borderColor: theme.colors.text,
                   backgroundColor: theme.dark
-                    ? theme.colors.primary + "90"
-                    : "#f5f5f5",
+                    ? "#292524" + "40"
+                    : "#f6d8c1" + "30",
+                  borderColor: theme.colors.text + "20",
                 },
               ]}
               onPress={onScrollToTop}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
+              <View style={styles.actionIconWrapper}>
+                <MaterialIcons
+                  name="keyboard-arrow-up"
+                  size={24}
+                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                />
+              </View>
               <Text
-                style={[styles.receiptActionCode, { color: theme.colors.text }]}
+                style={[styles.modernActionLabel, { color: theme.colors.text }]}
               >
-                01
-              </Text>
-              <Text
-                style={[styles.receiptActionText, { color: theme.colors.text }]}
-              >
-                SCROLL TOP
+                TO TOP
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.receiptActionButton,
+                styles.modernActionCard,
                 {
-                  borderColor: theme.colors.text,
                   backgroundColor: theme.dark
-                    ? theme.colors.primary + "90"
-                    : "#f5f5f5",
+                    ? "#292524" + "40"
+                    : "#f6d8c1" + "30",
+                  borderColor: theme.colors.text + "20",
                 },
               ]}
               onPress={onScrollToBottom}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
+              <View style={styles.actionIconWrapper}>
+                <MaterialIcons
+                  name="keyboard-arrow-down"
+                  size={24}
+                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                />
+              </View>
               <Text
-                style={[styles.receiptActionCode, { color: theme.colors.text }]}
+                style={[styles.modernActionLabel, { color: theme.colors.text }]}
               >
-                02
-              </Text>
-              <Text
-                style={[styles.receiptActionText, { color: theme.colors.text }]}
-              >
-                SCROLL END
+                TO END
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.receiptActionButton,
+                styles.modernActionCard,
                 {
-                  borderColor: theme.colors.text,
                   backgroundColor: theme.dark
-                    ? theme.colors.primary + "90"
-                    : "#f5f5f5",
+                    ? "#292524" + "40"
+                    : "#f6d8c1" + "30",
+                  borderColor: theme.colors.text + "20",
                 },
               ]}
               onPress={onBack}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
+              <View style={styles.actionIconWrapper}>
+                <MaterialIcons
+                  name="list"
+                  size={24}
+                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                />
+              </View>
               <Text
-                style={[styles.receiptActionCode, { color: theme.colors.text }]}
+                style={[styles.modernActionLabel, { color: theme.colors.text }]}
               >
-                03
-              </Text>
-              <Text
-                style={[styles.receiptActionText, { color: theme.colors.text }]}
-              >
-                SERMON LIST
+                SERMONS
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.receiptActionButton,
+                styles.modernActionCard,
                 {
-                  borderColor: theme.colors.text,
                   backgroundColor: theme.dark
-                    ? theme.colors.primary + "90"
-                    : "#f5f5f5",
+                    ? "#292524" + "40"
+                    : "#f6d8c1" + "30",
+                  borderColor: theme.colors.text + "20",
                 },
               ]}
               onPress={() => router.push("Settings")}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
+              <View style={styles.actionIconWrapper}>
+                <MaterialIcons
+                  name="settings"
+                  size={24}
+                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                />
+              </View>
               <Text
-                style={[styles.receiptActionCode, { color: theme.colors.text }]}
-              >
-                04
-              </Text>
-              <Text
-                style={[styles.receiptActionText, { color: theme.colors.text }]}
+                style={[styles.modernActionLabel, { color: theme.colors.text }]}
               >
                 SETTINGS
               </Text>
@@ -477,23 +320,44 @@ const TopCardContent = ({
 
         <ReceiptSeparator />
 
-        {/* Receipt Footer */}
-        <View style={styles.receiptFooter}>
+        {/* Modern Receipt Footer */}
+        <View style={styles.modernFooter}>
+          <View style={styles.footerDivider}>
+            <Text
+              style={[
+                styles.modernFooterDots,
+                { color: theme.colors.text + "30" },
+              ]}
+            >
+              • • • • • • • • • • • • • • • • • • • • • • • • • •
+            </Text>
+          </View>
           <Text
-            style={[styles.receiptFooterText, { color: theme.colors.text }]}
+            style={[
+              styles.modernFooterText,
+              { color: theme.colors.text + "70" },
+            ]}
           >
-            THANK YOU FOR USING
+            🙏 Thank you for reading
           </Text>
           <Text
-            style={[styles.receiptFooterText, { color: theme.colors.text }]}
+            style={[
+              styles.modernFooterSubtext,
+              { color: theme.colors.text + "50" },
+            ]}
           >
-            SERMON SEARCH SYSTEM
+            His Voice Sermon App
           </Text>
-          <Text
-            style={[styles.receiptFooterSmall, { color: theme.colors.text }]}
-          >
-            ═══════════════════════
-          </Text>
+          <View style={styles.footerDivider}>
+            <Text
+              style={[
+                styles.modernFooterDots,
+                { color: theme.colors.text + "30" },
+              ]}
+            >
+              • • • • • • • • • • • • • • • • • • • • • • • • • •
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </View>

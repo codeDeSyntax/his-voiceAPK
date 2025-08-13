@@ -226,21 +226,27 @@ export const searchSermon = (paragraphs, searchPhrase) => {
     return [];
   }
 
+  const trimmedPhrase = searchPhrase.trim();
+  if (!trimmedPhrase) {
+    return [];
+  }
+
   const searchResults = [];
-  const lowerSearchPhrase = searchPhrase.toLowerCase();
+  const lowerSearchPhrase = trimmedPhrase.toLowerCase();
 
   // Check if search phrase is a paragraph number
-  const paragraphNumberMatch = searchPhrase.match(/^#?(\d+)$/);
+  const paragraphNumberMatch = trimmedPhrase.match(/^#?(\d+)$/);
   if (paragraphNumberMatch) {
     const paragraphNumber = parseInt(paragraphNumberMatch[1]);
     if (paragraphNumber > 0 && paragraphNumber <= paragraphs.length) {
       return [paragraphNumber - 1]; // Convert to zero-based index
     }
+    return []; // Invalid paragraph number
   }
 
   // Optimized text search using forEach instead of filter/map
   paragraphs.forEach((paragraph, index) => {
-    if (paragraph.toLowerCase().includes(lowerSearchPhrase)) {
+    if (paragraph && paragraph.toLowerCase().includes(lowerSearchPhrase)) {
       searchResults.push(index);
     }
   });

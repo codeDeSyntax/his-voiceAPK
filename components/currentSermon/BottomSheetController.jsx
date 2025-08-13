@@ -9,21 +9,11 @@ const CustomTopCardController = ({
   isCardOpen,
   setIsCardOpen,
   selectedSermon,
-  searchSermon,
   paragraphs,
   paragraphLayouts,
   scrollToParagraph,
-  searchPhrase,
-  setSearchPhrase,
-  searchResults,
-  setSearchResults,
-  searching,
-  setSearching,
-  currentResultIndex,
-  setCurrentResultIndex,
   scrollToTop,
   scrollToBottom,
-  navigateToResult,
   onBack,
 }) => {
   // Screen dimensions
@@ -81,6 +71,23 @@ const CustomTopCardController = ({
     }
   };
 
+  // Create wrapper functions that close the sheet after scrolling
+  const handleScrollToTopAndClose = () => {
+    scrollToTop();
+    // Close the sheet after a short delay to let the scroll animation start
+    setTimeout(() => {
+      closeCard();
+    }, 300);
+  };
+
+  const handleScrollToBottomAndClose = () => {
+    scrollToBottom();
+    // Close the sheet after a short delay to let the scroll animation start
+    setTimeout(() => {
+      closeCard();
+    }, 300);
+  };
+
   return (
     <>
       {/* Toggle button */}
@@ -134,22 +141,12 @@ const CustomTopCardController = ({
           <TopCardContent
             theme={theme}
             selectedSermon={selectedSermon}
-            searchPhrase={searchPhrase}
-            setSearchPhrase={setSearchPhrase}
-            searchResults={searchResults}
-            setSearchResults={setSearchResults}
-            currentResultIndex={currentResultIndex}
-            setCurrentResultIndex={setCurrentResultIndex}
-            onScrollToTop={scrollToTop}
-            onScrollToBottom={scrollToBottom}
-            onNavigateToResult={navigateToResult}
+            onScrollToTop={handleScrollToTopAndClose}
+            onScrollToBottom={handleScrollToBottomAndClose}
             onBack={onBack}
-            searchSermon={searchSermon}
             paragraphs={paragraphs}
             paragraphLayouts={paragraphLayouts}
             scrollToParagraph={scrollToParagraph}
-            searching={searching}
-            setSearching={setSearching}
             isCardOpen={isCardOpen}
           />
         </Animated.View>

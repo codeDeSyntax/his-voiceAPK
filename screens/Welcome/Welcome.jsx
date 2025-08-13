@@ -29,7 +29,7 @@ const { width: screenWidth } = Dimensions.get("window");
 
 const Welcome = () => {
   const navigation = useNavigation();
-  const { theme } = useAppContext();
+  const { theme, getLastVisitedScreen, lastVisitedScreen } = useAppContext();
   const [fontsLoaded] = useFonts({
     "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
   });
@@ -51,10 +51,10 @@ const Welcome = () => {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
   const rippleScale = useRef(new Animated.Value(0)).current;
 
-  // Responsive slider dimensions
-  const sliderWidth = Math.min(horizontalScale(280), screenWidth * 0.8);
-  const thumbSize = horizontalScale(56);
-  const maxSlideDistance = sliderWidth - thumbSize - 8;
+  // Responsive slider dimensions - Improved for better touch handling
+  const sliderWidth = Math.min(horizontalScale(300), screenWidth * 0.85); // Increased width
+  const thumbSize = horizontalScale(60); // Slightly larger thumb for better touch
+  const maxSlideDistance = sliderWidth - thumbSize - 12; // More margin for smoother movement
 
   // Haptic feedback helper
   const triggerHaptic = (type = "impactMedium") => {
@@ -119,7 +119,38 @@ const Welcome = () => {
     sliderOpacity.setValue(0.8);
   };
 
-  // Reset slider when screen comes into focus
+  // Smart navigation based on last visited screen
+  const navigateToLastScreen = async () => {
+    const lastScreen = await getLastVisitedScreen();
+
+    if (lastScreen) {
+      console.log("Last visited screen:", lastScreen);
+
+      switch (lastScreen) {
+        case "AllSermons":
+          navigation?.navigate("AllSermons");
+          break;
+        case "CurrentSermon":
+          navigation?.navigate("currentsermon");
+          break;
+        case "Settings":
+          navigation?.navigate("Settings");
+          break;
+        case "Bookmarks":
+          navigation?.navigate("bookmarks");
+          break;
+        case "Search":
+          navigation?.navigate("Search");
+          break;
+        default:
+          navigation?.navigate("AllSermons");
+          break;
+      }
+    } else {
+      // No last screen recorded, navigate to default
+      navigation?.navigate("AllSermons");
+    }
+  }; // Reset slider when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       resetSlider();
@@ -219,7 +250,7 @@ const Welcome = () => {
     };
   }, []);
 
-  // Enhanced gesture handling with haptic feedback
+  // Enhanced gesture handling with improved responsiveness
   const onGestureEvent = Animated.event(
     [{ nativeEvent: { translationX: slideX } }],
     {
@@ -227,16 +258,26 @@ const Welcome = () => {
       listener: (event) => {
         const { translationX } = event.nativeEvent;
 
-        // Progressive glow effect based on slide progress
-        const progress = Math.min(
-          Math.max(translationX / maxSlideDistance, 0),
-          1
+        // Clamp translation to valid range immediately for smoother feel
+        const clampedTranslation = Math.min(
+          Math.max(translationX, 0),
+          maxSlideDistance
         );
+
+        // Progressive glow effect based on slide progress
+        const progress = clampedTranslation / maxSlideDistance;
         glowIntensity.setValue(progress);
 
-        // Scale effect on thumb
-        const scaleValue = 1 + progress * 0.1;
+        // Scale effect on thumb - more subtle for better UX
+        const scaleValue = 1 + progress * 0.08; // Reduced scale change
         thumbScale.setValue(scaleValue);
+
+        // Update background width in real-time for better visual feedback
+        backgroundWidth.setValue(progress);
+
+        // Text fade out based on progress
+        const textOpacityValue = Math.max(0, 1 - progress * 1.5);
+        textOpacity.setValue(textOpacityValue);
 
         // Haptic feedback at 50% progress
         if (progress > 0.5 && progress < 0.55) {
@@ -250,30 +291,52 @@ const Welcome = () => {
     const { state, translationX } = event.nativeEvent;
 
     if (state === State.BEGAN) {
-      // Start gesture feedback
-      triggerHaptic("impactLight");
-      Animated.timing(rippleScale, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+      // Start gesture feedback with stronger haptic
+      triggerHaptic("impactMedium");
+      Animated.parallel([
+        Animated.timing(rippleScale, {
+          toValue: 1,
+          duration: 150, // Faster response
+          useNativeDriver: true,
+        }),
+        Animated.spring(thumbScale, {
+          toValue: 1.05, // Immediate visual feedback
+          useNativeDriver: true,
+          tension: 300,
+          friction: 6,
+        }),
+      ]).start();
     }
 
     if (state === State.ACTIVE) {
-      const progress = translationX / maxSlideDistance;
+      // Clamp the translation for smoother experience
+      const clampedTranslation = Math.min(
+        Math.max(translationX, 0),
+        maxSlideDistance
+      );
+      const progress = clampedTranslation / maxSlideDistance;
 
-      // Update background width in real-time
-      backgroundWidth.setValue(progress);
+      // Update visual feedback continuously
+      if (progress !== backgroundWidth._value) {
+        backgroundWidth.setValue(progress);
+      }
 
-      // Text fade out based on progress
-      const textOpacityValue = Math.max(0, 1 - progress * 2);
-      textOpacity.setValue(textOpacityValue);
+      // Enhanced text fade out
+      const textOpacityValue = Math.max(0, 1 - progress * 1.8);
+      if (textOpacityValue !== textOpacity._value) {
+        textOpacity.setValue(textOpacityValue);
+      }
     }
 
     if (state === State.END || state === State.CANCELLED) {
-      const progress = translationX / maxSlideDistance;
+      const clampedTranslation = Math.min(
+        Math.max(translationX, 0),
+        maxSlideDistance
+      );
+      const progress = clampedTranslation / maxSlideDistance;
 
-      if (progress > 0.75) {
+      if (progress > 0.7) {
+        // Reduced threshold for easier completion
         // Success - Complete the slide with enhanced feedback
         triggerHaptic("success");
 
@@ -281,75 +344,75 @@ const Welcome = () => {
           Animated.spring(slideX, {
             toValue: maxSlideDistance,
             useNativeDriver: true,
-            tension: 200,
-            friction: 8,
+            tension: 250, // Faster completion
+            friction: 6,
           }),
           Animated.timing(backgroundWidth, {
             toValue: 1,
-            duration: 300,
+            duration: 250, // Faster fill
             useNativeDriver: false,
             easing: Easing.out(Easing.ease),
           }),
           Animated.timing(textOpacity, {
             toValue: 0,
-            duration: 200,
+            duration: 150,
             useNativeDriver: true,
           }),
           Animated.spring(thumbScale, {
-            toValue: 1.2,
+            toValue: 1.15, // Slightly larger success scale
             useNativeDriver: true,
-            tension: 150,
+            tension: 200,
             friction: 6,
           }),
           Animated.timing(glowIntensity, {
             toValue: 1,
-            duration: 200,
+            duration: 150,
             useNativeDriver: true,
           }),
         ]).start(() => {
           // Navigate after animation completes
           setTimeout(() => {
-            navigation?.navigate("AllSermons");
-          }, 150);
+            navigateToLastScreen();
+          }, 100); // Faster navigation
         });
       } else {
-        // Snap back with spring physics
+        // Snap back with improved spring physics
         triggerHaptic("impactMedium");
 
         Animated.parallel([
           Animated.spring(slideX, {
             toValue: 0,
             useNativeDriver: true,
-            tension: 180,
-            friction: 10,
-            velocity: -translationX * 0.1,
+            tension: 200, // More responsive snap back
+            friction: 8,
+            velocity: -clampedTranslation * 0.15, // Better velocity calculation
           }),
           Animated.timing(backgroundWidth, {
             toValue: 0,
-            duration: 400,
+            duration: 300, // Faster reset
             useNativeDriver: false,
-            easing: Easing.out(Easing.ease),
+            easing: Easing.out(Easing.cubic),
           }),
           Animated.spring(textOpacity, {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 150,
-            friction: 8,
-          }),
-          Animated.spring(thumbScale, {
             toValue: 1,
             useNativeDriver: true,
             tension: 200,
             friction: 8,
           }),
+          Animated.spring(thumbScale, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 250,
+            friction: 8,
+          }),
           Animated.timing(glowIntensity, {
             toValue: 0,
-            duration: 300,
+            duration: 250,
             useNativeDriver: true,
           }),
           Animated.timing(rippleScale, {
             toValue: 0,
-            duration: 300,
+            duration: 250,
             useNativeDriver: true,
           }),
         ]).start();
@@ -359,8 +422,8 @@ const Welcome = () => {
 
   // Enhanced interpolations for smoother animations
   const clampedSlideX = slideX.interpolate({
-    inputRange: [0, maxSlideDistance],
-    outputRange: [0, maxSlideDistance],
+    inputRange: [-50, 0, maxSlideDistance, maxSlideDistance + 50], // Allow slight overscroll
+    outputRange: [0, 0, maxSlideDistance, maxSlideDistance],
     extrapolate: "clamp",
   });
 
@@ -377,22 +440,22 @@ const Welcome = () => {
 
   const shimmerTranslate = shimmerAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [-sliderWidth, sliderWidth],
+    outputRange: [-sliderWidth * 1.5, sliderWidth * 1.5], // Wider shimmer range
   });
 
   const glowOpacity = glowIntensity.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0.6],
+    outputRange: [0, 0.8], // Slightly more visible glow
   });
 
   const rippleScaleInterpolate = rippleScale.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 2],
+    outputRange: [1, 2.5], // Larger ripple effect
   });
 
   const rippleOpacity = rippleScale.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.3, 0.1, 0],
+    inputRange: [0, 0.3, 1],
+    outputRange: [0.4, 0.2, 0], // More visible ripple start
   });
 
   // if (!fontsLoaded) {
@@ -404,15 +467,18 @@ const Welcome = () => {
       <ImageBackground
         source={require("../../assets/cloud.png")}
         style={styles.backgroundImage}
-        blurRadius={5}
+        blurRadius={1}
         resizeMode="cover"
+        tintColor={"#ffdec6"}
       >
         <LinearGradient
           colors={[
-            "rgba(28, 25, 23, 0.3)",
-            "rgba(28, 25, 23, 0.5)",
-            "rgba(28, 25, 23, 0.8)",
-            "rgba(28, 25, 23, 0.95)",
+            "rgba(28, 16, 8, 0.841)",
+            "rgba(28, 16, 8, 0.841)",
+            "rgba(28, 16, 8, 0.841)",
+            "rgba(28, 16, 8, 0.841)",
+            "rgba(28, 16, 8, 0.841)",
+            "rgba(28, 16, 8, 0.841)",
           ]}
           style={styles.gradient}
         >
@@ -550,10 +616,15 @@ const Welcome = () => {
                   Slide to enter
                 </Animated.Text>
 
-                {/* Enhanced Thumb with Glow */}
+                {/* Enhanced Thumb with improved touch handling */}
                 <PanGestureHandler
                   onGestureEvent={onGestureEvent}
                   onHandlerStateChange={onHandlerStateChange}
+                  activeOffsetX={[-3, 3]} // Small horizontal threshold to start gesture
+                  failOffsetY={[-20, 20]} // Allow more vertical movement before failing
+                  shouldCancelWhenOutside={false} // Don't cancel when finger moves outside
+                  maxPointers={1} // Single finger only
+                  enableTrackpadTwoFingerGesture={false} // Disable trackpad gestures
                 >
                   <Animated.View
                     style={[
@@ -566,6 +637,9 @@ const Welcome = () => {
                       },
                     ]}
                   >
+                    {/* Expanded touch area for better accessibility */}
+                    <View style={styles.touchArea} />
+
                     {/* Glow Effect */}
                     <Animated.View
                       style={[
@@ -585,10 +659,26 @@ const Welcome = () => {
                 </PanGestureHandler>
               </View>
 
-              {/* Instruction Text */}
+              {/* Instruction Text with enhanced visibility */}
               <Text style={styles.instructionText}>
-                Swipe right to begin your journey
+                ← My sheep hear my voice
               </Text>
+
+              {/* Additional subtle hint */}
+              <Animated.Text
+                style={[
+                  styles.hintText,
+                  {
+                    opacity: sliderOpacity.interpolate({
+                      inputRange: [0.7, 1],
+                      outputRange: [0.3, 0.6],
+                      extrapolate: "clamp",
+                    }),
+                  },
+                ]}
+              >
+                Slide to unlock sermons
+              </Animated.Text>
             </Animated.View>
           </Animated.View>
         </LinearGradient>
@@ -686,7 +776,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   description: {
-    fontFamily: "ZillaSlab-Regular",
+    fontFamily: "serif",
     fontSize: responsiveFontSize(14),
     textAlign: "center",
     color: "rgba(255, 255, 255, 0.7)",
@@ -710,9 +800,9 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   sliderTrack: {
-    width: horizontalScale(280),
-    height: verticalScale(64),
-    borderRadius: horizontalScale(32),
+    width: horizontalScale(300), // Updated to match new slider width
+    height: verticalScale(68), // Slightly taller for better touch
+    borderRadius: horizontalScale(34),
     borderWidth: 1.5,
     borderColor: "rgba(230, 195, 184, 0.25)",
     backgroundColor: "rgba(28, 25, 23, 0.4)",
@@ -733,12 +823,12 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     height: "100%",
-    borderRadius: horizontalScale(32),
+    borderRadius: horizontalScale(34),
     overflow: "hidden",
   },
   backgroundGradient: {
     flex: 1,
-    borderRadius: horizontalScale(32),
+    borderRadius: horizontalScale(34),
   },
   shimmerOverlay: {
     position: "absolute",
@@ -767,9 +857,9 @@ const styles = StyleSheet.create({
   sliderThumb: {
     position: "absolute",
     left: horizontalScale(4),
-    width: horizontalScale(56),
-    height: verticalScale(56),
-    borderRadius: horizontalScale(28),
+    width: horizontalScale(60), // Updated to match new thumb size
+    height: verticalScale(60),
+    borderRadius: horizontalScale(30),
     zIndex: 3,
     shadowColor: "#e6c3b8",
     shadowOffset: { width: 0, height: 4 },
@@ -779,37 +869,58 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  touchArea: {
+    position: "absolute",
+    top: -horizontalScale(10), // Expanded touch area
+    left: -horizontalScale(10),
+    right: -horizontalScale(10),
+    bottom: -horizontalScale(10),
+    borderRadius: horizontalScale(40),
+    backgroundColor: "transparent", // Invisible but touchable
+    zIndex: 1,
+  },
   thumbGlow: {
     position: "absolute",
-    top: -horizontalScale(4),
-    left: -horizontalScale(4),
-    right: -horizontalScale(4),
-    bottom: -horizontalScale(4),
-    borderRadius: horizontalScale(32),
+    top: -horizontalScale(5),
+    left: -horizontalScale(5),
+    right: -horizontalScale(5),
+    bottom: -horizontalScale(5),
+    borderRadius: horizontalScale(35),
     backgroundColor: "rgba(230, 195, 184, 0.3)",
     shadowColor: "#e6c3b8",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: horizontalScale(12),
     elevation: 8,
+    zIndex: 2,
   },
   thumbImage: {
-    width: horizontalScale(56),
-    height: verticalScale(56),
-    borderRadius: horizontalScale(28),
+    width: horizontalScale(60), // Updated to match new thumb size
+    height: verticalScale(60),
+    borderRadius: horizontalScale(30),
     borderWidth: 2,
     borderColor: "rgba(230, 195, 184, 0.4)",
     opacity: 0.95,
+    zIndex: 3,
   },
   instructionText: {
     fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(12),
-    color: "rgba(255, 255, 255, 0.5)",
-    fontWeight: "300",
+    fontSize: responsiveFontSize(13), // Slightly larger for better visibility
+    color: "rgba(255, 255, 255, 0.6)", // More visible
+    fontWeight: "400", // Slightly bolder
     letterSpacing: 0.8,
     marginTop: spacing.md,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  hintText: {
+    fontFamily: "ZillaSlab-Regular",
+    fontSize: responsiveFontSize(11),
+    color: "rgba(230, 195, 184, 0.5)",
+    fontWeight: "300",
+    letterSpacing: 0.5,
+    marginTop: spacing.xs,
+    textAlign: "center",
   },
   buttonContainer: {
     alignItems: "center",

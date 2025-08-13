@@ -130,7 +130,8 @@ const AnimatedBackground = React.memo(({ theme }) => {
 
 const SermonList = React.memo(() => {
   const navigation = useNavigation();
-  const { setSelectedSermon, allSermons, theme } = useAppContext();
+  const { setSelectedSermon, allSermons, theme, updateLastVisitedScreen } =
+    useAppContext();
 
   const [searchText, setSearchText] = useState("");
   const [selectedYear, setSelectedYear] = useState("All Years");
@@ -142,6 +143,11 @@ const SermonList = React.memo(() => {
   const [originalSermons, setOriginalSermons] = useState(allSermons);
   const [isOriginalOrder, setIsOriginalOrder] = useState(true);
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
+
+  // Track that user visited AllSermons screen
+  useEffect(() => {
+    updateLastVisitedScreen("AllSermons");
+  }, [updateLastVisitedScreen]);
 
   // Store original order when sermons are loaded
   useEffect(() => {

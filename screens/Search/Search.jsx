@@ -55,8 +55,14 @@ const EXPANDED_CONTEXT_LENGTH = 150;
 const POPUP_CONTEXT_LENGTH = 3000;
 
 const SermonSearch = () => {
-  const { theme, setSelectedSermon } = useAppContext(); // Removed searchText and setSearchText
+  const { theme, setSelectedSermon, updateLastVisitedScreen } = useAppContext(); // Removed searchText and setSearchText
   const navigation = useNavigation();
+
+  // Track that user visited Search screen
+  useEffect(() => {
+    updateLastVisitedScreen("Search");
+  }, [updateLastVisitedScreen]);
+
   const [searchText, setSearchText] = useState(""); // Local search state for Search screen
   const [searchPhrase, setSearchPhrase] = useState(""); // Local search phrase
   const [filteredSermons, setFilteredSermons] = useState([]);
@@ -627,6 +633,7 @@ const SermonSearch = () => {
               selectionColor={theme.dark ? theme.colors.text : "#5d3211"}
               returnKeyType="search"
               onSubmitEditing={handleSearch}
+              keyboardAppearance={theme.dark ? "dark" : "light"}
             />
             {searchText.length > 0 && (
               <TouchableOpacity
