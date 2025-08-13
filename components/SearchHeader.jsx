@@ -9,13 +9,14 @@ import { styles } from "../styles/Allsermons";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 
 const SearchHeader = ({ theme, searchText, setSearchText }) => {
+  
   return (
     <View style={{
       paddingHorizontal: 20,
       paddingVertical: 12,
       backgroundColor: theme.dark 
         ? "rgba(62, 45, 32, 0.3)" 
-        : "rgba(255, 255, 255, 0.8)",
+        : "rgba(255, 255, 255, 0.1)",
     }}>
       <View
         style={[
@@ -27,9 +28,9 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
             borderColor: theme.dark 
               ? "rgba(225, 179, 161, 0.2)" 
               : "rgba(93, 50, 17, 0.2)",
-            borderWidth: 1,
+            borderWidth: theme.dark ? 1 :   0,
             borderRadius: 16,
-            shadowColor: theme.dark ? "#000" : "#5d3211",
+            shadowColor: theme.dark ? "#000" : "#5d321106",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: theme.dark ? 0.3 : 0.1,
             shadowRadius: 8,

@@ -32,10 +32,10 @@ const ActionButton = React.memo(
         {
           backgroundColor: theme.dark 
             ? (isHighlighted ? "rgba(255, 255, 255, 0.15)" : "rgba(80, 61, 49, 0.8)") 
-            : (isHighlighted ? "rgba(93, 50, 17, 0.15)" : "rgba(255, 255, 255, 0.9)"),
+            : (isHighlighted ? "rgba(93, 50, 17, 0.15)" : "#3a210fa0"),
           borderColor: theme.dark 
             ? (isHighlighted ? "rgba(255, 255, 255, 0.4)" : "rgba(255, 255, 255, 0.2)") 
-            : (isHighlighted ? "rgba(93, 50, 17, 0.4)" : "rgba(93, 50, 17, 0.2)"),
+            : (isHighlighted ? "rgba(93, 50, 17, 0.4)" : "rgba(251, 251, 251, 0.859)"),
           borderWidth: isHighlighted ? 2 : 1,
           shadowColor: theme.dark ? "#000" : "#5d3211",
           shadowOffset: { width: 0, height: 2 },
@@ -237,7 +237,7 @@ const ActionsBar = ({
     <View style={{
      backgroundColor: theme.dark 
           ? "rgba(80, 61, 49, 0.25)" 
-          : "rgba(255, 255, 255, 0.95)",
+          : "rgba(255, 255, 255, 0.1)",
       paddingVertical: 8,
       borderBottomWidth: 1,
       borderBottomColor: theme.dark 

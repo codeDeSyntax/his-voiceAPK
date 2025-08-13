@@ -188,12 +188,48 @@ const DraggableFloatingBackButton = React.memo(
         ]).start();
       }
 
-      // Ultra-fast navigation - navigate immediately without any processing
+      // Ultra-fast navigation with smart fallback logic
       if (onPress) {
         onPress();
       } else if (router) {
-        // Just use router.goBack() for instant navigation
-        router.goBack();
+        const navigationState = router.getState();
+        const canGoBack = navigationState && navigationState.index > 0;
+
+        // Debug logging to see what's happening
+        console.log("Navigation State:", navigationState);
+        console.log(
+          "Current route:",
+          navigationState?.routes?.[navigationState.index]?.name
+        );
+        console.log(
+          "Previous route:",
+          navigationState?.routes?.[navigationState.index - 1]?.name
+        );
+
+        // Check if the previous screen would be Welcome
+        let shouldGoToSermonList = false;
+        if (canGoBack && navigationState.routes) {
+          const previousRoute =
+            navigationState.routes[navigationState.index - 1];
+          // Never navigate back to Welcome screen - check for different possible names
+          const welcomeScreenNames = ["Welcome", "WelcomeScreen", "welcome"];
+          shouldGoToSermonList = welcomeScreenNames.includes(
+            previousRoute?.name
+          );
+        }
+
+        if (canGoBack && !shouldGoToSermonList) {
+          // Safe to go back - previous screen is not Welcome
+          console.log(
+            "Going back to:",
+            navigationState?.routes?.[navigationState.index - 1]?.name
+          );
+          router.goBack();
+        } else {
+          // No history or previous screen is Welcome - go to sermon list
+          console.log("Navigating to AllSermons instead of Welcome");
+          router.navigate("AllSermons");
+        }
 
         // Update our custom history asynchronously after navigation (optional)
         setTimeout(() => {

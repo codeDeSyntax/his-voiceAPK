@@ -3,10 +3,19 @@ import { View, Text, TouchableOpacity } from 'react-native'
 import { styles } from '../styles/Allsermons'
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
+import { responsiveFontSize } from '../Utils/responsiveUtils'
+import { useFonts } from 'expo-font'
 
 const ListAppBar = ({theme}) => {
   const router = useNavigation();
-  
+  // load font
+  const [fontsLoaded] = useFonts({
+    'Philosopher': require('../assets/fonts/Philosopher-Regular.ttf'),
+  });
+
+  // if (!fontsLoaded) {
+  //   return null; // or a loading indicator
+  // }
   return (
     <View
       style={{
@@ -17,7 +26,7 @@ const ListAppBar = ({theme}) => {
         paddingVertical: 8,
         backgroundColor: theme.dark 
           ? "rgba(80, 61, 49, 0.25)" 
-          : "rgba(255, 255, 255, 0.95)",
+          : "rgba(255, 255, 255, 0.1)",
         borderBottomWidth: 1,
         borderBottomColor: theme.dark 
           ? "rgba(255, 255, 255, 0.1)" 
@@ -30,20 +39,33 @@ const ListAppBar = ({theme}) => {
       }}
     >
       <View style={{ flex: 1 }}>
-        <Text
+       <View style={{ 
+        alignItems: "center",
+        justifyContent: "center",
+        //  paddingVertical: 1,
+         paddingHorizontal: 3,
+          backgroundColor: theme.dark 
+            ? "rgba(46, 25, 12, 0.862)"
+            : "#3a210f",
+          borderRadius: 20,
+          width:150
+         }}>
+         <Text
           style={[
             styles.label,
             { 
-              color: theme.dark ? theme.colors.text : "#5d3211", 
+              color: theme.dark ? theme.colors.text : "#f0f0f0", 
               fontFamily: "serif",
-              fontSize: 18,
-              fontWeight: "600",
+              fontStyle:"italic",
+              fontSize: responsiveFontSize(16),
+              fontWeight: "bold",
               letterSpacing: 0.5,
             },
           ]}
         >
           R.L.L Sermons
         </Text>
+       </View>
         {/* <Text
           style={{
             color: theme.dark 
@@ -58,7 +80,7 @@ const ListAppBar = ({theme}) => {
         </Text> */}
       </View>
       
-      <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: 4 }}>
         <TouchableOpacity
           style={{
             padding: 10,
@@ -71,7 +93,7 @@ const ListAppBar = ({theme}) => {
           <Ionicons
             name="library"
             size={20}
-            color={theme.dark ? theme.colors.text : "#5d3211"}
+            color={theme.dark ? theme.colors.text : "#301d0e"}
           />
         </TouchableOpacity>
         
@@ -88,7 +110,7 @@ const ListAppBar = ({theme}) => {
           <Ionicons
             name="settings"
             size={20}
-            color={theme.dark ? theme.colors.text : "#5d3211"}
+            color={theme.dark ? theme.colors.text : "#301d0e"}
           />
         </TouchableOpacity>
       </View>
