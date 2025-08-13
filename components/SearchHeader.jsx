@@ -25,7 +25,7 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
               ? "rgba(80, 61, 49, 0.4)" 
               : "rgba(255, 255, 255, 0.95)",
             borderColor: theme.dark 
-              ? "rgba(255, 255, 255, 0.2)" 
+              ? "rgba(225, 179, 161, 0.2)" 
               : "rgba(93, 50, 17, 0.2)",
             borderWidth: 1,
             borderRadius: 16,
@@ -35,7 +35,7 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
             shadowRadius: 8,
             elevation: 4,
             paddingHorizontal: 16,
-            paddingVertical: 4,
+            // paddingVertical: 4,
             flexDirection: "row",
             alignItems: "center",
           },

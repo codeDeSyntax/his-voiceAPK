@@ -67,7 +67,7 @@ export const styles = StyleSheet.create({
   tableCellDate: {
     fontSize: responsiveFontSize(14),
     fontStyle: "italic",
-    fontFamily: "ZillaSlab",
+    fontFamily: "serif",
   },
   // Modal styles
   modalOverlay: {

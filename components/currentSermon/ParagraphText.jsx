@@ -295,9 +295,10 @@ const ParagraphText = React.memo(
       if (selectedSermon?.lastReadParagraph === index) {
         baseStyle.push({
           borderLeftWidth: 2,
-          paddingLeft: 2,
-          borderLeftColor: theme.dark ? theme.colors.hlight + "20" : "#5d3211",
-          backgroundColor: theme.dark ? theme.colors.hlight + "10" : "#ecedee",
+          paddingLeft: 3,
+          borderLeftColor: theme.dark ? theme.colors.hlight + "50" : "#5d3211",
+          borderStyle:"dashed"
+          // backgroundColor: theme.dark ? theme.colors.hlight + "10" : "#ecedee",
         });
       }
 

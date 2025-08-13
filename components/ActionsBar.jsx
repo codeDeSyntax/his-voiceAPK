@@ -235,10 +235,10 @@ const ActionsBar = ({
 
   return (
     <View style={{
-      backgroundColor: theme.dark 
-        ? "rgba(62, 45, 32, 0.4)" 
-        : "rgba(255, 255, 255, 0.85)",
-      paddingVertical: 12,
+     backgroundColor: theme.dark 
+          ? "rgba(80, 61, 49, 0.25)" 
+          : "rgba(255, 255, 255, 0.95)",
+      paddingVertical: 8,
       borderBottomWidth: 1,
       borderBottomColor: theme.dark 
         ? "rgba(255, 255, 255, 0.1)" 

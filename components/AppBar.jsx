@@ -14,9 +14,9 @@ const ListAppBar = ({theme}) => {
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingVertical: 8,
         backgroundColor: theme.dark 
-          ? "rgba(80, 61, 49, 0.95)" 
+          ? "rgba(80, 61, 49, 0.25)" 
           : "rgba(255, 255, 255, 0.95)",
         borderBottomWidth: 1,
         borderBottomColor: theme.dark 
@@ -44,7 +44,7 @@ const ListAppBar = ({theme}) => {
         >
           R.L.L Sermons
         </Text>
-        <Text
+        {/* <Text
           style={{
             color: theme.dark 
               ? "rgba(255, 255, 255, 0.6)" 
@@ -55,7 +55,7 @@ const ListAppBar = ({theme}) => {
           }}
         >
           Collection Library
-        </Text>
+        </Text> */}
       </View>
       
       <View style={{ flexDirection: "row", gap: 12 }}>

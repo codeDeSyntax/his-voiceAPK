@@ -111,7 +111,9 @@ const SermonListView = React.memo(
             >
               {item.title}
             </Text>
-            <Text
+            {
+              item.location &&
+              <Text
               style={[
                 styles.tableCellLocation,
                 {
@@ -120,14 +122,15 @@ const SermonListView = React.memo(
               ]}
               numberOfLines={1}
             >
-              {item.location || "Location not found"}
+              {item.location}
             </Text>
+            }
             <View style={[styles.tableCell, ]}>
             <Text
               style={[
                 styles.tableCellDate,
                 {
-                  color: theme.dark ? theme.colors.text + "50" : "#5d321190",
+                  color: theme.dark ? theme.colors.text + "80" : "#5d321190",
                 },
               ]}
             >
@@ -154,7 +157,7 @@ const SermonListView = React.memo(
               <Ionicons
                 name="text"
                 size={responsiveFontSize(14)}
-                color={theme.dark ? theme.colors.hlight + "60" : "#5d3211"}
+                color={theme.dark ? "#906443" : "#5d3211"}
               />
             )}
           </View>
