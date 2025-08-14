@@ -117,7 +117,7 @@ const SermonSkeletonLoader = ({ message = "Loading sermon..." }) => {
           marginBottom,
           backgroundColor: theme.dark
             ? "rgba(255, 255, 255, 0.08)"
-            : "rgba(0, 0, 0, 0.06)",
+            : "rgba(0, 0, 0, 0.1)",
           opacity: shimmerOpacity,
         },
       ]}

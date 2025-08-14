@@ -487,7 +487,7 @@ const CurrentSermon = React.memo(({ route }) => {
     }
 
     // Only render visible paragraphs + buffer for performance
-    const BUFFER_SIZE = 500;
+    const BUFFER_SIZE = 400;
     const visibleStart = Math.max(0, currentVisibleParagraph - BUFFER_SIZE);
     const visibleEnd = Math.min(
       paragraphs.length,

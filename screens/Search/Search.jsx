@@ -21,6 +21,7 @@ import {
   SafeAreaView,
   Dimensions,
   ImageBackground,
+  FlatList,
 } from "react-native";
 import { useAppContext } from "../../Logic/globalState";
 import { ActivityIndicator } from "react-native";
@@ -292,6 +293,316 @@ const SermonSearch = () => {
     setExpandedResults(new Set()); // Clear expanded search results
     searchInputRef.current?.focus();
   };
+
+  // Render function for FlatList items
+  const renderSearchResultItem = ({ item: sermon, index }) => {
+    const showExpanded = expandedResults.has(index);
+
+    return (
+      <TouchableOpacity
+        key={`search-result-${index}`}
+        style={styles.searchResultItem}
+        onPress={() => handleSermonClick(sermon)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.resultContent}>
+          {/* Title and Year */}
+          <View style={styles.resultHeader}>
+            <Text
+              style={[
+                styles.resultTitle,
+                {
+                  color: theme.colors.text,
+                  fontFamily: "ZillaSlab",
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {sermon.title.trim()}
+            </Text>
+            <View
+              style={[
+                styles.resultYearBadge,
+                { backgroundColor: theme.colors.primary },
+              ]}
+            >
+              <Text style={[styles.resultYearText, { color: "#fff" }]}>
+                {sermon.year}
+              </Text>
+            </View>
+          </View>
+
+          {/* Search context with paragraph info */}
+          <View style={styles.contextContainer}>
+            <View style={styles.paragraphInfo}>
+              <Text
+                style={[
+                  styles.paragraphLabel,
+                  {
+                    color: theme.colors.text,
+                    fontFamily: "ZillaSlab",
+                  },
+                ]}
+              >
+                📍Match {sermon.paragraphIndex}
+                {sermon.totalMatches > 1 && (
+                  <Text style={{ opacity: 0.7, fontSize: 12 }}>
+                    (+{sermon.totalMatches - 1} more)
+                  </Text>
+                )}
+              </Text>
+
+              {/* Show more caret */}
+              <TouchableOpacity
+                style={styles.expandCaret}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  toggleResultExpanded(index);
+                }}
+              >
+                <Text style={[styles.caretIcon, { color: theme.colors.text }]}>
+                  {showExpanded ? "▲" : "▼"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text
+              style={[
+                styles.resultContext,
+                {
+                  color: theme.dark ? "rgba(255,255,255,0.8)" : "#5d3211",
+                  fontFamily: "ZillaSlab",
+                },
+              ]}
+              numberOfLines={showExpanded ? undefined : 2}
+            >
+              {/* Show first match or all matches if expanded */}
+              {showExpanded && sermon.totalMatches > 1
+                ? // Show all matches when expanded as continuous text
+                  sermon.allMatches
+                    .map((match, matchIndex) => {
+                      // Create paragraph label and content
+                      const paragraphLabel = `Para ${match.paragraphIndex}: `;
+                      return paragraphLabel + match.context;
+                    })
+                    .join(" ... ")
+                    .split(/(<highlight>.*?<\/highlight>)/g)
+                    .map((part, i) => {
+                      const isHighlight =
+                        part.startsWith("<highlight>") &&
+                        part.endsWith("</highlight>");
+                      const text = part.replace(/<\/?highlight>/g, "");
+
+                      return (
+                        <Text
+                          key={`expanded-${i}`}
+                          style={[
+                            isHighlight
+                              ? {
+                                  backgroundColor: theme.dark
+                                    ? "#5d3211" + "70"
+                                    : "#5d3211" + "30",
+                                  color: theme.dark ? "#fff" : "#5d3211",
+                                  fontWeight: "600",
+                                }
+                              : undefined,
+                          ]}
+                        >
+                          {text}
+                        </Text>
+                      );
+                    })
+                : // Show only first match when not expanded
+                  sermon.sentence
+                    .split(/(<highlight>.*?<\/highlight>)/g)
+                    .map((part, i) => {
+                      const isHighlight =
+                        part.startsWith("<highlight>") &&
+                        part.endsWith("</highlight>");
+                      const text = part.replace(/<\/?highlight>/g, "");
+
+                      return (
+                        <Text
+                          key={`context-${i}`}
+                          style={[
+                            isHighlight
+                              ? {
+                                  backgroundColor: theme.dark
+                                    ? "#5d3211" + "70"
+                                    : "#5d3211" + "30",
+                                  color: theme.dark ? "#fff" : "#5d3211",
+                                  fontWeight: "600",
+                                }
+                              : undefined,
+                          ]}
+                        >
+                          {text}
+                        </Text>
+                      );
+                    })}
+            </Text>
+          </View>
+        </View>
+
+        {/* Bottom separator line */}
+        <View
+          style={[
+            styles.resultSeparator,
+            {
+              backgroundColor: theme.dark
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.1)",
+            },
+          ]}
+        />
+      </TouchableOpacity>
+    );
+  };
+
+  // Key extractor for FlatList
+  const keyExtractor = (item, index) => `search-result-${item.id}-${index}`;
+
+  // Render function for the main FlatList (includes header, results, and footer)
+  const renderMainContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loaderContainer}>
+          <View
+            style={[
+              styles.loaderWrapper,
+              {
+                backgroundColor: theme.dark
+                  ? theme.colors.primary
+                  : "rgba(0,0,0,0.02)",
+              },
+            ]}
+          >
+            <ActivityIndicator size="large" color="#5d3211" />
+            <Text
+              style={[
+                styles.loaderText,
+                {
+                  color: theme.dark
+                    ? "rgba(255,255,255,0.7)"
+                    : "rgba(0,0,0,0.6)",
+                },
+              ]}
+            >
+              Searching through sermons...
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    if (filteredSermons.length > 0) {
+      return null; // Results will be rendered by FlatList data
+    }
+
+    // No results content
+    return (
+      <View style={styles.noResultsContainer}>
+        {searchText.trim() !== "" && !found ? (
+          <>
+            <Image
+              source={require("../../assets/viewnotfound.png")}
+              style={{
+                width: 140,
+                height: 170,
+                marginBottom: 20,
+              }}
+            />
+            <Text
+              style={[
+                styles.noResultsText,
+                {
+                  color: theme.dark
+                    ? "rgba(255,255,255,0.6)"
+                    : "rgba(0,0,0,0.6)",
+                },
+              ]}
+            >
+              No sermons found for "{searchText}"
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.tryAgainButton,
+                {
+                  backgroundColor: theme.dark
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.05)",
+                },
+              ]}
+              onPress={() => {
+                handleClearSearch();
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.dark ? theme.colors.hlight : "#1c1917",
+                  fontWeight: "500",
+                }}
+              >
+                Try another search
+              </Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <MaterialCommunityIcons
+              name="text-search"
+              size={80}
+              color={theme.dark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}
+              style={{ marginBottom: 20 }}
+            />
+            <Text
+              style={[
+                styles.noResultsText,
+                {
+                  color: theme.dark
+                    ? "rgba(255,255,255,0.6)"
+                    : "rgba(0,0,0,0.6)",
+                },
+              ]}
+            >
+              Search quotes from all sermons
+            </Text>
+            <Text
+              style={[
+                styles.noResultsSubtext,
+                {
+                  color: theme.dark
+                    ? "rgba(255,255,255,0.4)"
+                    : "rgba(0,0,0,0.4)",
+                },
+              ]}
+            >
+              Enter keywords to find specific passages
+            </Text>
+          </>
+        )}
+      </View>
+    );
+  };
+
+  // Header component for FlatList
+  const ListHeaderComponent = () => (
+    <View style={styles.resultsContainer}>
+      <Text
+        style={[
+          styles.resultsCount,
+          {
+            color: theme.dark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)",
+            fontFamily: "ZillaSlab",
+          },
+        ]}
+      >
+        Found {filteredSermons.length} result
+        {filteredSermons.length !== 1 ? "s" : ""}
+      </Text>
+    </View>
+  );
+
   const gradientColors = useMemo(
     () =>
       theme.dark
@@ -667,408 +978,128 @@ const SermonSearch = () => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 30 }}
-        >
-          {loading ? (
-            <View style={styles.loaderContainer}>
-              <View
-                style={[
-                  styles.loaderWrapper,
-                  {
-                    backgroundColor: theme.dark
-                      ? theme.colors.primary
-                      : "rgba(0,0,0,0.02)",
-                  },
-                ]}
-              >
-                <ActivityIndicator size="large" color="#5d3211" />
-                <Text
-                  style={[
-                    styles.loaderText,
-                    {
-                      color: theme.dark
-                        ? "rgba(255,255,255,0.7)"
-                        : "rgba(0,0,0,0.6)",
-                    },
-                  ]}
-                >
-                  Searching through sermons...
-                </Text>
-              </View>
-            </View>
-          ) : filteredSermons.length > 0 ? (
-            <View style={styles.resultsContainer}>
-              <Text
-                style={[
-                  styles.resultsCount,
-                  {
-                    color: theme.dark
-                      ? "rgba(255,255,255,0.6)"
-                      : "rgba(0,0,0,0.6)",
-                    fontFamily: "ZillaSlab",
-                  },
-                ]}
-              >
-                Found {filteredSermons.length} result
-                {filteredSermons.length !== 1 ? "s" : ""}
-              </Text>
-
-              {/* New sleek search results without cards */}
-              <View style={styles.searchResultsList}>
-                {filteredSermons.map((sermon, index) => {
-                  const showExpanded = expandedResults.has(index);
-
-                  return (
-                    <TouchableOpacity
-                      key={`search-result-${index}`}
-                      style={styles.searchResultItem}
-                      onPress={() => handleSermonClick(sermon)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.resultContent}>
-                        {/* Title and Year */}
-                        <View style={styles.resultHeader}>
-                          <Text
-                            style={[
-                              styles.resultTitle,
-                              {
-                                color: theme.colors.text,
-                                fontFamily: "ZillaSlab",
-                              },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {sermon.title.trim()}
-                          </Text>
-                          <View
-                            style={[
-                              styles.resultYearBadge,
-                              { backgroundColor: theme.colors.primary },
-                            ]}
-                          >
-                            <Text
-                              style={[styles.resultYearText, { color: "#fff" }]}
-                            >
-                              {sermon.year}
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Search context with paragraph info */}
-                        <View style={styles.contextContainer}>
-                          <View style={styles.paragraphInfo}>
-                            <Text
-                              style={[
-                                styles.paragraphLabel,
-                                {
-                                  color: theme.colors.text,
-                                  fontFamily: "ZillaSlab",
-                                },
-                              ]}
-                            >
-                              📍Paragraph {sermon.paragraphIndex}
-                              {sermon.totalMatches > 1 && (
-                                <Text style={{ opacity: 0.7, fontSize: 12 }}>
-                                  {/* {" "} */}
-                                  (+{sermon.totalMatches - 1} more)
-                                </Text>
-                              )}
-                            </Text>
-
-                            {/* Show more caret */}
-                            <TouchableOpacity
-                              style={styles.expandCaret}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                toggleResultExpanded(index);
-                              }}
-                            >
-                              <Text
-                                style={[
-                                  styles.caretIcon,
-                                  { color: theme.colors.text },
-                                ]}
-                              >
-                                {showExpanded ? "▲" : "▼"}
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-
-                          <Text
-                            style={[
-                              styles.resultContext,
-                              {
-                                color: theme.dark
-                                  ? "rgba(255,255,255,0.8)"
-                                  : "#5d3211",
-                                fontFamily: "ZillaSlab",
-                              },
-                            ]}
-                            numberOfLines={showExpanded ? undefined : 2}
-                          >
-                            {/* Show first match or all matches if expanded */}
-                            {showExpanded && sermon.totalMatches > 1
-                              ? // Show all matches when expanded as continuous text
-                                sermon.allMatches
-                                  .map((match, matchIndex) => {
-                                    // Create paragraph label and content
-                                    const paragraphLabel = `Para ${match.paragraphIndex}: `;
-                                    return paragraphLabel + match.context;
-                                  })
-                                  .join(" ... ")
-                                  .split(/(<highlight>.*?<\/highlight>)/g)
-                                  .map((part, i) => {
-                                    const isHighlight =
-                                      part.startsWith("<highlight>") &&
-                                      part.endsWith("</highlight>");
-                                    const text = part.replace(
-                                      /<\/?highlight>/g,
-                                      ""
-                                    );
-
-                                    return (
-                                      <Text
-                                        key={`expanded-${i}`}
-                                        style={[
-                                          isHighlight
-                                            ? {
-                                                backgroundColor: theme.dark
-                                                  ? "#5d3211" + "70"
-                                                  : "#5d3211" + "30",
-                                                color: theme.dark
-                                                  ? "#fff"
-                                                  : "#5d3211",
-                                                fontWeight: "600",
-                                              }
-                                            : undefined,
-                                        ]}
-                                      >
-                                        {text}
-                                      </Text>
-                                    );
-                                  })
-                              : // Show only first match when not expanded
-                                sermon.sentence
-                                  .split(/(<highlight>.*?<\/highlight>)/g)
-                                  .map((part, i) => {
-                                    const isHighlight =
-                                      part.startsWith("<highlight>") &&
-                                      part.endsWith("</highlight>");
-                                    const text = part.replace(
-                                      /<\/?highlight>/g,
-                                      ""
-                                    );
-
-                                    return (
-                                      <Text
-                                        key={`context-${i}`}
-                                        style={[
-                                          isHighlight
-                                            ? {
-                                                backgroundColor: theme.dark
-                                                  ? "#5d3211" + "70"
-                                                  : "#5d3211" + "30",
-                                                color: theme.dark
-                                                  ? "#fff"
-                                                  : "#5d3211",
-                                                fontWeight: "600",
-                                              }
-                                            : undefined,
-                                        ]}
-                                      >
-                                        {text}
-                                      </Text>
-                                    );
-                                  })}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Bottom separator line */}
-                      <View
-                        style={[
-                          styles.resultSeparator,
-                          {
-                            backgroundColor: theme.dark
-                              ? "rgba(255,255,255,0.1)"
-                              : "rgba(0,0,0,0.1)",
-                          },
-                        ]}
-                      />
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.noResultsContainer}>
-              {searchText.trim() !== "" && !found ? (
-                <>
-                  <Image
-                    source={require("../../assets/viewnotfound.png")}
-                    style={{
-                      width: 140,
-                      height: 170,
-                      marginBottom: 20,
-                    }}
-                  />
-                  <Text
-                    style={[
-                      styles.noResultsText,
-                      {
-                        color: theme.dark
-                          ? "rgba(255,255,255,0.6)"
-                          : "rgba(0,0,0,0.6)",
-                      },
-                    ]}
-                  >
-                    No sermons found for "{searchText}"
-                  </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.tryAgainButton,
-                      {
-                        backgroundColor: theme.dark
-                          ? "rgba(255,255,255,0.1)"
-                          : "rgba(0,0,0,0.05)",
-                      },
-                    ]}
-                    onPress={() => {
-                      handleClearSearch();
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: theme.dark ? theme.colors.hlight : "#1c1917",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Try another search
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  <MaterialCommunityIcons
-                    name="text-search"
-                    size={80}
-                    color={
-                      theme.dark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"
-                    }
-                    style={{ marginBottom: 20 }}
-                  />
-                  <Text
-                    style={[
-                      styles.noResultsText,
-                      {
-                        color: theme.dark
-                          ? "rgba(255,255,255,0.6)"
-                          : "rgba(0,0,0,0.6)",
-                      },
-                    ]}
-                  >
-                    Search quotes from all sermons
-                  </Text>
-                  <Text
-                    style={[
-                      styles.noResultsSubtext,
-                      {
-                        color: theme.dark
-                          ? "rgba(255,255,255,0.4)"
-                          : "rgba(0,0,0,0.4)",
-                      },
-                    ]}
-                  >
-                    Enter keywords to find specific passages
-                  </Text>
-                </>
-              )}
-            </View>
-          )}
-        </ScrollView>
+        {/* Main content with FlatList - no nested ScrollView */}
+        {filteredSermons.length > 0 ? (
+          <FlatList
+            data={filteredSermons}
+            renderItem={renderSearchResultItem}
+            keyExtractor={keyExtractor}
+            style={styles.scrollView}
+            contentContainerStyle={{ paddingBottom: 30,paddingHorizontal :4 }}
+            showsVerticalScrollIndicator={false}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            updateCellsBatchingPeriod={50}
+            initialNumToRender={10}
+            windowSize={10}
+            ListHeaderComponent={ListHeaderComponent}
+          />
+        ) : (
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 30 }}
+          >
+            {renderMainContent()}
+          </ScrollView>
+        )}
 
         {/* Sermon Content Modal */}
         <Modal
           animationType="slide"
-          transparent={true}
+          transparent={false}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
+          statusBarTranslucent={true}
+          presentationStyle="fullScreen"
         >
           <View
-            style={[
-              styles.modalContainer,
-              {
-                backgroundColor: theme.dark
-                  ? "rgba(0,0,0,0.95)"
-                  : "rgba(255,255,255,0.95)",
-              },
-            ]}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100%",
+              height: "100%",
+              flex: 1,
+              backgroundColor: theme.dark ? theme.colors.primary : "#fff",
+              zIndex: 99999, // Much higher than current sermon search (1000)
+            }}
           >
+            {/* Modal Header with close button - with top padding for status bar */}
             <View
-              style={[
-                styles.modalContent,
-                {
-                  backgroundColor: theme.dark ? theme.colors.primary : "#fff",
-                },
-              ]}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                paddingHorizontal: 20,
+                paddingVertical: 15,
+                paddingTop: 50, // Extra padding for status bar
+                borderBottomWidth: 1,
+                borderBottomColor: theme.dark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.1)",
+              }}
             >
-              <View style={styles.modalScrollIndicator} />
-              <View style={styles.modalHeader}>
-                <View style={styles.headerContent}>
-                  <Text
-                    style={[
-                      styles.modalTitle,
-                      {
-                        color: theme.dark ? theme.colors.text : "black",
-                      },
-                    ]}
-                  >
-                    {selectedSermonContent?.title}
-                  </Text>
-                  <Text
-                    style={{
-                      fontStyle: "italic",
-                      fontSize: 14,
-                      color: theme.dark
-                        ? "rgba(255,255,255,0.6)"
-                        : "rgba(0,0,0,0.6)",
-                      marginBottom: 8,
-                      fontFamily: "ZillaSlab",
-                    }}
-                  >
-                    {selectedSermonContent?.year} •{" "}
-                    {selectedSermonContent?.location}
-                  </Text>
-                  <View style={styles.modalMetaContainer}>
-                    {/* Sermon details now shown above */}
-                  </View>
-                </View>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setModalVisible(false)}
+              <View style={{ flex: 1, marginRight: 15 }}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "600",
+                    color: theme.dark ? theme.colors.text : "black",
+                    fontFamily: "ZillaSlabSemiBold",
+                    marginBottom: 5,
+                  }}
                 >
-                  <AntDesign
-                    name="close"
-                    size={20}
-                    color={
-                      theme.dark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)"
-                    }
-                  />
-                </TouchableOpacity>
+                  {selectedSermonContent?.title}
+                </Text>
+                <Text
+                  style={{
+                    fontStyle: "italic",
+                    fontSize: 14,
+                    color: theme.dark
+                      ? "rgba(255,255,255,0.6)"
+                      : "rgba(0,0,0,0.6)",
+                    fontFamily: "ZillaSlab",
+                  }}
+                >
+                  {selectedSermonContent?.year} •{" "}
+                  {selectedSermonContent?.location}
+                </Text>
               </View>
-
-              <ScrollView
-                ref={modalScrollViewRef}
-                style={styles.modalScrollView}
-                showsVerticalScrollIndicator={true}
-                contentContainerStyle={styles.modalScrollContent}
+              <TouchableOpacity
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: theme.dark
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.05)",
+                }}
+                onPress={() => setModalVisible(false)}
               >
-                {selectedSermonContent && renderModalContent()}
-              </ScrollView>
+                <AntDesign
+                  name="close"
+                  size={20}
+                  color={
+                    theme.dark ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.6)"
+                  }
+                />
+              </TouchableOpacity>
             </View>
+
+            {/* Modal Content */}
+            <ScrollView
+              ref={modalScrollViewRef}
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{
+                padding: 20,
+                paddingBottom: 40,
+              }}
+            >
+              {selectedSermonContent && renderModalContent()}
+            </ScrollView>
           </View>
         </Modal>
       </LinearGradient>

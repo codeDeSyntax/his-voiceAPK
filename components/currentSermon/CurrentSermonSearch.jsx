@@ -229,7 +229,7 @@ const CurrentSermonSearch = ({
                 fontFamily: fontsLoaded ? "ZillaSlab" : "System",
               },
             ]}
-            placeholder="Search for words or phrases..."
+            placeholder="Search for paragraph or phrases..."
             placeholderTextColor={
               theme.dark ? theme.colors.text : "rgba(93, 50, 17, 0.6)"
             }
