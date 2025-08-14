@@ -115,12 +115,24 @@ const renderTextWithStyledNumbers = (
     });
   } else {
     // No search phrase - use original function with highlight color
-    return renderTextWithStyledNumbersOnly(text, theme, settings, key, highlightColor);
+    return renderTextWithStyledNumbersOnly(
+      text,
+      theme,
+      settings,
+      key,
+      highlightColor
+    );
   }
 };
 
 // Original function renamed for internal use
-const renderTextWithStyledNumbersOnly = (text, theme, settings, key = "", highlightColor = null) => {
+const renderTextWithStyledNumbersOnly = (
+  text,
+  theme,
+  settings,
+  key = "",
+  highlightColor = null
+) => {
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
     yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
@@ -150,9 +162,11 @@ const renderTextWithStyledNumbersOnly = (text, theme, settings, key = "", highli
           style={{
             fontSize: responsiveFontSize(settings.fontSize),
             fontFamily: settings.fontFamily || "ZillaSlab",
-            color: highlightColor 
-              ? baseTextColor 
-              : (theme.dark ? "#b37407" : "#36240f"), // Use highlight color or default amber/orange for numbers
+            color: highlightColor
+              ? baseTextColor
+              : theme.dark
+              ? "#b37407"
+              : "#36240f", // Use highlight color or default amber/orange for numbers
             // fontWeight: "700", // Bold numbers
             lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
           }}
