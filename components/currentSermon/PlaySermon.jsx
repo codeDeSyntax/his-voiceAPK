@@ -13,12 +13,14 @@ import {
   Animated,
   Easing,
   ToastAndroid,
+  ImageBackground,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Clipboard from "expo-clipboard";
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { useNavigation } from "@react-navigation/native";
+import DraggableFloatingBackButton from "../FloatButton";
 
 const DownloadSermon = () => {
   const { selectedSermon, theme } = useAppContext();
@@ -62,63 +64,13 @@ const DownloadSermon = () => {
   // Function to open URL in external browser
   const openInBrowser = async () => {
     navigation.navigate("audiowebscreen");
-    // if (!audioUrl) {
-    //   alert("No URL available");
-    //   return;
-    // }
+   
 
-    // setIsLoading(true);
-    // // Animate progress bar
-    // Animated.timing(progressAnim, {
-    //   toValue: 1,
-    //   duration: 3000,
-    //   easing: Easing.linear,
-    //   useNativeDriver: false,
-    // }).start();
-
-    // try {
-    //   const supported = await Linking.canOpenURL(audioUrl);
-    //   if (supported) {
-    //     await Linking.openURL(audioUrl);
-    //   } else {
-    //     alert("Cannot open this URL");
-    //   }
-    // } catch (error) {
-    //   alert("Failed to open URL");
-    // } finally {
-    //   setTimeout(() => {
-    //     setIsLoading(false);
-    //     progressAnim.setValue(0);
-    //   }, 500);
-    // }
   };
 
   // Function to simulate download
   const startDownload = async () => {
     navigation.navigate("audiowebscreen");
-    // if (!audioUrl) {
-    //   alert("No URL available");
-    //   return;
-    // }
-
-    // setIsLoading(true);
-    // // Animate progress bar
-
-    // try {
-    //   const supported = await Linking.canOpenURL(audioUrl);
-    //   if (supported) {
-    //     await Linking.openURL(audioUrl);
-    //   } else {
-    //     ToastAndroid.show("Cannot open this URL");
-    //   }
-    // } catch (error) {
-    //   alert("Failed to open URL");
-    // } finally {
-    //   setTimeout(() => {
-    //     setIsLoading(false);
-    //     progressAnim.setValue(0);
-    //   }, 500);
-    // }
   };
 
   // Button press animation
@@ -165,374 +117,361 @@ const DownloadSermon = () => {
   );
 
   return (
-    <View style={[styles.safeArea, { backgroundColor: theme.colors.primary }]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-          <Text style={[styles.backButtonText, { color: theme.colors.text }]}>
-            Back
-          </Text>
-        </TouchableOpacity>
-        <View style={styles.spacer} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+    <View style={[styles.fullScreenContainer]}>
+      <ImageBackground
+        source={require("../../assets/gradbg.png")}
+        style={styles.bgImage}
+        resizeMode="cover"
+        blurRadius={4}
       >
-        <View style={styles.container}>
-          {/* Receipt Paper Container */}
-          <Animated.View
-            style={[
-              styles.receiptPaper,
-              {
-                backgroundColor: theme.colors.secondary,
-                opacity: fadeAnim,
-                transform: [
-                  {
-                    translateY: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [20, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
+        <LinearGradient
+          colors={[
+            isDark ? "rgba(28, 25, 23, 0.47)" : "rgba(250, 250, 250, 0.87)",
+            isDark ? "rgba(28, 25, 23, 0.45)" : "rgba(250, 250, 250, 0.95)",
+          ]}
+          style={StyleSheet.absoluteFill}
+        >
+          <DraggableFloatingBackButton/>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+              <Text
+                style={[styles.backButtonText, { color: theme.colors.text }]}
+              >
+                Back
+              </Text>
+            </TouchableOpacity>
+            <View style={styles.spacer} />
+          </View>
+
+          <ScrollView
+            // contentContainerStyle={sty}
+            showsVerticalScrollIndicator={false}
           >
-            {/* Receipt Header */}
-            <ReceiptHeader />
-
-            {/* Sermon Details */}
-            <View style={styles.receiptSection}>
-              <Text
+            <View style={styles.container}>
+              {/* Receipt Paper Container */}
+              <Animated.View
                 style={[
-                  styles.sectionLabel,
-                  { color: isDark ? "#888" : "#666" },
-                ]}
-              >
-                ITEM DETAILS:
-              </Text>
-              <Text style={[styles.sermonTitle, { color: theme.colors.text }]}>
-                {selectedSermon?.title || "Sermon Title"}
-              </Text>
-              <View style={styles.receiptRow}>
-                <Text
-                  style={[
-                    styles.receiptLabel,
-                    { color: isDark ? "#aaa" : "#777" },
-                  ]}
-                >
-                  Minister:
-                </Text>
-                <Text
-                  style={[styles.receiptValue, { color: theme.colors.text }]}
-                >
-                  Brother Bob
-                </Text>
-              </View>
-              <View style={styles.receiptRow}>
-                <Text
-                  style={[
-                    styles.receiptLabel,
-                    { color: isDark ? "#aaa" : "#777" },
-                  ]}
-                >
-                  Date:
-                </Text>
-                <Text
-                  style={[styles.receiptValue, { color: theme.colors.text }]}
-                >
-                  {selectedSermon?.date || "Date"}
-                </Text>
-              </View>
-              <View style={styles.receiptRow}>
-                <Text
-                  style={[
-                    styles.receiptLabel,
-                    { color: isDark ? "#aaa" : "#777" },
-                  ]}
-                >
-                  Format:
-                </Text>
-                <Text
-                  style={[styles.receiptValue, { color: theme.colors.text }]}
-                >
-                  Audio MP3
-                </Text>
-              </View>
-            </View>
-
-            <DottedSeparator />
-
-            {/* URL Section */}
-            <View style={styles.receiptSection}>
-              <Text
-                style={[
-                  styles.sectionLabel,
-                  { color: isDark ? "#888" : "#666" },
-                ]}
-              >
-                AUDIO URL:
-              </Text>
-              <View
-                style={[
-                  styles.urlBox,
+                  styles.receiptPaper,
                   {
-                    backgroundColor: isDark ? "#1a1a1a" : "#f8f8f8",
-                    borderColor: isDark ? "#333" : "#ddd",
+                    // backgroundColor: theme.colors.secondary,
+                    opacity: fadeAnim,
+                    transform: [
+                      {
+                        translateY: fadeAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
                   },
                 ]}
               >
-                <Text
-                  style={[styles.urlText, { color: isDark ? "#bbb" : "#555" }]}
-                  numberOfLines={2}
-                  ellipsizeMode="middle"
-                >
-                  {audioUrl || "No URL available"}
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.copyBtn,
-                    {
-                      backgroundColor: isCopied ? "#2d5a2d" : "#404040",
-                    },
-                  ]}
-                  onPress={copyToClipboard}
-                  activeOpacity={0.7}
-                  disabled={!audioUrl}
-                >
-                  <FontAwesome5
-                    name={isCopied ? "check" : "copy"}
-                    size={12}
-                    color="white"
-                  />
-                  <Text style={styles.copyBtnText}>
-                    {isCopied ? "✓" : "COPY"}
+                {/* Receipt Header */}
+                <ReceiptHeader />
+
+                {/* Sermon Details */}
+                <View style={styles.receiptSection}>
+                  <Text
+                    style={[
+                      styles.sectionLabel,
+                      { color: isDark ? "#888" : "#666" },
+                    ]}
+                  >
+                    ITEM DETAILS:
                   </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <DottedSeparator />
-
-            {/* Action Items */}
-            <View style={styles.receiptSection}>
-              <Text
-                style={[
-                  styles.sectionLabel,
-                  { color: isDark ? "#888" : "#666" },
-                ]}
-              >
-                AVAILABLE ACTIONS:
-              </Text>
-
-              <View style={styles.actionsList}>
-                <TouchableOpacity
-                  onPress={openInBrowser}
-                  activeOpacity={0.8}
-                  disabled={isLoading || !audioUrl}
-                  style={styles.actionItem}
-                >
-                  <View style={styles.actionIcon}>
-                    <Ionicons
-                      name="play-circle-outline"
-                      size={20}
-                      color={isDark ? "#fff" : "#333"}
-                    />
-                  </View>
-                  <View style={styles.actionDetails}>
+                  <Text
+                    style={[styles.sermonTitle, { color:isDark ? "#f5d60d" : "#69431a" }]}
+                  >
+                    {selectedSermon?.title || "Sermon Title"}
+                  </Text>
+                  <View style={styles.receiptRow}>
                     <Text
-                      style={[styles.actionName, { color: theme.colors.text }]}
+                      style={[
+                        styles.receiptLabel,
+                        { color: isDark ? "#aaa" : "#777" },
+                      ]}
                     >
-                      Listen to AUDIO
+                      Minister:
                     </Text>
                     <Text
                       style={[
-                        styles.actionDesc,
-                        { color: isDark ? "#888" : "#666" },
+                        styles.receiptValue,
+                        { color: theme.colors.text },
                       ]}
                     >
-                      Play in browser
+                      Brother Bob
                     </Text>
                   </View>
-                  <Text
-                    style={[
-                      styles.actionPrice,
-                      { color: isDark ? "#aaa" : "#777" },
-                    ]}
-                  >
-                    FREE
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={startDownload}
-                  activeOpacity={0.8}
-                  disabled={isLoading || !audioUrl}
-                  style={styles.actionItem}
-                >
-                  <View style={styles.actionIcon}>
-                    <MaterialIcons
-                      name="cloud-download"
-                      size={20}
-                      color={isDark ? "#fff" : "#333"}
-                    />
-                  </View>
-                  <View style={styles.actionDetails}>
+                  <View style={styles.receiptRow}>
                     <Text
-                      style={[styles.actionName, { color: theme.colors.text }]}
+                      style={[
+                        styles.receiptLabel,
+                        { color: isDark ? "#aaa" : "#777" },
+                      ]}
                     >
-                      DOWNLOAD AUDIO
+                      Date:
                     </Text>
                     <Text
                       style={[
-                        styles.actionDesc,
-                        { color: isDark ? "#888" : "#666" },
+                        styles.receiptValue,
+                        { color: theme.colors.text },
                       ]}
                     >
-                      Save for offline
+                      {selectedSermon?.date || "Date"}
                     </Text>
                   </View>
+                  <View style={styles.receiptRow}>
+                    <Text
+                      style={[
+                        styles.receiptLabel,
+                        { color: isDark ? "#aaa" : "#777" },
+                      ]}
+                    >
+                      Format:
+                    </Text>
+                    <Text
+                      style={[
+                        styles.receiptValue,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      Audio MP3
+                    </Text>
+                  </View>
+                </View>
+
+                <DottedSeparator />
+
+                {/* URL Section */}
+                <View style={styles.receiptSection}>
                   <Text
                     style={[
-                      styles.actionPrice,
-                      { color: isDark ? "#aaa" : "#777" },
+                      styles.sectionLabel,
+                      { color: isDark ? "#888" : "#666" },
                     ]}
                   >
-                    FREE
+                    AUDIO URL:
                   </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <DottedSeparator />
-
-            <DottedSeparator />
-
-            {/* Receipt Footer */}
-            <View style={styles.receiptFooter}>
-              <Text
-                style={[styles.footerText, { color: isDark ? "#666" : "#888" }]}
-              >
-                Wonderful words of life!
-              </Text>
-              <Text
-                style={[styles.footerText, { color: isDark ? "#666" : "#888" }]}
-              >
-                God bless you
-              </Text>
-              <View style={styles.barcode}>
-                {Array.from({ length: 30 }).map((_, i) => (
                   <View
-                    key={i}
                     style={[
-                      styles.barcodeBar,
+                      styles.urlBox,
                       {
-                        backgroundColor: isDark ? "#444" : "#bbb",
-                        width: Math.random() > 0.5 ? 2 : 1,
+                        backgroundColor: isDark ? "#1a1a1a" : "#f8f8f8",
+                        borderColor: isDark ? "#333" : "#ddd",
                       },
                     ]}
-                  />
-                ))}
-              </View>
-            </View>
-          </Animated.View>
-
-          {/* Main Action Button */}
-          <Animated.View
-            style={[
-              {
-                opacity: fadeAnim,
-                transform: [
-                  { scale: scaleAnim },
-                  {
-                    translateY: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [20, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <TouchableOpacity
-              onPress={openInBrowser}
-              style={styles.mainActionButton}
-              activeOpacity={0.85}
-              disabled={isLoading || !audioUrl}
-              onPressIn={onPressIn}
-              onPressOut={onPressOut}
-            >
-              <LinearGradient
-                colors={
-                  isDark ? ["#2d2d2d", "#404040"] : ["#333333", "#979494"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.gradientButton}
-              >
-                {isLoading ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator
-                      size="small"
-                      color="white"
-                      style={styles.activityIndicator}
-                    />
-                    <Text style={styles.mainButtonText}>Processing...</Text>
-
-                    {/* Progress bar */}
-                    <View style={styles.progressBarContainer}>
-                      <Animated.View
-                        style={[
-                          styles.progressBar,
-                          {
-                            width: progressAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: ["0%", "100%"],
-                            }),
-                          },
-                        ]}
+                  >
+                    <Text
+                      style={[
+                        styles.urlText,
+                        { color: isDark ? "#bbb" : "#58370e" },
+                      ]}
+                      numberOfLines={2}
+                      ellipsizeMode="middle"
+                    >
+                      {audioUrl || "No URL available"}
+                    </Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.copyBtn,
+                        {
+                          backgroundColor: isCopied ? "#2d5a2d" : "#404040",
+                        },
+                      ]}
+                      onPress={copyToClipboard}
+                      activeOpacity={0.7}
+                      disabled={!audioUrl}
+                    >
+                      <FontAwesome5
+                        name={isCopied ? "check" : "copy"}
+                        size={12}
+                        color="white"
                       />
-                    </View>
+                      <Text style={styles.copyBtnText}>
+                        {isCopied ? "✓" : "COPY"}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                ) : (
-                  <View style={styles.buttonContent}>
-                    <Ionicons name="headset" size={22} color="white" />
-                    <Text style={styles.mainButtonText}>LISTEN NOW</Text>
-                  </View>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
+                </View>
 
-          {/* Additional Options */}
-          <Animated.View
-            style={[
-              styles.additionalOptions,
-              {
-                opacity: fadeAnim,
-                transform: [
+                <DottedSeparator />
+
+                {/* Action Items */}
+                <View style={styles.receiptSection}>
+                  <Text
+                    style={[
+                      styles.sectionLabel,
+                      { color: isDark ? "#888" : "#666" },
+                    ]}
+                  >
+                    AVAILABLE ACTIONS:
+                  </Text>
+
+                  <View style={styles.actionsList}>
+                    <TouchableOpacity
+                      onPress={openInBrowser}
+                      activeOpacity={0.8}
+                      disabled={isLoading || !audioUrl}
+                      style={[styles.actionItem,{backgroundColor:theme.dark? "#382311" : "#f8f8f8",paddingHorizontal:4,paddingRight:10,borderRadius:20}]}
+                    >
+                      <View style={styles.actionIcon}>
+                        <Ionicons
+                          name="play-circle-outline"
+                          size={20}
+                          color={isDark ? "#bd571b" : "#bd571b"}
+                        />
+                      </View>
+                      <View style={[styles.actionDetails,]}>
+                        <Text
+                          style={[
+                            styles.actionName,
+                            { color: theme.colors.text },
+                          ]}
+                        >
+                          Listen to AUDIO
+                        </Text>
+                        <Text
+                          style={[
+                            styles.actionDesc,
+                            { color: isDark ? "#888" : "#666" },
+                          ]}
+                        >
+                          Play in browser
+                        </Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.actionPrice,
+                          { color: isDark ? "#aaa" : "#777" },
+                        ]}
+                      >
+                        FREE
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={startDownload}
+                      activeOpacity={0.8}
+                      disabled={isLoading || !audioUrl}
+                    style={[styles.actionItem,{backgroundColor:theme.dark? "#382311" : "#f8f8f8",paddingHorizontal:4,paddingRight:10,borderRadius:20}]}
+                    >
+                      <View style={styles.actionIcon}>
+                        <MaterialIcons
+                          name="cloud-download"
+                          size={20}
+                          color={isDark ? "#bd571b" : "#bd571b"}
+                        />
+                      </View>
+                      <View style={styles.actionDetails}>
+                        <Text
+                          style={[
+                            styles.actionName,
+                            { color: theme.colors.text },
+                          ]}
+                        >
+                          DOWNLOAD AUDIO
+                        </Text>
+                        <Text
+                          style={[
+                            styles.actionDesc,
+                            { color: isDark ? "#888" : "#666" },
+                          ]}
+                        >
+                          Save for offline
+                        </Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.actionPrice,
+                          { color: isDark ? "#aaa" : "#777" },
+                        ]}
+                      >
+                        FREE
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <DottedSeparator />
+
+                <DottedSeparator />
+
+              </Animated.View>
+
+              {/* Main Action Button */}
+              <Animated.View
+                style={[
                   {
-                    translateY: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [20, 0],
-                    }),
+                    opacity: fadeAnim,
+                    transform: [
+                      { scale: scaleAnim },
+                      {
+                        translateY: fadeAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
                   },
-                ],
-              },
-            ]}
-          ></Animated.View>
-        </View>
-      </ScrollView>
+                ]}
+              >
+               
+              </Animated.View>
+
+              {/* Additional Options */}
+              <Animated.View
+                style={[
+                  styles.additionalOptions,
+                  {
+                    opacity: fadeAnim,
+                    transform: [
+                      {
+                        translateY: fadeAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              ></Animated.View>
+            </View>
+          </ScrollView>
+        </LinearGradient>
+      </ImageBackground>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+    fullScreenContainer: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 99999,
+  },
+  bgImage: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  overlayContent: {
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 10 : 44,
+    paddingHorizontal: 0,
+  },
   safeArea: {
     flex: 1,
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
@@ -541,6 +480,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingTop: 44,
     height: 60,
     width: "100%",
   },
@@ -557,25 +497,23 @@ const styles = StyleSheet.create({
   spacer: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-  },
+
   container: {
     flex: 1,
     padding: 20,
-    paddingBottom: 40,
+    // paddingBottom: 40,
   },
   receiptPaper: {
     borderRadius: 8,
     padding: 20,
-    marginBottom: 20,
+    // marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    // elevation: 5,
+    // borderWidth: 1,
+    // borderColor: "rgba(0,0,0,0.05)",
   },
   receiptHeader: {
     alignItems: "center",
@@ -583,14 +521,14 @@ const styles = StyleSheet.create({
   },
   receiptTitle: {
     fontSize: 16,
-    fontWeight: "bold",
+    // fontWeight: "bold",
     letterSpacing: 2,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   receiptSubtitle: {
     fontSize: 12,
     marginTop: 8,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   dottedLine: {
     width: "80%",
@@ -617,17 +555,17 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: "bold",
+    // fontWeight: "bold",
     letterSpacing: 1.5,
     marginBottom: 8,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   sermonTitle: {
     fontSize: 16,
-    fontWeight: "bold",
+    // fontWeight: "bold",
     marginBottom: 12,
     textAlign: "center",
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   receiptRow: {
     flexDirection: "row",
@@ -636,12 +574,12 @@ const styles = StyleSheet.create({
   },
   receiptLabel: {
     fontSize: 14,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   receiptValue: {
     fontSize: 14,
     fontWeight: "600",
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   urlBox: {
     borderWidth: 1,
@@ -651,7 +589,7 @@ const styles = StyleSheet.create({
   },
   urlText: {
     fontSize: 12,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
     marginBottom: 8,
   },
   copyBtn: {
@@ -665,9 +603,9 @@ const styles = StyleSheet.create({
   copyBtnText: {
     color: "white",
     fontSize: 10,
-    fontWeight: "bold",
+    // fontWeight: "bold",
     marginLeft: 4,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   actionsList: {
     marginTop: 8,
@@ -676,6 +614,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 8,
+    marginVertical:2
   },
   actionIcon: {
     width: 30,
@@ -687,18 +626,18 @@ const styles = StyleSheet.create({
   },
   actionName: {
     fontSize: 14,
-    fontWeight: "bold",
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    // fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   actionDesc: {
     fontSize: 12,
     marginTop: 2,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   actionPrice: {
     fontSize: 14,
-    fontWeight: "bold",
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    // fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   totalRow: {
     flexDirection: "row",
@@ -711,20 +650,20 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 16,
-    fontWeight: "bold",
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    // fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   totalValue: {
     fontSize: 16,
-    fontWeight: "bold",
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    // fontWeight: "bold",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   freeLabel: {
     textAlign: "center",
     fontSize: 12,
     fontStyle: "italic",
     marginTop: 8,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   receiptFooter: {
     alignItems: "center",
@@ -734,7 +673,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
     marginVertical: 2,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   barcode: {
     flexDirection: "row",
@@ -792,10 +731,10 @@ const styles = StyleSheet.create({
   mainButtonText: {
     color: "white",
     fontSize: 16,
-    fontWeight: "bold",
+    // fontWeight: "bold",
     marginLeft: 10,
     letterSpacing: 1,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
   additionalOptions: {
     flexDirection: "row",
@@ -815,7 +754,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     marginLeft: 8,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === "ios" ? "ZillaSlab" : "ZillaSlab",
   },
 });
 

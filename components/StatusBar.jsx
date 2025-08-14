@@ -126,7 +126,7 @@ export const withStatusBarHandler = (Component) => {
     return (
       <>
         <AppStatusBar ref={statusBarRef} />
-        <Component {...props} onScroll={handleScroll} />
+        <Component key={props.key} {...props} onScroll={handleScroll} />
       </>
     );
   };
