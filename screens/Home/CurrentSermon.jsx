@@ -29,7 +29,7 @@ import {
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
 import ParagraphText from "../../components/currentSermon/ParagraphText";
 import CustomBottomSheetController from "../../components/currentSermon/BottomSheetController";
-import DraggableFloatingBackButton from "../../components/FloatButton";
+import DraggableFloatingButton from "../../components/FloatButton";
 import SearchFeedback from "../../components/currentSermon/SearchFeedback";
 import CurrentSermonSearch from "../../components/currentSermon/CurrentSermonSearch";
 import { styles } from "../../styles/currentsermon";
@@ -557,7 +557,7 @@ const CurrentSermon = React.memo(({ route }) => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 50}
         enabled={keyboardVisible}
       >
-        <DraggableFloatingBackButton />
+        <DraggableFloatingButton />
         <View style={[styles.container, { backgroundColor: "transparent" }]}>
           {selectedSermon?.type === "mp3" ? (
             <DownloadSermon />
@@ -618,7 +618,7 @@ const CurrentSermon = React.memo(({ route }) => {
                             styles.titleText,
                             {
                               color: theme.dark
-                                ? theme.colors.hlight +"90"
+                                ? theme.colors.hlight + "90"
                                 : "#5d3211",
                               fontFamily: "ZillaSlab",
                               fontSize: responsiveFontSize(24),
@@ -699,7 +699,7 @@ const CurrentSermon = React.memo(({ route }) => {
                               borderRadius: 3,
                               marginBottom: 3,
                               shadowColor: theme.dark
-                                ? theme.colors.hlight +"20"
+                                ? theme.colors.hlight + "20"
                                 : "#5d3211",
                               shadowOffset: { width: 0, height: 2 },
                               shadowOpacity: 0.6,
@@ -717,8 +717,6 @@ const CurrentSermon = React.memo(({ route }) => {
                             }}
                           />
 
-                    
-
                           {/* Decorative center ornament with surrounding dots */}
                           <View
                             style={{
@@ -728,11 +726,7 @@ const CurrentSermon = React.memo(({ route }) => {
                               marginTop: 2,
                               width: "100%",
                             }}
-                          >
-                          
-                        
-                          
-                          </View>
+                          ></View>
 
                           {/* Bottom ornamental flourish */}
                           <View
@@ -776,7 +770,6 @@ const CurrentSermon = React.memo(({ route }) => {
                           </View>
                         </View>
                       </View>
-                    
 
                       <View style={{ width: "100%" }}>{renderSermonText}</View>
                     </View>

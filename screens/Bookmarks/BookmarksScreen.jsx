@@ -21,7 +21,7 @@ import {
 } from "../../Utils/responsiveUtils";
 import { styles } from "../../styles/Allsermons";
 import { LinearGradient } from "expo-linear-gradient";
-import DraggableFloatingBackButton from "../../components/FloatButton";
+import DraggableFloatingButton from "../../components/FloatButton";
 
 const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 44 : StatusBar.currentHeight;
 
@@ -206,7 +206,7 @@ const BookmarksScreen = () => {
 
   return (
     <View style={[styles.container, { paddingTop: STATUSBAR_HEIGHT }]}>
-      <DraggableFloatingBackButton />
+      <DraggableFloatingButton />
       <AnimatedBackground theme={theme} />
       <View style={styles.contentContainer}>
         {bookmarks.length === 0 ? (

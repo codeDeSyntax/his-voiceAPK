@@ -20,7 +20,7 @@ import * as Clipboard from "expo-clipboard";
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { useNavigation } from "@react-navigation/native";
-import DraggableFloatingBackButton from "../FloatButton";
+import DraggableFloatingButton from "../FloatButton";
 
 const DownloadSermon = () => {
   const { selectedSermon, theme } = useAppContext();
@@ -64,8 +64,6 @@ const DownloadSermon = () => {
   // Function to open URL in external browser
   const openInBrowser = async () => {
     navigation.navigate("audiowebscreen");
-   
-
   };
 
   // Function to simulate download
@@ -131,7 +129,7 @@ const DownloadSermon = () => {
           ]}
           style={StyleSheet.absoluteFill}
         >
-          <DraggableFloatingBackButton/>
+          <DraggableFloatingButton />
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
@@ -185,7 +183,10 @@ const DownloadSermon = () => {
                     ITEM DETAILS:
                   </Text>
                   <Text
-                    style={[styles.sermonTitle, { color:isDark ? "#f5d60d" : "#69431a" }]}
+                    style={[
+                      styles.sermonTitle,
+                      { color: isDark ? "#f5d60d" : "#69431a" },
+                    ]}
                   >
                     {selectedSermon?.title || "Sermon Title"}
                   </Text>
@@ -317,7 +318,15 @@ const DownloadSermon = () => {
                       onPress={openInBrowser}
                       activeOpacity={0.8}
                       disabled={isLoading || !audioUrl}
-                      style={[styles.actionItem,{backgroundColor:theme.dark? "#382311" : "#f8f8f8",paddingHorizontal:4,paddingRight:10,borderRadius:20}]}
+                      style={[
+                        styles.actionItem,
+                        {
+                          backgroundColor: theme.dark ? "#382311" : "#f8f8f8",
+                          paddingHorizontal: 4,
+                          paddingRight: 10,
+                          borderRadius: 20,
+                        },
+                      ]}
                     >
                       <View style={styles.actionIcon}>
                         <Ionicons
@@ -326,7 +335,7 @@ const DownloadSermon = () => {
                           color={isDark ? "#bd571b" : "#bd571b"}
                         />
                       </View>
-                      <View style={[styles.actionDetails,]}>
+                      <View style={[styles.actionDetails]}>
                         <Text
                           style={[
                             styles.actionName,
@@ -358,7 +367,15 @@ const DownloadSermon = () => {
                       onPress={startDownload}
                       activeOpacity={0.8}
                       disabled={isLoading || !audioUrl}
-                    style={[styles.actionItem,{backgroundColor:theme.dark? "#382311" : "#f8f8f8",paddingHorizontal:4,paddingRight:10,borderRadius:20}]}
+                      style={[
+                        styles.actionItem,
+                        {
+                          backgroundColor: theme.dark ? "#382311" : "#f8f8f8",
+                          paddingHorizontal: 4,
+                          paddingRight: 10,
+                          borderRadius: 20,
+                        },
+                      ]}
                     >
                       <View style={styles.actionIcon}>
                         <MaterialIcons
@@ -400,7 +417,6 @@ const DownloadSermon = () => {
                 <DottedSeparator />
 
                 <DottedSeparator />
-
               </Animated.View>
 
               {/* Main Action Button */}
@@ -419,9 +435,7 @@ const DownloadSermon = () => {
                     ],
                   },
                 ]}
-              >
-               
-              </Animated.View>
+              ></Animated.View>
 
               {/* Additional Options */}
               <Animated.View
@@ -449,7 +463,7 @@ const DownloadSermon = () => {
 };
 
 const styles = StyleSheet.create({
-    fullScreenContainer: {
+  fullScreenContainer: {
     flex: 1,
     width: "100%",
     height: "100%",
@@ -614,7 +628,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 8,
-    marginVertical:2
+    marginVertical: 2,
   },
   actionIcon: {
     width: 30,

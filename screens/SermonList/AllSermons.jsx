@@ -26,7 +26,7 @@ import LetterModal from "../../components/LetterModal";
 import { StyleSheet } from "react-native";
 import ListAppBar from "../../components/AppBar";
 import { useNavigation } from "@react-navigation/native";
-import DraggableFloatingBackButton from "../../components/FloatButton";
+import DraggableFloatingButton from "../../components/FloatButton";
 
 const years = Array.from({ length: 10 }, (_, i) => (1973 - i).toString());
 const alphabet = Array.from({ length: 26 }, (_, i) =>
@@ -313,7 +313,7 @@ const SermonList = React.memo(() => {
     >
       <AnimatedBackground theme={theme} />
 
-      <DraggableFloatingBackButton />
+      <DraggableFloatingButton />
 
       <LinearGradient colors={gradientColors} style={styles.gradientContainer}>
         <ListAppBar theme={theme} />

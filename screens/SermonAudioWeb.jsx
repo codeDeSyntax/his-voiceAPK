@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { useAppContext } from "../Logic/globalState";
 import Icon from "react-native-vector-icons/Ionicons";
-import DraggableFloatingBackButton from "../components/FloatButton";
+import DraggableFloatingButton from "../components/FloatButton";
 
 const { width, height } = Dimensions.get("window");
 
@@ -400,7 +400,7 @@ export default function SermonAudioWebScreen() {
         translucent={false}
       />
 
-      <DraggableFloatingBackButton />
+      <DraggableFloatingButton />
 
       {/* Subtle progress indicator */}
       {loading && !error && (

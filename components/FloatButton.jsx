@@ -23,7 +23,7 @@ import { useAppContext } from "../Logic/globalState";
 
 const { width, height } = Dimensions.get("window");
 
-const DraggableFloatingBackButton = React.memo(
+const DraggableFloatingButton = React.memo(
   ({
     size = 48,
     iconSize = 20,
@@ -405,4 +405,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DraggableFloatingBackButton;
+export default DraggableFloatingButton;

@@ -14,7 +14,7 @@ import DisplaySettings from "../../components/settings/DisplaySettings";
 import AppSettings from "../../components/settings/AppSettings";
 import SavingModal from "../../components/settings/SavingModal";
 
-import DraggableFloatingBackButton from "../../components/FloatButton";
+import DraggableFloatingButton from "../../components/FloatButton";
 import { useNavigation } from "@react-navigation/native";
 
 // Constants moved here to be accessible to all components
@@ -270,7 +270,7 @@ const Settings = React.memo(() => {
 
   return (
     <View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
-      <DraggableFloatingBackButton />
+      <DraggableFloatingButton />
       <View style={[containerStyle, { paddingTop: 40 }]}>
         <SettingsHeader
           theme={theme}

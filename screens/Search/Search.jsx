@@ -39,7 +39,7 @@ import secondSet from "../../sermons/1970/1970";
 import thirdSet from "../../sermons/1971/1971";
 import fourthSet from "../../sermons/1972/1972";
 import lastSet from "../../sermons/1973/1973";
-import DraggableFloatingBackButton from "../../components/FloatButton";
+import DraggableFloatingButton from "../../components/FloatButton";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFonts } from "expo-font";
 
@@ -883,7 +883,7 @@ const SermonSearch = () => {
       ]}
     >
       <AnimatedBackground theme={theme} />
-      <DraggableFloatingBackButton />
+      <DraggableFloatingButton />
       <LinearGradient colors={gradientColors} style={styles.gradientContainer}>
         <View style={styles.header}>
           <Text
@@ -985,7 +985,7 @@ const SermonSearch = () => {
             renderItem={renderSearchResultItem}
             keyExtractor={keyExtractor}
             style={styles.scrollView}
-            contentContainerStyle={{ paddingBottom: 30,paddingHorizontal :4 }}
+            contentContainerStyle={{ paddingBottom: 30, paddingHorizontal: 4 }}
             showsVerticalScrollIndicator={false}
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}

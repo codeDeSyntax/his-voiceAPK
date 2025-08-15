@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { useNavigation } from "@react-navigation/native";
-import DraggableFloatingBackButton from "../../components/FloatButton";
+import DraggableFloatingButton from "../../components/FloatButton";
 
 const MenuItem = ({ title, onPress, icon, crossed }) => {
   const { theme } = useAppContext();
@@ -80,7 +80,7 @@ const Menu = () => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <DraggableFloatingBackButton />
+      <DraggableFloatingButton />
       <View style={styles.header}>
         <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
           <Ionicons name="close" size={32} color={theme.colors.text} />

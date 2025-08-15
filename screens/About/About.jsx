@@ -14,7 +14,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { useAppContext } from "../../Logic/globalState";
-import DraggableFloatingBackButton from "../../components/FloatButton";
+import DraggableFloatingButton from "../../components/FloatButton";
 
 function About({ navigation }) {
   const handleLinkPress = (url) => {
@@ -54,7 +54,7 @@ function About({ navigation }) {
           <View style={styles.headerRight} />
         </View>
       </View> */}
-      <DraggableFloatingBackButton />
+      <DraggableFloatingButton />
 
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
@@ -66,14 +66,22 @@ function About({ navigation }) {
           style={styles.heroContainer}
         >
           <LinearGradient
-            colors={isDark ? [theme.colors.primary, theme.colors.primary] : [theme.colors.primary, theme.colors.primary]}
+            colors={
+              isDark
+                ? [theme.colors.primary, theme.colors.primary]
+                : [theme.colors.primary, theme.colors.primary]
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroGradient}
           >
             <View style={styles.heroContent}>
-              <Text style={[styles.heroTitle,{color:theme.colors.text}]}>His Voice</Text>
-              <Text style={[styles.heroSubtitle,{color:theme.colors.text}]}>Sermons & Teachings</Text>
+              <Text style={[styles.heroTitle, { color: theme.colors.text }]}>
+                His Voice
+              </Text>
+              <Text style={[styles.heroSubtitle, { color: theme.colors.text }]}>
+                Sermons & Teachings
+              </Text>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -109,11 +117,7 @@ function About({ navigation }) {
             style={[styles.card, { backgroundColor: theme.colors.secondary }]}
           >
             <View style={styles.cardHeader}>
-              <Icon
-                name="apps-outline"
-                size={24}
-                color={theme.colors.text}
-              />
+              <Icon name="apps-outline" size={24} color={theme.colors.text} />
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
                 Available Platforms
               </Text>
@@ -126,7 +130,9 @@ function About({ navigation }) {
             >
               <LinearGradient
                 colors={
-                  isDark ? [theme.colors.primary, theme.colors.primary] : [theme.colors.primary, theme.colors.primary]
+                  isDark
+                    ? [theme.colors.primary, theme.colors.primary]
+                    : [theme.colors.primary, theme.colors.primary]
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -138,7 +144,9 @@ function About({ navigation }) {
                   color="white"
                   style={styles.buttonIcon}
                 />
-                <Text style={[styles.buttonText,{color:theme.colors.text}]}>Desktop Version</Text>
+                <Text style={[styles.buttonText, { color: theme.colors.text }]}>
+                  Desktop Version
+                </Text>
                 <Icon name="open-outline" size={18} color={theme.colors.text} />
               </LinearGradient>
             </TouchableOpacity>
@@ -150,11 +158,7 @@ function About({ navigation }) {
             style={[styles.card, { backgroundColor: theme.colors.secondary }]}
           >
             <View style={styles.cardHeader}>
-              <Icon
-                name="globe-outline"
-                size={24}
-                color={theme.colors.text}
-              />
+              <Icon name="globe-outline" size={24} color={theme.colors.text} />
               <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
                 Website
               </Text>
