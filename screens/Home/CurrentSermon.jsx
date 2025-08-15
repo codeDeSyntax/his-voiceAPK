@@ -776,19 +776,7 @@ const CurrentSermon = React.memo(({ route }) => {
                           </View>
                         </View>
                       </View>
-                      {selectedSermon?.location && (
-                        <Text
-                          style={[
-                            styles.locationText,
-                            {
-                              color: theme.colors.text,
-                              fontFamily: settings.fontFamily || "ZillaSlab",
-                            },
-                          ]}
-                        >
-                          {selectedSermon?.location}
-                        </Text>
-                      )}
+                    
 
                       <View style={{ width: "100%" }}>{renderSermonText}</View>
                     </View>
