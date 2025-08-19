@@ -16,11 +16,18 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
+import { useFonts } from "expo-font";
 import { useAppContext } from "../../Logic/globalState";
 import { useNavigation } from "@react-navigation/native";
 import DraggableFloatingButton from "../../components/FloatButton";
 
 const { width, height } = Dimensions.get("window");
+
+// Font configuration for Menu
+const MENU_FONTS_CONFIG = {
+  "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+  "ZillaSlab-SemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
+};
 
 const MenuItem = ({ title, onPress, icon, crossed, subtitle, isSpecial }) => {
   const { theme } = useAppContext();
@@ -186,6 +193,7 @@ const MenuSection = ({ title, children, icon }) => {
 const Menu = () => {
   const { theme } = useAppContext();
   const navigation = useNavigation();
+  const [fontsLoaded] = useFonts(MENU_FONTS_CONFIG);
 
   const navigateTo = (screenName) => {
     navigation.navigate(screenName);
@@ -194,6 +202,21 @@ const Menu = () => {
   const closeMenu = () => {
     navigation.navigate("AllSermons");
   };
+
+  // Wait for fonts to load
+  if (!fontsLoaded) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Text style={{ color: theme.colors.text, fontFamily: "ZillaSlab" }}>
+              Loading...
+            </Text>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -386,6 +409,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
+    fontFamily: "ZillaSlab",
     letterSpacing: 0.3,
   },
   sectionContent: {
@@ -429,12 +453,14 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 17,
     fontWeight: "500",
+    fontFamily: "ZillaSlab",
     letterSpacing: 0.2,
     lineHeight: 22,
   },
   subtitleText: {
     fontSize: 13,
     fontWeight: "400",
+    fontFamily: "ZillaSlab",
     marginTop: 3,
     letterSpacing: 0.1,
     lineHeight: 16,

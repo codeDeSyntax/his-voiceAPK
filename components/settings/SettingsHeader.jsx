@@ -35,7 +35,7 @@ const SettingsHeader = ({ theme, accentColor, compact = false }) => {
           style={{
             fontSize: 20,
             fontWeight: "700",
-            // fontFamily: "serif",
+            fontFamily: "ZillaSlab",
             color: theme.colors.text,
             letterSpacing: 0.5,
           }}

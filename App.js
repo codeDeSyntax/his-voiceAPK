@@ -19,7 +19,7 @@ export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
-    MyFont: require("./assets/fonts/ZillaSlab-Regular.ttf"),
+    ZillaSlab: require("./assets/fonts/ZillaSlab-Regular.ttf"),
   });
 
   useEffect(() => {

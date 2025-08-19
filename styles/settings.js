@@ -53,13 +53,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     letterSpacing: 0.5,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   headerSubtitle: {
     fontSize: 14,
     marginTop: 4,
     opacity: 0.7,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   profileSection: {
     marginHorizontal: 20,
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 4,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   profileEmail: {
     fontSize: 14,
@@ -137,13 +137,13 @@ const styles = StyleSheet.create({
   settingText: {
     fontSize: 16,
     fontWeight: "500",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   settingDescription: {
     fontSize: 13,
     marginTop: 4,
     opacity: 0.6,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   separator: {
     height: 1,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 12,
     fontWeight: "500",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   fontOptionsContainer: {
     flexDirection: "row",
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   fontOptionText: {
     fontSize: 14,
     fontWeight: "500",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   previewBox: {
     padding: 20,
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   previewText: {
     textAlign: "center",
     lineHeight: 26,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   buttonsContainer: {
     marginHorizontal: 24,
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     letterSpacing: 0.5,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   resetButton: {
     padding: 18,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   resetButtonText: {
     fontSize: 16,
     fontWeight: "500",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   modalBackground: {
     flex: 1,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     textAlign: "center",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   modalSpinner: {
     marginVertical: 16,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 12,
     fontWeight: "600",
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
   colorOptionsContainer: {
     flexDirection: "row",
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     fontSize: 13,
     opacity: 0.5,
-    fontFamily: "serif",
+    fontFamily: "ZillaSlab",
   },
 });
 

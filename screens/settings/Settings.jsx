@@ -279,6 +279,11 @@ const Settings = React.memo(() => {
     return <UpdateScreen />;
   }
 
+  // Wait for fonts to load before rendering
+  if (!fontsLoaded) {
+    return <UpdateScreen />;
+  }
+
   return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
