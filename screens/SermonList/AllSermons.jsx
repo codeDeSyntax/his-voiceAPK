@@ -164,6 +164,12 @@ const SermonList = React.memo(() => {
       selectedLetter !== "All Letters";
     setHasActiveFilters(hasFilters);
 
+    // If no filters and original order, show all original sermons
+    if (!hasFilters && isOriginalOrder) {
+      setFilteredSermons(originalSermons);
+      return;
+    }
+
     const filtered = allSermons.filter((sermon) => {
       const titleLower = sermon.title.toLowerCase();
       const searchLower = searchText.toLowerCase();
@@ -208,18 +214,26 @@ const SermonList = React.memo(() => {
 
   // Memoized filter functions
   const filterOnlyText = useCallback(() => {
-    setFilteredSermons((prev) =>
-      prev.filter((sermon) => sermon.type === "text")
-    );
+    const textSermons = allSermons.filter((sermon) => sermon.type === "text");
+    setFilteredSermons(textSermons);
     setHasActiveFilters(true);
-  }, []);
+    setIsOriginalOrder(false);
+    // Clear other filters
+    setSearchText("");
+    setSelectedYear("All Years");
+    setSelectedLetter("All Letters");
+  }, [allSermons]);
 
   const filterOnlyAudio = useCallback(() => {
-    setFilteredSermons((prev) =>
-      prev.filter((sermon) => sermon.type === "mp3")
-    );
+    const audioSermons = allSermons.filter((sermon) => sermon.type === "mp3");
+    setFilteredSermons(audioSermons);
     setHasActiveFilters(true);
-  }, []);
+    setIsOriginalOrder(false);
+    // Clear other filters
+    setSearchText("");
+    setSelectedYear("All Years");
+    setSelectedLetter("All Letters");
+  }, [allSermons]);
 
   const handleSermonClick = useCallback(
     async (sermon) => {
@@ -252,6 +266,11 @@ const SermonList = React.memo(() => {
   const toggleSortOrder = useCallback(() => {
     setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     setIsOriginalOrder(false);
+    // Clear search and other filters when sorting
+    setSearchText("");
+    setSelectedYear("All Years");
+    setSelectedLetter("All Letters");
+    setHasActiveFilters(false);
   }, []);
 
   const restoreOriginalOrder = useCallback(() => {
@@ -260,7 +279,10 @@ const SermonList = React.memo(() => {
     setSelectedYear("All Years");
     setSelectedLetter("All Letters");
     setHasActiveFilters(false);
-  }, []);
+    setSortOrder("asc"); // Reset sort order to default
+    // Reset to original sermons list
+    setFilteredSermons(originalSermons);
+  }, [originalSermons]);
 
   // Memoized components
   const listHeaderComponent = useMemo(

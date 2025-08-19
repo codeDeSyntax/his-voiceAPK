@@ -1,9 +1,46 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
+  },
+  backgroundImage: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: "100%",
+    height: "100%",
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "ZillaSlab",
+    marginBottom: 16,
+    marginLeft: 4,
+    letterSpacing: 0.3,
+  },
+  versionText: {
+    textAlign: "center",
+    fontSize: 12,
+    marginTop: 32,
+    marginBottom: 16,
+    fontFamily: "ZillaSlab",
+    letterSpacing: 0.5,
   },
   headerContainer: {
     paddingHorizontal: 20,
@@ -162,7 +199,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 16,
     marginBottom: 50,
-    paddingBottom:30,
+    paddingBottom: 30,
     gap: 12,
   },
   saveButton: {

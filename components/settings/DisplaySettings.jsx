@@ -1,528 +1,461 @@
-// File: components/DisplaySettings.js
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Switch,
+  Pressable,
+  Animated,
+} from "react-native";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Switch } from "react-native";
-import { styles } from "../../styles/settings";
-import { FONT_OPTIONS, COLOR_OPTIONS } from "../../screens/settings/Settings";
-import { useAppContext } from "../../Logic/globalState";
-import { useNavigation } from "@react-navigation/native";
-import { FontAwesome5, FontAwesome6, MaterialIcons } from "@expo/vector-icons";
+import styles from "../../styles/settings";
 
 const DisplaySettings = ({
   theme,
-  accentColor,
   isDarkMode,
   toggleTheme,
   fontSize,
   setFontSize,
   fontFamily,
   setFontFamily,
-  compact = false,
+  accentColor,
+  navigation,
 }) => {
-  const [showPreview, setShowPreview] = useState(false);
   const [showFontOptions, setShowFontOptions] = useState(false);
   const [showColorOptions, setShowColorOptions] = useState(false);
-  const [localAccentColor, setLocalAccentColor] = useState(accentColor);
-  const { updateSettings } = useAppContext();
+  const [showPreview, setShowPreview] = useState(false);
+  const [localAccentColor, setLocalAccentColor] = useState(
+    accentColor || "#e9925c"
+  );
 
-  const navigation = useNavigation();
+  const FONT_OPTIONS = [
+    { name: "System Default", value: "System" },
+    { name: "ZillaSlab Regular", value: "ZillaSlab-Regular" },
+    { name: "ZillaSlab SemiBold", value: "ZillaSlab-SemiBold" },
+    { name: "Merienda", value: "Merienda-VariableFont_wght" },
+    { name: "Philosopher", value: "Philosopher-Regular" },
+  ];
 
-  const getSettingItemStyle = (disabled) => {
-    return [
-      styles.settingItem,
-      {
-        opacity: disabled ? 0.5 : 1,
-        paddingVertical: compact ? 12 : 20,
-      },
-    ];
+  const COLOR_OPTIONS = [
+    { name: "Orange", value: "#e9925c" },
+    { name: "Blue", value: "#5c7ce9" },
+    { name: "Green", value: "#5ce989" },
+    { name: "Purple", value: "#b65ce9" },
+    { name: "Red", value: "#e95c5c" },
+    { name: "Teal", value: "#5ce9c4" },
+  ];
+
+  const getCurrentFontName = () => {
+    const font = FONT_OPTIONS.find((f) => f.value === fontFamily);
+    return font ? font.name : "System Default";
   };
 
-  const getIconContainerStyle = () => {
-    return [
-      styles.iconContainer,
-      {
-        backgroundColor: theme.dark
-          ? theme.colors.primary
-          : "rgba(0, 0, 0, 0.04)",
-        shadowColor: theme.dark ? "#000" : "#888",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: theme.dark ? 0.3 : 0.1,
-        shadowRadius: 4,
-        width: compact ? 32 : 44,
-        height: compact ? 32 : 44,
-      },
-    ];
-  };
-
-  const getPreviewSectionStyle = () => {
-    return [
-      styles.previewSection,
-      {
-        backgroundColor: theme.dark
-          ? "rgba(255, 255, 255, 0.05)"
-          : "rgba(0, 0, 0, 0.03)",
-        borderWidth: 1,
-        borderColor: theme.dark
-          ? "rgba(255, 255, 255, 0.1)"
-          : "rgba(0, 0, 0, 0.05)",
-      },
-    ];
-  };
-
-  const getFontOptionStyle = (option) => {
-    const isSelected = fontFamily === option.value;
-    return [
-      styles.fontOption,
-      {
-        backgroundColor: isSelected
-          ? localAccentColor
-          : theme.dark
-          ? "rgba(255, 255, 255, 0.08)"
-          : "rgba(0, 0, 0, 0.04)",
-        borderColor: isSelected ? localAccentColor : "transparent",
-      },
-    ];
-  };
-
-  const getColorOptionStyle = (color) => {
-    const isSelected = localAccentColor === color.value;
-    return [
-      styles.colorOption,
-      {
-        backgroundColor: color.value,
-        borderColor: isSelected
-          ? theme.dark
-            ? "#FFFFFF"
-            : "#000000"
-          : "transparent",
-      },
-    ];
-  };
-
-  // Custom Font Size Selector Component
-  const FontSizeSelector = () => {
-    const fontSizes = [12, 14, 16, 18, 20, 22, 24, 26, 28, 30];
+  const SettingItem = ({ icon, title, subtitle, children, onPress, theme }) => {
+    const [pressed, setPressed] = useState(false);
 
     return (
-      <View style={styles.sliderContainer}>
-        <Text
-          style={[
-            styles.sliderLabel,
-            { color: theme.dark ? theme.colors.text : "#1A1A1A" },
-          ]}
-        >
-          Font Size: {fontSize}px
-        </Text>
-
-        {/* Font size buttons */}
-        <View
-          style={{
-            flexDirection: "row",
-            display: "none",
-            flexWrap: "wrap",
-            // justifyContent: "space-between",
-            marginTop: 12,
-            marginBottom: 16,
-          }}
-        >
-          {fontSizes.map((size) => (
-            <TouchableOpacity
-              key={size}
-              style={{
-                display: fontSize === size ? "flex" : "none",
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 6,
-                marginBottom: 8,
-                backgroundColor:
-                  fontSize === size
-                    ? ""
-                    : theme.dark
-                    ? "rgba(255, 255, 255, 0.08)"
-                    : "rgba(0, 0, 0, 0.04)",
-                borderWidth: 1,
-                borderColor:
-                  fontSize === size
-                    ? "#e9925c"
-                    : theme.dark
-                    ? "rgba(255, 255, 255, 0.1)"
-                    : "rgba(0, 0, 0, 0.1)",
-                minWidth: 40,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              onPress={() => setFontSize(size)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: fontSize === size ? "600" : "400",
-                  color:
-                    fontSize === size
-                      ? "#FFFFFF"
-                      : theme.dark
-                      ? theme.colors.text
-                      : "#333333",
-                }}
-              >
-                {size}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Custom increment/decrement controls */}
+      <TouchableOpacity
+        style={{
+          backgroundColor: theme.dark
+            ? "rgba(255, 255, 255, 0.02)"
+            : "rgba(255, 255, 255, 0.7)",
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 12,
+          borderWidth: 1,
+          borderColor: theme.dark
+            ? "rgba(255, 255, 255, 0.05)"
+            : "rgba(0, 0, 0, 0.02)",
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        }}
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        activeOpacity={0.7}
+      >
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "center",
-            marginTop: 8,
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: theme.dark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "rgba(0, 0, 0, 0.05)",
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 12,
+              }}
+            >
+              <Ionicons name={icon} size={18} color={theme.colors.text} />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "500",
+                  color: theme.colors.text,
+                  fontFamily: "ZillaSlab",
+                }}
+              >
+                {title}
+              </Text>
+              {subtitle && (
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: theme.colors.text + "80",
+                    marginTop: 2,
+                    fontFamily: "ZillaSlab",
+                  }}
+                >
+                  {subtitle}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {children}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const handleFontSizeChange = (action) => {
+    if (action === "increase" && fontSize < 32) {
+      setFontSize(fontSize + 1);
+    } else if (action === "decrease" && fontSize > 12) {
+      setFontSize(fontSize - 1);
+    }
+  };
+
+  return (
+    <View style={{ gap: 12 }}>
+      {/* Dark Mode */}
+      <SettingItem
+        icon="moon"
+        title="Dark Mode"
+        subtitle={`${
+          isDarkMode ? "Enabled" : "Disabled"
+        } • Easier on the eyes at night`}
+        theme={theme}
+      >
+        <Switch
+          value={isDarkMode}
+          onValueChange={toggleTheme}
+          trackColor={{
+            false: theme.dark
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.1)",
+            true: theme.dark ? theme.colors.hlight : "#5d3211",
+          }}
+          thumbColor={
+            isDarkMode
+              ? theme.dark
+                ? "#f2cdb4"
+                : "#522b11"
+              : theme.dark
+              ? "rgba(255, 255, 255, 0.8)"
+              : "#ffffff"
+          }
+        />
+      </SettingItem>
+
+      {/* Font Size */}
+      <SettingItem
+        icon="text-outline"
+        title="Font Size"
+        subtitle={`${fontSize}px`}
+        theme={theme}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
           }}
         >
           <TouchableOpacity
+            onPress={() => handleFontSizeChange("decrease")}
+            disabled={fontSize <= 12}
             style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
               backgroundColor: theme.dark
                 ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.04)",
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 6,
-              borderWidth: 1,
-              borderColor: theme.dark
-                ? "rgba(255, 255, 255, 0.1)"
-                : "rgba(0, 0, 0, 0.1)",
-              marginRight: 16,
+                : "rgba(0, 0, 0, 0.08)",
+              justifyContent: "center",
+              alignItems: "center",
+              opacity: fontSize <= 12 ? 0.5 : 1,
             }}
-            onPress={() => fontSize > 12 && setFontSize(fontSize - 1)}
-            disabled={fontSize <= 12}
-            activeOpacity={0.7}
           >
-            <Icon
-              name="remove"
-              size={20}
-              color={
-                fontSize <= 12
-                  ? theme.dark
-                    ? "#555"
-                    : "#ccc"
-                  : theme.dark
-                  ? theme.colors.text
-                  : "#333333"
-              }
-            />
+            <Ionicons name="remove" size={16} color={theme.colors.text} />
           </TouchableOpacity>
 
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: theme.colors.text,
+              minWidth: 30,
+              textAlign: "center",
+            }}
+          >
+            {fontSize}
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => handleFontSizeChange("increase")}
+            disabled={fontSize >= 32}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: theme.dark
+                ? "rgba(255, 255, 255, 0.08)"
+                : "rgba(0, 0, 0, 0.08)",
+              justifyContent: "center",
+              alignItems: "center",
+              opacity: fontSize >= 32 ? 0.5 : 1,
+            }}
+          >
+            <Ionicons name="add" size={16} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
+      </SettingItem>
+
+      {/* Font Family */}
+      <SettingItem
+        icon="text"
+        title="Font Family"
+        subtitle={`Current: ${getCurrentFontName()}`}
+        theme={theme}
+        onPress={() => setShowFontOptions(!showFontOptions)}
+      >
+        <Ionicons
+          name={showFontOptions ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={theme.colors.text + "60"}
+        />
+      </SettingItem>
+
+      {/* Font Options (when expanded) */}
+      {showFontOptions && (
+        <View
+          style={{
+            backgroundColor: theme.dark
+              ? "rgba(255, 255, 255, 0.02)"
+              : "rgba(0, 0, 0, 0.01)",
+            borderRadius: 12,
+            padding: 8,
+            gap: 4,
+            marginTop: -8,
+          }}
+        >
+          {FONT_OPTIONS.map((font) => (
+            <TouchableOpacity
+              key={font.value}
+              onPress={() => {
+                setFontFamily(font.value);
+                setShowFontOptions(false);
+              }}
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                backgroundColor:
+                  fontFamily === font.value
+                    ? theme.dark
+                      ? theme.colors.hlight + "20"
+                      : "#5d321120"
+                    : "transparent",
+                borderWidth: fontFamily === font.value ? 1 : 0,
+                borderColor:
+                  fontFamily === font.value
+                    ? theme.dark
+                      ? theme.colors.hlight + "40"
+                      : "#5d321140"
+                    : "transparent",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  // fontWeight: fontFamily === font.value ? "600" : "400",
+                  color:
+                    fontFamily === font.value
+                      ? theme.dark
+                        ? theme.colors.hlight
+                        : "#5d3211"
+                      : theme.colors.text,
+                  fontFamily: font.value !== "System Default" ? font.value : undefined,
+                }}
+              >
+                {font.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Accent Color */}
+      <SettingItem
+        icon="color-palette"
+        title="Accent Color"
+        subtitle="Choose your app's accent color"
+        theme={theme}
+        onPress={() => setShowColorOptions(!showColorOptions)}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           <View
             style={{
-              backgroundColor: theme.dark
-                ? "rgba(255, 255, 255, 0.05)"
-                : "rgba(0, 0, 0, 0.03)",
-              paddingHorizontal: 20,
-              paddingVertical: 8,
-              borderRadius: 6,
+              width: 20,
+              height: 20,
+              borderRadius: 10,
+              backgroundColor: localAccentColor,
               borderWidth: 1,
               borderColor: theme.dark
-                ? "rgba(255, 255, 255, 0.1)"
+                ? "rgba(255, 255, 255, 0.2)"
+                : "rgba(0, 0, 0, 0.1)",
+            }}
+          />
+          <Ionicons
+            name={showColorOptions ? "chevron-up" : "chevron-down"}
+            size={18}
+            color={theme.colors.text + "60"}
+          />
+        </View>
+      </SettingItem>
+
+      {/* Color Options (when expanded) */}
+      {showColorOptions && (
+        <View
+          style={{
+            backgroundColor: theme.dark
+              ? "rgba(255, 255, 255, 0.02)"
+              : "rgba(0, 0, 0, 0.01)",
+            borderRadius: 12,
+            padding: 12,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 12,
+            marginTop: -8,
+          }}
+        >
+          {COLOR_OPTIONS.map((color) => (
+            <TouchableOpacity
+              key={color.value}
+              disabled={true}
+              onPress={() => {
+                setLocalAccentColor(color.value);
+                // Note: setAccentColor would need to be passed as prop if needed
+                setShowColorOptions(false);
+              }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: color.value,
+                borderWidth: localAccentColor === color.value ? 3 : 1,
+                borderColor:
+                  localAccentColor === color.value
+                    ? theme.dark
+                      ? "#FFFFFF"
+                      : "#000000"
+                    : theme.dark
+                    ? "rgba(255, 255, 255, 0.2)"
+                    : "rgba(0, 0, 0, 0.1)",
+              }}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Preview Section */}
+      <SettingItem
+        icon="eye"
+        title="Text Preview"
+        subtitle="See how your text will look"
+        theme={theme}
+        onPress={() => setShowPreview(!showPreview)}
+      >
+        <Ionicons
+          name={showPreview ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={theme.colors.text + "60"}
+        />
+      </SettingItem>
+
+      {/* Preview Box (when expanded) */}
+      {showPreview && (
+        <View
+          style={{
+            backgroundColor: theme.dark
+              ? "rgba(255, 255, 255, 0.02)"
+              : "rgba(0, 0, 0, 0.01)",
+            borderRadius: 12,
+            padding: 16,
+            marginTop: -8,
+            borderWidth: 1,
+            borderColor: theme.dark
+              ? "rgba(255, 255, 255, 0.05)"
+              : "rgba(0, 0, 0, 0.02)",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: fontFamily !== "System" ? fontFamily : undefined,
+              fontSize: fontSize,
+              color: theme.colors.text,
+              lineHeight: fontSize * 1.4,
+              textAlign: "justify",
+            }}
+          >
+            This is a preview of how your text will appear throughout the app.
+            The current font size is {fontSize}px and the font family is set to{" "}
+            {getCurrentFontName()}. This preview helps you see how readable your
+            chosen settings will be when reading sermons.
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => navigation?.navigate("currentsermon")}
+            style={{
+              marginTop: 12,
+              padding: 8,
+              backgroundColor: theme.dark
+                ? "rgba(255, 255, 255, 0.08)"
                 : "rgba(0, 0, 0, 0.05)",
-              minWidth: 60,
+              borderRadius: 8,
               alignItems: "center",
-              marginHorizontal: 16,
             }}
           >
             <Text
               style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: theme.dark ? theme.colors.text : "#1A1A1A",
+                fontSize: 14,
+                color: theme.colors.text + "90",
+                fontFamily: "ZillaSlab",
               }}
             >
-              {fontSize}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={{
-              backgroundColor: theme.dark
-                ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.04)",
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 6,
-              borderWidth: 1,
-              borderColor: theme.dark
-                ? "rgba(255, 255, 255, 0.1)"
-                : "rgba(0, 0, 0, 0.1)",
-              marginLeft: 16,
-            }}
-            onPress={() => setFontSize(fontSize + 1)}
-            disabled={fontSize >= 30}
-            activeOpacity={0.7}
-          >
-            <Icon
-              name="add"
-              size={20}
-              color={
-                fontSize >= 30
-                  ? theme.dark
-                    ? "#555"
-                    : "#ccc"
-                  : theme.dark
-                  ? theme.colors.text
-                  : "#333333"
-              }
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
-
-  return (
-    <View
-      style={[styles.settingsGroup, { backgroundColor: theme.colors.primary }]}
-    >
-      <TouchableOpacity style={getSettingItemStyle(true)} disabled={true}>
-        <View style={styles.settingLeft}>
-          <View style={getIconContainerStyle()}>
-            <Icon
-              name="language"
-              size={20}
-              color={theme.dark ? "#999999" : "#888888"}
-            />
-          </View>
-          <View style={styles.settingTextContainer}>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? theme.colors.text : "#888888" },
-              ]}
-            >
-              App Language
-            </Text>
-            <Text
-              style={[
-                styles.settingDescription,
-                { color: theme.dark ? theme.colors.text : "#999999" },
-              ]}
-            >
-              English (United States)
-            </Text>
-          </View>
-        </View>
-        <Icon
-          name="chevron-forward"
-          size={20}
-          color={theme.dark ? "#777777" : "#999999"}
-        />
-      </TouchableOpacity>
-
-      <View
-        style={[
-          styles.separator,
-          { backgroundColor: theme.dark ? theme.colors.primary : "#000000" },
-        ]}
-      />
-
-      <TouchableOpacity
-        style={styles.settingItem}
-        onPress={() => setShowPreview(!showPreview)}
-      >
-        <View style={styles.settingLeft}>
-          <View style={getIconContainerStyle()}>
-            <Icon
-              name="text"
-              size={20}
-              color={theme.dark ? "#FFFFFF" : "#333333"}
-            />
-          </View>
-          <View style={styles.settingTextContainer}>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
-              ]}
-            >
-              Font Settings
-            </Text>
-            <Text
-              style={[
-                styles.settingDescription,
-                { color: theme.dark ? "#BBBBBB" : "#666666" },
-              ]}
-            >
-              Size: {fontSize}px • {fontFamily.split("-")[0]}
-            </Text>
-          </View>
-        </View>
-        <Icon
-          name={showPreview ? "chevron-up" : "chevron-down"}
-          size={20}
-          color={theme.dark ? theme.colors.text : "#333333"}
-        />
-      </TouchableOpacity>
-
-      {showPreview && (
-        <View style={getPreviewSectionStyle()}>
-          <FontSizeSelector />
-
-          <TouchableOpacity
-            onPress={() => setShowFontOptions(!showFontOptions)}
-            style={{ marginBottom: 16 }}
-          >
-            <Text
-              style={[
-                styles.sliderLabel,
-                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
-              ]}
-            >
-              Font Family: {fontFamily.split("-")[0]}
+              Open Full Reading View
             </Text>
           </TouchableOpacity>
-
-          {showFontOptions && (
-            <View style={styles.fontOptionsContainer}>
-              {FONT_OPTIONS.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={getFontOptionStyle(option)}
-                  onPress={() => setFontFamily(option.value)}
-                >
-                  <Text
-                    style={[
-                      styles.fontOptionText,
-                      {
-                        color:
-                          fontFamily === option.value
-                            ? "#FFFFFF"
-                            : theme.dark
-                            ? "#FFFFFF"
-                            : "#333333",
-                        fontFamily:
-                          option.value !== "System" ? option.value : undefined,
-                      },
-                    ]}
-                  >
-                    {option.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          <TouchableOpacity
-            onPress={() => setShowColorOptions(!showColorOptions)}
-          >
-            <Text
-              style={[
-                styles.sliderLabel,
-                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
-              ]}
-            >
-              Accent Color
-            </Text>
-          </TouchableOpacity>
-
-          {showColorOptions && (
-            <View style={styles.colorOptionsContainer}>
-              {COLOR_OPTIONS.map((color) => (
-                <TouchableOpacity
-                  key={color.value}
-                  style={getColorOptionStyle(color)}
-                  onPress={() => setLocalAccentColor(color.value)}
-                />
-              ))}
-            </View>
-          )}
-
-          <View
-            style={[
-              styles.previewBox,
-              {
-                backgroundColor: theme.dark
-                  ? theme.colors.background
-                  : "#F5F5F5",
-                borderWidth: 1,
-                borderColor: theme.dark
-                  ? "rgba(255, 255, 255, 0.1)"
-                  : "rgba(0, 0, 0, 0.05)",
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.previewText,
-                {
-                  fontFamily: fontFamily !== "System" ? fontFamily : undefined,
-                  fontSize: fontSize,
-                  color: theme.dark ? "#dedbdb" : "#1A1A1A",
-                },
-              ]}
-            >
-              This is a preview of how your text will appear in the app.
-            </Text>
-            <Pressable
-              onPress={() => navigation.navigate("currentsermon")}
-              style={[getIconContainerStyle(), { marginTop: 4 }]}
-            >
-              <MaterialIcons
-                name="open-in-full"
-                size={20}
-                color={theme.dark ? theme.colors.text : "#333333"}
-              />
-            </Pressable>
-          </View>
         </View>
       )}
-
-      <View
-        style={[
-          styles.separator,
-          { backgroundColor: theme.dark ? theme.colors.primary : "#000000" },
-        ]}
-      />
-
-      <View style={styles.settingItem}>
-        <View style={styles.settingLeft}>
-          <View style={getIconContainerStyle()}>
-            <Icon
-              name="moon"
-              size={20}
-              color={theme.dark ? "#FFFFFF" : "#333333"}
-            />
-          </View>
-          <View style={styles.settingTextContainer}>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
-              ]}
-            >
-              Dark Mode
-            </Text>
-            <Text
-              style={[
-                styles.settingDescription,
-                { color: theme.dark ? "#BBBBBB" : "#666666" },
-              ]}
-            >
-              {theme.dark ? "On" : "Off"} • Easier on the eyes at night
-            </Text>
-          </View>
-        </View>
-        <Switch
-          value={isDarkMode}
-          onValueChange={toggleTheme}
-          color={localAccentColor}
-          trackColor={{
-            false: theme.dark.background,
-            true: theme.colors.background,
-          }}
-          thumbColor={theme.dark ? "#f2cdb4" : "#522b11"}
-        />
-      </View>
     </View>
   );
 };

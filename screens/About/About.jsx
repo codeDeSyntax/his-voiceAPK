@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -7,516 +7,570 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  StatusBar,
+  SafeAreaView,
+  Platform,
+  ImageBackground,
 } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import { useAppContext } from "../../Logic/globalState";
 import DraggableFloatingButton from "../../components/FloatButton";
 
 function About({ navigation }) {
+  const { theme } = useAppContext();
+  const [pressedCard, setPressedCard] = useState(null);
+
   const handleLinkPress = (url) => {
     Linking.openURL(url);
   };
 
-  const { theme } = useAppContext();
-  const isDark = theme.dark;
+  const ModernCard = ({
+    icon,
+    title,
+    subtitle,
+    children,
+    onPress,
+    delay = 0,
+    cardId,
+  }) => {
+    const scaleValue = useRef(useSharedValue(1)).current;
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scaleValue.value }],
+    }));
+
+    const handlePressIn = () => {
+      scaleValue.value = withSpring(0.98);
+      setPressedCard(cardId);
+    };
+
+    const handlePressOut = () => {
+      scaleValue.value = withSpring(1);
+      setPressedCard(null);
+    };
+
+    return (
+      <Animated.View entering={FadeInDown.delay(delay).duration(600)}>
+        <Animated.View style={animatedStyle}>
+          <TouchableOpacity
+            onPress={onPress}
+            onPressIn={onPress ? handlePressIn : undefined}
+            onPressOut={onPress ? handlePressOut : undefined}
+            activeOpacity={onPress ? 0.9 : 1}
+            disabled={!onPress}
+            style={{
+              backgroundColor: theme.dark
+                ? "rgba(255, 255, 255, 0.03)"
+                : "rgba(0, 0, 0, 0.02)",
+              borderRadius: 20,
+              padding: 20,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: theme.dark
+                ? "rgba(255, 255, 255, 0.08)"
+                : "rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            {/* Card Header */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: subtitle ? 8 : 16,
+              }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: theme.dark
+                    ? "rgba(213, 122, 62, 0.15)"
+                    : "rgba(93, 50, 17, 0.15)",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name={icon}
+                  size={20}
+                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "600",
+                    fontFamily: "ZillaSlab",
+                    color: theme.colors.text,
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  {title}
+                </Text>
+                {subtitle && (
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: theme.colors.text + "80",
+                      marginTop: 2,
+                      fontFamily: "ZillaSlab",
+                    }}
+                  >
+                    {subtitle}
+                  </Text>
+                )}
+              </View>
+
+              {onPress && (
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={theme.colors.text + "60"}
+                />
+              )}
+            </View>
+
+            {children}
+          </TouchableOpacity>
+        </Animated.View>
+      </Animated.View>
+    );
+  };
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
-      {/* <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor="transparent"
-        translucent
-      /> */}
-
-      {/* Modern Header with Blur Effect */}
-      {/* <View style={styles.headerContainer}> */}
-      {/* <BlurView
-          style={StyleSheet.absoluteFill}
-          blurType={isDark ? 'dark' : 'light'}
-          blurAmount={10}
-        /> */}
-      {/* <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
-            <Icon name="chevron-back" size={24} color={theme.colors.primary} />
-            <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>Back</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>About</Text>
-          <View style={styles.headerRight} />
-        </View>
-      </View> */}
-      <DraggableFloatingButton />
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
+    <View style={{ flex: 1 }}>
+      {/* Background */}
+      <ImageBackground
+        source={require("../../assets/gradbg.png")}
+        style={{ flex: 1 }}
+        resizeMode="cover"
       >
-        {/* Hero Section */}
-        <Animated.View
-          entering={FadeInUp.delay(100).duration(700)}
-          style={styles.heroContainer}
+        <LinearGradient
+          colors={
+            theme.dark
+              ? [
+                  "rgba(28, 25, 23, 0.95)",
+                  "rgba(41, 37, 36, 0.9)",
+                  "rgba(28, 25, 23, 0.95)",
+                ]
+              : [
+                  "rgba(255, 251, 235, 0.95)",
+                  "rgba(254, 249, 235, 0.9)",
+                  "rgba(255, 251, 235, 0.95)",
+                ]
+          }
+          style={{ flex: 1 }}
         >
-          <LinearGradient
-            colors={
-              isDark
-                ? [theme.colors.primary, theme.colors.primary]
-                : [theme.colors.primary, theme.colors.primary]
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroGradient}
-          >
-            <View style={styles.heroContent}>
-              <Text style={[styles.heroTitle, { color: theme.colors.text }]}>
-                His Voice
-              </Text>
-              <Text style={[styles.heroSubtitle, { color: theme.colors.text }]}>
-                Sermons & Teachings
-              </Text>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        <View style={styles.content}>
-          {/* About Card */}
-          <Animated.View
-            entering={FadeInDown.delay(200).duration(700)}
-            style={[styles.card, { backgroundColor: theme.colors.secondary }]}
-          >
-            <View style={styles.cardHeader}>
-              <Icon
-                name="information-circle-outline"
-                size={24}
-                color={theme.colors.text}
-              />
-              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
-                About the App
-              </Text>
-            </View>
-            <View style={styles.divider} />
-            <Text style={[styles.text, { color: theme.colors.text }]}>
-              Welcome to <Text style={styles.highlightText}>His Voice</Text>.
-              This app contains audio sermons and transcribed sermons of the
-              Prophet Robert Lambert Lee. A sermon may have both audio and text
-              versions.
-            </Text>
-          </Animated.View>
-
-          {/* Apps Card */}
-          <Animated.View
-            entering={FadeInDown.delay(300).duration(700)}
-            style={[styles.card, { backgroundColor: theme.colors.secondary }]}
-          >
-            <View style={styles.cardHeader}>
-              <Icon name="apps-outline" size={24} color={theme.colors.text} />
-              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
-                Available Platforms
-              </Text>
-            </View>
-            <View style={styles.divider} />
-            <TouchableOpacity
-              style={styles.platformButton}
-              onPress={() => handleLinkPress("https://hisvoice.vercel.app/")}
-              activeOpacity={0.8}
+          <SafeAreaView style={{ flex: 1 }}>
+            {/* Modern Header */}
+            <Animated.View
+              entering={FadeInUp.duration(600)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 20,
+                paddingVertical: 16,
+                backgroundColor: theme.dark
+                  ? "rgba(255, 255, 255, 0.03)"
+                  : "rgba(0, 0, 0, 0.02)",
+                borderBottomWidth: 1,
+                borderBottomColor: theme.dark
+                  ? "rgba(255, 255, 255, 0.08)"
+                  : "rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <LinearGradient
-                colors={
-                  isDark
-                    ? [theme.colors.primary, theme.colors.primary]
-                    : [theme.colors.primary, theme.colors.primary]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.buttonGradient}
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: theme.dark
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(0, 0, 0, 0.05)",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginRight: 12,
+                }}
               >
-                <Icon
-                  name="desktop-outline"
+                <Ionicons
+                  name="chevron-back"
                   size={20}
-                  color="white"
-                  style={styles.buttonIcon}
+                  color={theme.colors.text}
                 />
-                <Text style={[styles.buttonText, { color: theme.colors.text }]}>
-                  Desktop Version
-                </Text>
-                <Icon name="open-outline" size={18} color={theme.colors.text} />
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
+              </TouchableOpacity>
 
-          {/* Visit Site Card */}
-          <Animated.View
-            entering={FadeInDown.delay(400).duration(700)}
-            style={[styles.card, { backgroundColor: theme.colors.secondary }]}
-          >
-            <View style={styles.cardHeader}>
-              <Icon name="globe-outline" size={24} color={theme.colors.text} />
-              <Text style={[styles.cardTitle, { color: theme.colors.text }]}>
-                Website
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "600",
+                  fontFamily: "ZillaSlab",
+                  color: theme.colors.text,
+                  flex: 1,
+                }}
+              >
+                About
               </Text>
-            </View>
-            <View style={styles.divider} />
-            <TouchableOpacity
-              style={styles.websiteContainer}
-              onPress={() => handleLinkPress("https://hisvoice.vercel.app/")}
-              activeOpacity={0.7}
+            </Animated.View>
+
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
             >
-              <Icon
-                name="link-outline"
-                size={18}
-                color={theme.colors.primary}
-              />
-              <Text style={styles.link}>https://hisvoice.vercel.app/</Text>
-            </TouchableOpacity>
-          </Animated.View>
+              {/* Hero Section */}
+              <Animated.View
+                entering={FadeInUp.delay(100).duration(700)}
+                style={{
+                  alignItems: "center",
+                  marginBottom: 32,
+                }}
+              >
+                <View
+                  style={{
+                    // width: 80,
+                    // height: 80,
+                    borderRadius: 40,
+                    // backgroundColor: theme.dark
+                    //   ? "rgba(213, 122, 62, 0.2)"
+                    //   : "rgba(93, 50, 17, 0.2)",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                 {/* image icon */}
+                 <Image source={require("../../assets/splashicon.png")} alt="alt" width={20} height={4} style={{
+                  height: 80,
+                  width: 80,
+                  borderRadius: 40,
+                }}/>
+                </View>
 
-          {/* Image Card */}
-          <Animated.View
-            entering={FadeInDown.delay(500).duration(700)}
-            style={[
-              styles.imageCard,
-              { backgroundColor: theme.colors.secondary },
-            ]}
-          >
-            <Image
-              source={require("../../assets/site.png")}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            <View style={styles.imageOverlay}>
-              <Text style={styles.imageText}>Visit this url</Text>
-              <TouchableOpacity
-                style={styles.imageButton}
+                <Text
+                  style={{
+                    fontSize: 28,
+                    fontWeight: "700",
+                    fontFamily: "ZillaSlab",
+                    color: theme.colors.text,
+                    textAlign: "center",
+                    marginBottom: 8,
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  His Voice
+                </Text>
+
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: theme.colors.text + "90",
+                    textAlign: "center",
+                    fontFamily: "ZillaSlab",
+                    lineHeight: 22,
+                  }}
+                >
+                  Sermons & Teachings of Prophet Robert Lambert Lee
+                </Text>
+              </Animated.View>
+
+              {/* About Card */}
+              <ModernCard
+                icon="information-circle-outline"
+                title="About the App"
+                delay={200}
+                cardId="about"
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    lineHeight: 24,
+                    color: theme.colors.text,
+                    fontFamily: "ZillaSlab",
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  Welcome to{" "}
+                  <Text
+                    style={{
+                      fontWeight: "700",
+                      color: theme.dark ? theme.colors.hlight : "#5d3211",
+                    }}
+                  >
+                    His Voice
+                  </Text>
+                  . This app contains audio sermons and transcribed sermons of
+                  the Prophet Robert Lambert Lee. A sermon may have both audio
+                  and text versions.
+                </Text>
+              </ModernCard>
+
+              {/* Desktop Version Card */}
+              <ModernCard
+                icon="desktop-outline"
+                title="Desktop Version"
+                subtitle="Access the full web experience"
                 onPress={() => handleLinkPress("https://hisvoice.vercel.app/")}
+                delay={300}
+                cardId="desktop"
               >
-                <Text style={styles.imageButtonText}>Explore</Text>
-                <Icon name="arrow-forward" size={16} color="white" />
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: theme.dark
+                      ? "rgba(213, 122, 62, 0.1)"
+                      : "rgba(93, 50, 17, 0.1)",
+                    padding: 12,
+                    borderRadius: 12,
+                    marginTop: 8,
+                  }}
+                >
+                  <Ionicons
+                    name="globe-outline"
+                    size={18}
+                    color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: theme.dark ? theme.colors.hlight : "#5d3211",
+                      marginLeft: 8,
+                      fontFamily: "ZillaSlab",
+                      fontWeight: "500",
+                    }}
+                  >
+                    hisvoice.vercel.app
+                  </Text>
+                </View>
+              </ModernCard>
 
-          {/* Social Media Section */}
-          <Animated.View
-            entering={FadeInDown.delay(600).duration(700)}
-            style={styles.socialContainer}
-          >
-            <Text style={[styles.socialTitle, { color: theme.colors.text }]}>
-              Contact
-            </Text>
-            <View style={styles.socialButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.socialButton,
-                  { backgroundColor: isDark ? "#333" : "#f1f1f1" },
-                ]}
+              {/* Features Card */}
+              <ModernCard
+                icon="list-outline"
+                title="Features"
+                delay={400}
+                cardId="features"
               >
-                <Icon
-                  name="logo-facebook"
-                  size={22}
-                  color={theme.colors.primary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.socialButton,
-                  { backgroundColor: isDark ? "#333" : "#f1f1f1" },
-                ]}
-              >
-                <Icon
-                  name="logo-twitter"
-                  size={22}
-                  color={theme.colors.primary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.socialButton,
-                  { backgroundColor: isDark ? "#333" : "#f1f1f1" },
-                ]}
-              >
-                <Icon
-                  name="logo-youtube"
-                  size={22}
-                  color={theme.colors.primary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.socialButton,
-                  { backgroundColor: isDark ? "#333" : "#f1f1f1" },
-                ]}
-              >
-                <Icon
-                  name="mail-outline"
-                  size={22}
-                  color={theme.colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
+                <View style={{ gap: 12 }}>
+                  {[
+                    { icon: "headset-outline", text: "Audio Sermons" },
+                    { icon: "document-text-outline", text: "Transcribed Text" },
+                    { icon: "search-outline", text: "Search Content" },
+                    { icon: "bookmark-outline", text: "Save Favorites" },
+                    { icon: "settings-outline", text: "Customize Experience" },
+                  ].map((feature, index) => (
+                    <View
+                      key={index}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: 12,
+                          backgroundColor: theme.dark
+                            ? "rgba(213, 122, 62, 0.1)"
+                            : "rgba(93, 50, 17, 0.1)",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          marginRight: 12,
+                        }}
+                      >
+                        <Ionicons
+                          name={feature.icon}
+                          size={12}
+                          color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                        />
+                      </View>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: theme.colors.text,
+                          fontFamily: "ZillaSlab",
+                        }}
+                      >
+                        {feature.text}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </ModernCard>
 
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: theme.colors.text }]}>
-              © 2025 His Voice App. All rights reserved.
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
+              {/* Website Preview Card */}
+              <ModernCard
+                icon="image-outline"
+                title="Website Preview"
+                onPress={() => handleLinkPress("https://hisvoice.vercel.app/")}
+                delay={500}
+                cardId="preview"
+              >
+                <View
+                  style={{
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    marginTop: 8,
+                  }}
+                >
+                  <Image
+                    source={require("../../assets/site.png")}
+                    style={{
+                      width: "100%",
+                      height: 150,
+                      borderRadius: 12,
+                    }}
+                    resizeMode="cover"
+                  />
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      padding: 12,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 14,
+                        fontWeight: "500",
+                        fontFamily: "ZillaSlab",
+                      }}
+                    >
+                      Visit Website
+                    </Text>
+                    <View
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.2)",
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 12,
+                          marginRight: 4,
+                        }}
+                      >
+                        Open
+                      </Text>
+                      <Ionicons name="open-outline" size={12} color="white" />
+                    </View>
+                  </View>
+                </View>
+              </ModernCard>
+
+              {/* Contact Card */}
+              <ModernCard
+                icon="mail-outline"
+                title="Contact & Support"
+                delay={600}
+                cardId="contact"
+                
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-around",
+                    marginTop: 8,
+                  }}
+                >
+                  {[
+                    { icon: "logo-facebook", label: "Facebook" },
+                    { icon: "logo-twitter", label: "Twitter" },
+                    { icon: "logo-youtube", label: "YouTube" },
+                    { icon: "mail-outline", label: "Email" },
+                  ].map((social, index) => (
+                    <TouchableOpacity
+                    disabled={true}
+                      key={index}
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 24,
+                        backgroundColor: theme.dark
+                          ? "rgba(61, 61, 61, 0.73)"
+                          : "rgba(193, 191, 191, 0.388)",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        borderWidth: 1,
+                        borderColor: theme.dark
+                          ? "rgba(255, 255, 255, 0.1)"
+                          : "rgba(0, 0, 0, 0.05)",
+                      }}
+                    >
+                      <Ionicons
+                        name={social.icon}
+                        size={20}
+                        color={theme.dark ? theme.colors.hlight +"30" : "#5d321120"}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ModernCard>
+
+              {/* Footer */}
+              <View
+                style={{
+                  alignItems: "center",
+                  marginTop: 20,
+                  marginBottom: 40,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: theme.colors.text + "60",
+                    fontFamily: "ZillaSlab",
+                    textAlign: "center",
+                  }}
+                >
+                  © 2025 His Voice App. All rights reserved.
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: theme.colors.text + "40",
+                    fontFamily: "ZillaSlab",
+                    textAlign: "center",
+                    marginTop: 4,
+                  }}
+                >
+                  Made with ♥ for the community
+                </Text>
+              </View>
+            </ScrollView>
+          </SafeAreaView>
+        </LinearGradient>
+      </ImageBackground>
+
+      <DraggableFloatingButton />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  // Header Styles
-  headerContainer: {
-    height: 100,
-    paddingTop: 50,
-    borderBottomWidth: 0,
-    zIndex: 10,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    height: 50,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    marginLeft: 4,
-    fontFamily: "serif",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    fontFamily: "serif",
-  },
-  headerRight: {
-    width: 60, // For balanced header
-  },
-
-  // Scroll Content
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  content: {
-    padding: 16,
-  },
-
-  // Hero Section
-  heroContainer: {
-    height: 180,
-    marginBottom: 20,
-  },
-  heroGradient: {
-    flex: 1,
-    borderRadius: 0,
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  heroContent: {
-    alignItems: "center",
-  },
-  heroTitle: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "white",
-    letterSpacing: 1,
-    fontFamily: "serif",
-  },
-  heroSubtitle: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 8,
-    fontFamily: "serif",
-  },
-
-  // Card Styles
-  card: {
-    marginBottom: 16,
-    borderRadius: 16,
-    padding: 20,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginLeft: 10,
-    fontFamily: "serif",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(150, 150, 150, 0.2)",
-    marginBottom: 12,
-  },
-  text: {
-    fontSize: 16,
-    lineHeight: 24,
-    letterSpacing: 0.2,
-    fontFamily: "serif",
-  },
-  highlightText: {
-    fontWeight: "800",
-    color: "#723718",
-    fontSize: 18,
-    fontFamily: "serif",
-  },
-
-  // Button Styles
-  platformButton: {
-    borderRadius: 12,
-    overflow: "hidden",
-    marginTop: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  buttonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 14,
-    borderRadius: 12,
-  },
-  buttonIcon: {
-    marginRight: 10,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    flex: 1,
-    fontFamily: "serif",
-  },
-
-  // Website Link
-  websiteContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  link: {
-    fontSize: 16,
-    color: "#9d4911",
-    marginLeft: 10,
-    fontWeight: "500",
-    fontFamily: "serif",
-  },
-
-  // Image Card
-  imageCard: {
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-  image: {
-    width: "100%",
-    height: 200,
-  },
-  imageOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    padding: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  imageText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "serif",
-  },
-  imageButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#3eb7ee",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  imageButtonText: {
-    color: "white",
-    marginRight: 4,
-    fontWeight: "500",
-  },
-
-  // Social Section
-  socialContainer: {
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  socialTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-    fontFamily: "serif",
-  },
-  socialButtons: {
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  socialButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 8,
-  },
-
-  // Footer
-  footer: {
-    marginTop: 16,
-    alignItems: "center",
-    paddingVertical: 16,
-  },
-  footerText: {
-    fontSize: 12,
-    opacity: 0.6,
-    fontFamily: "serif",
-    textDecorationLine: "line-through",
-  },
-});
 
 export default About;

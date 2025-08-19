@@ -1,7 +1,17 @@
 // File: Settings.js
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, ScrollView, Animated } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Animated,
+  ImageBackground,
+  StyleSheet,
+  SafeAreaView,
+  Platform,
+} from "react-native";
 import { useFonts } from "expo-font";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import UpdateScreen from "../LoadingScreen";
 import { useAppContext } from "../../Logic/globalState";
@@ -19,11 +29,11 @@ import { useNavigation } from "@react-navigation/native";
 
 // Constants moved here to be accessible to all components
 export const FONT_OPTIONS = [
-  { name: "Default", value: "System" },
-  { name: "Merienda", value: "Merienda-VariableFont" },
+  { name: "System Default", value: "System" },
+  { name: "ZillaSlab Regular", value: "ZillaSlab-Regular" },
+  { name: "ZillaSlab SemiBold", value: "ZillaSlab-SemiBold" },
+  { name: "Merienda", value: "Merienda-VariableFont_wght" },
   { name: "Philosopher", value: "Philosopher-Regular" },
-  { name: "Serif", value: "serif" },
-  { name: "ZillaSlab", value: "ZillaSlab" },
 ];
 
 export const COLOR_OPTIONS = [
@@ -36,9 +46,10 @@ export const COLOR_OPTIONS = [
 
 // Memoized fonts configuration to prevent recreation
 const FONTS_CONFIG = {
-  "Merienda-VariableFont": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
+  "Merienda-VariableFont_wght": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
   "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
-  ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+  "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+  "ZillaSlab-SemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
 };
 
 // Default settings constant
@@ -269,63 +280,83 @@ const Settings = React.memo(() => {
   }
 
   return (
-    <View style={{ backgroundColor: theme.colors.background, flex: 1 }}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      {/* Background with gradient overlay */}
+      <ImageBackground
+        source={require("../../assets/gradbg.png")}
+        style={styles.backgroundImage}
+        blurRadius={3}
+        resizeMode="cover"
+      >
+        <LinearGradient
+          colors={[
+            theme.dark ? "rgba(28, 25, 23, 0.85)" : "rgba(250, 250, 250, 0.90)",
+            theme.dark ? "rgba(28, 25, 23, 0.95)" : "rgba(250, 250, 250, 0.95)",
+          ]}
+          style={StyleSheet.absoluteFill}
+        />
+      </ImageBackground>
+
       <DraggableFloatingButton />
-      <View style={[containerStyle, { paddingTop: 40 }]}>
+
+      <SafeAreaView style={styles.safeArea}>
         <SettingsHeader
           theme={theme}
-          accentColor={accentColor}
-          compact={true}
-        />
-
-        <ProfileSection
-          theme={theme}
           accentColor={FIXED_ACCENT_COLOR}
           compact={true}
         />
 
-        <Text style={[sectionHeaderStyle, { fontSize: 14, marginBottom: 8 }]}>
-          DISPLAY
-        </Text>
-
-        <DisplaySettings
-          theme={theme}
-          accentColor={accentColor}
-          isDarkMode={isDarkMode}
-          toggleTheme={toggleTheme}
-          fontSize={fontSize}
-          setFontSize={setFontSize}
-          fontFamily={fontFamily}
-          setFontFamily={setFontFamily}
-          compact={true}
-        />
-
-        <Text
-          style={[
-            sectionHeaderStyle,
-            { marginTop: 16, fontSize: 14, marginBottom: 8 },
-          ]}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          APP
-        </Text>
+          <ProfileSection
+            theme={theme}
+            accentColor={FIXED_ACCENT_COLOR}
+            compact={true}
+          />
 
-        <AppSettings theme={theme} router={router} compact={true} />
+          <View style={styles.sectionContainer}>
+            <Text style={[styles.sectionHeader, { color: theme.colors.text }]}>
+              Display Settings
+            </Text>
+            <DisplaySettings
+              theme={theme}
+              accentColor={accentColor}
+              isDarkMode={isDarkMode}
+              toggleTheme={toggleTheme}
+              fontSize={fontSize}
+              setFontSize={setFontSize}
+              fontFamily={fontFamily}
+              setFontFamily={setFontFamily}
+              navigation={router}
+              compact={true}
+            />
+          </View>
 
-        <Text
-          style={[
-            versionTextStyle,
-            { textAlign: "center", fontSize: 10, marginTop: 16 },
-          ]}
-        >
-          Version 1.0.0 • Build 2025.05.09
-        </Text>
+          <View style={styles.sectionContainer}>
+            <Text style={[styles.sectionHeader, { color: theme.colors.text }]}>
+              App Settings
+            </Text>
+            <AppSettings theme={theme} router={router} compact={true} />
+          </View>
 
-        <SavingModal
-          visible={savingTheme}
-          theme={theme}
-          accentColor={FIXED_ACCENT_COLOR}
-        />
-      </View>
+          <Text
+            style={[styles.versionText, { color: theme.colors.text + "60" }]}
+          >
+            Version 1.0.0 • Build 2025.08.19
+          </Text>
+        </ScrollView>
+      </SafeAreaView>
+
+      <SavingModal
+        visible={savingTheme}
+        theme={theme}
+        accentColor={FIXED_ACCENT_COLOR}
+      />
     </View>
   );
 });

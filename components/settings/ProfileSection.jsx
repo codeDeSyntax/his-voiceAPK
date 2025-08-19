@@ -1,95 +1,102 @@
 // File: components/ProfileSection.js
 import React from "react";
-import { View, Text, Image } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import { styles } from "../../styles/settings";
+import { View, Text, Image, Platform } from "react-native";
 
 const ProfileSection = ({ theme, accentColor, compact = false }) => {
-  const imageSize = compact ? 40 : 60;
-  const imageRadius = compact ? 20 : 30;
-  const innerImageSize = compact ? 32 : 50;
-  const innerImageRadius = compact ? 16 : 25;
+  const imageSize = compact ? 50 : 60;
+  const imageRadius = compact ? 25 : 30;
 
   return (
     <View
-      style={[
-        styles.profileSection,
-        {
-          backgroundColor: theme.dark
-            ? theme.colors.primary
-            : "rgba(0, 0, 0, 0.02)",
-          paddingVertical: compact ? 12 : 20,
-        },
-      ]}
+      style={{
+        marginHorizontal: 0,
+        marginBottom: 24,
+        backgroundColor: theme.dark
+          ? "rgba(255, 255, 255, 0.03)"
+          : "rgba(0, 0, 0, 0.02)",
+        borderRadius: 16,
+        padding: 20,
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: theme.dark
+          ? "rgba(255, 255, 255, 0.08)"
+          : "rgba(0, 0, 0, 0.05)",
+     
+      }}
     >
       <View
-        style={[
-          styles.profileImage,
-          {
-            backgroundColor: theme.colors.primary,
-            borderRadius: imageRadius,
-            width: imageSize,
-            height: imageSize,
-          },
-        ]}
+        style={{
+          width: imageSize,
+          height: imageSize,
+          borderRadius: imageRadius,
+          backgroundColor: theme.dark
+            ? "rgba(213, 122, 62, 0.15)"
+            : "rgba(93, 50, 17, 0.15)",
+          justifyContent: "center",
+          alignItems: "center",
+          borderWidth: 2,
+          borderColor: theme.dark ? theme.colors.hlight + "30" : "#5d321130",
+        }}
       >
         <Image
           source={require("../../assets/splashicon.png")}
-          height={innerImageSize}
-          width={innerImageSize}
           style={{
-            height: innerImageSize,
-            width: innerImageSize,
-            borderRadius: innerImageRadius,
+            height: imageSize - 8,
+            width: imageSize - 8,
+            borderRadius: imageRadius - 4,
           }}
           resizeMode="cover"
         />
       </View>
-      <View style={[styles.profileInfo, { marginLeft: compact ? 12 : 16 }]}>
+
+      <View style={{ marginLeft: 16, flex: 1 }}>
         <Text
-          style={[
-            styles.profileName,
-            {
-              color: theme.dark ? "#FFFFFF" : "#1A1A1A",
-              fontSize: compact ? 14 : 18,
-            },
-          ]}
+          style={{
+            fontSize: compact ? 16 : 18,
+            fontWeight: "600",
+            fontFamily: "ZillaSlab",
+            color: theme.colors.text,
+            letterSpacing: 0.2,
+          }}
         >
-          His voice
+          His Voice
         </Text>
         <Text
-          style={[
-            styles.profileEmail,
-            {
-              color: theme.dark ? "#BBBBBB" : "#666666",
-              fontSize: compact ? 11 : 14,
-            },
-          ]}
+          style={{
+            fontSize: compact ? 12 : 14,
+            fontFamily: "ZillaSlab",
+            color: theme.colors.text + "70",
+            marginTop: 2,
+            letterSpacing: 0.1,
+          }}
         >
-          RobertLambertLee
+          Robert Lambert Lee Collection
         </Text>
       </View>
+
       <View
-        style={[
-          styles.chip,
-          {
-            backgroundColor: "#432917",
-            borderRadius: compact ? 12 : 20,
-            paddingHorizontal: compact ? 8 : 12,
-            paddingVertical: compact ? 4 : 6,
-          },
-        ]}
+        style={{
+          backgroundColor: theme.dark
+            ? theme.colors.hlight + "20"
+            : "#5d321120",
+          borderRadius: 12,
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderWidth: 1,
+          borderColor: theme.dark ? theme.colors.hlight + "30" : "#5d321130",
+        }}
       >
         <Text
-          style={[
-            styles.chipText,
-            {
-              color: "#FFFFFF",
-              fontSize: compact ? 10 : 12,
-            },
-          ]}
+          style={{
+            color: theme.dark ? theme.colors.hlight : "#5d3211",
+            fontSize: 11,
+            fontWeight: "500",
+            fontFamily: "ZillaSlab",
+            letterSpacing: 0.5,
+          }}
         >
-          Hisv
+          HISV
         </Text>
       </View>
     </View>

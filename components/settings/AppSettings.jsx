@@ -1,120 +1,164 @@
-// File: components/AppSettings.js
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
-import { styles } from "../../styles/settings";
+import { Ionicons } from "@expo/vector-icons";
 
 const AppSettings = ({ theme, router, compact = false }) => {
-  const getSettingItemStyle = (disabled) => {
-    return [
-      styles.settingItem,
-      {
-        opacity: disabled ? 0.5 : 1,
-        paddingVertical: compact ? 12 : 20,
-      },
-    ];
-  };
+  const SettingItem = ({
+    icon,
+    title,
+    subtitle,
+    onPress,
+    disabled = false,
+    rightIcon = "chevron-forward",
+  }) => {
+    const [pressed, setPressed] = useState(false);
 
-  const getIconContainerStyle = () => {
-    return [
-      styles.iconContainer,
-      {
-        backgroundColor: theme.dark
-          ? "rgba(255, 255, 255, 0.08)"
-          : "rgba(0, 0, 0, 0.04)",
-        shadowColor: theme.dark ? "#000" : "#888",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: theme.dark ? 0.3 : 0.1,
-        shadowRadius: 4,
-        width: compact ? 32 : 44,
-        height: compact ? 32 : 44,
-      },
-    ];
+    return (
+      <TouchableOpacity
+        style={{
+          backgroundColor: theme.dark
+            ? "rgba(255, 255, 255, 0.02)"
+            : "rgba(255, 255, 255, 0.7)",
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 12,
+          borderWidth: 1,
+          borderColor: theme.dark
+            ? "rgba(255, 255, 255, 0.05)"
+            : "rgba(0, 0, 0, 0.02)",
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+          opacity: disabled ? 0.6 : 1,
+        }}
+        onPress={onPress}
+        onPressIn={() => !disabled && setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        activeOpacity={disabled ? 1 : 0.7}
+        disabled={disabled}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: theme.dark
+                  ? disabled
+                    ? "rgba(255, 255, 255, 0.04)"
+                    : "rgba(255, 255, 255, 0.08)"
+                  : disabled
+                  ? "rgba(0, 0, 0, 0.03)"
+                  : "rgba(0, 0, 0, 0.05)",
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 12,
+              }}
+            >
+              <Ionicons
+                name={icon}
+                size={18}
+                color={
+                  disabled
+                    ? theme.dark
+                      ? "#666666"
+                      : "#888888"
+                    : theme.colors.text
+                }
+              />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "500",
+                  color: disabled
+                    ? theme.dark
+                      ? "#666666"
+                      : "#888888"
+                    : theme.colors.text,
+                  fontFamily: "ZillaSlab",
+                }}
+              >
+                {title}
+              </Text>
+              {subtitle && (
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: disabled
+                      ? theme.dark
+                        ? "#555555"
+                        : "#999999"
+                      : theme.colors.text + "80",
+                    marginTop: 2,
+                    fontFamily: "ZillaSlab",
+                  }}
+                >
+                  {subtitle}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          <Ionicons
+            name={rightIcon}
+            size={18}
+            color={
+              disabled
+                ? theme.dark
+                  ? "#666666"
+                  : "#888888"
+                : theme.colors.text + "60"
+            }
+          />
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
-    <View
-      style={[styles.settingsGroup, { backgroundColor: theme.colors.primary }]}
-    >
-      <TouchableOpacity
-        style={styles.settingItem}
+    <View style={{ gap: 12 }}>
+      {/* About */}
+      <SettingItem
+        icon="help-circle-outline"
+        title="About"
+        subtitle="App information, privacy policy"
         onPress={() => router.push("About")}
-      >
-        <View style={styles.settingLeft}>
-          <View style={getIconContainerStyle()}>
-            <Icon
-              name="help-circle"
-              size={20}
-              color={theme.dark ? "#FFFFFF" : "#333333"}
-            />
-          </View>
-          <View style={styles.settingTextContainer}>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? theme.colors.text : "#1A1A1A" },
-              ]}
-            >
-              About
-            </Text>
-            <Text
-              style={[
-                styles.settingDescription,
-                { color: theme.dark ? "#BBBBBB" : "#666666" },
-              ]}
-            >
-              App information, privacy policy
-            </Text>
-          </View>
-        </View>
-        <Icon
-          name="chevron-forward"
-          size={20}
-          color={theme.dark ? "#FFFFFF" : "#333333"}
-        />
-      </TouchableOpacity>
-
-      <View
-        style={[
-          styles.separator,
-          { backgroundColor: theme.dark ? "#FFFFFF" : "#000000" },
-        ]}
       />
 
-      <TouchableOpacity style={getSettingItemStyle(true)} disabled={true}>
-        <View style={styles.settingLeft}>
-          <View style={getIconContainerStyle()}>
-            <Icon
-              name="download"
-              size={20}
-              color={theme.dark ? "#999999" : "#888888"}
-            />
-          </View>
-          <View style={styles.settingTextContainer}>
-            <Text
-              style={[
-                styles.settingText,
-                { color: theme.dark ? "#999999" : "#888888" },
-              ]}
-            >
-              Check for Updates
-            </Text>
-            <Text
-              style={[
-                styles.settingDescription,
-                { color: theme.dark ? "#777777" : "#999999" },
-              ]}
-            >
-              Current version 1.0.0
-            </Text>
-          </View>
-        </View>
-        <Icon
-          name="arrow-down-circle"
-          size={20}
-          color={theme.dark ? "#999999" : "#888888"}
-        />
-      </TouchableOpacity>
+      {/* Check for Updates */}
+      <SettingItem
+        icon="download-outline"
+        title="Check for Updates"
+        subtitle="Current version 1.0.0"
+        disabled={true}
+        rightIcon="arrow-down-circle-outline"
+      />
+
+      {/* Feedback */}
+      <SettingItem
+        icon="mail-outline"
+        title="Send Feedback"
+        subtitle="Help us improve the app"
+        disabled={true}
+        rightIcon="open-outline"
+      />
+
+      {/* Rate App */}
+      <SettingItem
+        icon="star-outline"
+        title="Rate App"
+        subtitle="Rate us on the App Store"
+        disabled={true}
+        rightIcon="heart-outline"
+      />
     </View>
   );
 };
