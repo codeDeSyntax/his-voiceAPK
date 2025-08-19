@@ -206,9 +206,13 @@ const Menu = () => {
   // Wait for fonts to load
   if (!fontsLoaded) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+      >
         <SafeAreaView style={styles.safeArea}>
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
             <Text style={{ color: theme.colors.text, fontFamily: "ZillaSlab" }}>
               Loading...
             </Text>
@@ -380,7 +384,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
- 
   },
   scrollView: {
     flex: 1,
