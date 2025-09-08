@@ -143,6 +143,7 @@ const SermonList = React.memo(() => {
   const [originalSermons, setOriginalSermons] = useState(allSermons);
   const [isOriginalOrder, setIsOriginalOrder] = useState(true);
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
+  const [viewMode, setViewMode] = useState("table"); // "table", "compact"
 
   // Track that user visited AllSermons screen
   useEffect(() => {
@@ -273,6 +274,13 @@ const SermonList = React.memo(() => {
     setHasActiveFilters(false);
   }, []);
 
+  const toggleViewMode = useCallback(() => {
+    setViewMode((prev) => {
+      if (prev === "table") return "compact";
+      return "table";
+    });
+  }, []);
+
   const restoreOriginalOrder = useCallback(() => {
     setIsOriginalOrder(true);
     setSearchText("");
@@ -338,7 +346,11 @@ const SermonList = React.memo(() => {
       <DraggableFloatingButton />
 
       <LinearGradient colors={gradientColors} style={styles.gradientContainer}>
-        <ListAppBar theme={theme} />
+        <ListAppBar
+          theme={theme}
+          viewMode={viewMode}
+          toggleViewMode={toggleViewMode}
+        />
 
         <ActionsBar
           theme={theme}
@@ -366,6 +378,7 @@ const SermonList = React.memo(() => {
           setSearchText={setSearchText}
           allSermons={allSermons}
           setFilteredSermons={setFilteredSermons}
+          viewMode={viewMode}
         />
         <YearModal
           theme={theme}

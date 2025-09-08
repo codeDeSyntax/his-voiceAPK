@@ -179,4 +179,41 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
   },
+
+  // Compact view styles
+  compactRow: {
+    borderBottomWidth: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.md,
+  },
+  compactContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  compactTypeIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(93, 50, 17, 0.1)",
+    marginRight: spacing.sm,
+  },
+  compactTextContainer: {
+    flex: 1,
+  },
+  compactTitle: {
+    fontSize: responsiveFontSize(14),
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  compactDate: {
+    fontSize: responsiveFontSize(11),
+    fontFamily: "ZillaSlab",
+  },
+  compactListContent: {
+    paddingHorizontal: 0,
+    paddingBottom: spacing.lg,
+  },
 });

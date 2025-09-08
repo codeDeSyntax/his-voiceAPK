@@ -531,10 +531,23 @@ export const SermonProvider = ({ children }) => {
 
   // Remove bookmark with optimistic updates
   const removeBookmark = useCallback(
-    async (bookmarkId) => {
+    async (sermon, paragraphIndex) => {
       try {
+        // Find the bookmark to remove by sermon ID and paragraph index
+        const bookmarkToRemove = bookmarks.find(
+          (b) =>
+            b.sermon.id === sermon.id && b.paragraphIndex === paragraphIndex
+        );
+
+        if (!bookmarkToRemove) {
+          console.warn("Bookmark not found for removal");
+          return;
+        }
+
         // Optimistic update - update UI immediately
-        const updatedBookmarks = bookmarks.filter((b) => b.id !== bookmarkId);
+        const updatedBookmarks = bookmarks.filter(
+          (b) => b.id !== bookmarkToRemove.id
+        );
         setBookmarks(updatedBookmarks);
 
         // Show immediate feedback

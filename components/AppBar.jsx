@@ -1,16 +1,16 @@
-import React from 'react'
-import { View, Text, TouchableOpacity } from 'react-native'
-import { styles } from '../styles/Allsermons'
-import { Ionicons } from '@expo/vector-icons'
-import { useNavigation } from '@react-navigation/native'
-import { responsiveFontSize } from '../Utils/responsiveUtils'
-import { useFonts } from 'expo-font'
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { styles } from "../styles/Allsermons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { responsiveFontSize } from "../Utils/responsiveUtils";
+import { useFonts } from "expo-font";
 
-const ListAppBar = ({theme}) => {
+const ListAppBar = ({ theme, viewMode = "table", toggleViewMode }) => {
   const router = useNavigation();
   // load font
   const [fontsLoaded] = useFonts({
-    'Philosopher': require('../assets/fonts/Philosopher-Regular.ttf'),
+    Philosopher: require("../assets/fonts/Philosopher-Regular.ttf"),
   });
 
   // if (!fontsLoaded) {
@@ -24,12 +24,12 @@ const ListAppBar = ({theme}) => {
         justifyContent: "space-between",
         paddingHorizontal: 20,
         paddingVertical: 8,
-        backgroundColor: theme.dark 
-          ? "rgba(80, 61, 49, 0.25)" 
+        backgroundColor: theme.dark
+          ? "rgba(80, 61, 49, 0.25)"
           : "rgba(255, 255, 255, 0.1)",
         borderBottomWidth: 1,
-        borderBottomColor: theme.dark 
-          ? "rgba(255, 255, 255, 0.1)" 
+        borderBottomColor: theme.dark
+          ? "rgba(255, 255, 255, 0.1)"
           : "rgba(93, 50, 17, 0.1)",
         shadowColor: theme.dark ? "#000" : "#5d3211",
         shadowOffset: { width: 0, height: 2 },
@@ -39,33 +39,33 @@ const ListAppBar = ({theme}) => {
       }}
     >
       <View style={{ flex: 1 }}>
-       <View style={{ 
-        alignItems: "center",
-        justifyContent: "center",
-        //  paddingVertical: 1,
-         paddingHorizontal: 3,
-          backgroundColor: theme.dark 
-            ? "rgba(46, 25, 12, 0.862)"
-            : "#3a210f",
-          borderRadius: 20,
-          width:150
-         }}>
-         <Text
-          style={[
-            styles.label,
-            { 
-              color: theme.dark ? theme.colors.text : "#f0f0f0", 
-              fontFamily: "serif",
-              fontStyle:"italic",
-              fontSize: responsiveFontSize(16),
-              fontWeight: "bold",
-              letterSpacing: 0.5,
-            },
-          ]}
+        <View
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            //  paddingVertical: 1,
+            paddingHorizontal: 3,
+            backgroundColor: theme.dark ? "rgba(46, 25, 12, 0.862)" : "#3a210f",
+            borderRadius: 20,
+            width: 150,
+          }}
         >
-          R.L.L Sermons
-        </Text>
-       </View>
+          <Text
+            style={[
+              styles.label,
+              {
+                color: theme.dark ? theme.colors.text : "#f0f0f0",
+                fontFamily: "serif",
+                fontStyle: "italic",
+                fontSize: responsiveFontSize(16),
+                fontWeight: "bold",
+                letterSpacing: 0.5,
+              },
+            ]}
+          >
+            R.L.L Sermons
+          </Text>
+        </View>
         {/* <Text
           style={{
             color: theme.dark 
@@ -79,14 +79,40 @@ const ListAppBar = ({theme}) => {
           Collection Library
         </Text> */}
       </View>
-      
+
       <View style={{ flexDirection: "row", gap: 4 }}>
+        {/* View Mode Toggle Button */}
         <TouchableOpacity
           style={{
             padding: 10,
             borderRadius: 8,
-            backgroundColor: theme.dark 
-              ? "rgba(255, 255, 255, 0.1)" 
+            backgroundColor: theme.dark
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(93, 50, 17, 0.1)",
+          }}
+          onPress={toggleViewMode}
+        >
+          {viewMode === "table" ? (
+            <MaterialIcons
+              name="table-rows"
+              size={20}
+              color={theme.dark ? theme.colors.text : "#301d0e"}
+            />
+          ) : (
+            <MaterialIcons
+              name="view-list"
+              size={20}
+              color={theme.dark ? theme.colors.text : "#301d0e"}
+            />
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            borderRadius: 8,
+            backgroundColor: theme.dark
+              ? "rgba(255, 255, 255, 0.1)"
               : "rgba(93, 50, 17, 0.1)",
           }}
         >
@@ -96,13 +122,13 @@ const ListAppBar = ({theme}) => {
             color={theme.dark ? theme.colors.text : "#301d0e"}
           />
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={{
             padding: 10,
             borderRadius: 8,
-            backgroundColor: theme.dark 
-              ? "rgba(255, 255, 255, 0.1)" 
+            backgroundColor: theme.dark
+              ? "rgba(255, 255, 255, 0.1)"
               : "rgba(93, 50, 17, 0.1)",
           }}
           onPress={() => router?.navigate("Settings")}
@@ -115,7 +141,7 @@ const ListAppBar = ({theme}) => {
         </TouchableOpacity>
       </View>
     </View>
-  )
-}
+  );
+};
 
-export default ListAppBar
+export default ListAppBar;

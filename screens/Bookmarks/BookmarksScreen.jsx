@@ -10,6 +10,7 @@ import {
   StatusBar,
   StyleSheet,
 } from "react-native";
+import { Pressable } from "react-native-gesture-handler";
 import { useAppContext } from "../../Logic/globalState";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -28,9 +29,13 @@ const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 44 : StatusBar.currentHeight;
 const AnimatedBackground = React.memo(({ theme }) => (
   <View style={styles.backgroundContainer}>
     <ImageBackground
-      source={require("../../assets/gradbg.png")}
+      source={
+        theme.dark
+          ? require("../../assets/gradbg.png")
+          : require("../../assets/lib2.jpg")
+      }
       style={styles.backgroundImage}
-      blurRadius={4}
+      blurRadius={2}
       resizeMode="cover"
     >
       <LinearGradient
@@ -133,7 +138,7 @@ const BookmarksScreen = () => {
   };
 
   const renderBookmarkItem = ({ item }) => (
-    <TouchableOpacity
+    <Pressable
       style={[
         styles.tableRow,
         {
@@ -143,6 +148,9 @@ const BookmarksScreen = () => {
           borderRadius: 10,
         },
       ]}
+      android_ripple={{
+        color: theme.dark ? "#58320cef" : "rgba(0,0,0,0.05)",
+      }}
       onPress={() => handleBookmarkPress(item)}
     >
       <View style={[styles.tableCell, { flex: 2 }]}>
@@ -201,7 +209,7 @@ const BookmarksScreen = () => {
           />
         </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (

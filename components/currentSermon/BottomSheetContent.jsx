@@ -212,7 +212,7 @@ const TopCardContent = ({
 
         <ReceiptSeparator />
 
-        {/* Modern Actions Section */}
+        {/* Modern Quick Actions Section */}
         <View style={styles.receiptSection}>
           <Text
             style={[
@@ -220,116 +220,160 @@ const TopCardContent = ({
               { color: theme.colors.text, fontFamily: "ZillaSlabsm" },
             ]}
           >
-            ⚡ QUICK ACTIONS
+            Quick Actions
           </Text>
 
-          <View style={styles.modernActionsGrid}>
+          <View style={styles.quickActionsContainer}>
             <TouchableOpacity
               style={[
-                styles.modernActionCard,
+                styles.quickActionItem,
                 {
                   backgroundColor: theme.dark
-                    ? "#292524" + "40"
-                    : "#f6d8c1" + "30",
-                  borderColor: theme.colors.text + "20",
+                    ? "rgba(213, 122, 62, 0.15)"
+                    : "rgba(93, 50, 17, 0.08)",
                 },
               ]}
               onPress={onScrollToTop}
               activeOpacity={0.7}
             >
-              <View style={styles.actionIconWrapper}>
+              <View
+                style={[
+                  styles.quickActionIconContainer,
+                  {
+                    backgroundColor: theme.dark
+                      ? theme.colors.hlight
+                      : "#5d3211",
+                  },
+                ]}
+              >
                 <MaterialIcons
                   name="keyboard-arrow-up"
-                  size={24}
-                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                  size={20}
+                  color="#FFFFFF"
                 />
               </View>
               <Text
-                style={[styles.modernActionLabel, { color: theme.colors.text }]}
+                style={[styles.quickActionLabel, { color: theme.colors.text }]}
               >
-                TO TOP
+                To Top
               </Text>
+              <MaterialIcons
+                name="chevron-right"
+                size={16}
+                color={theme.colors.text + "60"}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.modernActionCard,
+                styles.quickActionItem,
                 {
                   backgroundColor: theme.dark
-                    ? "#292524" + "40"
-                    : "#f6d8c1" + "30",
-                  borderColor: theme.colors.text + "20",
+                    ? "rgba(213, 122, 62, 0.15)"
+                    : "rgba(93, 50, 17, 0.08)",
                 },
               ]}
               onPress={onScrollToBottom}
               activeOpacity={0.7}
             >
-              <View style={styles.actionIconWrapper}>
+              <View
+                style={[
+                  styles.quickActionIconContainer,
+                  {
+                    backgroundColor: theme.dark
+                      ? theme.colors.hlight
+                      : "#5d3211",
+                  },
+                ]}
+              >
                 <MaterialIcons
                   name="keyboard-arrow-down"
-                  size={24}
-                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                  size={20}
+                  color="#FFFFFF"
                 />
               </View>
               <Text
-                style={[styles.modernActionLabel, { color: theme.colors.text }]}
+                style={[styles.quickActionLabel, { color: theme.colors.text }]}
               >
-                TO END
+                To End
               </Text>
+              <MaterialIcons
+                name="chevron-right"
+                size={16}
+                color={theme.colors.text + "60"}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.modernActionCard,
+                styles.quickActionItem,
                 {
                   backgroundColor: theme.dark
-                    ? "#292524" + "40"
-                    : "#f6d8c1" + "30",
-                  borderColor: theme.colors.text + "20",
+                    ? "rgba(213, 122, 62, 0.15)"
+                    : "rgba(93, 50, 17, 0.08)",
                 },
               ]}
               onPress={onBack}
               activeOpacity={0.7}
             >
-              <View style={styles.actionIconWrapper}>
-                <MaterialIcons
-                  name="list"
-                  size={24}
-                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
-                />
+              <View
+                style={[
+                  styles.quickActionIconContainer,
+                  {
+                    backgroundColor: theme.dark
+                      ? theme.colors.hlight
+                      : "#5d3211",
+                  },
+                ]}
+              >
+                <MaterialIcons name="list" size={20} color="#FFFFFF" />
               </View>
               <Text
-                style={[styles.modernActionLabel, { color: theme.colors.text }]}
+                style={[styles.quickActionLabel, { color: theme.colors.text }]}
               >
-                SERMONS
+                All Sermons
               </Text>
+              <MaterialIcons
+                name="chevron-right"
+                size={16}
+                color={theme.colors.text + "60"}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.modernActionCard,
+                styles.quickActionItem,
                 {
                   backgroundColor: theme.dark
-                    ? "#292524" + "40"
-                    : "#f6d8c1" + "30",
-                  borderColor: theme.colors.text + "20",
+                    ? "rgba(213, 122, 62, 0.15)"
+                    : "rgba(93, 50, 17, 0.08)",
                 },
               ]}
               onPress={() => router.push("Settings")}
               activeOpacity={0.7}
             >
-              <View style={styles.actionIconWrapper}>
-                <MaterialIcons
-                  name="settings"
-                  size={24}
-                  color={theme.dark ? theme.colors.hlight : "#5d3211"}
-                />
+              <View
+                style={[
+                  styles.quickActionIconContainer,
+                  {
+                    backgroundColor: theme.dark
+                      ? theme.colors.hlight
+                      : "#5d3211",
+                  },
+                ]}
+              >
+                <MaterialIcons name="settings" size={20} color="#FFFFFF" />
               </View>
               <Text
-                style={[styles.modernActionLabel, { color: theme.colors.text }]}
+                style={[styles.quickActionLabel, { color: theme.colors.text }]}
               >
-                SETTINGS
+                Settings
               </Text>
+              <MaterialIcons
+                name="chevron-right"
+                size={16}
+                color={theme.colors.text + "60"}
+              />
             </TouchableOpacity>
           </View>
         </View>

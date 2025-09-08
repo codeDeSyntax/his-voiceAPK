@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   },
   sermonText: {
     lineHeight: responsiveFontSize(20), // Tighter line height for better flow
-    marginBottom: spacing.xs / 2, // Even tighter spacing (2px) for close paragraph flow
+    marginBottom: 1, // Very tight spacing (1px) for close paragraph flow
     textAlign: "left",
     paddingVertical: 0, // Remove vertical padding for tighter gaps
   },
@@ -428,11 +428,6 @@ const styles = StyleSheet.create({
   // Container: spacing.xs (4px) between paragraphs for tight reading flow
   // Text: lineHeight 24px for optimal readability
   // Numbers: spacing.xs (4px) margin from text
-  paragraphContainer: {
-    flexDirection: "row",
-    marginBottom: spacing.xs, // Consistent 4px spacing between paragraphs
-    borderRadius: 5,
-  },
   paragraphHeader: {
     flexDirection: "column",
     alignItems: "flex-start",
@@ -440,7 +435,7 @@ const styles = StyleSheet.create({
   paragraphNumberContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.xs / 2, // Tighter spacing (2px) between number and text
+    marginBottom: 1, // Reduced to 1px for tighter spacing between header and text
   },
   paragraphNumber: {
     fontSize: responsiveFontSize(14),
@@ -448,11 +443,12 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
   paragraphNumberButton: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs / 2,
+    paddingHorizontal: spacing.sm, // Increased from spacing.xs for better touch area
+    paddingVertical: spacing.xs, // Increased vertical padding
     borderRadius: 12,
     marginRight: spacing.xs,
-    minWidth: 28,
+    minWidth: 36, // Increased from 28 for better accessibility
+    minHeight: 36, // Added minimum height for better touch area
     alignItems: "center",
     justifyContent: "center",
   },
@@ -460,13 +456,16 @@ const styles = StyleSheet.create({
     flex: 1,
     // lineHeight removed - will be set dynamically based on user settings
     paddingLeft: 8,
-    marginBottom: spacing.xs, // Consistent 4px spacing between paragraphs
+    marginBottom: 0, // Remove bottom margin to prevent double spacing
     paddingVertical: 0, // Remove vertical padding for consistent gaps
   },
   paragraphContainer: {
-    marginBottom: spacing.xs, // Consistent 4px gap between paragraph containers
+    flexDirection: "row",
+    marginBottom: 1, // Very tight spacing - just 1px between paragraphs
     paddingHorizontal: 0,
     paddingVertical: 0, // Remove container padding for consistent spacing
+    // borderRadius: 5,
+    // borderStyle removed from base - will be applied conditionally in component
   },
   selectableTextContainer: {
     flex: 1,
@@ -675,10 +674,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
 
-  copyingParagraph: {
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-  },
-
   // Text selection indication
   textSelectable: {
     backgroundColor: "rgba(0, 123, 255, 0.05)",
@@ -705,24 +700,28 @@ const styles = StyleSheet.create({
   },
 
   bookmarkButton: {
-    padding: spacing.xs,
+    padding: spacing.sm, // Increased from spacing.xs for better touch area
     marginLeft: spacing.xs / 2,
-    minWidth: 32,
-    minHeight: 32,
+    minWidth: 44, // Increased from 32 for better accessibility
+    minHeight: 44, // Increased from 32 for better accessibility
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 8, // Added border radius for better visual feedback
+    backgroundColor: "transparent",
   },
   bookmarkButtonActive: {
+    backgroundColor: "rgba(230, 195, 184, 0.2)", // Added background for active state
     // Remove scale transform to prevent layout shifts
   },
   highlightButton: {
-    padding: spacing.xs,
+    padding: spacing.sm, // Increased from spacing.xs for better touch area
     marginLeft: spacing.xs / 2,
     borderRadius: 12,
-    minWidth: 32,
-    minHeight: 32,
+    minWidth: 44, // Increased from 32 for better accessibility
+    minHeight: 44, // Increased from 32 for better accessibility
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "transparent",
   },
   highlightButtonActive: {
     backgroundColor: "rgba(230, 195, 184, 0.1)",
@@ -922,6 +921,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     gap: spacing.sm,
   },
+
+  // New Quick Actions Styles
+  quickActionsContainer: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  quickActionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: 12,
+    marginBottom: spacing.sm,
+  },
+  quickActionIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.md,
+  },
+  quickActionLabel: {
+    flex: 1,
+    fontSize: responsiveFontSize(15),
+    fontWeight: "500",
+    fontFamily: "ZillaSlab",
+  },
   modernActionCard: {
     width: "47%",
     aspectRatio: 1.3,
@@ -930,13 +957,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
+
     shadowRadius: 4,
   },
   actionIconWrapper: {

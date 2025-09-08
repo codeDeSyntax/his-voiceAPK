@@ -13,6 +13,7 @@ import {
   Platform,
   Alert,
   Vibration,
+  StyleSheet,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
@@ -95,7 +96,7 @@ const renderTextWithStyledNumbers = (
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 2,
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4
+                responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
               ),
             }}
           >
@@ -150,6 +151,77 @@ const renderTextWithStyledNumbersOnly = (
 
   // Split text by numbers (including decimals, dates, times, etc.)
   const numberRegex = /(\d+(?:\.\d+)?(?::\d+)?(?:\s*(?:AM|PM|am|pm))?)/g;
+
+  // Check if text starts with a paragraph number pattern (number followed by period and space)
+  const paragraphNumberMatch = text.match(/^(\d+)\.\s+(.*)$/);
+
+  if (paragraphNumberMatch) {
+    const [, paragraphNumber, remainingText] = paragraphNumberMatch;
+
+    // Render paragraph number with special styling, then process the rest normally
+    const restParts = remainingText.split(numberRegex);
+
+    return [
+      // Paragraph number with special italic styling and theme color
+      <Text
+        key={`${key}-paragraph-number`}
+        style={{
+          fontSize: responsiveFontSize(settings.fontSize),
+          fontFamily: "serif",
+          color: theme.dark ? theme.colors.hlight : "#5d3211", // Theme-appropriate color
+          fontStyle: "italic", // Italics for paragraph numbers
+          fontWeight: "bold", // Slightly bold
+          lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
+        }}
+      >
+        {paragraphNumber}.{" "}
+      </Text>,
+      // Process the remaining text normally
+      ...restParts.map((part, index) => {
+        const isNumber = numberRegex.test(part);
+
+        if (isNumber) {
+          return (
+            <Text
+              key={`${key}-number-${index}-${part.slice(0, 5)}`}
+              style={{
+                fontSize: responsiveFontSize(settings.fontSize),
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                color: highlightColor
+                  ? baseTextColor
+                  : theme.dark
+                  ? "#b37407"
+                  : "#36240f", // Use highlight color or default amber/orange for numbers
+                lineHeight: Math.round(
+                  responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
+                ),
+              }}
+            >
+              {part}
+            </Text>
+          );
+        } else {
+          return (
+            <Text
+              key={`${key}-text-${index}-${part.slice(0, 10)}`}
+              style={{
+                fontSize: responsiveFontSize(settings.fontSize),
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                color: baseTextColor, // Use highlight color or default text color
+                lineHeight: Math.round(
+                  responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
+                ),
+              }}
+            >
+              {part}
+            </Text>
+          );
+        }
+      }),
+    ];
+  }
+
+  // If no paragraph number at start, process normally
   const parts = text.split(numberRegex);
 
   return parts.map((part, index) => {
@@ -168,7 +240,7 @@ const renderTextWithStyledNumbersOnly = (
               ? "#b37407"
               : "#36240f", // Use highlight color or default amber/orange for numbers
             // fontWeight: "700", // Bold numbers
-            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
+            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
           }}
         >
           {part}
@@ -182,7 +254,7 @@ const renderTextWithStyledNumbersOnly = (
             fontSize: responsiveFontSize(settings.fontSize),
             fontFamily: settings.fontFamily || "ZillaSlab",
             color: baseTextColor, // Use highlight color or default text color
-            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4),
+            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
           }}
         >
           {part}
@@ -208,7 +280,7 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
               textDecorationLine: "underline",
               fontWeight: "500",
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4
+                responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
               ),
             }}
           >
@@ -226,7 +298,7 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
               textDecorationLine: "underline",
               fontWeight: "500",
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4
+                responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
               ),
             }}
           >
@@ -369,7 +441,7 @@ const ParagraphText = React.memo(
     const textStyle = useMemo(() => {
       const baseSize = responsiveFontSize(settings?.fontSize || 22);
       const fontFamily = settings?.fontFamily || "ZillaSlab";
-      const lineHeight = Math.round(baseSize * 1.4);
+      const lineHeight = Math.round(baseSize * 1.4); // Restored to 1.4 for better text readability
 
       // Pre-calculated highlight colors for better performance
       const highlightTextColors = {
@@ -421,24 +493,33 @@ const ParagraphText = React.memo(
           paddingLeft: 3,
           borderLeftColor: theme.dark ? theme.colors.hlight + "50" : "#5d3211",
           borderStyle: "dashed",
+          borderTopStyle: "dashed", // Explicit border styles for all sides
+          borderRightStyle: "dashed",
+          borderBottomStyle: "dashed",
+          marginBottom: 1, // Match very tight spacing (1px)
           // backgroundColor: theme.dark ? theme.colors.hlight + "10" : "#ecedee",
         });
       }
 
       if (isCopying) {
-        baseStyle.push(styles.copyingParagraph);
+        baseStyle.push({
+          ...styles.copyingParagraph,
+          marginBottom: 1, // Match very tight spacing (1px)
+        });
       }
 
-      // Add selection mode styling
+      // Add selection mode styling (no borderStyle to avoid conflicts)
       if (isSelectionMode) {
         baseStyle.push({
           backgroundColor: theme.dark
             ? theme.colors.hlight + "20"
             : "#5d321120",
           borderWidth: 1,
+          borderStyle: "dashed",
           borderColor: theme.dark ? theme.colors.hlight + "50" : "#5d321150",
           borderRadius: 8,
           paddingHorizontal: 4,
+          marginBottom: 1, // Match very tight spacing (1px)
         });
       }
 
@@ -672,7 +753,7 @@ const ParagraphText = React.memo(
       <View style={containerStyle} onLayout={handleLayout}>
         <View style={styles.paragraphHeader}>
           <View style={styles.paragraphNumberContainer}>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               onPress={handleTextPress}
               style={[
                 styles.paragraphNumberButton,
@@ -685,18 +766,10 @@ const ParagraphText = React.memo(
                 },
               ]}
             >
-              <Text
-                style={[
-                  paragraphNumberStyle,
-                  {
-                    color: isSelectionMode ? "#fff" : theme.colors.text,
-                  },
-                ]}
-              >
-                {index + 1}
-              </Text>
-            </TouchableOpacity>
+             
+            </TouchableOpacity> */}
             <TouchableOpacity
+              activeOpacity={0.7} // Added opacity feedback
               onPress={handleBookmarkPress}
               style={[
                 styles.bookmarkButton,
@@ -711,6 +784,7 @@ const ParagraphText = React.memo(
             </TouchableOpacity>
             <View style={{ position: "relative" }}>
               <TouchableOpacity
+                activeOpacity={0.7} // Added opacity feedback
                 onPress={handleHighlightPress}
                 style={[
                   styles.highlightButton,
@@ -776,104 +850,157 @@ const ParagraphText = React.memo(
               }}
             >
               {processedText.type === "endnote_with_title"
-                ? processedText.parts.map((part, partIndex) => {
-                    const lowerPart = part.toLowerCase();
-                    let isTitle = false;
+                ? [
+                    // Add paragraph number at the beginning
+                    <Text
+                      key={`paragraph-number-${index}`}
+                      style={{
+                        fontSize: responsiveFontSize(settings?.fontSize || 22),
+                        fontFamily: "serif",
+                        color: theme.dark ? theme.colors.hlight : "#5d3211",
+                        fontStyle: "italic",
+                        fontWeight: "bold",
+                        lineHeight: Math.round(
+                          responsiveFontSize(settings?.fontSize || 22) * 1.4
+                        ),
+                      }}
+                    >
+                      {index + 1}.{" "}
+                    </Text>,
+                    // Then render the processed parts
+                    ...processedText.parts.map((part, partIndex) => {
+                      const lowerPart = part.toLowerCase();
+                      let isTitle = false;
 
-                    // Check if this part is in title position (after endnote, before or including William Marrion Branham)
-                    if (partIndex > 0) {
-                      const prevParts = processedText.parts.slice(0, partIndex);
-                      const endnoteIndex = prevParts.findIndex(
-                        (p) => p.toLowerCase() === "endnote"
-                      );
-                      const branhamIndex = processedText.parts.findIndex(
-                        (p) => p.toLowerCase() === "william marrion branham"
-                      );
-                      isTitle =
-                        endnoteIndex !== -1 &&
-                        (branhamIndex === -1 || partIndex <= branhamIndex);
-                    }
+                      // Check if this part is in title position (after endnote, before or including William Marrion Branham)
+                      if (partIndex > 0) {
+                        const prevParts = processedText.parts.slice(
+                          0,
+                          partIndex
+                        );
+                        const endnoteIndex = prevParts.findIndex(
+                          (p) => p.toLowerCase() === "endnote"
+                        );
+                        const branhamIndex = processedText.parts.findIndex(
+                          (p) => p.toLowerCase() === "william marrion branham"
+                        );
+                        isTitle =
+                          endnoteIndex !== -1 &&
+                          (branhamIndex === -1 || partIndex <= branhamIndex);
+                      }
 
-                    if (lowerPart === "endnote") {
-                      return (
-                        <Text
-                          key={`endnote-${partIndex}-${part.slice(0, 10)}`}
-                          style={{
-                            color: theme.dark ? theme.colors.hlight : "#5d3211",
-                            textDecorationLine: "underline",
-                            fontWeight: "500",
-                            fontFamily: settings?.fontFamily || "ZillaSlab",
-                            fontSize: responsiveFontSize(
-                              settings?.fontSize || 22
-                            ),
-                          }}
-                        >
-                          {part}
-                        </Text>
-                      );
-                    } else if (lowerPart === "william marrion branham") {
-                      return (
-                        <Text
-                          key={`branham-${partIndex}-${part.slice(0, 10)}`}
-                          style={{
-                            color: theme.dark ? "#FFFFFF" : "#000000",
-                            textDecorationLine: "underline",
-                            fontWeight: "bold",
-                            fontStyle: "italic",
-                            fontFamily: "serif",
-                            fontSize: responsiveFontSize(15),
-                          }}
-                        >
-                          {part}
-                        </Text>
-                      );
-                    } else if (isTitle && part.trim()) {
-                      return (
-                        <Text
-                          key={`title-${partIndex}-${part.slice(0, 10)}`}
-                          style={{
-                            color: theme.dark ? theme.colors.hlight : "#5d3211",
-                            textDecorationLine: "underline",
-                            fontWeight: "bold",
-                            fontStyle: "italic",
-                            fontFamily: "serif",
-                            fontSize: responsiveFontSize(15),
-                          }}
-                        >
-                          {part}
-                        </Text>
-                      );
-                    } else {
-                      return part;
-                    }
-                  })
+                      if (lowerPart === "endnote") {
+                        return (
+                          <Text
+                            key={`endnote-${partIndex}-${part.slice(0, 10)}`}
+                            style={{
+                              color: theme.dark
+                                ? theme.colors.hlight
+                                : "#5d3211",
+                              textDecorationLine: "underline",
+                              fontWeight: "500",
+                              fontFamily: settings?.fontFamily || "ZillaSlab",
+                              fontSize: responsiveFontSize(
+                                settings?.fontSize || 22
+                              ),
+                            }}
+                          >
+                            {part}
+                          </Text>
+                        );
+                      } else if (lowerPart === "william marrion branham") {
+                        return (
+                          <Text
+                            key={`branham-${partIndex}-${part.slice(0, 10)}`}
+                            style={{
+                              color: theme.dark ? "#FFFFFF" : "#000000",
+                              textDecorationLine: "underline",
+                              fontWeight: "bold",
+                              fontStyle: "italic",
+                              fontFamily: "serif",
+                              fontSize: responsiveFontSize(15),
+                            }}
+                          >
+                            {part}
+                          </Text>
+                        );
+                      } else if (isTitle && part.trim()) {
+                        return (
+                          <Text
+                            key={`title-${partIndex}-${part.slice(0, 10)}`}
+                            style={{
+                              color: theme.dark
+                                ? theme.colors.hlight
+                                : "#5d3211",
+                              textDecorationLine: "underline",
+                              fontWeight: "bold",
+                              fontStyle: "italic",
+                              fontFamily: "serif",
+                              fontSize: responsiveFontSize(15),
+                            }}
+                          >
+                            {part}
+                          </Text>
+                        );
+                      } else {
+                        return part;
+                      }
+                    }),
+                  ]
                 : processedText.type === "endnote"
-                ? processedText.parts.map((part, partIndex) => {
-                    const lowerPart = part.toLowerCase();
-                    if (lowerPart === "endnote" || lowerPart === "reference") {
-                      return (
-                        <Text
-                          key={`${lowerPart}-${partIndex}-${part.slice(0, 10)}`}
-                          style={{
-                            color: theme.dark ? theme.colors.hlight : "#5d3211",
-                            textDecorationLine: "underline",
-                            fontWeight: "500",
-                            fontFamily: settings?.fontFamily || "ZillaSlab",
-                            fontSize: responsiveFontSize(
-                              settings?.fontSize || 22
-                            ),
-                            // Inherit lineHeight from parent to maintain consistent spacing
-                          }}
-                        >
-                          {part}
-                        </Text>
-                      );
-                    } else {
-                      return part;
-                    }
-                  })
+                ? [
+                    // Add paragraph number at the beginning
+                    <Text
+                      key={`paragraph-number-${index}`}
+                      style={{
+                        fontSize: responsiveFontSize(settings?.fontSize || 22),
+                        fontFamily: "serif",
+                        color: theme.dark ? theme.colors.hlight : "#5d3211",
+                        fontStyle: "italic",
+                        fontWeight: "bold",
+                        lineHeight: Math.round(
+                          responsiveFontSize(settings?.fontSize || 22) * 1.4
+                        ),
+                      }}
+                    >
+                      {index + 1}.{" "}
+                    </Text>,
+                    // Then render the processed parts
+                    ...processedText.parts.map((part, partIndex) => {
+                      const lowerPart = part.toLowerCase();
+                      if (
+                        lowerPart === "endnote" ||
+                        lowerPart === "reference"
+                      ) {
+                        return (
+                          <Text
+                            key={`${lowerPart}-${partIndex}-${part.slice(
+                              0,
+                              10
+                            )}`}
+                            style={{
+                              color: theme.dark
+                                ? theme.colors.hlight
+                                : "#5d3211",
+                              textDecorationLine: "underline",
+                              fontWeight: "500",
+                              fontFamily: settings?.fontFamily || "ZillaSlab",
+                              fontSize: responsiveFontSize(
+                                settings?.fontSize || 22
+                              ),
+                              // Inherit lineHeight from parent to maintain consistent spacing
+                            }}
+                          >
+                            {part}
+                          </Text>
+                        );
+                      } else {
+                        return part;
+                      }
+                    }),
+                  ]
                 : renderTextWithStyledNumbers(
-                    processedText.text,
+                    `${index + 1}. ${processedText.text}`,
                     theme,
                     settings,
                     "normal",
