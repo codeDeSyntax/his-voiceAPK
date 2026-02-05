@@ -82,9 +82,20 @@ const AppSettings = ({ theme, router, compact = false }) => {
               await AsyncStorage.removeItem("lastOpenedSermon");
 
               console.log("✅ All settings reset");
+
+              // Reload the app to apply reset settings
               Alert.alert(
                 "Success",
-                "All settings have been reset to defaults.",
+                "All settings have been reset to defaults. The app will now reload.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      // Reload the app
+                      router.replace("welcome");
+                    },
+                  },
+                ],
               );
             } catch (error) {
               console.error("Reset error:", error);
@@ -100,52 +111,52 @@ const AppSettings = ({ theme, router, compact = false }) => {
     );
   };
 
-  const handleRebuildSearchIndex = async () => {
-    Alert.alert(
-      "Rebuild Search Index",
-      "This will delete the database and re-download everything with the new FTS5 search index. This may take a few minutes.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Rebuild",
-          onPress: async () => {
-            try {
-              console.log("🔄 Rebuilding search index...");
-
-              // Close the database connection first
-              await closeDatabase();
-              console.log("✅ Database connection closed");
-
-              // Delete the database file
-              await deleteLocalDatabase();
-              console.log("✅ Database file deleted");
-
-              Alert.alert(
-                "Success",
-                "Database deleted. The app will now re-download and index all sermons.",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => {
-                      // Navigate to Welcome - it will handle re-download and initialization
-                      router.replace("welcome");
-                    },
-                  },
-                ],
-              );
-            } catch (error) {
-              console.error("Rebuild error:", error);
-              Alert.alert("Error", `Failed to rebuild: ${error.message}`);
-            }
-          },
-          style: "destructive",
-        },
-      ],
-    );
-  };
+  // const handleRebuildSearchIndex = async () => {
+  //   Alert.alert(
+  //     "Rebuild Search Index",
+  //     "This will delete the database and re-download everything with the new FTS5 search index. This may take a few minutes.",
+  //     [
+  //       {
+  //         text: "Cancel",
+  //         style: "cancel",
+  //       },
+  //       {
+  //         text: "Rebuild",
+  //         onPress: async () => {
+  //           try {
+  //             console.log("🔄 Rebuilding search index...");
+  //
+  //             // Close the database connection first
+  //             await closeDatabase();
+  //             console.log("✅ Database connection closed");
+  //
+  //             // Delete the database file
+  //             await deleteLocalDatabase();
+  //             console.log("✅ Database file deleted");
+  //
+  //             Alert.alert(
+  //               "Success",
+  //               "Database deleted. The app will now re-download and index all sermons.",
+  //               [
+  //                 {
+  //                   text: "OK",
+  //                   onPress: () => {
+  //                     // Navigate to Welcome - it will handle re-download and initialization
+  //                     router.replace("welcome");
+  //                   },
+  //                 },
+  //               ],
+  //             );
+  //           } catch (error) {
+  //             console.error("Rebuild error:", error);
+  //             Alert.alert("Error", `Failed to rebuild: ${error.message}`);
+  //           }
+  //         },
+  //         style: "destructive",
+  //       },
+  //     ],
+  //   );
+  // };
 
   const handleExportDatabase = async () => {
     try {
@@ -329,14 +340,14 @@ const AppSettings = ({ theme, router, compact = false }) => {
 
   return (
     <View style={{ paddingHorizontal: 0 }}>
-      {/* Rebuild Search Index */}
-      <SettingItem
+      {/* Rebuild Search Index - DISABLED */}
+      {/* <SettingItem
         icon="build-outline"
         title="Rebuild Search Index"
         subtitle="Clear & rebuild database with FTS5 search"
         onPress={handleRebuildSearchIndex}
         rightIcon="chevron-forward"
-      />
+      /> */}
 
       {/* Delete Database File */}
       <SettingItem

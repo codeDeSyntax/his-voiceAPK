@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -78,7 +78,7 @@ const Welcome = () => {
         }
       };
       checkDatabase();
-    }, []),
+    }, [setDbExists, setIsDownloading, setDownloadProgress, setDownloadError]),
   );
 
   // Navigate to sermon list
@@ -177,7 +177,7 @@ const Welcome = () => {
           }),
         ]),
       ]).start();
-    }, []),
+    }, [fadeAnim, slideAnim, scaleAnim, logoRotateAnim]),
   );
 
   // Handle button press
@@ -204,6 +204,16 @@ const Welcome = () => {
   const patternAccent = theme.dark
     ? "rgba(212, 165, 116, 0.06)"
     : "rgba(139, 69, 19, 0.05)";
+
+  // Memoize button style to prevent recalculation on every render
+  const buttonStyleMemo = useMemo(
+    () => ({
+      backgroundColor: theme.dark
+        ? "rgba(230, 195, 184, 0.1)"
+        : "rgba(93, 50, 17, 0.8)",
+    }),
+    [theme.dark],
+  );
 
   // Generate radiating lines for "truth/light" symbolism
   const radiatingLines = Array.from({ length: 12 }, (_, i) => i * 30);
@@ -305,7 +315,7 @@ const Welcome = () => {
             {
               backgroundColor: theme.dark
                 ? "rgba(230, 195, 184, 0.1)"
-                : "rgba(93, 50, 17, 0.08)",
+                : "rgba(93, 50, 17, 0.8)",
             },
           ]}
         >
@@ -454,46 +464,25 @@ const Welcome = () => {
                 onPress={handleDownloadDatabase}
                 activeOpacity={0.8}
               >
-                <LinearGradient
-                  colors={
-                    theme.dark ? ["#d4a574", "#b8845d"] : ["#e6c3b8", "#d4a574"]
-                  }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.button}
-                >
+                <View style={[styles.button, buttonStyleMemo]}>
                   <Text style={styles.buttonText}>RETRY DOWNLOAD</Text>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             </View>
           ) : dbExists ? (
             <TouchableOpacity onPress={handleBeginReading} activeOpacity={0.8}>
-              <LinearGradient
-                colors={
-                  theme.dark ? ["#d4a574", "#b8845d"] : ["#e6c3b8", "#d4a574"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.button}
-              >
+              <View style={[styles.button, buttonStyleMemo]}>
                 <Text style={styles.buttonText}>BEGIN READING</Text>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
               onPress={handleDownloadDatabase}
               activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={
-                  theme.dark ? ["#d4a574", "#b8845d"] : ["#e6c3b8", "#d4a574"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.button}
-              >
+              <View style={[styles.button, buttonStyleMemo]}>
                 <Text style={styles.buttonText}>DOWNLOAD SERMON</Text>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           )}
         </View>

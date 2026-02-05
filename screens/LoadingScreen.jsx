@@ -17,11 +17,11 @@ const { width, height } = Dimensions.get("window");
 
 const LoaderScreen = () => {
   const renderContent = () => (
-    <View style={[styles.contentContainer, { backgroundColor: "#1c1917" }]}>
+    <View style={[styles.contentContainer, { backgroundColor: "#2c221a" }]}>
       {/* Update Image */}
       <Animated.View style={[styles.imageContainer]}>
         <Image
-          source={require("../assets/cloud.png")}
+          source={require("../assets/hisv.png")}
           style={styles.image}
           resizeMode="contain"
           onError={(error) =>
@@ -34,7 +34,7 @@ const LoaderScreen = () => {
       <View style={styles.loadingContainer}>
         <ActivityIndicator
           size="large"
-          color="#54381a" // Lighter blue for better contrast
+          color="#7a5c2e" // Lighter brown for better contrast
         />
         <Text style={styles.updateText}>His voice</Text>
         <Text style={styles.subText}>Robert Lambert Lee</Text>
