@@ -58,28 +58,28 @@ const styles = StyleSheet.create({
   floatingButton: {
     position: "absolute",
     right: 20,
-    top: "60%",
-    backgroundColor: "#2d2d2d",
-    borderRadius: 30,
-    width: 50,
-    height: 50,
+    bottom: 120,
+    borderRadius: 16,
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.25,
-    // shadowRadius: 3.84,
-    // elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
     zIndex: 100,
   },
 
-  // Bottom sheet styles - Updated for custom implementation
-  overlay: {
+  // Bottom sheet styles
+  backdrop: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     zIndex: 50,
   },
   bottomSheet: {
@@ -87,16 +87,28 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: height * 0.8, // Maximum height (80% of screen)
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    backgroundColor: "white",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.27,
-    shadowRadius: 4.65,
-    elevation: 6,
+    height: height * 0.85,
     zIndex: 60,
+  },
+  dragHandleContainer: {
+    width: "100%",
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+
+  // Old styles - keeping for compatibility
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
   },
   bottomSheetHandle: {
     width: 40,
@@ -461,7 +473,7 @@ const styles = StyleSheet.create({
   },
   paragraphContainer: {
     flexDirection: "row",
-    marginBottom: 1, // Very tight spacing - just 1px between paragraphs
+    marginBottom: 12, // Comfortable spacing between paragraphs
     paddingHorizontal: 0,
     paddingVertical: 0, // Remove container padding for consistent spacing
     // borderRadius: 5,

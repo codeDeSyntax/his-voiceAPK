@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Platform,
   ToastAndroid,
   Alert,
@@ -13,6 +12,7 @@ import {
   Dimensions,
   ImageBackground,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -68,15 +68,15 @@ const MenuItem = ({ title, onPress, icon, crossed, subtitle, isSpecial }) => {
                 ? "rgba(213, 122, 62, 0.08)"
                 : "rgba(255, 255, 255, 0.03)"
               : isSpecial
-              ? "rgba(93, 50, 17, 0.08)"
-              : "rgba(0, 0, 0, 0.02)",
+                ? "rgba(93, 50, 17, 0.08)"
+                : "rgba(0, 0, 0, 0.02)",
             borderColor: theme.dark
               ? isSpecial
                 ? "rgba(213, 122, 62, 0.2)"
                 : "rgba(255, 255, 255, 0.08)"
               : isSpecial
-              ? "rgba(93, 50, 17, 0.2)"
-              : "rgba(0, 0, 0, 0.05)",
+                ? "rgba(93, 50, 17, 0.2)"
+                : "rgba(0, 0, 0, 0.05)",
             transform: [{ scale: scaleValue }],
           },
         ]}
@@ -91,8 +91,8 @@ const MenuItem = ({ title, onPress, icon, crossed, subtitle, isSpecial }) => {
                     ? "rgba(213, 122, 62, 0.15)"
                     : "rgba(255, 255, 255, 0.08)"
                   : isSpecial
-                  ? "rgba(93, 50, 17, 0.15)"
-                  : "rgba(0, 0, 0, 0.05)",
+                    ? "rgba(93, 50, 17, 0.15)"
+                    : "rgba(0, 0, 0, 0.05)",
               },
             ]}
           >
@@ -105,8 +105,8 @@ const MenuItem = ({ title, onPress, icon, crossed, subtitle, isSpecial }) => {
                     ? theme.colors.hlight
                     : theme.colors.text
                   : isSpecial
-                  ? "#5d3211"
-                  : theme.colors.text
+                    ? "#5d3211"
+                    : theme.colors.text
               }
             />
           </View>
@@ -194,6 +194,7 @@ const Menu = () => {
   const { theme } = useAppContext();
   const navigation = useNavigation();
   const [fontsLoaded] = useFonts(MENU_FONTS_CONFIG);
+  const insets = useSafeAreaInsets();
 
   const navigateTo = (screenName) => {
     navigation.navigate(screenName);
@@ -209,7 +210,13 @@ const Menu = () => {
       <View
         style={[styles.container, { backgroundColor: theme.colors.background }]}
       >
-        <SafeAreaView style={styles.safeArea}>
+        <View
+          style={{
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            flex: 1,
+          }}
+        >
           <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
           >
@@ -217,7 +224,7 @@ const Menu = () => {
               Loading...
             </Text>
           </View>
-        </SafeAreaView>
+        </View>
       </View>
     );
   }
@@ -244,7 +251,13 @@ const Menu = () => {
 
       <DraggableFloatingButton />
 
-      <SafeAreaView style={styles.safeArea}>
+      <View
+        style={{
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          flex: 1,
+        }}
+      >
         {/* Modern Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
@@ -327,12 +340,12 @@ const Menu = () => {
                 if (Platform.OS === "android") {
                   ToastAndroid.show(
                     "Feature coming soon! 🚀",
-                    ToastAndroid.SHORT
+                    ToastAndroid.SHORT,
                   );
                 } else {
                   Alert.alert(
                     "Coming Soon",
-                    "This feature is under development 🚀"
+                    "This feature is under development 🚀",
                   );
                 }
               }}
@@ -341,7 +354,7 @@ const Menu = () => {
             />
           </MenuSection>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </View>
   );
 };

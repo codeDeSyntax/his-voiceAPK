@@ -12,17 +12,16 @@ const ProfileSection = ({ theme, accentColor, compact = false }) => {
         marginHorizontal: 0,
         marginBottom: 24,
         backgroundColor: theme.dark
-          ? "rgba(255, 255, 255, 0.03)"
-          : "rgba(0, 0, 0, 0.02)",
+          ? theme.colors.primary
+          : "rgba(93, 50, 17, 0.04)",
         borderRadius: 16,
         padding: 20,
         flexDirection: "row",
         alignItems: "center",
         borderWidth: 1,
         borderColor: theme.dark
-          ? "rgba(255, 255, 255, 0.08)"
-          : "rgba(0, 0, 0, 0.05)",
-     
+          ? "rgba(242, 205, 180, 0.15)"
+          : "rgba(93, 50, 17, 0.15)",
       }}
     >
       <View

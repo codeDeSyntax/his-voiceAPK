@@ -9,15 +9,16 @@ import React, {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform, ToastAndroid } from "react-native";
 import * as Updates from "expo-updates";
-// Separate configuration from component logic
-const SERMON_MODULES = {
-  earlySermons: () => import("../sermons/1964-1969/firstset"),
-  secondSet: () => import("../sermons/1970/1970"),
-  thirdSet: () => import("../sermons/1971/1971"),
-  fourthSet: () => import("../sermons/1972/1972"),
-  lastSet: () => import("../sermons/1973/1973"),
-  audioSermons: () => import("../sermons/audio"),
-};
+import {
+  getAllSermonsMetadata,
+  getSermonById,
+  getSermonsByType,
+  initializeDatabase,
+} from "../database/sermonDB";
+import {
+  migrateSermons,
+  checkMigrationStatus,
+} from "../database/migrationScript";
 
 // Storage keys in constants to avoid typos
 const STORAGE_KEYS = {
@@ -26,16 +27,14 @@ const STORAGE_KEYS = {
   BOOKMARKS: "sermonBookmarks",
   HIGHLIGHTS: "sermonHighlights",
   LAST_SERMON: "lastOpenedSermon", // Store reference to last opened sermon
-  LAST_SCREEN: "lastVisitedScreen", // Store the last visited screen
-  NAVIGATION_HISTORY: "navigationHistory", // Store navigation history stack
 };
 
 const INITIAL_SETTINGS = {
   darkMode: false,
-  backgroundColor: "#fafafa",
+  backgroundColor: "#faeed1",
   fontSize: 22,
   fontFamily: "ZillaSlab",
-  textColor: "#031412", // Fixed inconsistency - textColor should match non-dark text
+  textColor: "#5d3211", // Deep brown for light mode on beige background
 };
 
 // Create context with a more descriptive default value
@@ -65,24 +64,51 @@ export const SermonProvider = ({ children }) => {
   const [lastReadPositions, setLastReadPositions] = useState({});
   const [bookmarks, setBookmarks] = useState([]);
   const [highlights, setHighlights] = useState({}); // Store paragraph highlights
-  const [lastVisitedScreen, setLastVisitedScreen] = useState(null); // Track last visited screen
-  const [navigationHistory, setNavigationHistory] = useState([]); // Track navigation history
 
   // Theme derived from isDarkMode
   const theme = useMemo(
     () => ({
       dark: isDarkMode,
       colors: {
-        primary: isDarkMode ? "#292524" : "#fafafa",
-        background: isDarkMode ? "#1c1917" : "#fafafa",
-        secondary: isDarkMode ? "#121212" : "#fafafa",
-        text: isDarkMode ? "#f2cdb4" : "#1c1917",
+        primary: isDarkMode ? "#2c2420" : "#faeed1",
+        background: isDarkMode ? "#221b17" : "#faeed1",
+        secondary: isDarkMode ? "#1a1410" : "#f5e6d3",
+        text: isDarkMode ? "#f2cdb4" : "#5d3211",
         hlight: "#d57a3e",
         blueText: "",
       },
     }),
-    [isDarkMode]
+    [isDarkMode],
   );
+
+  // Clean up last read positions older than 30 days
+  const cleanExpiredPositions = useCallback((positions) => {
+    const now = Date.now();
+    const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+    const cleanedPositions = {};
+
+    Object.entries(positions).forEach(([sermonId, data]) => {
+      // Handle both old format (just paragraph number) and new format (object with timestamp)
+      if (typeof data === "number") {
+        // Old format - keep it and add current timestamp
+        cleanedPositions[sermonId] = {
+          paragraph: data,
+          timestamp: now,
+        };
+      } else if (data && typeof data === "object" && data.timestamp) {
+        // New format - check if expired
+        if (now - data.timestamp < thirtyDaysInMs) {
+          cleanedPositions[sermonId] = data;
+        } else {
+          console.log(
+            `Removing expired last read position for sermon ${sermonId}`,
+          );
+        }
+      }
+    });
+
+    return cleanedPositions;
+  }, []);
 
   // Update last read position for a sermon
   const updateLastReadPosition = useCallback(
@@ -90,7 +116,10 @@ export const SermonProvider = ({ children }) => {
       try {
         const updatedPositions = {
           ...lastReadPositions,
-          [sermonId]: paragraphIndex,
+          [sermonId]: {
+            paragraph: paragraphIndex,
+            timestamp: Date.now(),
+          },
         };
 
         setLastReadPositions(updatedPositions);
@@ -98,35 +127,48 @@ export const SermonProvider = ({ children }) => {
         // Save to AsyncStorage
         await AsyncStorage.setItem(
           STORAGE_KEYS.LAST_POSITIONS,
-          JSON.stringify(updatedPositions)
+          JSON.stringify(updatedPositions),
         );
       } catch (error) {
         console.error("Failed to update last read position:", error);
       }
     },
-    [lastReadPositions]
+    [lastReadPositions],
   );
 
   // Get last read position for a sermon
   const getLastReadPosition = useCallback(
     (sermonId) => {
-      return lastReadPositions[sermonId] || 0;
+      const position = lastReadPositions[sermonId];
+
+      // Handle both old format (number) and new format (object)
+      if (typeof position === "number") {
+        return position;
+      } else if (
+        position &&
+        typeof position === "object" &&
+        position.paragraph !== undefined
+      ) {
+        return position.paragraph;
+      }
+
+      return 0;
     },
-    [lastReadPositions]
+    [lastReadPositions],
   );
 
   // Load last opened sermon
   const loadLastOpenedSermon = useCallback(async () => {
     try {
       const storedLastSermon = await AsyncStorage.getItem(
-        STORAGE_KEYS.LAST_SERMON
+        STORAGE_KEYS.LAST_SERMON,
       );
       if (storedLastSermon && textSermons.length > 0) {
         const lastSermonRef = JSON.parse(storedLastSermon);
 
         // Find the full sermon object from our loaded sermons
         const fullSermon = textSermons.find(
-          (sermon) => sermon.id === lastSermonRef.id
+          (sermon) => sermon.id === lastSermonRef.id,
         );
 
         if (fullSermon) {
@@ -154,219 +196,111 @@ export const SermonProvider = ({ children }) => {
     }
   }, [textSermons, setSelectedSermonWithPosition]);
 
-  // Enhanced setSelectedSermon to include last read position and save as last opened
+  // Enhanced setSelectedSermon to include last read position and lazy load full content
   const setSelectedSermonWithPosition = useCallback(
     async (sermon) => {
       if (sermon) {
-        const sermonWithPosition = {
-          ...sermon,
-          lastReadParagraph: getLastReadPosition(sermon.id),
-        };
-        setSelectedSermon(sermonWithPosition);
-
-        // Save as last opened sermon (store only essential data)
         try {
-          const sermonReference = {
-            id: sermon.id,
-            title: sermon.title,
-            date: sermon.date,
-            type: sermon.type,
-            // Don't store the full sermon content, just enough to identify it
+          // If sermon doesn't have full content (sermon field), load it from database
+          let fullSermon = sermon;
+
+          if (!sermon.sermon) {
+            const sermonFromDB = await getSermonById(sermon.id);
+
+            if (sermonFromDB) {
+              fullSermon = sermonFromDB;
+            } else {
+              console.error("Failed to load sermon content from database");
+            }
+          }
+
+          const sermonWithPosition = {
+            ...fullSermon,
+            lastReadParagraph: getLastReadPosition(fullSermon.id),
           };
-          await AsyncStorage.setItem(
-            STORAGE_KEYS.LAST_SERMON,
-            JSON.stringify(sermonReference)
-          );
+          setSelectedSermon(sermonWithPosition);
+
+          // Save as last opened sermon (store only essential data)
+          try {
+            const sermonReference = {
+              id: fullSermon.id,
+              title: fullSermon.title,
+              date: fullSermon.date,
+              type: fullSermon.type,
+            };
+            await AsyncStorage.setItem(
+              STORAGE_KEYS.LAST_SERMON,
+              JSON.stringify(sermonReference),
+            );
+          } catch (error) {
+            console.error("Failed to save last opened sermon:", error);
+          }
         } catch (error) {
-          console.error("Failed to save last opened sermon:", error);
+          console.error("Error in setSelectedSermonWithPosition:", error);
+          // Fallback: set sermon without full content
+          setSelectedSermon(sermon);
         }
       } else {
         setSelectedSermon(null);
       }
     },
-    [getLastReadPosition]
+    [getLastReadPosition],
   );
 
-  // Last visited screen management
-  const updateLastVisitedScreen = useCallback(
-    async (screenName) => {
-      try {
-        setLastVisitedScreen(screenName);
-        await AsyncStorage.setItem(STORAGE_KEYS.LAST_SCREEN, screenName);
-        console.log("Last visited screen updated:", screenName);
-
-        // Also add to navigation history
-        await addToNavigationHistory(screenName);
-      } catch (error) {
-        console.error("Failed to save last visited screen:", error);
-      }
-    },
-    [addToNavigationHistory]
-  );
-
-  const getLastVisitedScreen = useCallback(async () => {
-    try {
-      const savedScreen = await AsyncStorage.getItem(STORAGE_KEYS.LAST_SCREEN);
-      if (savedScreen) {
-        setLastVisitedScreen(savedScreen);
-        return savedScreen;
-      }
-      return null;
-    } catch (error) {
-      console.error("Failed to load last visited screen:", error);
-      return null;
-    }
-  }, []);
-
-  // Navigation History Management - Optimized for performance
-  const addToNavigationHistory = useCallback(
-    async (screenName) => {
-      try {
-        const newHistory = [...navigationHistory];
-
-        // Remove the screen if it already exists in history to avoid duplicates
-        const existingIndex = newHistory.findIndex(
-          (screen) => screen === screenName
-        );
-        if (existingIndex !== -1) {
-          newHistory.splice(existingIndex, 1);
-        }
-
-        // Add to the end of the array (most recent)
-        newHistory.push(screenName);
-
-        // Keep only the last 10 screens to prevent memory issues
-        if (newHistory.length > 10) {
-          newHistory.shift();
-        }
-
-        setNavigationHistory(newHistory);
-
-        // Save to AsyncStorage asynchronously without blocking UI
-        setTimeout(async () => {
-          try {
-            await AsyncStorage.setItem(
-              STORAGE_KEYS.NAVIGATION_HISTORY,
-              JSON.stringify(newHistory)
-            );
-          } catch (storageError) {
-            console.error("Failed to save navigation history:", storageError);
-          }
-        }, 0);
-
-        console.log("Navigation history updated:", newHistory);
-      } catch (error) {
-        console.error("Failed to save navigation history:", error);
-      }
-    },
-    [navigationHistory]
-  );
-
-  const getPreviousScreen = useCallback(() => {
-    // Return the second-to-last screen in history (previous screen)
-    if (navigationHistory.length >= 2) {
-      return navigationHistory[navigationHistory.length - 2];
-    }
-    // If no previous screen, default to AllSermons
-    return "AllSermons";
-  }, [navigationHistory]);
-
-  // Optimized goBack - separates sync navigation from async storage
-  const goBack = useCallback(async () => {
-    try {
-      const previousScreen = getPreviousScreen();
-
-      // Update state immediately for responsive UI
-      const newHistory = [...navigationHistory];
-      if (newHistory.length > 0) {
-        newHistory.pop();
-      }
-      setNavigationHistory(newHistory);
-
-      // Save to storage asynchronously without blocking
-      setTimeout(async () => {
-        try {
-          await AsyncStorage.setItem(
-            STORAGE_KEYS.NAVIGATION_HISTORY,
-            JSON.stringify(newHistory)
-          );
-        } catch (storageError) {
-          console.error(
-            "Failed to update navigation history storage:",
-            storageError
-          );
-        }
-      }, 0);
-
-      return previousScreen;
-    } catch (error) {
-      console.error("Failed to update navigation history on back:", error);
-      return "AllSermons";
-    }
-  }, [navigationHistory, getPreviousScreen]);
-
-  const loadNavigationHistory = useCallback(async () => {
-    try {
-      const savedHistory = await AsyncStorage.getItem(
-        STORAGE_KEYS.NAVIGATION_HISTORY
-      );
-      if (savedHistory) {
-        const parsedHistory = JSON.parse(savedHistory);
-        setNavigationHistory(parsedHistory);
-        return parsedHistory;
-      }
-      return [];
-    } catch (error) {
-      console.error("Failed to load navigation history:", error);
-      return [];
-    }
-  }, []);
-
-  const clearNavigationHistory = useCallback(async () => {
-    try {
-      setNavigationHistory([]);
-      await AsyncStorage.removeItem(STORAGE_KEYS.NAVIGATION_HISTORY);
-      console.log("Navigation history cleared");
-    } catch (error) {
-      console.error("Failed to clear navigation history:", error);
-    }
-  }, []);
-
-  // Load sermons from modules
+  // Load sermons from SQLite database
   const loadSermons = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load all sermon modules concurrently
-      const loadedModules = await Promise.all(
-        Object.values(SERMON_MODULES).map((importFn) => importFn())
-      );
+      console.log("Initializing database...");
+      await initializeDatabase();
+      console.log("✅ Database initialized");
 
-      const fetchedSermons = loadedModules.reduce((acc, module) => {
-        const moduleSermons = Object.values(module)[0];
-        return [...acc, ...moduleSermons];
-      }, []);
+      // Check if migration is needed
+      const migrationStatus = await checkMigrationStatus();
+      console.log("Migration status:", migrationStatus);
+
+      if (migrationStatus.needsMigration) {
+        console.log("Starting migration...");
+        const result = await migrateSermons((progress) => {
+          console.log(`Migration progress: ${progress}%`);
+        });
+
+        if (!result.success) {
+          throw new Error(`Migration failed: ${result.error}`);
+        }
+        console.log(
+          `✅ Migration completed. ${result.count} sermons migrated.`,
+        );
+      } else {
+        console.log("Migration already completed, skipping...");
+      }
+
+      // Load sermons metadata from database (fast - no full text)
+      console.log("Loading sermons from database...");
+      const fetchedSermons = await getAllSermonsMetadata();
+      console.log(`✅ Loaded ${fetchedSermons.length} sermons from database`);
 
       // Set all sermons
       setAllSermons(fetchedSermons);
 
-      // Filter and set text sermons
+      // Filter text sermons
       const filteredTextSermons = fetchedSermons.filter(
-        (sermon) => sermon.type === "text"
+        (sermon) => sermon.type === "text",
       );
       setTextSermons(filteredTextSermons);
 
       setSermonsLoaded(true);
       setLoading(false);
 
-      return true; // Return success status
+      return true;
     } catch (err) {
-      console.error("Error loading sermons:", err);
+      console.error("❌ Error loading sermons:", err);
       setError("Failed to load sermons. Please try again later.");
       setLoading(false);
       setSermonsLoaded(false);
-      return false; // Return failure status
+      return false;
     }
   }, []);
 
@@ -380,7 +314,7 @@ export const SermonProvider = ({ children }) => {
 
         await AsyncStorage.setItem(
           STORAGE_KEYS.SETTINGS,
-          JSON.stringify(updatedSettings)
+          JSON.stringify(updatedSettings),
         );
         return true;
       } catch (error) {
@@ -388,7 +322,7 @@ export const SermonProvider = ({ children }) => {
         return false;
       }
     },
-    [settings]
+    [settings],
   );
 
   // Load data from storage
@@ -402,12 +336,28 @@ export const SermonProvider = ({ children }) => {
         setIsDarkMode(parsedSettings.darkMode);
       }
 
-      // Load last read positions
+      // Load last read positions and clean expired ones
       const storedPositions = await AsyncStorage.getItem(
-        STORAGE_KEYS.LAST_POSITIONS
+        STORAGE_KEYS.LAST_POSITIONS,
       );
       if (storedPositions) {
-        setLastReadPositions(JSON.parse(storedPositions));
+        const parsedPositions = JSON.parse(storedPositions);
+        const cleanedPositions = cleanExpiredPositions(parsedPositions);
+        setLastReadPositions(cleanedPositions);
+
+        // If any positions were cleaned, save the updated data
+        if (
+          Object.keys(cleanedPositions).length !==
+          Object.keys(parsedPositions).length
+        ) {
+          console.log(
+            `Cleaned ${Object.keys(parsedPositions).length - Object.keys(cleanedPositions).length} expired last read positions`,
+          );
+          await AsyncStorage.setItem(
+            STORAGE_KEYS.LAST_POSITIONS,
+            JSON.stringify(cleanedPositions),
+          );
+        }
       }
 
       // Load bookmarks
@@ -508,7 +458,7 @@ export const SermonProvider = ({ children }) => {
           try {
             await AsyncStorage.setItem(
               STORAGE_KEYS.BOOKMARKS,
-              JSON.stringify(updatedBookmarks)
+              JSON.stringify(updatedBookmarks),
             );
           } catch (storageError) {
             console.error("Failed to save bookmark to storage:", storageError);
@@ -526,7 +476,7 @@ export const SermonProvider = ({ children }) => {
         }
       }
     },
-    [bookmarks]
+    [bookmarks],
   );
 
   // Remove bookmark with optimistic updates
@@ -536,7 +486,7 @@ export const SermonProvider = ({ children }) => {
         // Find the bookmark to remove by sermon ID and paragraph index
         const bookmarkToRemove = bookmarks.find(
           (b) =>
-            b.sermon.id === sermon.id && b.paragraphIndex === paragraphIndex
+            b.sermon.id === sermon.id && b.paragraphIndex === paragraphIndex,
         );
 
         if (!bookmarkToRemove) {
@@ -546,7 +496,7 @@ export const SermonProvider = ({ children }) => {
 
         // Optimistic update - update UI immediately
         const updatedBookmarks = bookmarks.filter(
-          (b) => b.id !== bookmarkToRemove.id
+          (b) => b.id !== bookmarkToRemove.id,
         );
         setBookmarks(updatedBookmarks);
 
@@ -560,19 +510,19 @@ export const SermonProvider = ({ children }) => {
           try {
             await AsyncStorage.setItem(
               STORAGE_KEYS.BOOKMARKS,
-              JSON.stringify(updatedBookmarks)
+              JSON.stringify(updatedBookmarks),
             );
           } catch (storageError) {
             console.error(
               "Failed to remove bookmark from storage:",
-              storageError
+              storageError,
             );
             // Revert optimistic update if storage fails
             setBookmarks(bookmarks);
             if (Platform.OS === "android") {
               ToastAndroid.show(
                 "Failed to remove bookmark",
-                ToastAndroid.SHORT
+                ToastAndroid.SHORT,
               );
             }
           }
@@ -584,14 +534,14 @@ export const SermonProvider = ({ children }) => {
         }
       }
     },
-    [bookmarks]
+    [bookmarks],
   );
 
   // Load bookmarks from storage
   const loadBookmarks = useCallback(async () => {
     try {
       const storedBookmarks = await AsyncStorage.getItem(
-        STORAGE_KEYS.BOOKMARKS
+        STORAGE_KEYS.BOOKMARKS,
       );
       if (storedBookmarks) {
         setBookmarks(JSON.parse(storedBookmarks));
@@ -623,7 +573,7 @@ export const SermonProvider = ({ children }) => {
         // Use immediate storage write without setTimeout for better responsiveness
         AsyncStorage.setItem(
           STORAGE_KEYS.HIGHLIGHTS,
-          JSON.stringify(updatedHighlights)
+          JSON.stringify(updatedHighlights),
         ).catch((storageError) => {
           console.error("Failed to save highlight to storage:", storageError);
           // Revert only on storage failure
@@ -633,7 +583,7 @@ export const SermonProvider = ({ children }) => {
         console.error("Failed to add highlight:", error);
       }
     },
-    [highlights]
+    [highlights],
   );
 
   const removeHighlight = useCallback(
@@ -655,11 +605,11 @@ export const SermonProvider = ({ children }) => {
         // Use immediate storage write without setTimeout for better responsiveness
         AsyncStorage.setItem(
           STORAGE_KEYS.HIGHLIGHTS,
-          JSON.stringify(updatedHighlights)
+          JSON.stringify(updatedHighlights),
         ).catch((storageError) => {
           console.error(
             "Failed to remove highlight from storage:",
-            storageError
+            storageError,
           );
           // Revert only on storage failure
           setHighlights(highlights);
@@ -668,7 +618,7 @@ export const SermonProvider = ({ children }) => {
         console.error("Failed to remove highlight:", error);
       }
     },
-    [highlights]
+    [highlights],
   );
 
   const getHighlight = useCallback(
@@ -676,7 +626,7 @@ export const SermonProvider = ({ children }) => {
       const highlightKey = `${sermonId}-${paragraphIndex}`;
       return highlights[highlightKey] || null;
     },
-    [highlights]
+    [highlights],
   );
 
   // Initialize app data
@@ -685,7 +635,7 @@ export const SermonProvider = ({ children }) => {
       try {
         // Load settings
         const storedSettings = await AsyncStorage.getItem(
-          STORAGE_KEYS.SETTINGS
+          STORAGE_KEYS.SETTINGS,
         );
         if (storedSettings) {
           const parsedSettings = JSON.parse(storedSettings);
@@ -695,7 +645,7 @@ export const SermonProvider = ({ children }) => {
 
         // Load last positions
         const storedPositions = await AsyncStorage.getItem(
-          STORAGE_KEYS.LAST_POSITIONS
+          STORAGE_KEYS.LAST_POSITIONS,
         );
         if (storedPositions) {
           setLastReadPositions(JSON.parse(storedPositions));
@@ -706,17 +656,11 @@ export const SermonProvider = ({ children }) => {
 
         // Load highlights
         const storedHighlights = await AsyncStorage.getItem(
-          STORAGE_KEYS.HIGHLIGHTS
+          STORAGE_KEYS.HIGHLIGHTS,
         );
         if (storedHighlights) {
           setHighlights(JSON.parse(storedHighlights));
         }
-
-        // Load last visited screen
-        await getLastVisitedScreen();
-
-        // Load navigation history
-        await loadNavigationHistory();
 
         // Load sermons
         await loadSermons();
@@ -727,7 +671,7 @@ export const SermonProvider = ({ children }) => {
     };
 
     initializeApp();
-  }, [loadSermons, loadBookmarks, getLastVisitedScreen, loadNavigationHistory]);
+  }, [loadSermons, loadBookmarks]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -768,7 +712,7 @@ export const SermonProvider = ({ children }) => {
       // Add additional helper functions
       filterSermonsByTag: (tag) => {
         return allSermons.filter(
-          (sermon) => sermon.tags && sermon.tags.includes(tag)
+          (sermon) => sermon.tags && sermon.tags.includes(tag),
         );
       },
       getSermonById: (id) => {
@@ -785,19 +729,6 @@ export const SermonProvider = ({ children }) => {
       addHighlight,
       removeHighlight,
       getHighlight,
-
-      // Last visited screen management
-      lastVisitedScreen,
-      updateLastVisitedScreen,
-      getLastVisitedScreen,
-
-      // Navigation history management
-      navigationHistory,
-      addToNavigationHistory,
-      getPreviousScreen,
-      goBack,
-      loadNavigationHistory,
-      clearNavigationHistory,
     }),
     [
       selectedSermon,
@@ -830,16 +761,7 @@ export const SermonProvider = ({ children }) => {
       addHighlight,
       removeHighlight,
       getHighlight,
-      lastVisitedScreen,
-      updateLastVisitedScreen,
-      getLastVisitedScreen,
-      navigationHistory,
-      addToNavigationHistory,
-      getPreviousScreen,
-      goBack,
-      loadNavigationHistory,
-      clearNavigationHistory,
-    ]
+    ],
   );
 
   return (

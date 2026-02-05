@@ -5,7 +5,12 @@ import { styles } from "../../styles/settings";
 
 const SavingModal = ({ visible, theme, accentColor }) => {
   return (
-    <Modal transparent={true} visible={visible} animationType="fade">
+    <Modal
+      transparent={true}
+      visible={visible}
+      animationType="fade"
+      statusBarTranslucent
+    >
       <View style={styles.modalBackground}>
         <View
           style={[
@@ -21,10 +26,10 @@ const SavingModal = ({ visible, theme, accentColor }) => {
           >
             Saving Your Settings...
           </Text>
-          <ActivityIndicator 
+          <ActivityIndicator
             style={styles.modalSpinner}
-            size="large" 
-            color={accentColor} 
+            size="large"
+            color={accentColor}
           />
         </View>
       </View>

@@ -5,21 +5,17 @@ import {
   Text,
   ScrollView,
   Animated,
-  ImageBackground,
   StyleSheet,
   SafeAreaView,
   Platform,
 } from "react-native";
 import { useFonts } from "expo-font";
-import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import UpdateScreen from "../LoadingScreen";
 import { useAppContext } from "../../Logic/globalState";
 import { styles } from "../../styles/settings";
 
 // Import components
 import SettingsHeader from "../../components/settings/SettingsHeader";
-import ProfileSection from "../../components/settings/ProfileSection";
 import DisplaySettings from "../../components/settings/DisplaySettings";
 import AppSettings from "../../components/settings/AppSettings";
 import SavingModal from "../../components/settings/SavingModal";
@@ -76,7 +72,6 @@ const Settings = React.memo(() => {
     setIsDarkMode,
     numberOfColumns,
     setNumberOfColumns,
-    updateLastVisitedScreen,
   } = useAppContext();
 
   // Memoized initial values to prevent unnecessary recalculations
@@ -89,7 +84,7 @@ const Settings = React.memo(() => {
       backgroundColor:
         settings.backgroundColor || (isDarkMode ? "#121212" : "#F8F9FA"),
     }),
-    [settings, isDarkMode]
+    [settings, isDarkMode],
   );
 
   const [fontSize, setFontSize] = useState(initialValues.fontSize);
@@ -97,7 +92,7 @@ const Settings = React.memo(() => {
   const [textColor, setTextColor] = useState(initialValues.textColor);
   const [accentColor, setAccentColor] = useState(initialValues.accentColor);
   const [backgroundColor, setBackgroundColor] = useState(
-    initialValues.backgroundColor
+    initialValues.backgroundColor,
   );
 
   const [savingTheme, setSavingTheme] = useState(false);
@@ -108,27 +103,22 @@ const Settings = React.memo(() => {
 
   const router = useNavigation();
 
-  // Track that user visited Settings screen
-  useEffect(() => {
-    updateLastVisitedScreen("Settings");
-  }, [updateLastVisitedScreen]);
-
   // Memoized container style
   const containerStyle = useMemo(
     () => [styles.container, { backgroundColor: theme.colors.background }],
-    [theme.colors.primary]
+    [theme.colors.primary],
   );
 
   // Memoized section header style
   const sectionHeaderStyle = useMemo(
     () => [styles.sectionHeader, { color: theme.dark ? "#BBBBBB" : "#666666" }],
-    [theme.dark]
+    [theme.dark],
   );
 
   // Memoized version text style
   const versionTextStyle = useMemo(
     () => [styles.versionText, { color: theme.dark ? "#777777" : "#999999" }],
-    [theme.dark]
+    [theme.dark],
   );
 
   // Animation effect for theme toggling - optimized with useCallback
@@ -274,36 +264,20 @@ const Settings = React.memo(() => {
     }
   }, [updateSettings, setIsDarkMode]);
 
-  // Early return for updating state
-  if (isUpdating) {
-    return <UpdateScreen />;
-  }
+  // Early return for updating state - render content while updating in background
+  // if (isUpdating) {
+  //   return <UpdateScreen />;
+  // }
 
-  // Wait for fonts to load before rendering
-  if (!fontsLoaded) {
-    return <UpdateScreen />;
-  }
+  // Don't wait for fonts - render with fallback and fonts will load in background
+  // if (!fontsLoaded) {
+  //   return <UpdateScreen />;
+  // }
 
   return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      {/* Background with gradient overlay */}
-      <ImageBackground
-        source={require("../../assets/gradbg.png")}
-        style={styles.backgroundImage}
-        blurRadius={3}
-        resizeMode="cover"
-      >
-        <LinearGradient
-          colors={[
-            theme.dark ? "rgba(28, 25, 23, 0.85)" : "rgba(250, 250, 250, 0.90)",
-            theme.dark ? "rgba(28, 25, 23, 0.95)" : "rgba(250, 250, 250, 0.95)",
-          ]}
-          style={StyleSheet.absoluteFill}
-        />
-      </ImageBackground>
-
       <DraggableFloatingButton />
 
       <SafeAreaView style={styles.safeArea}>
@@ -318,12 +292,6 @@ const Settings = React.memo(() => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          <ProfileSection
-            theme={theme}
-            accentColor={FIXED_ACCENT_COLOR}
-            compact={true}
-          />
-
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionHeader, { color: theme.colors.text }]}>
               Display Settings

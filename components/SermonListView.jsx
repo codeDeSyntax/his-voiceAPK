@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
+  Pressable,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "../styles/Allsermons";
 import { useAppContext } from "../Logic/globalState";
-import { Pressable } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
 import {
   responsiveFontSize,
@@ -24,8 +24,10 @@ const TableHeader = React.memo(({ theme }) => (
     style={[
       styles.tableHeader,
       {
-        backgroundColor: theme.dark ? theme.colors.primary + "20" : "#f5f5f5",
-        borderColor: theme.dark ? theme.colors.primary : "#bbb8b8",
+        backgroundColor: theme.dark ? "transparent" : "rgba(93, 50, 17, 0.06)",
+        borderColor: theme.dark
+          ? "rgba(242, 205, 180, 0.2)"
+          : "rgba(93, 50, 17, 0.12)",
       },
     ]}
   >
@@ -84,22 +86,18 @@ const SermonListView = React.memo(
     // Table view with alternating backgrounds - compact spacing
     const renderTableItem = useCallback(
       ({ item, index }) => {
-        // Alternating background colors - using different shades instead of white
-        const isEven = index % 2 === 0;
-        const backgroundColor = theme.dark
-          ? isEven
-            ? "rgba(80, 61, 49, 0.15)"
-            : "rgba(80, 61, 49, 0.08)"
-          : isEven
-          ? "rgba(93, 50, 17, 0.08)"
-          : "rgba(93, 50, 17, 0.03)";
-
         return (
           <Pressable
             key={item.id}
-            style={[
+            style={({ pressed }) => [
               {
-                backgroundColor: backgroundColor,
+                backgroundColor: pressed
+                  ? theme.dark
+                    ? "rgba(242, 205, 180, 0.12)"
+                    : "rgba(93, 50, 17, 0.12)"
+                  : theme.dark
+                    ? "transparent"
+                    : "rgba(93, 50, 17, 0.04)",
                 paddingVertical: spacing.sm,
                 paddingHorizontal: spacing.md,
                 marginVertical: 0.5,
@@ -109,7 +107,9 @@ const SermonListView = React.memo(
               },
             ]}
             android_ripple={{
-              color: theme.dark ? "#58320cef" : "rgba(0,0,0,0.05)",
+              color: theme.dark
+                ? "rgba(242, 205, 180, 0.12)"
+                : "rgba(93, 50, 17, 0.12)",
             }}
             onPress={() => handleSermonClick(item)}
           >
@@ -192,7 +192,7 @@ const SermonListView = React.memo(
           </Pressable>
         );
       },
-      [theme, handleSermonClick]
+      [theme, handleSermonClick],
     );
 
     // Compact view - minimal list layout with separator
@@ -200,21 +200,36 @@ const SermonListView = React.memo(
       ({ item, index }) => (
         <View key={item.id}>
           <Pressable
-            style={[
+            style={({ pressed }) => [
               styles.compactRow,
               {
-                backgroundColor: theme.dark
-                  ? "rgba(80, 61, 49, 0.15)"
-                  : "rgba(255, 255, 255, 0.5)",
+                backgroundColor: pressed
+                  ? theme.dark
+                    ? "rgba(242, 205, 180, 0.08)"
+                    : "rgba(93, 50, 17, 0.08)"
+                  : theme.dark
+                    ? "transparent"
+                    : "rgba(93, 50, 17, 0.02)",
               },
             ]}
             android_ripple={{
-              color: theme.dark ? "#58320cef" : "rgba(0,0,0,0.05)",
+              color: theme.dark
+                ? "rgba(242, 205, 180, 0.12)"
+                : "rgba(93, 50, 17, 0.12)",
             }}
             onPress={() => handleSermonClick(item)}
           >
             <View style={styles.compactContent}>
-              <View style={styles.compactTypeIcon}>
+              <View
+                style={[
+                  styles.compactTypeIcon,
+                  {
+                    backgroundColor: theme.dark
+                      ? theme.colors.primary
+                      : "rgba(93, 50, 17, 0.1)",
+                  },
+                ]}
+              >
                 {item.type === "mp3" ? (
                   <FontAwesome5
                     name="microphone"
@@ -265,14 +280,14 @@ const SermonListView = React.memo(
             style={{
               height: 1,
               backgroundColor: theme.dark
-                ? theme.colors.primary + "20"
-                : "rgba(93, 50, 17, 0.1)",
+                ? "rgba(242, 205, 180, 0.15)"
+                : "rgba(93, 50, 17, 0.2)",
               marginHorizontal: spacing.md,
             }}
           />
         </View>
       ),
-      [theme, handleSermonClick]
+      [theme, handleSermonClick],
     );
 
     // Choose render function based on viewMode - only table and compact
@@ -330,7 +345,7 @@ const SermonListView = React.memo(
         />
       </>
     );
-  }
+  },
 );
 
 export default SermonListView;

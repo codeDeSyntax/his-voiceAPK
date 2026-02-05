@@ -40,12 +40,11 @@ const LoadingFallback = () => {
 // Suspense wrapper for smooth loading
 const ScreenWithSuspense =
   (Component) =>
-  ({ navigation, route }) =>
-    (
-      <Suspense fallback={<LoadingFallback />}>
-        <Component />
-      </Suspense>
-    );
+  ({ navigation, route }) => (
+    <Suspense fallback={<LoadingFallback />}>
+      <Component navigation={navigation} route={route} />
+    </Suspense>
+  );
 
 const TransitionScreen = {
   gestureDirection: "horizontal",

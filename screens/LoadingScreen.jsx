@@ -1,45 +1,39 @@
-import React, { useEffect, useRef } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  ActivityIndicator, 
-  Dimensions, 
-  Platform, 
+import React, { useEffect, useRef } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  ActivityIndicator,
+  Dimensions,
+  Platform,
   Image,
-  Animated 
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { useAppContext } from '../Logic/globalState';
+  Animated,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import { useAppContext } from "../Logic/globalState";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 const LoaderScreen = () => {
-  // const scaleAnim = useRef(new Animated.Value(1)).current;
-
-
   const renderContent = () => (
-    <View style={[styles.contentContainer,{backgroundColor:"#1c1917"}]}>
+    <View style={[styles.contentContainer, { backgroundColor: "#1c1917" }]}>
       {/* Update Image */}
-      <Animated.View style={[
-        styles.imageContainer,
-        // {
-        //   transform: [{ scale: scaleAnim }]
-        // }
-      ]}>
-        <Image 
-          source={require('../assets/cloud.png')}
+      <Animated.View style={[styles.imageContainer]}>
+        <Image
+          source={require("../assets/cloud.png")}
           style={styles.image}
           resizeMode="contain"
-          onError={(error) => console.warn('Image loading error:', error.nativeEvent.error)}
+          onError={(error) =>
+            console.warn("Image loading error:", error.nativeEvent.error)
+          }
         />
       </Animated.View>
 
       {/* Loading Indicator and Text */}
       <View style={styles.loadingContainer}>
-        <ActivityIndicator 
-          size="large" 
+        <ActivityIndicator
+          size="large"
           color="#54381a" // Lighter blue for better contrast
         />
         <Text style={styles.updateText}>His voice</Text>
@@ -53,23 +47,21 @@ const LoaderScreen = () => {
 
   return (
     <LinearGradient
-      colors={['#1c1917', '#1c1917']} // Darker colors
+      colors={["#1c1917", "#1c1917"]} // Darker colors
       style={styles.container}
-      onError={(error) => console.warn('Gradient error:', error)}
+      onError={(error) => console.warn("Gradient error:", error)}
     >
-      {Platform.OS === 'ios' ? (
-        <BlurView 
-          intensity={20} 
-          tint="dark" 
+      {Platform.OS === "ios" ? (
+        <BlurView
+          intensity={20}
+          tint="dark"
           style={styles.blurContainer}
-          onError={(error) => console.warn('BlurView error:', error)}
+          onError={(error) => console.warn("BlurView error:", error)}
         >
           {renderContent()}
         </BlurView>
       ) : (
-        <View style={styles.androidContainer}>
-          {renderContent()}
-        </View>
+        <View style={styles.androidContainer}>{renderContent()}</View>
       )}
     </LinearGradient>
   );
@@ -78,66 +70,74 @@ const LoaderScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   blurContainer: {
     padding: 32,
     borderRadius: 24,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: '#1c1917', // More subtle border
-    backgroundColor: '#202425', // Darker background
+    borderColor: "#1c1917", // More subtle border
+    backgroundColor: "#202425", // Darker background
     width: width * 0.85,
-    alignItems: 'center',
+    alignItems: "center",
   },
   androidContainer: {
     padding: 32,
     borderRadius: 24,
-    backgroundColor: '#1c1917', // Darker background
+    backgroundColor: "#1c1917", // Darker background
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)', // More subtle border
+    borderColor: "rgba(255,255,255,0.05)", // More subtle border
     width: width * 0.85,
-    alignItems: 'center',
+    alignItems: "center",
   },
   contentContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
   },
   imageContainer: {
     width: 160,
     height: 160,
     marginBottom: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   loadingContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
   },
   updateText: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#f8fafc', // Lighter text for better contrast
+    fontWeight: "600",
+    color: "#f8fafc", // Lighter text for better contrast
     marginTop: 16,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'serif',
+    fontFamily: Platform.OS === "ios" ? "System" : "serif",
   },
   subText: {
     fontSize: 14,
-    color: '#94a3b8', // Lighter gray for better contrast
+    color: "#94a3b8", // Lighter gray for better contrast
     marginTop: 8,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'serif',
+    fontFamily: Platform.OS === "ios" ? "System" : "serif",
+  },
+  migrationText: {
+    fontSize: 12,
+    color: "#d57a3e",
+    marginTop: 12,
+    textAlign: "center",
+    paddingHorizontal: 20,
+    fontFamily: Platform.OS === "ios" ? "System" : "serif",
   },
   versionText: {
     fontSize: 12,
-    color: '#475569', // Darker gray for less emphasis
+    color: "#475569", // Darker gray for less emphasis
     marginTop: 8,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'serif',
+    fontFamily: Platform.OS === "ios" ? "System" : "serif",
   },
 });
 

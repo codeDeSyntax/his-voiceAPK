@@ -42,7 +42,7 @@ const MinimalLoader = React.memo(({ theme }) => {
         toValue: 1,
         duration: 3000,
         useNativeDriver: true,
-      })
+      }),
     );
 
     // Subtle pulse
@@ -58,7 +58,7 @@ const MinimalLoader = React.memo(({ theme }) => {
           duration: 1500,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
 
     spinAnimation.start();
@@ -377,7 +377,7 @@ export default function SermonAudioWebScreen() {
         backgroundColor: theme?.colors?.background || "#fafafa",
       },
     ],
-    [theme?.colors?.background]
+    [theme?.colors?.background],
   );
 
   const webViewStyle = useMemo(
@@ -388,7 +388,7 @@ export default function SermonAudioWebScreen() {
         backgroundColor: isDark ? "#1c1917" : "transparent",
       },
     ],
-    [fadeAnim, isDark]
+    [fadeAnim, isDark],
   );
 
   // Render immersive full-screen experience
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
 
   // Minimalist Loader Styles
   loaderContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
 
   // Clean Error State Styles
   errorContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: "center",
     alignItems: "center",
     padding: 32,

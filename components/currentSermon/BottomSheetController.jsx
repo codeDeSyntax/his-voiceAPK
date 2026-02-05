@@ -1,156 +1,86 @@
-import React, { useRef, useState, useEffect } from "react";
-import { View, TouchableOpacity, Animated, Dimensions } from "react-native";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
-import TopCardContent from "./BottomSheetContent";
+import React, { useState } from "react";
+import { View, TouchableOpacity } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import ActionToolbar from "./ActionToolbar";
 import { styles } from "../../styles/currentsermon";
 
 const CustomTopCardController = ({
   theme,
-  isCardOpen,
-  setIsCardOpen,
-  selectedSermon,
-  paragraphs,
-  paragraphLayouts,
-  scrollToParagraph,
+  onOpenSearch,
   scrollToTop,
   scrollToBottom,
-  onBack,
 }) => {
-  // Screen dimensions
-  const { width, height } = Dimensions.get("window");
+  // Local state for action toolbar
+  const [isToolbarVisible, setIsToolbarVisible] = useState(false);
 
-  // State to track card visibility and animation completion
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  // Animation values
-  const translateY = useRef(new Animated.Value(height)).current; // Start off-screen at the bottom
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-
-  // Handle button animation
-  useEffect(() => {
-    Animated.timing(rotateAnim, {
-      toValue: isCardOpen ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [isCardOpen]);
-
-  // Calculate button rotation
-  const spin = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "180deg"],
-  });
-
-  // Functions to control the card
-  const openCard = () => {
-    setIsCardOpen(true);
-
-    Animated.spring(translateY, {
-      toValue: 0,
-      tension: 80,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const closeCard = () => {
-    setIsCardOpen(false);
-
-    Animated.spring(translateY, {
-      toValue: height,
-      tension: 80,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-  };
   const handleTogglePress = () => {
-    if (isCardOpen) {
-      closeCard();
-    } else {
-      openCard();
-    }
+    setIsToolbarVisible(!isToolbarVisible);
   };
 
-  // Create wrapper functions that close the sheet after scrolling
-  const handleScrollToTopAndClose = () => {
+  // Handle scroll actions from toolbar
+  const handleScrollToTopFromToolbar = () => {
     scrollToTop();
-    // Close the sheet after a short delay to let the scroll animation start
-    setTimeout(() => {
-      closeCard();
-    }, 300);
+    setIsToolbarVisible(false);
   };
 
-  const handleScrollToBottomAndClose = () => {
+  const handleScrollToBottomFromToolbar = () => {
     scrollToBottom();
-    // Close the sheet after a short delay to let the scroll animation start
-    setTimeout(() => {
-      closeCard();
-    }, 300);
+    setIsToolbarVisible(false);
+  };
+
+  // Handle search action from toolbar
+  const handleOpenSearchFromToolbar = () => {
+    onOpenSearch();
+    setIsToolbarVisible(false);
   };
 
   return (
     <>
+      {/* Action Toolbar */}
+      <ActionToolbar
+        theme={theme}
+        isVisible={isToolbarVisible}
+        onClose={() => setIsToolbarVisible(false)}
+        onOpenSearch={handleOpenSearchFromToolbar}
+        onScrollToTop={handleScrollToTopFromToolbar}
+        onScrollToBottom={handleScrollToBottomFromToolbar}
+      />
+
       {/* Toggle button */}
       <TouchableOpacity
         style={[
           styles.floatingButton,
           {
-            backgroundColor: theme.dark ? theme.colors.background : "#ececec",
-            // borderWidth: 1,
-            borderColor: theme.dark ? "#1a1919" : "#4276b7",
+            backgroundColor: isToolbarVisible
+              ? theme.dark
+                ? "#f2cdb4"
+                : "#5d3211"
+              : theme.dark
+                ? "rgba(44, 36, 32, 0.95)"
+                : "rgba(255, 255, 255, 0.95)",
+            borderColor: theme.dark
+              ? "rgba(242, 205, 180, 0.2)"
+              : "rgba(93, 50, 17, 0.15)",
+            borderWidth: 1,
           },
         ]}
         onPress={handleTogglePress}
         activeOpacity={0.8}
       >
-        <Animated.View style={{ transform: [{ rotate: spin }] }}>
-          <MaterialIcons
-            name={isCardOpen ? "cancel" : "menu-open"}
-            size={24}
-            color={theme.dark ? "#e5e5e5" : "#5d3211"}
-          />
-        </Animated.View>
+        <MaterialIcons
+          name={isToolbarVisible ? "close" : "more-horiz"}
+          size={22}
+          color={
+            isToolbarVisible
+              ? theme.dark
+                ? "#1a1512"
+                : "#fff"
+              : theme.dark
+                ? "#e6c3b8"
+                : "#5d3211"
+          }
+        />
       </TouchableOpacity>
-
-      {/* Top Card */}
-      {isCardOpen && (
-        <Animated.View
-          style={[
-            styles.topCard,
-            {
-              transform: [{ translateY: translateY }],
-              backgroundColor: theme.colors.background,
-              borderColor: theme.colors.text,
-            },
-          ]}
-          pointerEvents={isCardOpen ? "auto" : "none"}
-        >
-          {/* Close button inside card */}
-          <TouchableOpacity
-            style={[
-              styles.topCardCloseButton,
-              { backgroundColor: theme.colors.secondary },
-            ]}
-            onPress={closeCard}
-            activeOpacity={0.7}
-          >
-            <Feather name="x" size={18} color={theme.colors.text} />
-          </TouchableOpacity>
-
-          {/* Card Content */}
-          <TopCardContent
-            theme={theme}
-            selectedSermon={selectedSermon}
-            onScrollToTop={handleScrollToTopAndClose}
-            onScrollToBottom={handleScrollToBottomAndClose}
-            onBack={onBack}
-            paragraphs={paragraphs}
-            paragraphLayouts={paragraphLayouts}
-            scrollToParagraph={scrollToParagraph}
-            isCardOpen={isCardOpen}
-          />
-        </Animated.View>
-      )}
     </>
   );
 };

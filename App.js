@@ -9,8 +9,7 @@ import * as Font from "expo-font";
 import { useFonts } from "expo-font";
 import UpdateScreen from "./components/Update";
 import LoaderScreen from "./screens/LoadingScreen";
-
-
+import { SQLiteProvider } from "expo-sqlite";
 
 // Prevent auto hide of splash screen until we're ready
 SplashScreen.preventAutoHideAsync();
@@ -53,13 +52,15 @@ export default function App() {
   }
 
   return (
-    <SermonProvider>
-      <NavigationContainer>
-        {/* <LoaderScreen/> */}
-        <AppStatusBar />
-        <UpdateScreen/>
-        <StackNavigator />
-      </NavigationContainer>
-    </SermonProvider>
+    <SQLiteProvider databaseName="sermons.db">
+      <SermonProvider>
+        <NavigationContainer>
+          {/* <LoaderScreen/> */}
+          <AppStatusBar />
+          <UpdateScreen />
+          <StackNavigator />
+        </NavigationContainer>
+      </SermonProvider>
+    </SQLiteProvider>
   );
 }

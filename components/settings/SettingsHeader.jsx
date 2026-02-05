@@ -3,9 +3,11 @@ import React from "react";
 import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SettingsHeader = ({ theme, accentColor, compact = false }) => {
   const router = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const getIconButtonStyle = () => ({
     width: 44,
@@ -22,7 +24,7 @@ const SettingsHeader = ({ theme, accentColor, compact = false }) => {
     <View
       style={{
         paddingHorizontal: 24,
-        paddingTop: 20,
+        paddingTop: insets.top + 8,
         paddingBottom: 16,
         flexDirection: "row",
         justifyContent: "space-between",

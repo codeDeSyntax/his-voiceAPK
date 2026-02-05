@@ -9,34 +9,27 @@ import { styles } from "../styles/Allsermons";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 
 const SearchHeader = ({ theme, searchText, setSearchText }) => {
-  
   return (
-    <View style={{
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      backgroundColor: theme.dark 
-        ? "rgba(62, 45, 32, 0.3)" 
-        : "rgba(255, 255, 255, 0.1)",
-    }}>
+    <View
+      style={{
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        backgroundColor: theme.colors.background,
+      }}
+    >
       <View
         style={[
           styles.searchInputContainer,
           {
-            backgroundColor: theme.dark 
-              ? "rgba(80, 61, 49, 0.4)" 
-              : "rgba(255, 255, 255, 0.95)",
-            borderColor: theme.dark 
-              ? "rgba(225, 179, 161, 0.2)" 
-              : "rgba(93, 50, 17, 0.2)",
-            borderWidth: theme.dark ? 1 :   0,
-            borderRadius: 16,
-            shadowColor: theme.dark ? "#000" : "#5d321106",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: theme.dark ? 0.3 : 0.1,
-            shadowRadius: 8,
-            elevation: 4,
+            backgroundColor: theme.dark
+              ? "rgba(80, 61, 49, 0.4)"
+              : "rgba(93, 50, 17, 0.04)",
+            borderColor: theme.dark
+              ? "rgba(225, 179, 161, 0.2)"
+              : "rgba(93, 50, 17, 0.1)",
+            borderWidth: 1,
+            borderRadius: 12,
             paddingHorizontal: 16,
-            // paddingVertical: 4,
             flexDirection: "row",
             alignItems: "center",
           },
@@ -45,12 +38,12 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
         <Feather
           name="search"
           size={18}
-          color={theme.dark 
-            ? "rgba(255, 255, 255, 0.6)" 
-            : "rgba(93, 50, 17, 0.6)"}
+          color={
+            theme.dark ? "rgba(255, 255, 255, 0.6)" : "rgba(93, 50, 17, 0.5)"
+          }
           style={{ marginRight: 12 }}
         />
-        
+
         <TextInput
           style={[
             styles.searchInput,
@@ -66,36 +59,38 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
           placeholder="Search sermons..."
           value={searchText}
           onChangeText={setSearchText}
-          placeholderTextColor={theme.dark 
-            ? "rgba(255, 255, 255, 0.5)" 
-            : "rgba(93, 50, 17, 0.5)"}
+          placeholderTextColor={
+            theme.dark ? "rgba(255, 255, 255, 0.5)" : "rgba(93, 50, 17, 0.5)"
+          }
           selectionColor={theme.dark ? theme.colors.text : "#5d3211"}
           spellCheck={false}
           autoCorrect={false}
           keyboardAppearance={theme.dark ? "dark" : "light"}
         />
-        
+
         {searchText.length > 0 && (
           <TouchableOpacity
             onPress={() => setSearchText("")}
             style={{
               padding: 4,
               borderRadius: 12,
-              backgroundColor: theme.dark 
-                ? "rgba(255, 255, 255, 0.1)" 
+              backgroundColor: theme.dark
+                ? "rgba(255, 255, 255, 0.1)"
                 : "rgba(93, 50, 17, 0.1)",
             }}
           >
             <Feather
               name="x"
               size={14}
-              color={theme.dark 
-                ? "rgba(255, 255, 255, 0.6)" 
-                : "rgba(93, 50, 17, 0.6)"}
+              color={
+                theme.dark
+                  ? "rgba(255, 255, 255, 0.6)"
+                  : "rgba(93, 50, 17, 0.6)"
+              }
             />
           </TouchableOpacity>
         )}
-        
+
         <TouchableOpacity
           style={{
             backgroundColor: theme.dark ? theme.colors.text : "#5d3211",

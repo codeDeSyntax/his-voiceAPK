@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: -1,
   },
   backgroundImage: {
@@ -182,7 +182,6 @@ export const styles = StyleSheet.create({
 
   // Compact view styles
   compactRow: {
-    borderBottomWidth: 1,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     marginHorizontal: spacing.md,

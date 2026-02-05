@@ -25,8 +25,8 @@ const { width, height } = Dimensions.get("window");
 
 const DraggableFloatingButton = React.memo(
   ({
-    size = 48,
-    iconSize = 20,
+    size = 44,
+    iconSize = 18,
     iconColor = "white",
     backgroundColor = "",
     initialPosition = { x: 20, y: height - 140 },
@@ -35,7 +35,7 @@ const DraggableFloatingButton = React.memo(
     vibrationEnabled = true,
     animationEnabled = true,
   }) => {
-    const { theme, goBack } = useAppContext();
+    const { theme } = useAppContext();
     const route = useRoute();
     const router = useNavigation();
     const insets = useSafeAreaInsets();
@@ -56,20 +56,86 @@ const DraggableFloatingButton = React.memo(
         left: 20,
         right: width - size - 20,
       }),
-      [insets, size]
+      [insets, size],
     );
 
     const pan = useRef(
       new Animated.ValueXY({
         x: Math.max(initialPosition.x, safeAreaBounds.left),
         y: Math.max(initialPosition.y, safeAreaBounds.top),
-      })
+      }),
     ).current;
 
     const [isPressed, setIsPressed] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const hasMoved = useRef(false);
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const rotateAnim = useRef(new Animated.Value(0)).current;
     const breatheAnim = useRef(new Animated.Value(1)).current;
+
+    // Pan responder for drag functionality
+    const panResponder = useRef(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: () => {
+          hasMoved.current = false;
+          triggerHapticFeedback("light");
+          pan.setOffset({
+            x: pan.x._value,
+            y: pan.y._value,
+          });
+        },
+        onPanResponderMove: (evt, gestureState) => {
+          // Only consider it a drag if moved more than 5 pixels
+          if (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5) {
+            hasMoved.current = true;
+            setIsDragging(true);
+          }
+          pan.x.setValue(gestureState.dx);
+          pan.y.setValue(gestureState.dy);
+        },
+        onPanResponderRelease: (evt, gestureState) => {
+          pan.flattenOffset();
+
+          // If it was a tap (not a drag), trigger the press action
+          if (!hasMoved.current) {
+            setIsDragging(false);
+            handlePressAction();
+          } else {
+            setIsDragging(false);
+          }
+
+          // Snap to nearest edge if enabled
+          if (snapToEdge) {
+            const newX = pan.x._value;
+            const newY = Math.max(
+              Math.min(pan.y._value, safeAreaBounds.bottom),
+              safeAreaBounds.top,
+            );
+
+            // Snap to left or right edge
+            const shouldSnapLeft = newX < width / 2;
+            const snapX = shouldSnapLeft
+              ? safeAreaBounds.left
+              : safeAreaBounds.right;
+
+            Animated.parallel([
+              Animated.timing(pan.x, {
+                toValue: snapX,
+                duration: 200,
+                useNativeDriver: false,
+              }),
+              Animated.timing(pan.y, {
+                toValue: newY,
+                duration: 200,
+                useNativeDriver: false,
+              }),
+            ]).start();
+          }
+        },
+      }),
+    ).current;
 
     // New sleek effects
     const opacityAnim = useRef(new Animated.Value(0.9)).current;
@@ -93,7 +159,7 @@ const DraggableFloatingButton = React.memo(
             duration: 4000,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
 
       breatheAnimation.start();
@@ -108,7 +174,7 @@ const DraggableFloatingButton = React.memo(
           Vibration.vibrate(pattern);
         }
       },
-      [vibrationEnabled]
+      [vibrationEnabled],
     );
 
     const handlePressIn = useCallback(() => {
@@ -169,7 +235,8 @@ const DraggableFloatingButton = React.memo(
       return handlePressOut;
     }, [animationEnabled, handlePressOut]);
 
-    const handlePress = useCallback(() => {
+    // Core navigation action - extracted for use in panResponder
+    const handlePressAction = useCallback(() => {
       triggerHapticFeedback("press");
 
       if (animationEnabled) {
@@ -188,55 +255,27 @@ const DraggableFloatingButton = React.memo(
         ]).start();
       }
 
-      // Ultra-fast navigation with smart fallback logic
+      // Ultra-fast navigation - behaves like native back button
       if (onPress) {
         onPress();
       } else if (router) {
-        const navigationState = router.getState();
-        const canGoBack = navigationState && navigationState.index > 0;
-
-        // Debug logging to see what's happening
-        console.log("Navigation State:", navigationState);
-        console.log(
-          "Current route:",
-          navigationState?.routes?.[navigationState.index]?.name
-        );
-        console.log(
-          "Previous route:",
-          navigationState?.routes?.[navigationState.index - 1]?.name
-        );
-
-        // Check if the previous screen would be Welcome
-        let shouldGoToSermonList = false;
-        if (canGoBack && navigationState.routes) {
-          const previousRoute =
-            navigationState.routes[navigationState.index - 1];
-          // Never navigate back to Welcome screen - check for different possible names
-          const welcomeScreenNames = ["Welcome", "WelcomeScreen", "welcome"];
-          shouldGoToSermonList = welcomeScreenNames.includes(
-            previousRoute?.name
-          );
-        }
-
-        if (canGoBack && !shouldGoToSermonList) {
-          // Safe to go back - previous screen is not Welcome
-          console.log(
-            "Going back to:",
-            navigationState?.routes?.[navigationState.index - 1]?.name
-          );
+        // Simply check if we can go back, like native back button
+        if (router.canGoBack()) {
           router.goBack();
         } else {
-          // No history or previous screen is Welcome - go to sermon list
-          console.log("Navigating to AllSermons instead of Welcome");
+          // No history - go to sermon list as fallback
           router.navigate("AllSermons");
         }
-
-        // Update our custom history asynchronously after navigation (optional)
-        setTimeout(() => {
-          goBack().catch(console.error);
-        }, 0);
       }
-    }, [onPress, router, goBack, triggerHapticFeedback, animationEnabled]);
+    }, [onPress, router, triggerHapticFeedback, animationEnabled]);
+
+    const handlePress = useCallback(() => {
+      // Don't trigger action if we were dragging
+      if (isDragging) {
+        return;
+      }
+      handlePressAction();
+    }, [isDragging, handlePressAction]);
 
     // Optimized animation values with memoization
     const rotateInterpolate = useMemo(
@@ -245,7 +284,7 @@ const DraggableFloatingButton = React.memo(
           inputRange: [0, 1],
           outputRange: ["0deg", "180deg"],
         }),
-      [rotateAnim]
+      [rotateAnim],
     );
 
     // Simplified button style for maximum performance
@@ -278,7 +317,7 @@ const DraggableFloatingButton = React.memo(
         breatheAnim,
         theme?.colors?.text,
         isPressed,
-      ]
+      ],
     );
 
     return (
@@ -287,8 +326,10 @@ const DraggableFloatingButton = React.memo(
           styles.container,
           {
             transform: [{ translateX: pan.x }, { translateY: pan.y }],
+            opacity: isDragging ? 0.7 : 1,
           },
         ]}
+        {...panResponder.panHandlers}
       >
         {/* Main button */}
         <TouchableWithoutFeedback
@@ -299,52 +340,32 @@ const DraggableFloatingButton = React.memo(
           delayPressOut={0}
         >
           <Animated.View style={buttonStyle}>
-            {/* Sleek background with frosted glass effect */}
+            {/* Modern glassmorphism background */}
             <View
               style={[
-                styles.buttonSleek,
+                styles.buttonGlass,
                 {
-                  backgroundColor: theme?.colors?.primary || "#fafafa",
+                  backgroundColor: theme?.dark
+                    ? "rgba(45, 35, 30, 0.85)"
+                    : "rgba(255, 255, 255, 0.9)",
                   borderColor: theme?.dark
-                    ? "rgba(255,255,255,0.1)"
-                    : "rgba(0,0,0,0.08)",
+                    ? "rgba(230, 195, 184, 0.2)"
+                    : "rgba(93, 50, 17, 0.15)",
                 },
               ]}
             >
-              {/* Icon with optimized animation */}
-              <Animated.View
-                style={[
-                  styles.iconContainer,
-                  animationEnabled && {
-                    transform: [{ rotate: rotateInterpolate }],
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="arrow-back"
-                  size={iconSize}
-                  color={theme?.colors?.text || "#1c1917"}
-                  style={styles.iconSleek}
-                />
-              </Animated.View>
-
-              {/* Conditional shimmer overlay - simplified for performance */}
-              {animationEnabled && (
-                <Animated.View
-                  style={[
-                    styles.shimmerSleek,
-                    {
-                      opacity: 0.3, // Static opacity for better performance
-                    },
-                  ]}
-                />
-              )}
+              {/* Chevron icon - more modern than arrow */}
+              <Ionicons
+                name="chevron-back"
+                size={iconSize}
+                color={theme?.dark ? "#e6c3b8" : "#5d3211"}
+              />
             </View>
           </Animated.View>
         </TouchableWithoutFeedback>
       </Animated.View>
     );
-  }
+  },
 );
 
 const styles = StyleSheet.create({
@@ -359,49 +380,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  iconContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonSleek: {
+  buttonGlass: {
     width: "100%",
     height: "100%",
-    borderRadius: 24, // Half of default size (48/2)
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 0.3,
-    borderColor: "rgba(0,0,0,0.08)",
-    overflow: "hidden",
+    borderWidth: 1,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
         shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 6,
       },
     }),
-  },
-  iconSleek: {
-    ...Platform.select({
-      ios: {
-        textShadowColor: "rgba(0,0,0,0.1)",
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
-      },
-    }),
-  },
-  shimmerSleek: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: 12,
-    height: "100%",
-    backgroundColor: "rgba(255,255,255,0.3)",
-    borderRadius: 6,
-    transform: [{ skewX: "-10deg" }],
   },
 });
 

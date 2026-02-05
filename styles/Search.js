@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   backgroundOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.1)",
   },
   gradientContainer: {
@@ -398,12 +398,24 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   expandCaret: {
-    padding: 6,
-    marginRight: -6,
+    padding: 4,
+    marginRight: -4,
   },
-  caretIcon: {
-    fontSize: 11,
-    opacity: 0.6,
+  individualMatch: {
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 6,
+    borderLeftWidth: 3,
+  },
+  matchLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 4,
+    opacity: 0.8,
+  },
+  matchContext: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   resultContext: {
     fontSize: 15,

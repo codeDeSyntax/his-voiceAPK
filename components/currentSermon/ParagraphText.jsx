@@ -1,47 +1,26 @@
-import React, {
-  useState,
-  useRef,
-  useMemo,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Text,
   View,
-  TouchableOpacity,
   ToastAndroid,
   Platform,
   Alert,
   Vibration,
-  StyleSheet,
+  Pressable,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
-import { Ionicons } from "@expo/vector-icons";
-import { responsiveFontSize, spacing } from "../../Utils/responsiveUtils";
+import { responsiveFontSize } from "../../Utils/responsiveUtils";
 import { useAppContext } from "../../Logic/globalState";
-import HighlightColorPalette from "./HighlightColorPalette";
 
 // Pre-calculate common values to avoid recalculations
-const DOUBLE_TAP_DELAY = 300;
-const LONG_PRESS_DELAY = 500;
 const VIBRATION_DURATION = 50;
-const DEBOUNCE_DELAY = 100; // Debounce rapid consecutive actions
-
-// Debounce utility for rapid state changes
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(null, args), delay);
-  };
-};
 
 // Memoized highlight colors - calculate once
 const HIGHLIGHT_COLORS = {
   yellow: { light: "#FEF08A", dark: "#FBBF2499" },
   green: { light: "#BBF7D0", dark: "#34D39999" },
-  brown: { light: "#D2B48C", dark: "#8B7355" }, // Changed from blue to brown
+  brown: { light: "#D2B48C", dark: "#8B7355" },
   purple: { light: "#DDD6FE", dark: "#C084FC99" },
   pink: { light: "#FBCFE8", dark: "#F472B699" },
   orange: { light: "#FED7AA", dark: "#FB923C99" },
@@ -54,7 +33,7 @@ const renderTextWithStyledNumbers = (
   settings,
   key = "",
   searchPhrase = "",
-  highlightColor = null
+  highlightColor = null,
 ) => {
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
@@ -75,7 +54,7 @@ const renderTextWithStyledNumbers = (
   if (searchPhrase && searchPhrase.trim()) {
     const regex = new RegExp(
       `(${searchPhrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi"
+      "gi",
     );
     const parts = text.split(regex);
 
@@ -96,7 +75,7 @@ const renderTextWithStyledNumbers = (
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 2,
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
+                responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
               ),
             }}
           >
@@ -110,7 +89,7 @@ const renderTextWithStyledNumbers = (
           theme,
           settings,
           `${key}-${partIndex}`,
-          highlightColor
+          highlightColor,
         );
       }
     });
@@ -121,7 +100,7 @@ const renderTextWithStyledNumbers = (
       theme,
       settings,
       key,
-      highlightColor
+      highlightColor,
     );
   }
 };
@@ -132,7 +111,7 @@ const renderTextWithStyledNumbersOnly = (
   theme,
   settings,
   key = "",
-  highlightColor = null
+  highlightColor = null,
 ) => {
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
@@ -167,7 +146,7 @@ const renderTextWithStyledNumbersOnly = (
         key={`${key}-paragraph-number`}
         style={{
           fontSize: responsiveFontSize(settings.fontSize),
-          fontFamily: "serif",
+          fontFamily: settings.fontFamily || "System",
           color: theme.dark ? theme.colors.hlight : "#5d3211", // Theme-appropriate color
           fontStyle: "italic", // Italics for paragraph numbers
           fontWeight: "bold", // Slightly bold
@@ -190,10 +169,10 @@ const renderTextWithStyledNumbersOnly = (
                 color: highlightColor
                   ? baseTextColor
                   : theme.dark
-                  ? "#b37407"
-                  : "#36240f", // Use highlight color or default amber/orange for numbers
+                    ? "#b37407"
+                    : "#36240f", // Use highlight color or default amber/orange for numbers
                 lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
+                  responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
                 ),
               }}
             >
@@ -209,7 +188,7 @@ const renderTextWithStyledNumbersOnly = (
                 fontFamily: settings.fontFamily || "ZillaSlab",
                 color: baseTextColor, // Use highlight color or default text color
                 lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
+                  responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
                 ),
               }}
             >
@@ -237,8 +216,8 @@ const renderTextWithStyledNumbersOnly = (
             color: highlightColor
               ? baseTextColor
               : theme.dark
-              ? "#b37407"
-              : "#36240f", // Use highlight color or default amber/orange for numbers
+                ? "#b37407"
+                : "#36240f", // Use highlight color or default amber/orange for numbers
             // fontWeight: "700", // Bold numbers
             lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
           }}
@@ -275,12 +254,11 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
             key={`endnote-${partIndex}-${part.slice(0, 10)}`}
             style={{
               fontSize: responsiveFontSize(settings.fontSize),
-              fontFamily: settings.fontFamily || "ZillaSlab",
+              fontFamily: "ZillaSlab",
               color: theme.dark ? theme.colors.hlight : "#5d3211",
               textDecorationLine: "underline",
-              fontWeight: "500",
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
+                responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
               ),
             }}
           >
@@ -293,12 +271,11 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
             key={`reference-${partIndex}-${part.slice(0, 10)}`}
             style={{
               fontSize: responsiveFontSize(settings.fontSize),
-              fontFamily: settings.fontFamily || "ZillaSlab",
+              fontFamily: "ZillaSlab",
               color: theme.dark ? theme.colors.hlight : "#5d3211",
               textDecorationLine: "underline",
-              fontWeight: "500",
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4 // Tighter line height
+                responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
               ),
             }}
           >
@@ -312,7 +289,7 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
           settings,
           `endnote-${partIndex}`,
           searchPhrase,
-          null // No highlight color for endnotes
+          null, // No highlight color for endnotes
         );
       }
     })}
@@ -336,12 +313,11 @@ const EndnoteWithTitleText = React.memo(
                 key={`endnote-${partIndex}-${part.slice(0, 10)}`}
                 style={{
                   fontSize: responsiveFontSize(settings.fontSize),
-                  fontFamily: settings.fontFamily || "ZillaSlab",
+                  fontFamily: "ZillaSlab",
                   color: theme.dark ? theme.colors.hlight : "#5d3211",
                   textDecorationLine: "underline",
-                  fontWeight: "500",
                   lineHeight: Math.round(
-                    responsiveFontSize(settings.fontSize) * 1.4
+                    responsiveFontSize(settings.fontSize) * 1.4,
                   ),
                 }}
               >
@@ -353,14 +329,12 @@ const EndnoteWithTitleText = React.memo(
               <Text
                 key={`title-${partIndex}-${part.slice(0, 10)}`}
                 style={{
-                  fontSize: responsiveFontSize(16),
-                  fontFamily: "serif",
+                  fontSize: responsiveFontSize(settings.fontSize),
+                  fontFamily: "ZillaSlab",
                   color: theme.dark ? "#FFFFFF" : "#000000",
                   textDecorationLine: "underline",
-                  fontWeight: "500",
-                  fontStyle: "italic", // Add italics for the title including the name
                   lineHeight: Math.round(
-                    responsiveFontSize(settings.fontSize) * 1.4
+                    responsiveFontSize(settings.fontSize) * 1.4,
                   ),
                 }}
               >
@@ -377,7 +351,7 @@ const EndnoteWithTitleText = React.memo(
               settings,
               `title-${partIndex}`,
               searchPhrase,
-              null // No highlight color for title sections
+              null, // No highlight color for title sections
             );
           } else {
             // Regular text (before Endnote or after William Marrion Branham)
@@ -387,13 +361,13 @@ const EndnoteWithTitleText = React.memo(
               settings,
               `regular-${partIndex}`,
               searchPhrase,
-              null // No highlight color for endnote sections
+              null, // No highlight color for endnote sections
             );
           }
         })}
       </>
     );
-  }
+  },
 );
 
 const ParagraphText = React.memo(
@@ -405,29 +379,12 @@ const ParagraphText = React.memo(
     onLayout,
     selectedSermon,
     searchPhrase,
+    isSelected = false,
+    onParagraphClick,
   }) => {
-    const {
-      addBookmark,
-      removeBookmark,
-      bookmarks,
-      addHighlight,
-      removeHighlight,
-      getHighlight,
-      highlights,
-    } = useAppContext();
+    const { highlights } = useAppContext();
 
     const [isCopying, setIsCopying] = useState(false);
-    const [showColorPalette, setShowColorPalette] = useState(false);
-    const [isSelectionMode, setIsSelectionMode] = useState(false);
-    const lastTapTime = useRef(0);
-
-    // Check if this paragraph is bookmarked - optimized with unique key
-    const isBookmarked = useMemo(() => {
-      const bookmarkKey = `${selectedSermon.id}-${index}`;
-      return bookmarks.some(
-        (b) => `${b.sermon.id}-${b.paragraphIndex}` === bookmarkKey
-      );
-    }, [bookmarks, selectedSermon.id, index]); // More specific dependencies
 
     // Check if this paragraph is highlighted - optimized with direct highlights access
     const currentHighlight = useMemo(() => {
@@ -477,14 +434,24 @@ const ParagraphText = React.memo(
 
     const paragraphNumberStyle = useMemo(
       () => [styles.paragraphNumber, { color: theme.colors.text }],
-      [theme.colors.text]
+      [theme.colors.text],
     );
 
     // Enhanced container style with selection mode - text color highlighting instead of background
     const containerStyle = useMemo(() => {
       const baseStyle = [styles.paragraphContainer];
 
-      // Note: Highlight color is now applied to text, not background
+      // Selected state - add underline effect
+      if (isSelected) {
+        baseStyle.push({
+          borderBottomWidth: 3,
+          borderBottomColor: theme.dark ? theme.colors.hlight : "#d57a3e",
+          backgroundColor: theme.dark
+            ? "rgba(213, 122, 62, 0.08)"
+            : "rgba(213, 122, 62, 0.06)",
+          marginBottom: 12,
+        });
+      }
 
       // Add visual indicator if this is the last read paragraph
       if (selectedSermon?.lastReadParagraph === index) {
@@ -493,33 +460,14 @@ const ParagraphText = React.memo(
           paddingLeft: 3,
           borderLeftColor: theme.dark ? theme.colors.hlight + "50" : "#5d3211",
           borderStyle: "dashed",
-          borderTopStyle: "dashed", // Explicit border styles for all sides
-          borderRightStyle: "dashed",
-          borderBottomStyle: "dashed",
-          marginBottom: 1, // Match very tight spacing (1px)
-          // backgroundColor: theme.dark ? theme.colors.hlight + "10" : "#ecedee",
+          marginBottom: 12,
         });
       }
 
       if (isCopying) {
         baseStyle.push({
           ...styles.copyingParagraph,
-          marginBottom: 1, // Match very tight spacing (1px)
-        });
-      }
-
-      // Add selection mode styling (no borderStyle to avoid conflicts)
-      if (isSelectionMode) {
-        baseStyle.push({
-          backgroundColor: theme.dark
-            ? theme.colors.hlight + "20"
-            : "#5d321120",
-          borderWidth: 1,
-          borderStyle: "dashed",
-          borderColor: theme.dark ? theme.colors.hlight + "50" : "#5d321150",
-          borderRadius: 8,
-          paddingHorizontal: 4,
-          marginBottom: 1, // Match very tight spacing (1px)
+          marginBottom: 12,
         });
       }
 
@@ -531,7 +479,7 @@ const ParagraphText = React.memo(
       selectedSermon?.lastReadParagraph,
       index,
       isCopying,
-      isSelectionMode,
+      isSelected,
     ]);
 
     // Memoize text processing for endnotes and titles (search removed)
@@ -569,7 +517,7 @@ const ParagraphText = React.memo(
         // Additional layout handling can be added here if needed
         // For example, tracking when paragraphs become visible
       },
-      [onLayout]
+      [onLayout],
     );
 
     // Optimized clipboard function with better error handling
@@ -614,115 +562,6 @@ const ParagraphText = React.memo(
       }
     }, [isCopying, paragraph, selectedSermon]);
 
-    // Optimized text selection handler
-    const handleTextPress = useCallback(() => {
-      const now = Date.now();
-      const timeDiff = now - lastTapTime.current;
-      lastTapTime.current = now;
-
-      if (timeDiff < DOUBLE_TAP_DELAY) {
-        // Double tap detected - enable selection mode
-        if (Platform.OS === "ios") {
-          Vibration.vibrate(30);
-        }
-        setIsSelectionMode(true);
-
-        // Show selection tip
-        const message = "📝 Selection enabled! Long press text to select";
-        if (Platform.OS === "android") {
-          ToastAndroid.show(message, ToastAndroid.SHORT);
-        } else {
-          Alert.alert("Selection Mode", message);
-        }
-      } else {
-        // Single tap - show hint for selection
-        const message =
-          "💡 Double-tap paragraph number to enable text selection";
-        if (Platform.OS === "android") {
-          ToastAndroid.show(message, ToastAndroid.SHORT);
-        }
-      }
-    }, []);
-
-    // Reset selection mode after a delay
-    useEffect(() => {
-      if (isSelectionMode) {
-        const timeout = setTimeout(() => {
-          setIsSelectionMode(false);
-        }, 5000); // 5 seconds selection mode
-        return () => clearTimeout(timeout);
-      }
-    }, [isSelectionMode]);
-
-    // Debounced bookmark handlers to prevent rapid consecutive calls
-    const debouncedAddBookmark = useMemo(
-      () => debounce(addBookmark, DEBOUNCE_DELAY),
-      [addBookmark]
-    );
-
-    const debouncedRemoveBookmark = useMemo(
-      () => debounce(removeBookmark, DEBOUNCE_DELAY),
-      [removeBookmark]
-    );
-
-    const handleBookmarkPress = useCallback(() => {
-      // Provide immediate haptic feedback
-      if (Platform.OS === "ios") {
-        Vibration.vibrate(VIBRATION_DURATION);
-      }
-
-      if (isBookmarked) {
-        // Remove bookmark if already bookmarked
-        debouncedRemoveBookmark(selectedSermon, index);
-      } else {
-        // Add bookmark if not bookmarked
-        debouncedAddBookmark(selectedSermon, index, paragraph);
-      }
-    }, [
-      debouncedAddBookmark,
-      debouncedRemoveBookmark,
-      selectedSermon,
-      index,
-      paragraph,
-      isBookmarked,
-    ]);
-
-    // Optimized highlight button press handler
-    const handleHighlightPress = useCallback(() => {
-      // Provide immediate haptic feedback
-      if (Platform.OS === "ios") {
-        Vibration.vibrate(VIBRATION_DURATION);
-      }
-
-      // Use requestAnimationFrame for smooth state transition
-      requestAnimationFrame(() => {
-        setShowColorPalette((prev) => !prev);
-      });
-    }, []);
-
-    // Optimized color selection handler with immediate UI feedback
-    const handleColorSelect = useCallback(
-      (color) => {
-        // Immediate UI feedback - close palette first for responsive feel
-        setShowColorPalette(false);
-
-        // Provide immediate haptic feedback
-        if (Platform.OS === "ios") {
-          Vibration.vibrate(VIBRATION_DURATION);
-        }
-
-        // Use requestAnimationFrame for smooth state updates
-        requestAnimationFrame(() => {
-          if (color) {
-            addHighlight(selectedSermon.id, index, color);
-          } else {
-            removeHighlight(selectedSermon.id, index);
-          }
-        });
-      },
-      [addHighlight, removeHighlight, selectedSermon.id, index]
-    );
-
     // Render text content based on type
     const renderTextContent = useCallback(() => {
       switch (processedText.type) {
@@ -750,104 +589,32 @@ const ParagraphText = React.memo(
     }, [processedText, theme, settings, searchPhrase]);
 
     return (
-      <View style={containerStyle} onLayout={handleLayout}>
+      <Pressable
+        onPress={() => onParagraphClick?.(index)}
+        style={({ pressed }) => [
+          containerStyle,
+          pressed && {
+            opacity: 0.9,
+          },
+        ]}
+        onLayout={handleLayout}
+        onLongPress={copyToClipboard}
+        delayLongPress={500}
+        android_ripple={{
+          color: theme.dark
+            ? "rgba(213, 122, 62, 0.15)"
+            : "rgba(93, 50, 17, 0.1)",
+          borderless: false,
+        }}
+      >
         <View style={styles.paragraphHeader}>
-          <View style={styles.paragraphNumberContainer}>
-            {/* <TouchableOpacity
-              onPress={handleTextPress}
-              style={[
-                styles.paragraphNumberButton,
-                {
-                  backgroundColor: isSelectionMode
-                    ? theme.dark
-                      ? theme.colors.hlight
-                      : "#5d3211"
-                    : "transparent",
-                },
-              ]}
-            >
-             
-            </TouchableOpacity> */}
-            <TouchableOpacity
-              activeOpacity={0.7} // Added opacity feedback
-              onPress={handleBookmarkPress}
-              style={[
-                styles.bookmarkButton,
-                isBookmarked && styles.bookmarkButtonActive,
-              ]}
-            >
-              <Ionicons
-                name={isBookmarked ? "bookmark" : "bookmark-outline"}
-                size={responsiveFontSize(20)}
-                color={theme.dark ? theme.colors.hlight : "#5d3211"}
-              />
-            </TouchableOpacity>
-            <View style={{ position: "relative" }}>
-              <TouchableOpacity
-                activeOpacity={0.7} // Added opacity feedback
-                onPress={handleHighlightPress}
-                style={[
-                  styles.highlightButton,
-                  currentHighlight && styles.highlightButtonActive,
-                ]}
-              >
-                <Ionicons
-                  name="chevron-forward"
-                  size={responsiveFontSize(18)}
-                  color={
-                    currentHighlight
-                      ? theme.dark
-                        ? theme.colors.hlight
-                        : "#5d3211"
-                      : theme.dark
-                      ? theme.colors.text + "60"
-                      : "#666"
-                  }
-                />
-              </TouchableOpacity>
-
-              {/* Optimized Highlight Color Palette with better positioning */}
-              {showColorPalette && (
-                <View style={styles.paletteContainer}>
-                  <HighlightColorPalette
-                    isVisible={showColorPalette}
-                    onColorSelect={handleColorSelect}
-                    onClose={() => setShowColorPalette(false)}
-                    theme={theme}
-                    currentColor={currentHighlight}
-                  />
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Selectable Text Container */}
+          {/* Text Container */}
           <View style={styles.selectableTextContainer}>
             <Text
-              style={textStyle} // Use pre-calculated style
-              selectable={true}
-              selectTextOnFocus={false}
-              selectionColor={
-                theme.dark ? theme.colors.hlight + "60" : "#5d321160"
-              }
-              onLongPress={copyToClipboard}
+              style={textStyle}
+              selectable={false}
               dataDetectorType="none"
               allowFontScaling={false}
-              onSelectionChange={(event) => {
-                // Optional: Handle selection changes
-                if (
-                  event.nativeEvent.selection.start !==
-                  event.nativeEvent.selection.end
-                ) {
-                  // Text is selected
-                  if (Platform.OS === "android") {
-                    ToastAndroid.show(
-                      "Text selected! Copy available in context menu",
-                      ToastAndroid.SHORT
-                    );
-                  }
-                }
-              }}
             >
               {processedText.type === "endnote_with_title"
                 ? [
@@ -855,13 +622,13 @@ const ParagraphText = React.memo(
                     <Text
                       key={`paragraph-number-${index}`}
                       style={{
-                        fontSize: responsiveFontSize(settings?.fontSize || 22),
-                        fontFamily: "serif",
+                        fontSize: responsiveFontSize(settings?.fontSize || 16),
+                        fontFamily: settings?.fontFamily || "System",
                         color: theme.dark ? theme.colors.hlight : "#5d3211",
                         fontStyle: "italic",
                         fontWeight: "bold",
                         lineHeight: Math.round(
-                          responsiveFontSize(settings?.fontSize || 22) * 1.4
+                          responsiveFontSize(settings?.fontSize || 22) * 1.4,
                         ),
                       }}
                     >
@@ -876,13 +643,13 @@ const ParagraphText = React.memo(
                       if (partIndex > 0) {
                         const prevParts = processedText.parts.slice(
                           0,
-                          partIndex
+                          partIndex,
                         );
                         const endnoteIndex = prevParts.findIndex(
-                          (p) => p.toLowerCase() === "endnote"
+                          (p) => p.toLowerCase() === "endnote",
                         );
                         const branhamIndex = processedText.parts.findIndex(
-                          (p) => p.toLowerCase() === "william marrion branham"
+                          (p) => p.toLowerCase() === "william marrion branham",
                         );
                         isTitle =
                           endnoteIndex !== -1 &&
@@ -901,7 +668,7 @@ const ParagraphText = React.memo(
                               fontWeight: "500",
                               fontFamily: settings?.fontFamily || "ZillaSlab",
                               fontSize: responsiveFontSize(
-                                settings?.fontSize || 22
+                                settings?.fontSize || 22,
                               ),
                             }}
                           >
@@ -915,10 +682,12 @@ const ParagraphText = React.memo(
                             style={{
                               color: theme.dark ? "#FFFFFF" : "#000000",
                               textDecorationLine: "underline",
-                              fontWeight: "bold",
-                              fontStyle: "italic",
-                              fontFamily: "serif",
-                              fontSize: responsiveFontSize(15),
+                              // fontWeight: "bold",
+                              // fontStyle: "italic",
+                              fontFamily: settings?.fontFamily || "System",
+                              fontSize: responsiveFontSize(
+                                settings?.fontSize || 16,
+                              ),
                             }}
                           >
                             {part}
@@ -933,10 +702,12 @@ const ParagraphText = React.memo(
                                 ? theme.colors.hlight
                                 : "#5d3211",
                               textDecorationLine: "underline",
-                              fontWeight: "bold",
-                              fontStyle: "italic",
-                              fontFamily: "serif",
-                              fontSize: responsiveFontSize(15),
+                              // fontWeight: "bold",
+                              // fontStyle: "italic",
+                              fontFamily: settings?.fontFamily || "System",
+                              fontSize: responsiveFontSize(
+                                settings?.fontSize || 16,
+                              ),
                             }}
                           >
                             {part}
@@ -948,89 +719,73 @@ const ParagraphText = React.memo(
                     }),
                   ]
                 : processedText.type === "endnote"
-                ? [
-                    // Add paragraph number at the beginning
-                    <Text
-                      key={`paragraph-number-${index}`}
-                      style={{
-                        fontSize: responsiveFontSize(settings?.fontSize || 22),
-                        fontFamily: "serif",
-                        color: theme.dark ? theme.colors.hlight : "#5d3211",
-                        fontStyle: "italic",
-                        fontWeight: "bold",
-                        lineHeight: Math.round(
-                          responsiveFontSize(settings?.fontSize || 22) * 1.4
-                        ),
-                      }}
-                    >
-                      {index + 1}.{" "}
-                    </Text>,
-                    // Then render the processed parts
-                    ...processedText.parts.map((part, partIndex) => {
-                      const lowerPart = part.toLowerCase();
-                      if (
-                        lowerPart === "endnote" ||
-                        lowerPart === "reference"
-                      ) {
-                        return (
-                          <Text
-                            key={`${lowerPart}-${partIndex}-${part.slice(
-                              0,
-                              10
-                            )}`}
-                            style={{
-                              color: theme.dark
-                                ? theme.colors.hlight
-                                : "#5d3211",
-                              textDecorationLine: "underline",
-                              fontWeight: "500",
-                              fontFamily: settings?.fontFamily || "ZillaSlab",
-                              fontSize: responsiveFontSize(
-                                settings?.fontSize || 22
-                              ),
-                              // Inherit lineHeight from parent to maintain consistent spacing
-                            }}
-                          >
-                            {part}
-                          </Text>
-                        );
-                      } else {
-                        return part;
-                      }
-                    }),
-                  ]
-                : renderTextWithStyledNumbers(
-                    `${index + 1}. ${processedText.text}`,
-                    theme,
-                    settings,
-                    "normal",
-                    searchPhrase,
-                    currentHighlight
-                  )}
+                  ? [
+                      // Add paragraph number at the beginning
+                      <Text
+                        key={`paragraph-number-${index}`}
+                        style={{
+                          fontSize: responsiveFontSize(
+                            settings?.fontSize || 16,
+                          ),
+                          fontFamily: settings?.fontFamily || "System",
+                          color: theme.dark ? theme.colors.hlight : "#5d3211",
+                          fontStyle: "italic",
+                          fontWeight: "bold",
+                          lineHeight: Math.round(
+                            responsiveFontSize(settings?.fontSize || 16) * 1.4,
+                          ),
+                        }}
+                      >
+                        {index + 1}.{" "}
+                      </Text>,
+                      // Then render the processed parts
+                      ...processedText.parts.map((part, partIndex) => {
+                        const lowerPart = part.toLowerCase();
+                        if (
+                          lowerPart === "endnote" ||
+                          lowerPart === "reference"
+                        ) {
+                          return (
+                            <Text
+                              key={`${lowerPart}-${partIndex}-${part.slice(
+                                0,
+                                10,
+                              )}`}
+                              style={{
+                                color: theme.dark
+                                  ? theme.colors.hlight
+                                  : "#5d3211",
+                                textDecorationLine: "underline",
+                                fontWeight: "500",
+                                fontFamily: settings?.fontFamily || "System",
+                                fontSize: responsiveFontSize(
+                                  settings?.fontSize || 16,
+                                ),
+                                // Inherit lineHeight from parent to maintain consistent spacing
+                              }}
+                            >
+                              {part}
+                            </Text>
+                          );
+                        } else {
+                          return part;
+                        }
+                      }),
+                    ]
+                  : renderTextWithStyledNumbers(
+                      `${index + 1}. ${processedText.text}`,
+                      theme,
+                      settings,
+                      "normal",
+                      searchPhrase,
+                      currentHighlight,
+                    )}
             </Text>
           </View>
         </View>
-
-        {/* Selection Mode Indicator */}
-        {isSelectionMode && (
-          <View
-            style={[
-              styles.selectionModeIndicator,
-              {
-                backgroundColor: theme.dark
-                  ? theme.colors.hlight + "E0"
-                  : "#5d3211E0",
-              },
-            ]}
-          >
-            <Text style={styles.selectionModeText}>
-              📝 Selection Mode Active
-            </Text>
-          </View>
-        )}
-      </View>
+      </Pressable>
     );
-  }
+  },
 );
 
 // Add display name for debugging

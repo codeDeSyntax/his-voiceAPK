@@ -26,7 +26,7 @@ const DisplaySettings = ({
   const [showColorOptions, setShowColorOptions] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [localAccentColor, setLocalAccentColor] = useState(
-    accentColor || "#e9925c"
+    accentColor || "#e9925c",
   );
 
   const FONT_OPTIONS = [
@@ -57,75 +57,54 @@ const DisplaySettings = ({
     return (
       <TouchableOpacity
         style={{
-          backgroundColor: theme.dark
-            ? "rgba(255, 255, 255, 0.02)"
-            : "rgba(255, 255, 255, 0.7)",
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 12,
-          borderWidth: 1,
-          borderColor: theme.dark
-            ? "rgba(255, 255, 255, 0.05)"
-            : "rgba(0, 0, 0, 0.02)",
-          transform: [{ scale: pressed ? 0.98 : 1 }],
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: 16,
+          paddingHorizontal: 4,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.dark
+            ? "rgba(242, 205, 180, 0.08)"
+            : "rgba(93, 50, 17, 0.08)",
+          opacity: pressed ? 0.7 : 1,
         }}
         onPress={onPress}
         onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}
-        activeOpacity={0.7}
+        activeOpacity={1}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-            <View
+        <Ionicons
+          name={icon}
+          size={24}
+          color={theme.colors.text}
+          style={{ marginRight: 16 }}
+        />
+
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "500",
+              color: theme.colors.text,
+              fontFamily: "ZillaSlab",
+              marginBottom: subtitle ? 2 : 0,
+            }}
+          >
+            {title}
+          </Text>
+          {subtitle && (
+            <Text
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: theme.dark
-                  ? "rgba(255, 255, 255, 0.08)"
-                  : "rgba(0, 0, 0, 0.05)",
-                justifyContent: "center",
-                alignItems: "center",
-                marginRight: 12,
+                fontSize: 13,
+                color: theme.colors.text + "60",
+                fontFamily: "ZillaSlab",
               }}
             >
-              <Ionicons name={icon} size={18} color={theme.colors.text} />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "500",
-                  color: theme.colors.text,
-                  fontFamily: "ZillaSlab",
-                }}
-              >
-                {title}
-              </Text>
-              {subtitle && (
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: theme.colors.text + "80",
-                    marginTop: 2,
-                    fontFamily: "ZillaSlab",
-                  }}
-                >
-                  {subtitle}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {children}
+              {subtitle}
+            </Text>
+          )}
         </View>
+
+        {children}
       </TouchableOpacity>
     );
   };
@@ -139,7 +118,7 @@ const DisplaySettings = ({
   };
 
   return (
-    <View style={{ gap: 12 }}>
+    <View style={{ paddingHorizontal: 0 }}>
       {/* Dark Mode */}
       <SettingItem
         icon="moon"
@@ -164,8 +143,8 @@ const DisplaySettings = ({
                 ? "#f2cdb4"
                 : "#522b11"
               : theme.dark
-              ? "rgba(255, 255, 255, 0.8)"
-              : "#ffffff"
+                ? "rgba(255, 255, 255, 0.8)"
+                : "#ffffff"
           }
         />
       </SettingItem>
@@ -297,7 +276,8 @@ const DisplaySettings = ({
                         ? theme.colors.hlight
                         : "#5d3211"
                       : theme.colors.text,
-                  fontFamily: font.value !== "System Default" ? font.value : undefined,
+                  fontFamily:
+                    font.value !== "System Default" ? font.value : undefined,
                 }}
               >
                 {font.name}
@@ -378,8 +358,8 @@ const DisplaySettings = ({
                       ? "#FFFFFF"
                       : "#000000"
                     : theme.dark
-                    ? "rgba(255, 255, 255, 0.2)"
-                    : "rgba(0, 0, 0, 0.1)",
+                      ? "rgba(255, 255, 255, 0.2)"
+                      : "rgba(0, 0, 0, 0.1)",
               }}
             />
           ))}
