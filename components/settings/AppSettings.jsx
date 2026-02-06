@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { closeDatabase } from "../../database/sermonDB";
+import { closeDatabase, forceStopIndexing } from "../../database/sermonDB";
 import { deleteLocalDatabase } from "../../database/downloadDatabase";
 import { resetAppToFresh } from "../../Utils/resetApp";
 
@@ -25,14 +25,26 @@ const AppSettings = ({ theme, router, compact = false }) => {
             try {
               console.log("🗑️  Deleting database file...");
 
-              // Close the database connection first (resets singleton + isInitialized)
-              await closeDatabase();
-              console.log("✅ Database connection closed");
+              // Step 1: Stop any ongoing indexing FIRST
+              console.log("🛑 Stopping any ongoing indexing...");
+              forceStopIndexing();
 
-              // Small delay to ensure connection is fully released
+              // Step 2: Wait for in-flight DB writes to finish
+              console.log("⏳ Waiting for in-flight operations...");
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+
+              // Step 3: Close the database connection (resets singleton + isInitialized)
+              try {
+                await closeDatabase();
+                console.log("✅ Database connection closed");
+              } catch (closeErr) {
+                console.warn("⚠️ Error closing database:", closeErr.message);
+              }
+
+              // Step 4: Small delay to ensure connection is fully released
               await new Promise((resolve) => setTimeout(resolve, 300));
 
-              // Delete the database file
+              // Step 5: Delete the database file
               await deleteLocalDatabase();
 
               console.log("✅ Database file deleted");

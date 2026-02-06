@@ -27,7 +27,12 @@ import {
   downloadDatabaseFromGitHub,
   databaseExists,
 } from "../../database/downloadDatabase";
-import { forceStopIndexing, closeDatabase } from "../../database/sermonDB";
+import {
+  forceStopIndexing,
+  closeDatabase,
+  resetDatabaseState,
+} from "../../database/sermonDB";
+import * as Updates from "expo-updates";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -98,62 +103,50 @@ const Welcome = () => {
 
       // Only stop indexing and close DB if database already exists
       if (allSermons.length > 0) {
-        // Stop any ongoing indexing before download
         console.log("🛑 Stopping any ongoing indexing...");
         forceStopIndexing();
 
-        // Close existing database connection
-        console.log("🔌 Closing database connection...");
         try {
           await closeDatabase();
+          console.log("✅ Database closed before download");
         } catch (closeError) {
-          console.log("⚠️ Could not close database:", closeError.message);
+          console.warn("⚠️ Error closing database:", closeError.message);
         }
 
-        // Small delay to ensure connection is closed
         await new Promise((resolve) => setTimeout(resolve, 200));
-      } else {
-        console.log("✅ No existing database - skipping cleanup");
       }
 
       // Download the database with real progress tracking
       const result = await downloadDatabaseFromGitHub((percentage, message) => {
-        console.log(`Download progress: ${percentage}% - ${message}`);
         setDownloadProgress(percentage);
       });
 
       if (result.success) {
         setDownloadProgress(100);
-        console.log("✅ Database downloaded successfully");
+        console.log("✅ Database downloaded successfully. Restarting app...");
 
-        // Force close any existing database connection to ensure fresh open
-        console.log("🔌 Force closing database to reset connection...");
+        // Brief delay so user sees 100%
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        // Restart the app to load fresh data
         try {
-          await closeDatabase();
-        } catch (e) {
-          console.log("Database was already closed");
-        }
-
-        // Wait for file system to stabilize after download
-        console.log("⏳ Waiting for file system to stabilize...");
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        // Reload sermons from database before navigating
-        console.log("⏳ Loading sermons after download...");
-        const loadSuccess = await refreshSermons();
-
-        if (loadSuccess) {
-          console.log("✅ Sermons loaded successfully, navigating...");
-          setDbExists(true);
-
-          // Small delay to ensure state updates
-          await new Promise((resolve) => setTimeout(resolve, 300));
-
-          setIsDownloading(false);
-          setDownloadProgress(0);
-          navigateToMainScreen();
-        } else {
-          throw new Error("Failed to load sermons after download");
+          await Updates.reloadAsync();
+        } catch (restartError) {
+          // Fallback for dev mode (Expo Go) where Updates.reloadAsync doesn't work
+          console.warn("⚠️ Updates.reloadAsync failed, trying DevSettings...");
+          try {
+            const { DevSettings } = require("react-native");
+            DevSettings.reload();
+          } catch (devError) {
+            console.warn(
+              "⚠️ DevSettings.reload also failed:",
+              devError.message,
+            );
+            setDownloadError(
+              "Download complete! Please close and reopen the app to load your sermons.",
+            );
+            setIsDownloading(false);
+          }
         }
       } else {
         throw new Error("Download failed");
@@ -352,24 +345,7 @@ const Welcome = () => {
             style={styles.cloudImage}
             resizeMode="contain"
           />
-          {/* Audio waveform bars */}
-          <View style={styles.audioLinesContainer}>
-            {[0.4, 0.7, 0.9, 0.65, 0.5, 0.8, 0.45, 0.6, 0.85, 0.55, 0.7].map(
-              (height, index) => (
-                <Animated.View
-                  key={`bar-${index}`}
-                  style={[
-                    styles.audioBar,
-                    {
-                      height: verticalScale(15 * height),
-                      backgroundColor: theme.dark ? "#e6c3b8" : "#5d3211",
-                      opacity: 0.8 + height * 0.2,
-                    },
-                  ]}
-                />
-              ),
-            )}
-          </View>
+         
         </Animated.View>
 
         {/* Title Section */}
@@ -455,7 +431,9 @@ const Welcome = () => {
                   { color: theme.dark ? "#e6c3b8" : "#5d3211" },
                 ]}
               >
-                Downloading... {Math.round(downloadProgress)}%
+                {downloadProgress >= 100
+                  ? "Download complete! Restarting app..."
+                  : `Downloading... ${Math.round(downloadProgress)}%`}
               </Text>
               <View
                 style={[

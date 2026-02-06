@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { View, ActivityIndicator, Platform, BackHandler } from "react-native";
 
 // Import screens
-import Menu from "../screens/menu/Menu";
 import About from "../screens/About/About";
 import Welcome from "../screens/Welcome/Welcome";
 import UpdateScreen from "../screens/LoadingScreen";
@@ -129,15 +128,6 @@ const StackNavigator = () => {
         <Stack.Screen
           name="welcome"
           component={ScreenWithSuspense(Welcome)}
-          options={{
-            navigationBarHidden: true,
-            statusBarHidden: true,
-            ...CardOptions,
-          }}
-        />
-        <Stack.Screen
-          name="Menu"
-          component={ScreenWithSuspense(Menu)}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,

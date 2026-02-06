@@ -732,22 +732,22 @@ export const indexSermonForSearch = async (
 
     console.log(`✅ Indexed sermon ${sermonId}`);
   } catch (error) {
-    // Retry logic for connection errors
-    if (
-      retryCount < MAX_RETRIES &&
-      error.message?.includes("NullPointerException")
-    ) {
-      console.warn(
-        `⚠️ Retrying indexing sermon ${sermonId} (attempt ${retryCount + 1}/${MAX_RETRIES})...`,
-      );
-      // Wait before retrying
-      await new Promise((resolve) =>
-        setTimeout(resolve, 500 * (retryCount + 1)),
-      );
-      return indexSermonForSearch(sermonId, retryCount + 1, dbConnection);
+    // If indexing was stopped, don't retry - just exit silently
+    if (!isIndexing) {
+      return;
     }
 
-    // Silently fail after retries - indexing is background work
+    // NullPointerException means the DB connection is dead
+    // Stop ALL indexing - no point retrying individual sermons
+    if (error.message?.includes("NullPointerException")) {
+      console.error(
+        `❌ Database connection lost at sermon ${sermonId} - stopping indexing`,
+      );
+      isIndexing = false;
+      return;
+    }
+
+    // For other errors, just log and continue to next sermon
     console.error(
       `⚠️ Failed indexing sermon ${sermonId}: ${error.message || error}`,
     );
@@ -846,6 +846,15 @@ export const rebuildSearchIndex = async () => {
       // Check if indexing was force-stopped
       if (!isIndexing) {
         console.log("⚠️ Indexing was stopped");
+        break;
+      }
+
+      // Verify database connection is still alive before each batch
+      try {
+        await database.getFirstAsync("SELECT 1");
+      } catch (connCheckError) {
+        console.error("❌ Database connection lost during indexing - stopping");
+        isIndexing = false;
         break;
       }
 
@@ -1034,27 +1043,60 @@ export const forceStopIndexing = () => {
   }
 };
 
+// Reset database state variables without touching the native connection
+// Use this when you need a fresh connection (e.g., after downloading a new DB file)
+// but calling closeAsync() would crash (e.g., on fresh app with no open connection)
+export const resetDatabaseState = () => {
+  console.log("🔄 Resetting database state (no native close)...");
+  db = null;
+  isOpening = false;
+  openPromise = null;
+  isInitialized = false;
+  initPromise = null;
+  console.log(
+    "✅ Database state reset - next access will open fresh connection",
+  );
+};
+
 // Close database connection
 export const closeDatabase = async () => {
-  if (db) {
-    try {
-      await db.closeAsync();
+  try {
+    if (db) {
+      try {
+        // Try to close the database if it has a closeAsync method
+        if (typeof db.closeAsync === "function") {
+          await db.closeAsync();
+          console.log("✅ Database closed successfully");
+        } else {
+          console.log(
+            "⚠️ Database does not have closeAsync method, resetting reference",
+          );
+        }
+      } catch (closeError) {
+        console.warn(
+          "⚠️ Error closing database:",
+          closeError.message || closeError,
+        );
+        // Continue with reset even if close fails
+      }
+
+      // Always reset the singleton and state
       db = null;
       isOpening = false;
       openPromise = null;
       isInitialized = false;
       initPromise = null;
-      console.log("Database closed");
-    } catch (error) {
-      console.warn("⚠️ Error closing database:", error.message);
-      // Force null even if close fails
-      db = null;
-      isOpening = false;
-      openPromise = null;
-      isInitialized = false;
-      initPromise = null;
+      console.log("✅ Database state reset");
+    } else {
+      console.log("✅ No database connection to close");
     }
-  } else {
-    console.log("✅ No database connection to close");
+  } catch (error) {
+    console.error("Fatal error in closeDatabase:", error);
+    // Force reset state even if something goes wrong
+    db = null;
+    isOpening = false;
+    openPromise = null;
+    isInitialized = false;
+    initPromise = null;
   }
 };

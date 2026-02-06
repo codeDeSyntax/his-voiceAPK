@@ -17,7 +17,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#faeed1"
+        "backgroundColor": "#2c221a"
       },
       "package": "com.boblambert.hisvoice",
       "edgeToEdgeEnabled": true
