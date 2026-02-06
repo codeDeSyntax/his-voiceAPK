@@ -4,9 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { openDatabase, closeDatabase } from "../../database/sermonDB";
+import { closeDatabase } from "../../database/sermonDB";
 import { deleteLocalDatabase } from "../../database/downloadDatabase";
-import { clearAllData, initializeDatabase } from "../../database/sermonDB";
+import { resetAppToFresh } from "../../Utils/resetApp";
 
 const AppSettings = ({ theme, router, compact = false }) => {
   const handleDeleteDatabaseFile = async () => {
@@ -24,18 +24,19 @@ const AppSettings = ({ theme, router, compact = false }) => {
           onPress: async () => {
             try {
               console.log("🗑️  Deleting database file...");
-              const db = await openDatabase();
 
-              // Clear migration status so app knows to re-download
-              await db.runAsync(
-                "DELETE FROM migration_status WHERE key = 'migration_completed'",
-              );
+              // Close the database connection first (resets singleton + isInitialized)
+              await closeDatabase();
+              console.log("✅ Database connection closed");
+
+              // Small delay to ensure connection is fully released
+              await new Promise((resolve) => setTimeout(resolve, 300));
 
               // Delete the database file
               await deleteLocalDatabase();
 
               console.log("✅ Database file deleted");
-              Alert.alert("Success", "Database deleted.", [
+              Alert.alert("Success", "Database deleted successfully.", [
                 {
                   text: "OK",
                   onPress: () => {
@@ -75,15 +76,17 @@ const AppSettings = ({ theme, router, compact = false }) => {
               console.log("🔄 Resetting all settings...");
 
               // Clear all settings from AsyncStorage
-              await AsyncStorage.removeItem("sermonSettings");
-              await AsyncStorage.removeItem("sermonLastPositions");
-              await AsyncStorage.removeItem("sermonBookmarks");
-              await AsyncStorage.removeItem("sermonHighlights");
-              await AsyncStorage.removeItem("lastOpenedSermon");
+              await AsyncStorage.multiRemove([
+                "sermonSettings",
+                "sermonLastPositions",
+                "sermonBookmarks",
+                "sermonHighlights",
+                "lastOpenedSermon",
+              ]);
 
               console.log("✅ All settings reset");
 
-              // Reload the app to apply reset settings
+              // Navigate home — DB is still intact, no need to go to Welcome
               Alert.alert(
                 "Success",
                 "All settings have been reset to defaults. The app will now reload.",
@@ -91,8 +94,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
                   {
                     text: "OK",
                     onPress: () => {
-                      // Reload the app
-                      router.replace("welcome");
+                      router.replace("Home");
                     },
                   },
                 ],
@@ -103,6 +105,50 @@ const AppSettings = ({ theme, router, compact = false }) => {
                 "Error",
                 `Failed to reset settings: ${error.message}`,
               );
+            }
+          },
+          style: "destructive",
+        },
+      ],
+    );
+  };
+
+  const handleResetAppToFresh = async () => {
+    Alert.alert(
+      "Reset App to Fresh",
+      "This will reset EVERYTHING to first-time launch state:\n• Clear all preferences\n• Clear reading progress\n• Clear bookmarks & highlights\n• Reset database migration\n\nThe app will reload to the Welcome screen.",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Reset cancelled"),
+          style: "cancel",
+        },
+        {
+          text: "Reset",
+          onPress: async () => {
+            try {
+              console.log("🔄 Starting fresh state reset...");
+              const result = await resetAppToFresh();
+
+              if (result.success) {
+                Alert.alert(
+                  "Success",
+                  "App has been reset to fresh state. Reloading now...",
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => {
+                        router.replace("welcome");
+                      },
+                    },
+                  ],
+                );
+              } else {
+                throw new Error(result.error);
+              }
+            } catch (error) {
+              console.error("Fresh reset error:", error);
+              Alert.alert("Error", `Failed to reset: ${error.message}`);
             }
           },
           style: "destructive",
@@ -366,6 +412,15 @@ const AppSettings = ({ theme, router, compact = false }) => {
         onPress={handleResetAllSettings}
         rightIcon="chevron-forward"
       />
+
+      {/* Reset App to Fresh State - commented out, not safe for regular users */}
+      {/* <SettingItem
+        icon="refresh-circle-outline"
+        title="Reset App to Fresh"
+        subtitle="Complete reset to first-time launch"
+        onPress={handleResetAppToFresh}
+        rightIcon="chevron-forward"
+      /> */}
 
       {/* Export Database */}
       <SettingItem

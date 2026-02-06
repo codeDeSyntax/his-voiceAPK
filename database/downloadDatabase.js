@@ -1,4 +1,5 @@
 import * as FileSystem from "expo-file-system/legacy";
+import { closeDatabase, getSermonCount } from "./sermonDB";
 
 // Configuration
 const GITHUB_OWNER = "codeDeSyntax"; // Update this
@@ -30,7 +31,22 @@ export const downloadDatabaseFromGitHub = async (onProgress) => {
     const downloadUrl = getGitHubDownloadUrl();
 
     console.log(`Downloading database from: ${downloadUrl}`);
-    onProgress?.("Downloading database from GitHub...");
+    onProgress?.(0, "Starting download...");
+
+    // Delete any existing database file first
+    try {
+      const existingFile = await FileSystem.getInfoAsync(dbPath);
+      if (existingFile.exists) {
+        console.log("🗑️ Deleting existing database file...");
+        await FileSystem.deleteAsync(dbPath);
+        console.log("✅ Existing database deleted");
+      }
+    } catch (deleteError) {
+      console.log("No existing database to delete");
+    }
+
+    // Small delay after deletion
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Create directory if it doesn't exist
     const dbDir = `${FileSystem.documentDirectory}SQLite`;
@@ -41,12 +57,24 @@ export const downloadDatabaseFromGitHub = async (onProgress) => {
       console.log("SQLite directory already exists or created");
     }
 
-    // Download the file
-    const downloadResult = await FileSystem.downloadAsync(downloadUrl, dbPath, {
-      fromCache: false,
-    });
+    // Create download resumable with progress callback
+    const downloadResumable = FileSystem.createDownloadResumable(
+      downloadUrl,
+      dbPath,
+      {},
+      (downloadProgress) => {
+        const progress =
+          downloadProgress.totalBytesWritten /
+          downloadProgress.totalBytesExpectedToWrite;
+        const percentage = Math.floor(progress * 100);
+        onProgress?.(percentage, `Downloading ${percentage}%...`);
+      },
+    );
 
-    if (downloadResult.status !== 200) {
+    // Download the file with real progress tracking
+    const downloadResult = await downloadResumable.downloadAsync();
+
+    if (!downloadResult || downloadResult.status !== 200) {
       // Clean up incomplete file if download failed
       try {
         await FileSystem.deleteAsync(dbPath);
@@ -54,35 +82,24 @@ export const downloadDatabaseFromGitHub = async (onProgress) => {
       } catch (cleanupError) {
         console.error("Error cleaning up incomplete file:", cleanupError);
       }
-      throw new Error(`Download failed with status ${downloadResult.status}`);
-    }
-
-    // Ensure the file is writable by copying it to a temporary location and back
-    // This removes any read-only flags from the download
-    try {
-      const tempPath = `${dbPath}.temp`;
-      await FileSystem.copyAsync({
-        from: dbPath,
-        to: tempPath,
-      });
-      await FileSystem.deleteAsync(dbPath);
-      await FileSystem.moveAsync({
-        from: tempPath,
-        to: dbPath,
-      });
-      console.log("Database file permissions set to writable");
-    } catch (permError) {
-      console.error("Error setting file permissions:", permError);
-      // Continue anyway, the database might still work
+      throw new Error(
+        `Download failed with status ${downloadResult?.status || "unknown"}`,
+      );
     }
 
     console.log(`✅ Database downloaded successfully to: ${dbPath}`);
-    onProgress?.("Database downloaded successfully!");
+    onProgress?.(100, "Download complete!");
+
+    // Verify the downloaded file size
+    const fileInfo = await FileSystem.getInfoAsync(dbPath);
+    console.log(
+      `📊 Downloaded file size: ${fileInfo.size} bytes (${(fileInfo.size / 1024 / 1024).toFixed(2)} MB)`,
+    );
 
     return {
       success: true,
       path: dbPath,
-      size: downloadResult.size,
+      size: fileInfo.size,
     };
   } catch (error) {
     console.error("Error downloading database:", error);
@@ -110,15 +127,23 @@ export const databaseExists = async () => {
     const fileInfo = await FileSystem.getInfoAsync(dbPath);
 
     // Check if file exists and is larger than an empty database (~4KB)
-    // A valid populated database should be > 10KB
-    if (
-      fileInfo.exists &&
-      fileInfo.isDirectory === false &&
-      fileInfo.size > 10000
-    ) {
-      return true;
+    if (!fileInfo.exists || fileInfo.isDirectory) {
+      console.log("📂 Database file does not exist");
+      return false;
     }
-    return false;
+
+    // File exists, but check if it has sermons
+    try {
+      const sermonCount = await getSermonCount();
+      console.log(`📊 Database has ${sermonCount} sermons`);
+
+      // Database is valid if it has at least some sermons
+      return sermonCount > 0;
+    } catch (dbError) {
+      // If we can't query the database, consider it invalid
+      console.error("❌ Cannot query database:", dbError.message);
+      return false;
+    }
   } catch (error) {
     console.error("Error checking database existence:", error);
     return false;
@@ -144,6 +169,7 @@ export const getDatabaseSize = async () => {
 
 /**
  * Delete local database (for resetting) - deletes any database file regardless of size
+ * NOTE: closeDatabase() should be called separately by the reset function
  */
 export const deleteLocalDatabase = async () => {
   try {

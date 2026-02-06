@@ -15,8 +15,8 @@ export const migrateSermons = async (onProgress) => {
   try {
     console.log("Starting sermon migration...");
 
-    // Initialize database tables
-    await initializeDatabase();
+    // NOTE: initializeDatabase() is already called by loadSermons() before this
+    // No need to call it again here
 
     // Check if migration already completed
     const migrationDone = await isMigrationComplete();
@@ -30,26 +30,28 @@ export const migrateSermons = async (onProgress) => {
     // Check if database file exists locally
     const dbExists = await databaseExists();
     if (!dbExists) {
-      console.log("Database file not found. Downloading from GitHub...");
-      onProgress?.("Downloading database from GitHub...");
+      console.log(
+        "📂 Database file not found. User needs to download manually.",
+      );
+      onProgress?.("Database not found. Please download from Welcome screen.");
 
-      const downloadResult = await downloadDatabaseFromGitHub(onProgress);
-      if (!downloadResult.success) {
-        throw new Error("Failed to download database from GitHub");
-      }
-
-      console.log(`✅ Database downloaded: ${downloadResult.size} bytes`);
-      onProgress?.("Database downloaded successfully!");
-    } else {
-      console.log("Database file already exists locally");
-      onProgress?.("Using local database...");
+      // Don't auto-download - let user click the button on Welcome screen
+      return {
+        success: false,
+        needsDownload: true,
+        error: "Database file not found. Please download from Welcome screen.",
+      };
     }
+
+    console.log("✅ Database file exists locally");
+    onProgress?.("Using local database...");
 
     // Mark migration as complete
     console.log("Marking migration as complete...");
     await setMigrationComplete();
 
-    console.log(`✅ Migration completed. ${count} sermons in database.`);
+    const finalCount = await getSermonCount();
+    console.log(`✅ Migration completed. ${finalCount} sermons in database.`);
 
     onProgress?.("Database initialized successfully!");
     console.log("Database initialization completed successfully!");
@@ -57,7 +59,7 @@ export const migrateSermons = async (onProgress) => {
     return {
       success: true,
       alreadyCompleted: false,
-      count: count,
+      count: finalCount,
     };
   } catch (error) {
     console.error("Error during migration:", error);
@@ -74,7 +76,7 @@ export const migrateSermons = async (onProgress) => {
  */
 export const checkMigrationStatus = async () => {
   try {
-    await initializeDatabase();
+    // NOTE: initializeDatabase() is already called by loadSermons() before this
     const completed = await isMigrationComplete();
     const count = await getSermonCount();
 

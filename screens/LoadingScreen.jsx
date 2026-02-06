@@ -21,7 +21,7 @@ const LoaderScreen = () => {
       {/* Update Image */}
       <Animated.View style={[styles.imageContainer]}>
         <Image
-          source={require("../assets/hisv.png")}
+          source={require("../assets/adaptive-icon.png")}
           style={styles.image}
           resizeMode="contain"
           onError={(error) =>

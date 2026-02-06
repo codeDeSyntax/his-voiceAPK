@@ -27,12 +27,13 @@ import {
   downloadDatabaseFromGitHub,
   databaseExists,
 } from "../../database/downloadDatabase";
+import { forceStopIndexing, closeDatabase } from "../../database/sermonDB";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const Welcome = () => {
   const navigation = useNavigation();
-  const { theme, refreshSermons } = useAppContext();
+  const { theme, refreshSermons, allSermons } = useAppContext();
   const [fontsLoaded] = useFonts({
     "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
   });
@@ -65,20 +66,20 @@ const Welcome = () => {
   // Re-check database when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      const checkDatabase = async () => {
-        try {
-          const exists = await databaseExists();
-          setDbExists(exists);
-          // Reset download state when returning to this screen
-          setIsDownloading(false);
-          setDownloadProgress(0);
-          setDownloadError(null);
-        } catch (error) {
-          console.error("Error checking database:", error);
-        }
-      };
-      checkDatabase();
-    }, [setDbExists, setIsDownloading, setDownloadProgress, setDownloadError]),
+      // Primary check: if allSermons is loaded in context, we have a database
+      const hasLoadedSermons = allSermons && allSermons.length > 0;
+
+      console.log("📚 Sermons in context:", allSermons?.length || 0);
+      console.log("✅ Database ready:", hasLoadedSermons);
+
+      // Set dbExists based on sermon data in context
+      setDbExists(hasLoadedSermons);
+
+      // Reset download state when returning to this screen
+      setIsDownloading(false);
+      setDownloadProgress(0);
+      setDownloadError(null);
+    }, [allSermons]),
   );
 
   // Navigate to sermon list
@@ -95,38 +96,65 @@ const Welcome = () => {
 
       console.log("Starting database download...");
 
-      // Simulate progress updates
-      const progressInterval = setInterval(() => {
-        setDownloadProgress((prev) => {
-          if (prev < 90) {
-            return prev + Math.random() * 30;
-          }
-          return prev;
-        });
-      }, 500);
+      // Only stop indexing and close DB if database already exists
+      if (allSermons.length > 0) {
+        // Stop any ongoing indexing before download
+        console.log("🛑 Stopping any ongoing indexing...");
+        forceStopIndexing();
 
-      // Download the database
-      const result = await downloadDatabaseFromGitHub((message) => {
-        console.log("Download progress:", message);
+        // Close existing database connection
+        console.log("🔌 Closing database connection...");
+        try {
+          await closeDatabase();
+        } catch (closeError) {
+          console.log("⚠️ Could not close database:", closeError.message);
+        }
+
+        // Small delay to ensure connection is closed
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      } else {
+        console.log("✅ No existing database - skipping cleanup");
+      }
+
+      // Download the database with real progress tracking
+      const result = await downloadDatabaseFromGitHub((percentage, message) => {
+        console.log(`Download progress: ${percentage}% - ${message}`);
+        setDownloadProgress(percentage);
       });
-
-      clearInterval(progressInterval);
 
       if (result.success) {
         setDownloadProgress(100);
-        setDbExists(true);
         console.log("✅ Database downloaded successfully");
 
-        // Reload sermons from database before navigating
-        console.log("Loading sermons after download...");
-        await refreshSermons();
+        // Force close any existing database connection to ensure fresh open
+        console.log("🔌 Force closing database to reset connection...");
+        try {
+          await closeDatabase();
+        } catch (e) {
+          console.log("Database was already closed");
+        }
 
-        // Navigate after loading sermons
-        setTimeout(() => {
+        // Wait for file system to stabilize after download
+        console.log("⏳ Waiting for file system to stabilize...");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        // Reload sermons from database before navigating
+        console.log("⏳ Loading sermons after download...");
+        const loadSuccess = await refreshSermons();
+
+        if (loadSuccess) {
+          console.log("✅ Sermons loaded successfully, navigating...");
+          setDbExists(true);
+
+          // Small delay to ensure state updates
+          await new Promise((resolve) => setTimeout(resolve, 300));
+
           setIsDownloading(false);
           setDownloadProgress(0);
           navigateToMainScreen();
-        }, 500);
+        } else {
+          throw new Error("Failed to load sermons after download");
+        }
       } else {
         throw new Error("Download failed");
       }
@@ -481,7 +509,7 @@ const Welcome = () => {
               activeOpacity={0.8}
             >
               <View style={[styles.button, buttonStyleMemo]}>
-                <Text style={styles.buttonText}>DOWNLOAD SERMON</Text>
+                <Text style={styles.buttonText}>DOWNLOAD SERMONS</Text>
               </View>
             </TouchableOpacity>
           )}

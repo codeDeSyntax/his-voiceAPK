@@ -4,17 +4,89 @@ import * as FileSystem from "expo-file-system/legacy";
 const DB_NAME = "sermons-db.db"; // Match downloadDatabase.js
 let db = null; // Persistent database instance
 let isIndexing = false; // Lock to prevent multiple indexing processes
+let connectionAttempts = 0;
+let isOpening = false; // Lock to prevent concurrent database opens
+let openPromise = null; // Shared promise for concurrent callers
+let isInitialized = false; // Lock to prevent multiple initializations
+let initPromise = null; // Shared promise for concurrent init callers
+const MAX_CONNECTION_RETRIES = 3;
 
 /**
- * Get or open database connection (singleton pattern)
+ * Get the full database file path
+ */
+const getDatabasePath = () => {
+  return `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
+};
+
+/**
+ * Get fresh database connection - avoids singleton issues
+ * Each operation gets its own connection to prevent conflicts
+ */
+const getFreshConnection = async () => {
+  try {
+    const connection = await SQLite.openDatabaseAsync(DB_NAME);
+    return connection;
+  } catch (error) {
+    console.error("Error getting fresh database connection:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get or open database connection (singleton pattern for primary operations)
  */
 export const openDatabase = async () => {
   try {
-    if (db === null) {
-      db = await SQLite.openDatabaseAsync(DB_NAME);
-      console.log("Database opened successfully");
+    // If already open, return immediately
+    if (db !== null) {
+      return db;
     }
-    return db;
+
+    // If another call is already opening, wait for it
+    if (isOpening && openPromise) {
+      return await openPromise;
+    }
+
+    // Set lock and create shared promise
+    isOpening = true;
+    openPromise = (async () => {
+      try {
+        connectionAttempts = 0;
+
+        // Verify the database file exists
+        const dbPath = getDatabasePath();
+        const fileInfo = await FileSystem.getInfoAsync(dbPath);
+        console.log(`📂 Opening database at: ${dbPath}`);
+        console.log(
+          `📊 File exists: ${fileInfo.exists}, Size: ${fileInfo.exists ? (fileInfo.size / 1024 / 1024).toFixed(2) + " MB" : "N/A"}`,
+        );
+
+        db = await SQLite.openDatabaseAsync(DB_NAME);
+        console.log("Database opened successfully");
+
+        // Immediately verify sermon count after opening (optional, for debugging)
+        try {
+          const countCheck = await db.getFirstAsync(
+            "SELECT COUNT(*) as count FROM sermons",
+          );
+          console.log(
+            `📊 Sermon count immediately after opening: ${countCheck?.count || 0}`,
+          );
+        } catch (countError) {
+          // Table might not exist yet, ignore this error
+          console.log(
+            "📂 Sermon count check skipped (table may not exist yet)",
+          );
+        }
+
+        return db;
+      } finally {
+        isOpening = false;
+        openPromise = null;
+      }
+    })();
+
+    return await openPromise;
   } catch (error) {
     console.error("Error opening database:", error);
     // If database is corrupted, try to delete it so it can be re-downloaded
@@ -29,6 +101,13 @@ export const openDatabase = async () => {
         console.error("Error deleting corrupted database:", deleteError);
       }
     }
+
+    // If we still have a valid db reference despite error, return it
+    if (db) {
+      console.warn("Returning existing db connection despite error");
+      return db;
+    }
+
     throw error;
   }
 };
@@ -38,11 +117,13 @@ export const openDatabase = async () => {
  */
 const checkAndBuildSearchIndex = async (database) => {
   try {
-    // Prevent multiple indexing processes - check and set atomically
+    // Prevent multiple indexing processes - set lock immediately
     if (isIndexing) {
       console.log("Search index already building, skipping...");
       return;
     }
+    // Set lock BEFORE any async operations to prevent race conditions
+    isIndexing = true;
 
     // Check if search index has been built
     const result = await database.getFirstAsync(
@@ -50,23 +131,23 @@ const checkAndBuildSearchIndex = async (database) => {
       ["search_index_built"],
     );
 
-    if (result?.value !== "true") {
-      // Set lock immediately before checking sermon count
-      if (isIndexing) {
-        console.log("Search index already building, skipping...");
-        return;
-      }
-      isIndexing = true;
+    if (result?.value === "true") {
+      console.log("Search index already exists");
+      isIndexing = false;
+      return;
+    }
 
-      console.log("Search index not found. Building index in background...");
+    console.log("Search index not found. Building index in background...");
 
-      // Check if we have sermons to index
-      const sermonCount = await database.getFirstAsync(
-        "SELECT COUNT(*) as count FROM sermons WHERE sermon IS NOT NULL",
-      );
+    // Check if we have sermons to index
+    const sermonCount = await database.getFirstAsync(
+      "SELECT COUNT(*) as count FROM sermons WHERE sermon IS NOT NULL",
+    );
 
-      if (sermonCount?.count > 0) {
-        // Build the index in background (don't await)
+    if (sermonCount?.count > 0) {
+      // Delay indexing by 2 seconds to avoid immediate connection issues
+      // This lets the main connection stabilize first
+      setTimeout(() => {
         rebuildSearchIndex()
           .then(() => {
             console.log("✅ Background search index built successfully!");
@@ -83,14 +164,12 @@ const checkAndBuildSearchIndex = async (database) => {
             // Release lock
             isIndexing = false;
           });
+      }, 2000);
 
-        console.log("Search index building started in background...");
-      } else {
-        // No sermons to index, release lock
-        isIndexing = false;
-      }
+      console.log("Search index building scheduled for background...");
     } else {
-      console.log("Search index already exists");
+      // No sermons to index, release lock
+      isIndexing = false;
     }
   } catch (error) {
     console.error("Error checking search index:", error);
@@ -103,13 +182,81 @@ const checkAndBuildSearchIndex = async (database) => {
  * Initialize database - creates tables if they don't exist
  */
 export const initializeDatabase = async () => {
-  try {
-    // Open the database
-    const database = await openDatabase();
-    console.log("Creating tables...");
+  // If already initialized, return immediately
+  if (isInitialized) {
+    console.log("✅ Database already initialized, skipping...");
+    return true;
+  }
 
-    // Create sermons table
-    await database.runAsync(`
+  // If another call is already initializing, wait for it
+  if (initPromise) {
+    console.log("⏳ Waiting for existing initialization...");
+    return await initPromise;
+  }
+
+  initPromise = (async () => {
+    try {
+      // Open the database (singleton pattern handles this)
+      const database = await openDatabase();
+
+      // Check if tables already exist (downloaded database)
+      try {
+        const tableCheck = await database.getFirstAsync(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='sermons'",
+        );
+
+        if (tableCheck) {
+          console.log(
+            "✅ Tables already exist (downloaded database) - skipping creation",
+          );
+
+          // Even if main tables exist, ensure FTS5 and paragraphs tables are created
+          // These might not exist in the downloaded database
+          console.log("Creating search-related tables if needed...");
+
+          // Create FTS5 virtual table for full-text search
+          await database.runAsync(`
+          CREATE VIRTUAL TABLE IF NOT EXISTS sermons_fts USING fts5(
+            sermon_id UNINDEXED,
+            title,
+            sermon
+          )
+        `);
+
+          // Create pre-computed paragraphs table
+          await database.runAsync(`
+          CREATE TABLE IF NOT EXISTS sermon_paragraphs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sermon_id TEXT NOT NULL,
+            paragraph_index INTEGER NOT NULL,
+            paragraph_text TEXT NOT NULL,
+            word_count INTEGER,
+            start_char INTEGER,
+            end_char INTEGER,
+            FOREIGN KEY (sermon_id) REFERENCES sermons(id),
+            UNIQUE(sermon_id, paragraph_index)
+          )
+        `);
+
+          await database.runAsync(`
+          CREATE INDEX IF NOT EXISTS idx_paragraphs_sermon ON sermon_paragraphs(sermon_id)
+        `);
+
+          console.log("✅ Search tables created/verified");
+
+          // Just check and build search index if needed
+          await checkAndBuildSearchIndex(database);
+          isInitialized = true;
+          return true;
+        }
+      } catch (checkError) {
+        console.log("No existing tables found, will create new ones");
+      }
+
+      console.log("Creating tables...");
+
+      // Create sermons table
+      await database.runAsync(`
       CREATE TABLE IF NOT EXISTS sermons (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
@@ -125,20 +272,20 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    await database.runAsync(`
+      await database.runAsync(`
       CREATE INDEX IF NOT EXISTS idx_sermons_type ON sermons(type)
     `);
 
-    await database.runAsync(`
+      await database.runAsync(`
       CREATE INDEX IF NOT EXISTS idx_sermons_year ON sermons(year)
     `);
 
-    await database.runAsync(`
+      await database.runAsync(`
       CREATE INDEX IF NOT EXISTS idx_sermons_date ON sermons(date)
     `);
 
-    // Create FTS5 virtual table for full-text search
-    await database.runAsync(`
+      // Create FTS5 virtual table for full-text search
+      await database.runAsync(`
       CREATE VIRTUAL TABLE IF NOT EXISTS sermons_fts USING fts5(
         sermon_id UNINDEXED,
         title,
@@ -146,8 +293,8 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    // Create pre-computed paragraphs table
-    await database.runAsync(`
+      // Create pre-computed paragraphs table
+      await database.runAsync(`
       CREATE TABLE IF NOT EXISTS sermon_paragraphs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sermon_id TEXT NOT NULL,
@@ -161,11 +308,11 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    await database.runAsync(`
+      await database.runAsync(`
       CREATE INDEX IF NOT EXISTS idx_paragraphs_sermon ON sermon_paragraphs(sermon_id)
     `);
 
-    await database.runAsync(`
+      await database.runAsync(`
       CREATE TABLE IF NOT EXISTS migration_status (
         key TEXT PRIMARY KEY,
         value TEXT,
@@ -173,27 +320,39 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    console.log("Database tables initialized successfully");
+      console.log("Database tables initialized successfully");
 
-    // Check if we need to build the search index
-    await checkAndBuildSearchIndex(database);
+      // Check if we need to build the search index
+      await checkAndBuildSearchIndex(database);
 
-    return true;
-  } catch (error) {
-    console.error("Error initializing database:", error);
-    // If database is corrupted, delete it
-    if (error.message && error.message.includes("not a database")) {
-      try {
-        console.log("Database is corrupted, deleting and resetting...");
-        const dbPath = `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
-        await FileSystem.deleteAsync(dbPath);
-        console.log("Corrupted database deleted");
-        db = null; // Reset singleton so next open creates fresh database
-      } catch (deleteError) {
-        console.error("Error deleting corrupted database:", deleteError);
+      isInitialized = true;
+      return true;
+    } catch (error) {
+      console.error("Error initializing database:", error);
+      // If database is corrupted, delete it
+      if (error.message && error.message.includes("not a database")) {
+        try {
+          console.log("Database is corrupted, deleting and resetting...");
+          const dbPath = `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
+          await FileSystem.deleteAsync(dbPath);
+          console.log("Corrupted database deleted");
+          db = null; // Reset singleton so next open creates fresh database
+        } catch (deleteError) {
+          console.error("Error deleting corrupted database:", deleteError);
+        }
       }
+      throw error;
     }
+  })();
+
+  try {
+    const result = await initPromise;
+    return result;
+  } catch (error) {
+    isInitialized = false;
     throw error;
+  } finally {
+    initPromise = null;
   }
 };
 
@@ -546,9 +705,29 @@ const formatSermonForSearch = (text) => {
  * Populate FTS5 and paragraphs tables for a sermon
  * Should be called after inserting a sermon
  */
-export const indexSermonForSearch = async (sermonId) => {
+export const indexSermonForSearch = async (
+  sermonId,
+  retryCount = 0,
+  dbConnection = null,
+) => {
+  const MAX_RETRIES = 2;
+
   try {
-    const database = await openDatabase();
+    // Check if indexing was stopped before starting
+    if (!isIndexing) {
+      return;
+    }
+
+    // Use passed connection or fallback to singleton
+    const database = dbConnection || (await openDatabase());
+
+    // Verify database is not null
+    if (!database) {
+      console.error(
+        `⚠️ Database is null for sermon ${sermonId}, skipping indexing`,
+      );
+      return;
+    }
 
     // Get the sermon
     const sermon = await database.getFirstAsync(
@@ -560,33 +739,71 @@ export const indexSermonForSearch = async (sermonId) => {
       return;
     }
 
-    // Insert into FTS5 table
-    await database.runAsync(
-      "INSERT OR REPLACE INTO sermons_fts(sermon_id, title, sermon) VALUES (?, ?, ?)",
-      [sermon.id, sermon.title, sermon.sermon],
-    );
-
-    // Format sermon into paragraphs
-    const paragraphs = formatSermonForSearch(sermon.sermon);
-
-    // Insert paragraphs (use INSERT OR REPLACE to handle duplicates)
-    for (let i = 0; i < paragraphs.length; i++) {
-      const wordCount = paragraphs[i]
-        .split(/\s+/)
-        .filter((w) => w.trim()).length;
-      await database.runAsync(
-        `INSERT OR REPLACE INTO sermon_paragraphs 
-         (sermon_id, paragraph_index, paragraph_text, word_count, start_char, end_char) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [sermon.id, i, paragraphs[i], wordCount, 0, 0],
-      );
+    // Check again before writing
+    if (!isIndexing) {
+      return;
     }
 
-    console.log(
-      `Indexed sermon ${sermonId} with ${paragraphs.length} paragraphs`,
-    );
+    // Wrap all database writes in try-catch to handle closed database
+    try {
+      // Insert into FTS5 table
+      await database.runAsync(
+        "INSERT OR REPLACE INTO sermons_fts(sermon_id, title, sermon) VALUES (?, ?, ?)",
+        [sermon.id, sermon.title, sermon.sermon],
+      );
+
+      // Format sermon into paragraphs
+      const paragraphs = formatSermonForSearch(sermon.sermon);
+
+      // Insert paragraphs (use INSERT OR REPLACE to handle duplicates)
+      for (let i = 0; i < paragraphs.length; i++) {
+        // Check if stopped during loop
+        if (!isIndexing) {
+          return;
+        }
+
+        const wordCount = paragraphs[i]
+          .split(/\s+/)
+          .filter((w) => w.trim()).length;
+        await database.runAsync(
+          `INSERT OR REPLACE INTO sermon_paragraphs 
+           (sermon_id, paragraph_index, paragraph_text, word_count, start_char, end_char) 
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [sermon.id, i, paragraphs[i], wordCount, 0, 0],
+        );
+      }
+    } catch (dbWriteError) {
+      // If database is closed/readonly, silently fail - this is expected during reset
+      if (
+        dbWriteError.message?.includes("readonly") ||
+        dbWriteError.message?.includes("closed")
+      ) {
+        return; // Silently stop - database is being reset
+      }
+      throw dbWriteError; // Re-throw other errors
+    }
+
+    console.log(`✅ Indexed sermon ${sermonId}`);
   } catch (error) {
-    console.error(`Error indexing sermon ${sermonId}:`, error);
+    // Retry logic for connection errors
+    if (
+      retryCount < MAX_RETRIES &&
+      error.message?.includes("NullPointerException")
+    ) {
+      console.warn(
+        `⚠️ Retrying indexing sermon ${sermonId} (attempt ${retryCount + 1}/${MAX_RETRIES})...`,
+      );
+      // Wait before retrying
+      await new Promise((resolve) =>
+        setTimeout(resolve, 500 * (retryCount + 1)),
+      );
+      return indexSermonForSearch(sermonId, retryCount + 1, dbConnection);
+    }
+
+    // Silently fail after retries - indexing is background work
+    console.error(
+      `⚠️ Failed indexing sermon ${sermonId}: ${error.message || error}`,
+    );
   }
 };
 
@@ -597,13 +814,73 @@ export const indexSermonForSearch = async (sermonId) => {
  */
 export const rebuildSearchIndex = async () => {
   try {
-    const database = await openDatabase();
+    // Add a small delay to ensure database is fully stable
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    console.log("Rebuilding search index...");
+    // Get fresh database connection and verify it's valid
+    let database = null;
+    let retries = 0;
+    const maxRetries = 3;
 
-    // Clear existing data
-    await database.runAsync("DELETE FROM sermons_fts");
-    await database.runAsync("DELETE FROM sermon_paragraphs");
+    while (retries < maxRetries && !database) {
+      try {
+        database = await openDatabase();
+
+        // Verify database is not null and is functional
+        if (!database) {
+          throw new Error("Database is null");
+        }
+
+        // Test the connection
+        await database.getFirstAsync("SELECT 1");
+        console.log("✅ Database connection verified for indexing");
+        break;
+      } catch (connError) {
+        retries++;
+        console.warn(
+          `⚠️ Database connection attempt ${retries}/${maxRetries} failed:`,
+          connError.message,
+        );
+
+        if (retries < maxRetries) {
+          // Wait before retrying (exponential backoff)
+          await new Promise((resolve) => setTimeout(resolve, 1000 * retries));
+          database = null;
+        } else {
+          console.error(
+            "❌ Failed to get valid database connection for indexing",
+          );
+          isIndexing = false;
+          return false;
+        }
+      }
+    }
+
+    if (!database) {
+      console.error("❌ No valid database connection available");
+      isIndexing = false;
+      return false;
+    }
+
+    console.log("🔍 Rebuilding search index...");
+
+    // Check if tables exist before trying to clear them
+    const ftsTableExists = await database.getFirstAsync(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='sermons_fts'",
+    );
+    const paragraphsTableExists = await database.getFirstAsync(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='sermon_paragraphs'",
+    );
+
+    // Clear existing data only if tables exist
+    if (ftsTableExists) {
+      console.log("Clearing existing FTS data...");
+      await database.runAsync("DELETE FROM sermons_fts");
+    }
+    if (paragraphsTableExists) {
+      console.log("Clearing existing paragraphs data...");
+      await database.runAsync("DELETE FROM sermon_paragraphs");
+    }
 
     // Get total count first
     const countResult = await database.getFirstAsync(
@@ -611,7 +888,7 @@ export const rebuildSearchIndex = async () => {
     );
     const totalSermons = countResult?.count || 0;
 
-    console.log(`Indexing ${totalSermons} sermons in batches...`);
+    console.log(`📚 Indexing ${totalSermons} sermons in batches...`);
 
     // Process in batches of 50 to avoid memory issues
     const batchSize = 50;
@@ -619,6 +896,12 @@ export const rebuildSearchIndex = async () => {
     let offset = 0;
 
     while (offset < totalSermons) {
+      // Check if indexing was force-stopped
+      if (!isIndexing) {
+        console.log("⚠️ Indexing was stopped");
+        break;
+      }
+
       // Get batch of sermons
       const sermons = await database.getAllAsync(
         "SELECT id, title, sermon FROM sermons WHERE sermon IS NOT NULL LIMIT ? OFFSET ?",
@@ -627,10 +910,14 @@ export const rebuildSearchIndex = async () => {
 
       // Index each sermon in the batch
       for (const sermon of sermons) {
-        await indexSermonForSearch(sermon.id);
+        if (!isIndexing) {
+          console.log("⚠️ Indexing was stopped");
+          break;
+        }
+        await indexSermonForSearch(sermon.id, 0, database);
         indexed++;
         if (indexed % 50 === 0) {
-          console.log(`Indexed ${indexed}/${totalSermons} sermons`);
+          console.log(`📊 Indexed ${indexed}/${totalSermons} sermons`);
         }
       }
 
@@ -640,11 +927,12 @@ export const rebuildSearchIndex = async () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
 
-    console.log("Search index rebuilt successfully");
+    console.log("✅ Search index rebuilt successfully");
     return true;
   } catch (error) {
-    console.error("Error rebuilding search index:", error);
-    throw error;
+    console.error("❌ Error rebuilding search index:", error);
+    // Don't throw - allow app to continue even if indexing fails
+    return false;
   }
 };
 
@@ -777,11 +1065,49 @@ export const clearAllData = async () => {
   }
 };
 
+// Wait for any ongoing indexing to complete
+export const waitForIndexingComplete = async (maxWaitTime = 30000) => {
+  const startTime = Date.now();
+  while (isIndexing && Date.now() - startTime < maxWaitTime) {
+    console.log("⏳ Waiting for search indexing to complete...");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  if (isIndexing) {
+    console.warn("⚠️ Indexing timeout - proceeding anyway");
+  } else {
+    console.log("✅ Indexing complete");
+  }
+};
+
+// Force-stop indexing (for emergency reset scenarios)
+export const forceStopIndexing = () => {
+  if (isIndexing) {
+    console.warn("🛑 FORCE-STOPPING all indexing operations");
+    isIndexing = false;
+  }
+};
+
 // Close database connection
 export const closeDatabase = async () => {
   if (db) {
-    await db.closeAsync();
-    db = null;
-    console.log("Database closed");
+    try {
+      await db.closeAsync();
+      db = null;
+      isOpening = false;
+      openPromise = null;
+      isInitialized = false;
+      initPromise = null;
+      console.log("Database closed");
+    } catch (error) {
+      console.warn("⚠️ Error closing database:", error.message);
+      // Force null even if close fails
+      db = null;
+      isOpening = false;
+      openPromise = null;
+      isInitialized = false;
+      initPromise = null;
+    }
+  } else {
+    console.log("✅ No database connection to close");
   }
 };

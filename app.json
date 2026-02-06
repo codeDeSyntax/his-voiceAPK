@@ -16,14 +16,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/hisv.png",
-        "backgroundColor": "#5e3c33"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#faeed1"
       },
       "package": "com.boblambert.hisvoice",
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/hisv.png"
+      "favicon": "./assets/adaptive-icon.png"
     },
     "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
     "plugins": [
@@ -37,7 +37,7 @@
             "image": "./assets/splashimg.png",
             "backgroundColor": "#2c221a"
           },
-          "imageWidth": 300
+          "imageWidth": 200
         }
       ],
       "expo-asset",

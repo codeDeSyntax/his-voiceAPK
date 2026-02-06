@@ -267,6 +267,16 @@ export const SermonProvider = ({ children }) => {
           console.log(`Migration progress: ${progress}%`);
         });
 
+        // Handle needsDownload case - not an error, just waiting for user action
+        if (!result.success && result.needsDownload) {
+          console.log("📥 Database needs to be downloaded by user");
+          setAllSermons([]);
+          setTextSermons([]);
+          setSermonsLoaded(false);
+          setLoading(false);
+          return false; // No error, just empty state
+        }
+
         if (!result.success) {
           throw new Error(`Migration failed: ${result.error}`);
         }
@@ -662,8 +672,8 @@ export const SermonProvider = ({ children }) => {
           setHighlights(JSON.parse(storedHighlights));
         }
 
-        // Load sermons
-        await loadSermons();
+        // NOTE: loadSermons() is NOT called here - it's already called
+        // in the other useEffect via Promise.all([loadSermons(), loadStoredData()])
       } catch (error) {
         console.error("Error initializing app:", error);
         setError("Failed to initialize app. Please try again later.");
@@ -671,7 +681,7 @@ export const SermonProvider = ({ children }) => {
     };
 
     initializeApp();
-  }, [loadSermons, loadBookmarks]);
+  }, [loadBookmarks]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
