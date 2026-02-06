@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
-import { searchSermon } from "../../Utils/sermonUtils";
+import { searchSermon } from "../../Utils/paragraphSplitter";
 import { useFonts } from "expo-font";
 
 // Debounce utility for search performance
@@ -75,7 +75,7 @@ const CurrentSermonSearch = ({
           const contextStart = Math.max(0, matchIndex - 100);
           const contextEnd = Math.min(
             paragraph.length,
-            matchIndex + debouncedSearchPhrase.length + 100
+            matchIndex + debouncedSearchPhrase.length + 100,
           );
 
           let context = paragraph.substring(contextStart, contextEnd);
@@ -87,7 +87,7 @@ const CurrentSermonSearch = ({
           // Highlight the match in the context
           const highlightedContext = highlightText(
             context,
-            debouncedSearchPhrase
+            debouncedSearchPhrase,
           );
 
           return {
@@ -132,7 +132,7 @@ const CurrentSermonSearch = ({
       onNavigateToResult(result.index, searchPhrase);
       onClose();
     },
-    [onNavigateToResult, onClose, searchPhrase]
+    [onNavigateToResult, onClose, searchPhrase],
   );
 
   const clearSearch = useCallback(() => {

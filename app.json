@@ -57,6 +57,9 @@
     "owner": "josiah-ok",
     "runtimeVersion": {
       "policy": "sdkVersion"
+    },
+    "cli": {
+      "appVersionSource": "appJson"
     }
   }
 }

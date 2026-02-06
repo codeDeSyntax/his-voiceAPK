@@ -25,7 +25,7 @@ import { Feather } from "@expo/vector-icons";
 import {
   formatSermonIntoParagraphs,
   formatSermonIntoParagraphsAsync,
-} from "../../Utils/sermonUtils";
+} from "../../Utils/paragraphSplitter";
 import { getSermonById, getSermonParagraphs } from "../../database/sermonDB";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
 import ParagraphText from "../../components/currentSermon/ParagraphText";

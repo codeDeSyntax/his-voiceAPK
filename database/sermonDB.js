@@ -1,5 +1,6 @@
 import * as SQLite from "expo-sqlite";
 import * as FileSystem from "expo-file-system/legacy";
+import { formatSermonIntoParagraphs } from "../Utils/paragraphSplitter";
 
 const DB_NAME = "sermons-db.db"; // Match downloadDatabase.js
 let db = null; // Persistent database instance
@@ -597,8 +598,8 @@ export const searchSermonsWithContext = async (
     const regex = new RegExp(`(${searchText})`, "gi");
 
     for (const sermon of sermons) {
-      // Use the same paragraph formatting as CurrentSermon to get accurate indices
-      const formattedParagraphs = formatSermonForSearch(sermon.sermon);
+      // Use the unified paragraph formatting algorithm for consistent indexing
+      const formattedParagraphs = formatSermonIntoParagraphs(sermon.sermon);
 
       const matches = [];
 
@@ -647,60 +648,6 @@ export const searchSermonsWithContext = async (
 
 // Simplified sermon formatting for search - matches CurrentSermon's paragraph splitting
 // This ensures paragraph indices match exactly between search and display
-const formatSermonForSearch = (text) => {
-  if (!text || text.length < 100) return [text];
-
-  // Step 1: Clean and normalize text (same as CurrentSermon)
-  const cleaned = text.replace(/\r\n/g, "\n").replace(/\s+/g, " ").trim();
-
-  // Step 2: Split by double newlines (major paragraph breaks)
-  const rawParagraphs = cleaned
-    .split(/\n\s*\n/)
-    .filter((p) => p.trim().length > 5);
-
-  // Step 3: Apply equal-volume splitting (simplified but accurate)
-  const result = [];
-
-  for (const paragraph of rawParagraphs) {
-    const trimmed = paragraph.trim();
-    const wordCount = trimmed.split(/\s+/).length;
-
-    // If paragraph is small enough, keep it as-is
-    if (wordCount < 200) {
-      result.push(trimmed);
-      continue;
-    }
-
-    // For larger paragraphs, split into ~300 word chunks at sentence boundaries
-    const sentences = trimmed.split(/(?<=[.!?])\s+/);
-    let currentChunk = "";
-    let currentWords = 0;
-
-    for (const sentence of sentences) {
-      const sentenceWords = sentence.split(/\s+/).length;
-
-      if (currentWords > 0 && currentWords + sentenceWords > 350) {
-        // Start new chunk
-        if (currentChunk.trim()) {
-          result.push(currentChunk.trim());
-        }
-        currentChunk = sentence;
-        currentWords = sentenceWords;
-      } else {
-        currentChunk += (currentChunk ? " " : "") + sentence;
-        currentWords += sentenceWords;
-      }
-    }
-
-    // Add remaining chunk
-    if (currentChunk.trim()) {
-      result.push(currentChunk.trim());
-    }
-  }
-
-  return result.length > 0 ? result : [text];
-};
-
 /**
  * Populate FTS5 and paragraphs tables for a sermon
  * Should be called after inserting a sermon
@@ -752,8 +699,8 @@ export const indexSermonForSearch = async (
         [sermon.id, sermon.title, sermon.sermon],
       );
 
-      // Format sermon into paragraphs
-      const paragraphs = formatSermonForSearch(sermon.sermon);
+      // Format sermon into paragraphs using unified algorithm
+      const paragraphs = formatSermonIntoParagraphs(sermon.sermon);
 
       // Insert paragraphs (use INSERT OR REPLACE to handle duplicates)
       for (let i = 0; i < paragraphs.length; i++) {
