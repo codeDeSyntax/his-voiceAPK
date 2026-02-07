@@ -1,0 +1,414 @@
+================================================================================
+  HOW TO BUILD SERMONS DATABASE FROM JS FILES
+  (Old Approach - JS Files → SQLite DB)
+================================================================================
+
+OVERVIEW
+--------
+The sermons data was originally stored as JavaScript arrays in sermon JS files.
+To create the sermons-db.db file, we:
+  1. Had all sermon data in JS files
+  2. Used a Node.js script to read those files and insert into SQLite
+  3. Exported the DB file from the device/app
+  4. Sent it to GitHub for distribution
+
+SERMON DATA FILES STRUCTURE
+----------------------------
+Location: j:\react-native\sermons\ (on dev machine)
+
+Directory layout:
+  sermons/
+    audio.js              ← Audio sermon metadata (exported as audioSermons array)
+    1964-1969/
+      firstset.js         ← Text sermons for 1964-1969
+    1970/
+      1970.js             ← Text sermons for 1970
+    1971/
+      1971.js
+    1972/
+      1972.js
+    1973/
+      1973.js
+    ... (more year folders through 1971)
+
+AUDIO SERMON FORMAT (audio.js)
+------------------------------
+Export format:
+
+  export const audioSermons = [
+    {
+      id: 1,
+      title: "SERMON TITLE HERE",
+      type: "audio",
+      audioUrl: "https://example.com/path/to/audio.mp3",
+      year: 1965,
+      downloadLink: "https://example.com/download/link",
+      date: "65-0101"
+    },
+    {
+      id: 2,
+      title: "ANOTHER SERMON",
+      type: "audio",
+      audioUrl: "...",
+      year: 1966,
+      downloadLink: "...",
+      date: "66-0215"
+    },
+    // ... ~591 entries total
+  ];
+
+TEXT SERMON FORMAT (year JS files like 1970.js)
+-----------------------------------------------
+Export format:
+
+  export const sermons1970 = [
+    {
+      id: <number>,
+      title: "SERMON TITLE",
+      date: "70-0101",
+      location: "Jeffersonville IN",
+      sermon: "Full sermon text content here... can be thousands of words...",
+      year: 1970
+    },
+    {
+      id: <number>,
+      title: "ANOTHER SERMON",
+      date: "70-0215",
+      location: "...",
+      sermon: "...",
+      year: 1970
+    },
+    // ... multiple sermons per year
+  ];
+
+THE DATABASE GENERATION PROCESS (sermonDB.old.js)
+-------------------------------------------------
+
+File: database/sermonDB.old.js (kept for reference in the repo)
+
+Step 1: CREATE TABLES
+  CREATE TABLE sermons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    date TEXT,
+    location TEXT,
+    sermon TEXT,
+    year INTEGER,
+    type TEXT DEFAULT 'text'
+  );
+
+  CREATE VIRTUAL TABLE sermons_fts USING fts5(
+    title, sermon, content='sermons', content_rowid='id'
+  );
+
+  CREATE TABLE sermon_paragraphs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sermon_id INTEGER,
+    paragraph_index INTEGER,
+    content TEXT,
+    FOREIGN KEY (sermon_id) REFERENCES sermons(id)
+  );
+
+  CREATE TABLE migration_status (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    is_complete INTEGER DEFAULT 0
+  );
+
+Step 2: INSERT FUNCTION (from sermonDB.old.js)
+
+  async function insertSermon(sermon) {
+    await db.runAsync(
+      `INSERT OR REPLACE INTO sermons (id, title, date, location, sermon, year, type)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        sermon.id,
+        sermon.title,
+        sermon.date || null,
+        sermon.location || null,
+        sermon.sermon || null,
+        sermon.year || null,
+        sermon.type || "text",
+      ]
+    );
+  }
+
+Step 3: BATCH INSERT FUNCTION (from sermonDB.old.js)
+
+  async function insertSermonsBatch(sermons) {
+    await initializeDatabase();
+    for (const sermon of sermons) {
+      await insertSermon(sermon);
+    }
+  }
+
+Step 4: MIGRATION SCRIPT (original migrationScript.js)
+
+  The old migrationScript.js would:
+  1. Call initializeDatabase() to create/open the DB
+  2. Check if migration already complete (migration_status.is_complete)
+  3. Import all sermon JS files:
+       - import { audioSermons } from '../sermons/audio.js'
+       - import { sermons1970 } from '../sermons/1970/1970.js'
+       - import { sermons1971 } from '../sermons/1971/1971.js'
+       - etc.
+  4. Call insertSermonsBatch() for each imported array
+  5. Set migration_status.is_complete = 1
+  6. Build the FTS search index (sermons_fts table)
+  7. Split sermons into paragraphs (sermon_paragraphs table)
+
+Step 5: EXTRACT THE DATABASE FILE
+
+  After the app runs and completes migration:
+  1. Go to Settings in the app
+  2. Find "Export Database" button (if it exists) or use adb to pull the file
+  3. File is located in: {app_documents}/SQLite/sermons-db.db
+  4. On Android device via adb:
+       adb shell run-as com.yourapp.packagename cat \
+         /data/data/com.yourapp.packagename/files/SQLite/sermons-db.db > sermons-db.db
+  5. On emulator: Can also access through file browser at:
+       ~/.android/avd/<emulator-name>/data/data/com.yourapp/files/SQLite/sermons-db.db
+
+Step 6: VERIFY & UPLOAD
+
+  1. Verify the DB file works by opening with SQLite:
+       sqlite3 sermons-db.db
+       SELECT COUNT(*) FROM sermons;  ← Should show ~591
+       SELECT COUNT(*) FROM sermons_fts;  ← Should show ~591
+       SELECT COUNT(*) FROM sermon_paragraphs;  ← Should show thousands (one per paragraph)
+
+  2. Upload to GitHub Releases:
+       https://github.com/codeDeSyntax/hisvoice-data/releases
+       (Currently at V1.0.0, upload new version tag as needed)
+
+================================================================================
+4. CURRENT APPROACH: PRE-BUILT DB DOWNLOAD
+================================================================================
+
+File: database/migrationScript.js (current version)
+File: screens/Welcome/Welcome.jsx (download UI)
+
+HOW IT WORKS NOW:
+
+  1. User opens app for first time → Welcome screen appears
+  2. User taps "Download Sermons" button
+  3. App downloads the pre-built sermons-db.db from GitHub Releases:
+
+     const DB_DOWNLOAD_URL =
+       "https://github.com/codeDeSyntax/hisvoice-data/releases/download/V1.0.0/sermons-db.db";
+
+  4. File is saved to: {documentDirectory}SQLite/sermons-db.db
+  5. App restarts via Updates.reloadAsync() (or DevSettings.reload() in dev)
+  6. On restart, the DB is found and opened — sermons are ready immediately
+
+DOWNLOAD CODE (from Welcome.jsx):
+
+  const downloadDatabaseFromGitHub = async (onProgress) => {
+    const dbDir = `${FileSystem.documentDirectory}SQLite`;
+    const dbPath = `${dbDir}/sermons-db.db`;
+
+    const dirInfo = await FileSystem.getInfoAsync(dbDir);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(dbDir, { recursive: true });
+    }
+
+    const downloadResumable = FileSystem.createDownloadResumable(
+      DB_DOWNLOAD_URL,
+      dbPath,
+      {},
+      (downloadProgress) => {
+        const progress =
+          downloadProgress.totalBytesWritten /
+          downloadProgress.totalBytesExpectedToWrite;
+        if (onProgress) onProgress(progress);
+      }
+    );
+
+    const result = await downloadResumable.downloadAsync();
+    return result.uri;
+  };
+
+POST-DOWNLOAD RESTART:
+
+  After download completes:
+  - Show "Download complete! Restarting app..." message
+  - Wait 1.5 seconds
+  - Call Updates.reloadAsync() to restart the app
+  - Fallback: DevSettings.reload() if Updates fails (dev mode)
+
+BACKGROUND INDEXING:
+
+  After restart, the app opens the downloaded DB and starts background indexing:
+  - rebuildSearchIndex() runs in the background
+  - Populates sermons_fts (full-text search) table
+  - Populates sermon_paragraphs table using the paragraph splitting algorithm
+  - User can browse sermons while indexing happens
+
+================================================================================
+5. DATABASE SCHEMA
+================================================================================
+
+TABLE: sermons
+  id        INTEGER PRIMARY KEY AUTOINCREMENT
+  title     TEXT NOT NULL
+  date      TEXT
+  location  TEXT
+  sermon    TEXT          ← Full sermon text (can be very long)
+  year      INTEGER
+  type      TEXT DEFAULT 'text'   ← 'text' or 'audio'
+
+TABLE: sermons_fts (FTS5 virtual table for full-text search)
+  title     TEXT
+  sermon    TEXT
+  content   = 'sermons'
+  content_rowid = 'id'
+
+TABLE: sermon_paragraphs (pre-split paragraphs for display)
+  id              INTEGER PRIMARY KEY AUTOINCREMENT
+  sermon_id       INTEGER (FK → sermons.id)
+  paragraph_index INTEGER
+  content         TEXT
+
+TABLE: migration_status
+  id          INTEGER PRIMARY KEY CHECK (id = 1)
+  is_complete INTEGER DEFAULT 0
+
+================================================================================
+6. INDEXING & PARAGRAPH SPLITTING
+================================================================================
+
+File: database/sermonDB.js — rebuildSearchIndex(), indexSermonForSearch()
+File: Utils/paragraphSplitter.js — formatSermonIntoParagraphs()
+
+INDEXING PROCESS (runs after DB is opened):
+
+  1. rebuildSearchIndex() is called
+  2. Fetches all sermons that haven't been indexed yet
+  3. For each sermon, calls indexSermonForSearch(sermon)
+  4. indexSermonForSearch does:
+     a. Insert into sermons_fts (for full-text search)
+     b. Split sermon text into paragraphs using formatSermonIntoParagraphs()
+     c. Insert each paragraph into sermon_paragraphs table
+
+PARAGRAPH SPLITTING ALGORITHM (Utils/paragraphSplitter.js):
+
+  The unified algorithm (shared with desktop version) uses "equal volume" splitting:
+
+  - Target: 375 words per paragraph
+  - Minimum: 300 words
+  - Maximum: 450 words
+  - Splits on sentence boundaries (periods, !, ?)
+  - Tries to keep paragraphs roughly equal in size
+
+  function createEqualVolumeParagraphs(text):
+    1. Split text into sentences
+    2. Calculate total word count
+    3. Determine ideal number of paragraphs (totalWords / targetWordsPerParagraph)
+    4. Distribute sentences into paragraphs, trying to keep each near the target
+    5. Return array of paragraph strings
+
+  This replaced the old formatSermonForSearch() which used a simpler splitting method.
+  NOTE: Existing users keep old paragraph splits until they delete & re-download the DB.
+
+================================================================================
+
+
+================================================================================
+8. HOW TO REGENERATE THE DATABASE
+================================================================================
+
+If you need to rebuild the database (e.g., adding new sermons):
+
+OPTION A: Use sermonDB.old.js approach (Node.js script)
+--------------------------------------------------------
+  1. Create a Node.js script that:
+     a. Creates a new SQLite database file
+     b. Creates the tables (schema from Section 5)
+     c. Imports all sermon JS files (audio.js, firstset.js, 1970.js, etc.)
+     d. Calls insertSermonsBatch() for each array
+     e. Runs the indexing (FTS5 + paragraph splitting)
+  2. This produces a complete sermons-db.db file
+  3. Upload it to GitHub Releases:
+     https://github.com/codeDeSyntax/hisvoice-data/releases
+
+OPTION B: Use the app itself
+-----------------------------
+  1. Import new sermon data into the JS files
+  2. Temporarily re-enable the old migration approach
+  3. Run the app — it will build the DB on-device
+  4. Extract the DB file from the device/emulator
+  5. Upload to GitHub Releases
+
+OPTION C: Direct SQLite manipulation
+--------------------------------------
+  1. Open the existing sermons-db.db in a SQLite editor (DB Browser for SQLite)
+  2. Manually insert new sermon records
+  3. Delete the sermons_fts and sermon_paragraphs tables (they'll be rebuilt)
+  4. Upload updated DB to GitHub Releases
+  5. The app will rebuild the FTS and paragraphs index on first open
+
+AFTER UPLOADING:
+  - Update the download URL in Welcome.jsx if the release tag changes
+  - Current URL: https://github.com/codeDeSyntax/hisvoice-data/releases/download/V1.0.0/sermons-db.db
+  - Consider bumping the version tag (V1.0.0 → V1.1.0) for new data
+
+================================================================================
+9. KEY FILE LOCATIONS
+================================================================================
+
+  App Database Code:
+    database/sermonDB.js          ← Current DB logic (open, index, search, etc.)
+    database/sermonDB.old.js      ← Old approach reference (copy bundled + insert)
+    database/migrationScript.js   ← First-launch migration checker
+
+  Paragraph Splitting:
+    Utils/paragraphSplitter.js    ← Unified splitting algorithm
+
+  Welcome/Download Screen:
+    screens/Welcome/Welcome.jsx   ← Download UI + restart logic
+
+  Settings (Delete/Reset DB):
+    components/settings/AppSettings.jsx
+
+  Sermon Data (JS files):
+    sermons/audio.js              ← Audio sermon metadata
+    sermons/1964-1969/firstset.js ← Text sermons 1964-1969
+    sermons/1970/1970.js          ← Text sermons 1970
+    sermons/1971/1971.js          ← etc.
+    sermons/1972/1972.js
+    sermons/1973/1973.js
+
+  Scraper:
+    targeted_sermon_scraper.py    ← Python scraper for new sermons
+
+  GitHub Repos:
+    App Code:    https://github.com/codeDeSyntax/his-voiceAPK (branch: betterhv)
+    DB Hosting:  https://github.com/codeDeSyntax/hisvoice-data
+
+================================================================================
+10. IMPORTANT NOTES
+================================================================================
+
+  • The downloaded DB already has the `sermons` table populated but the
+    `sermons_fts` and `sermon_paragraphs` tables are built by the app
+    on first open via background indexing (rebuildSearchIndex).
+
+  • The paragraph splitting algorithm was unified with the desktop version
+    in Feb 2026. Old users keep their old paragraph splits until they
+    delete the database and re-download.
+
+  • After download, the app RESTARTS (Updates.reloadAsync) instead of
+    trying to hot-reload the database. This avoids stale state issues.
+
+  • Delete Database in Settings: force-stops indexing, waits 2 seconds,
+    closes the DB connection, then deletes the file. User must go back
+    to Welcome screen to re-download.
+
+  • The DB file is ~32 MB. It contains 591 sermons as of the last build.
+
+  • Audio sermons have `type: 'audio'` and `audioUrl` fields but no
+    `sermon` text field. Text sermons have `type: 'text'` (default) and
+    the full text in the `sermon` field.
+
+================================================================================
+  END OF DOCUMENTATION
+================================================================================

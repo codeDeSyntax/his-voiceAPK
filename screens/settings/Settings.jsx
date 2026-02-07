@@ -95,7 +95,7 @@ const Settings = React.memo(() => {
     initialValues.backgroundColor,
   );
 
-  const [savingTheme, setSavingTheme] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Memoized animation value to prevent recreation
@@ -133,7 +133,7 @@ const Settings = React.memo(() => {
   // Optimized toggle theme function with useCallback
   const toggleTheme = useCallback(async () => {
     try {
-      setSavingTheme(true);
+      setIsSaving(true);
       const newMode = !isDarkMode;
 
       const updatedSettings = {
@@ -152,11 +152,11 @@ const Settings = React.memo(() => {
 
       // Slightly delayed to show animation
       setTimeout(() => {
-        setSavingTheme(false);
+        setIsSaving(false);
       }, 400);
     } catch (error) {
       console.error("Error saving theme settings:", error);
-      setSavingTheme(false);
+      setIsSaving(false);
     }
   }, [
     isDarkMode,
@@ -175,13 +175,16 @@ const Settings = React.memo(() => {
     if (settings.fontSize !== fontSize) {
       const autoSaveFontSize = async () => {
         try {
+          setIsSaving(true);
           const updatedSettings = {
             ...settings,
             fontSize,
           };
           await updateSettings(updatedSettings);
+          setTimeout(() => setIsSaving(false), 300);
         } catch (error) {
           console.error("Error auto-saving font size:", error);
+          setIsSaving(false);
         }
       };
       autoSaveFontSize();
@@ -193,23 +196,47 @@ const Settings = React.memo(() => {
     if (settings.fontFamily !== fontFamily) {
       const autoSaveFontFamily = async () => {
         try {
+          setIsSaving(true);
           const updatedSettings = {
             ...settings,
             fontFamily,
           };
           await updateSettings(updatedSettings);
+          setTimeout(() => setIsSaving(false), 300);
         } catch (error) {
           console.error("Error auto-saving font family:", error);
+          setIsSaving(false);
         }
       };
       autoSaveFontFamily();
     }
   }, [fontFamily, settings, updateSettings]);
 
+  // Auto-save accent color changes
+  useEffect(() => {
+    if (settings.accentColor !== accentColor) {
+      const autoSaveAccentColor = async () => {
+        try {
+          setIsSaving(true);
+          const updatedSettings = {
+            ...settings,
+            accentColor,
+          };
+          await updateSettings(updatedSettings);
+          setTimeout(() => setIsSaving(false), 300);
+        } catch (error) {
+          console.error("Error auto-saving accent color:", error);
+          setIsSaving(false);
+        }
+      };
+      autoSaveAccentColor();
+    }
+  }, [accentColor, settings, updateSettings]);
+
   // Optimized save settings function with useCallback (for theme and other settings)
   const saveSettings = useCallback(async () => {
     try {
-      setSavingTheme(true);
+      setIsSaving(true);
       const updatedSettings = {
         ...settings,
         darkMode: isDarkMode,
@@ -224,11 +251,11 @@ const Settings = React.memo(() => {
       updateSettings(updatedSettings);
 
       setTimeout(() => {
-        setSavingTheme(false);
+        setIsSaving(false);
       }, 400);
     } catch (error) {
       console.error("Error saving settings:", error);
-      setSavingTheme(false);
+      setIsSaving(false);
     }
   }, [
     settings,
@@ -245,7 +272,7 @@ const Settings = React.memo(() => {
   // Optimized restore default function with useCallback
   const restoreDefault = useCallback(async () => {
     try {
-      setSavingTheme(true);
+      setIsSaving(true);
 
       setFontSize(DEFAULT_SETTINGS.fontSize);
       setFontFamily(DEFAULT_SETTINGS.fontFamily);
@@ -256,11 +283,11 @@ const Settings = React.memo(() => {
       await updateSettings(DEFAULT_SETTINGS);
 
       setTimeout(() => {
-        setSavingTheme(false);
+        setIsSaving(false);
       }, 800);
     } catch (error) {
       console.error("Error restoring settings:", error);
-      setSavingTheme(false);
+      setIsSaving(false);
     }
   }, [updateSettings, setIsDarkMode]);
 
@@ -326,7 +353,7 @@ const Settings = React.memo(() => {
       </SafeAreaView>
 
       <SavingModal
-        visible={savingTheme}
+        visible={isSaving}
         theme={theme}
         accentColor={FIXED_ACCENT_COLOR}
       />

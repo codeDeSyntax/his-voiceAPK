@@ -1,6 +1,6 @@
 // File: components/SavingModal.js
 import React from "react";
-import { View, Text, Modal, ActivityIndicator } from "react-native";
+import { View, Text, Modal } from "react-native";
 import { styles } from "../../styles/settings";
 
 const SavingModal = ({ visible, theme, accentColor }) => {
@@ -24,13 +24,8 @@ const SavingModal = ({ visible, theme, accentColor }) => {
               { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
             ]}
           >
-            Saving Your Settings...
+            ✓ Saved
           </Text>
-          <ActivityIndicator
-            style={styles.modalSpinner}
-            size="large"
-            color={accentColor}
-          />
         </View>
       </View>
     </Modal>
