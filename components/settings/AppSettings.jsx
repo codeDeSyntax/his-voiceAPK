@@ -55,9 +55,22 @@ const AppSettings = ({ theme, router, compact = false }) => {
       }
     } catch (error) {
       console.error("Update check error:", error);
+      let errorMessage = "Could not check for updates. Please try again later.";
+      
+      // Provide more specific error messages
+      if (error.message?.includes("network")) {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else if (error.message?.includes("no updates configured")) {
+        errorMessage = "No update channel configured for this build.";
+      } else if (error.code === "ERR_UPDATES_DISABLED") {
+        errorMessage = "Updates are disabled in this build.";
+      } else if (error.code === "ERR_UPDATES_NOT_FOUND") {
+        errorMessage = "Update server not found. Check your configuration.";
+      }
+      
       Alert.alert(
         "Check Failed",
-        "Could not check for updates. Please try again later.",
+        errorMessage,
         [{ text: "OK" }],
       );
     } finally {
