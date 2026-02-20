@@ -265,8 +265,8 @@ const SermonListView = React.memo(
                       color: theme.dark
                         ? theme.colors.text + "70"
                         : "#5d321180",
-                      fontFamily: "serif",
-                      fontStyle: "italic",
+                      fontFamily: "ZillaSlab",
+                      // fontStyle: "italic",
                     },
                   ]}
                 >

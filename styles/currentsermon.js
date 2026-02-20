@@ -12,7 +12,7 @@ const TOP_BAR_HEIGHT = 60;
 const BOTTOM_SHEET_HANDLE_HEIGHT = 20;
 
 // Book page horizontal margin — comfortable reading margins
-const PAGE_MARGIN_H = 20;
+const PAGE_MARGIN_H = 10;
 // Inner gutter (left margin for paragraph numbers)
 const PAGE_GUTTER = 20;
 
@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
   // ─── Paragraph container ──────────────────────────────────────────────────
   paragraphContainer: {
     marginBottom: 18,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     // Constrain width so text never overflows the screen
     alignSelf: "stretch",
     overflow: "hidden",

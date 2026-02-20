@@ -441,12 +441,15 @@ const ParagraphText = React.memo(
       // Selected state - add underline effect
       if (isSelected) {
         baseStyle.push({
-          // borderBottomWidth: 3,
-          borderBottomColor: theme.dark ? theme.colors.hlight : "#d57a3e",
+          borderWidth: 2,
+          borderColor: theme.dark ? "#fee2d072" : "#d57a3e",
           backgroundColor: theme.dark
             ? "rgba(213, 122, 62, 0.08)"
             : "rgba(213, 122, 62, 0.06)",
           marginBottom: 12,
+          borderRadius:5,
+           borderStyle:"dashed",
+          
          
         });
       }
@@ -454,14 +457,15 @@ const ParagraphText = React.memo(
       // Add visual indicator if this is the last read paragraph
       if (selectedSermon?.lastReadParagraph === index) {
         baseStyle.push({
-          borderBottomWidth: 2,
+          // borderWidth: 2,
           borderStyle:"dashed",
-          borderBottomColor: theme.dark ? theme.colors.hlight : "#6b320bff",
+          border: theme.dark ? "#faeed1" : "#6b320bff",
           backgroundColor: theme.dark
             ? "rgba(213, 122, 62, 0.08)"
             : "rgba(213, 122, 62, 0.06)",
           marginBottom: 12,
-          padding:10
+          borderRadius:10,
+         
         });
       }
 
