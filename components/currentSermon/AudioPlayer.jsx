@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,11 +13,50 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
 
+// Precomputed icon sizes — stable across renders
+const ICON_SIZE_LG = responsiveFontSize(32);
+const ICON_SIZE_MD = responsiveFontSize(24);
+
+// Pure utility — no closure dependencies, defined at module level
+const formatTime = (seconds) => {
+  if (!seconds || isNaN(seconds)) return "0:00";
+  const totalSeconds = Math.floor(seconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
+
 const AudioPlayer = ({ audioUrl, sermonTitle }) => {
+  // ALL hooks must be called unconditionally before any early return.
   const { theme } = useAppContext();
   const [error, setError] = useState(null);
-  const [playerKey, setPlayerKey] = useState(0);
 
+  // Reset error state when audio URL changes
+  useEffect(() => {
+    setError(null);
+  }, [audioUrl]);
+
+  // updateInterval 500ms → 2 status updates/sec while playing instead of 20.
+  // The slider moves smoothly via native animation; the JS label update at 2Hz is enough.
+  const player = Audio.useAudioPlayer(audioUrl || "", {
+    updateInterval: 500,
+    downloadFirst: true,
+  });
+
+  const status = Audio.useAudioPlayerStatus(player);
+
+  useEffect(() => {
+    if (status.error) {
+      setError("Failed to load message");
+    }
+  }, [status.error]);
+
+  // --- Early returns go here, after all hooks ---
   if (!audioUrl) {
     return <Text>No message available</Text>;
   }
@@ -25,27 +64,6 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
   if (!theme?.colors) {
     return <Text>Theme not available</Text>;
   }
-
-  // Force player recreation when audioUrl changes
-  useEffect(() => {
-    setPlayerKey((prev) => prev + 1);
-    setError(null);
-  }, [audioUrl]);
-
-  // Use the useAudioPlayer hook
-  const player = Audio.useAudioPlayer(audioUrl, {
-    updateInterval: 50,
-    downloadFirst: true,
-  });
-
-  const status = Audio.useAudioPlayerStatus(player);
-
-  // Handle loading errors
-  useEffect(() => {
-    if (status.error) {
-      setError("Failed to load message");
-    }
-  }, [status.error]);
 
   if (!player) {
     return (
@@ -57,19 +75,9 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
     );
   }
 
-  const formatTime = (seconds) => {
-    if (!seconds || isNaN(seconds)) return "0:00";
-    const totalSeconds = Math.floor(seconds);
-    const hours = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
+  // Handlers — defined after hooks, stable references via useCallback are not
+  // needed here because re-renders only happen at 2Hz (updateInterval) while
+  // playing, which is acceptable. The player ref is stable.
   const togglePlayPause = () => {
     try {
       if (status.playing) {
@@ -185,7 +193,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
         >
           <MaterialCommunityIcons
             name="rewind-10"
-            size={24}
+            size={ICON_SIZE_MD}
             color={
               status.isLoaded
                 ? theme.colors.text + "99"
@@ -204,7 +212,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
           ) : (
             <Ionicons
               name={status.playing ? "pause" : "play"}
-              size={32}
+              size={ICON_SIZE_LG}
               color={theme.colors.background}
             />
           )}
@@ -217,7 +225,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
         >
           <MaterialCommunityIcons
             name="fast-forward-10"
-            size={24}
+            size={ICON_SIZE_MD}
             color={
               status.isLoaded
                 ? theme.colors.text + "99"
@@ -229,7 +237,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
 
       {/* Status Text */}
       <Text style={[styles.statusText, { color: theme.colors.text + "88" }]}>
-        {status.playing ? "Now starting..." : "Ready to listen"}
+        {status.playing ? "Now playing" : "Ready to listen"}
       </Text>
     </View>
   );

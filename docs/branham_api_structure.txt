@@ -1,0 +1,215 @@
+================================================================================
+  BRANHAM API DATA STRUCTURE
+  Understanding the data before SQLite generation
+================================================================================
+
+API ENDPOINT 1: GET SERMON INDEX (Metadata)
+-------------------------------------------
+
+Request:
+  POST https://table.branham.org/rest/index/allSermons
+  Body: { "Language": "en" }
+
+Response:
+  {
+    "Request": { "Language": "en" },
+    "Status": "Successful",
+    "Result": {
+      "Sermons": [
+        {
+          "i": 2,                    ← Sermon ID
+          "p": "47-0412",            ← Date (YY-MMDD format)
+          "t": "Faith Is The Substance",  ← Title
+          "c": 89,                   ← Chapters/Parts count
+          "m": 103,                  ← Duration in minutes
+          "cab": false,              ← CAB recording (boolean)
+          "ct": "S"                  ← Content Type ('S' = Sermon)
+        },
+        { ... more sermons ... }
+      ]
+    }
+  }
+
+Field Mapping:
+  i   → id (unique identifier)
+  p   → date (Branham date code)
+  t   → title (sermon title)
+  c   → chapters (number of parts)
+  m   → duration_minutes
+  cab → is_cab_recording
+  ct  → content_type ('S' = Sermon, 'T' = Testimony, etc.)
+
+
+API ENDPOINT 2: GET FULL SERMON CONTENT
+----------------------------------------
+
+Request:
+  POST https://table.branham.org/rest/sermons/sermonRequest
+  Body: {
+    "Language": "en",
+    "SermonProductIdentityId": 2,     ← The 'i' from index
+    "GetAllContent": true,
+    "HighlightQuery": null
+  }
+
+Response (actual structure from API):
+  {
+    "Status": "Successful",
+    "Result": {
+      "DateCode": "47-0412",
+      "Title": "Faith Is The Substance",
+      "IsCAB": false,
+      "BookTitle": "",
+      "TotalSections": 105,              ← Number of HTML sections (paragraphs)
+      "Sections": [
+        {
+          "Paragraph": "header",         ← Identifies the section (header, verse range, etc.)
+          "IsHit": false,                ← For search highlighting
+          "Content": "<div class=\"heading\"><div class=\"title1\">...[HTML formatted text]...</div>"
+        },
+        {
+          "Paragraph": "1-4",            ← Verse 1-4 range
+          "IsHit": false,
+          "Content": "<p class=\"first_par normal\"><span class=\"first st\" id=\"×A\">...</p>\n<p>...</p>"
+        },
+        {
+          "Paragraph": "5-6",
+          "IsHit": false,
+          "Content": "<p class=\"normal_pn\"><span class=\"pn\">5</span>...</p>\n<p>...</p>"
+        },
+        ...
+      ]
+    }
+  }
+
+KEY OBSERVATIONS:
+  • Content is HTML (NOT plain text)
+  • Sections are identified by "Paragraph" field (e.g., "1-4", "header")
+  • Each section contains 1-3 HTML paragraphs with verse numbers
+  • IDs like ×A, ×B, ×C are unique anchor points within the sermon
+  • Total Sections varies (105 for a long sermon)
+  • Need to strip HTML and extract clean text + verse references
+
+
+SECTION CONTENT FORMAT (HTML):
+  <p class="first_par normal">
+    <span class="first st" id="×A">
+      <span class="eagle first"></span>        ← Styling marker
+      We're getting some new gadgets...    ← Actual text
+      <span class="se"></span>             ← Styling end marker
+    </span>
+  </p>
+
+TEXT EXTRACTION NEEDED:
+  Strip away all HTML tags to get clean text
+  Keep verse numbers if embedded as <span class="pn">5</span>
+  Parse "Paragraph" field to understand structure (header, 1-4, 5-6, etc.)
+
+
+Field Mapping:
+  Result.DateCode → date_code ("47-0412")
+  Result.Title → title
+  Result.IsCAB → is_cab_recording
+  Result.BookTitle → book_title (usually empty)
+  Result.TotalSections → section_count (105)
+  Result.Sections[] → content (HTML paragraphs)
+
+
+TARGET SQLite SCHEMA
+--------------------
+
+TABLE: sermons (main sermon record)
+  id INTEGER PRIMARY KEY
+  branham_id INTEGER UNIQUE          ← From API index 'i' field
+  title TEXT NOT NULL
+  date_code TEXT                    ← Original "47-0412" format
+  year INTEGER                      ← Parsed from date_code
+  month INTEGER                     ← Parsed from date_code
+  location TEXT                     ← From metadata (may be empty)
+  duration_minutes INTEGER          ← From index 'm' field
+  is_cab_recording INTEGER (0/1)    ← From index 'cab' field
+  content_type TEXT                 ← From index 'ct' field ('S' for sermon)
+  total_sections INTEGER            ← Number of HTML sections from API
+  raw_html_content TEXT             ← Full concatenated HTML from Sections
+  clean_text_content TEXT           ← HTML stripped for searching
+  created_at TIMESTAMP
+  updated_at TIMESTAMP
+
+TABLE: sermon_sections (individual HTML sections from API)
+  id INTEGER PRIMARY KEY
+  sermon_id INTEGER FK
+  section_number INTEGER            ← Order in Sections array
+  paragraph_identifier TEXT         ← "header", "1-4", "5-6", etc.
+  html_content TEXT                 ← Raw HTML for this section
+  clean_text TEXT                   ← Stripped text
+  verse_start INTEGER               ← Extracted from paragraph_identifier
+  verse_end INTEGER                 ← Extracted from paragraph_identifier
+
+TABLE: sermons_fts (FTS5 Virtual Table)
+  For full-text search on title + clean_text_content
+
+TABLE: sermon_paragraphs (auto-split paragraphs for display)
+  id INTEGER PRIMARY KEY
+  sermon_id INTEGER FK
+  paragraph_index INTEGER
+  content TEXT                      ← Pre-split using paragraph splitter algorithm
+  verse_start INTEGER
+  verse_end INTEGER
+
+KEY DISTINCTION:
+  sermon_sections    = Exact structure from API (HTML + verse ranges)
+  sermon_paragraphs  = Re-split into UI-friendly chunks (375 words each)
+
+
+DATA FLOW
+---------
+
+Branham API
+    ↓
+    ├─→ Index (lightweight) 
+    │   (1300 sermons × 60 bytes each = ~80 KB)
+    │
+    ├─→ Full Content (per request)
+    │   (100-300 KB per sermon)
+    │    ├─ Title
+    │    ├─ Chapters (1-5 parts typically)
+    │    ├─ Full Text
+    │    ├─ Meta (date, location, duration)
+    │    └─ Related (verses, tags)
+    ↓
+SQLite Database
+    ├─ sermons (1300 rows)
+    │
+    ├─ sermon_chapters (3000-5000 rows, ~3-4 per sermon)
+    │
+    ├─ sermon_verses (varies)
+    │
+    ├─ sermon_tags (varies)
+    │
+    ├─ sermons_fts (indexed)
+    │
+    └─ sermon_paragraphs (20000-50000 rows, split by paragraph)
+
+
+ESTIMATED FILE SIZES
+--------------------
+
+Raw API responses:   ~500 MB (all 1300 sermons with all content)
+SQLite database:     ~50-100 MB (compressed, indexed)
+Download package:    ~30-50 MB (gzipped)
+
+
+EXAMPLE: How "47-0412" maps to real date
+-----------------------------------------
+
+Date Code: "47-0412"
+  YY:    47  →  1947
+  MM:    04  →  April
+  DD:    12  →  12th day
+  Full:  April 12, 1947
+
+Years map as:
+  47-99 → 1947-1999
+  00-26 → 2000-2026 (assuming current year is 2026)
+
+================================================================================

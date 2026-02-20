@@ -5,35 +5,112 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
+  StyleSheet,
   StatusBar,
   Platform,
   KeyboardAvoidingView,
   Keyboard,
-  Dimensions,
+  Animated,
 } from "react-native";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { searchSermon } from "../../Utils/paragraphSplitter";
 import { useFonts } from "expo-font";
 
-// Debounce utility for search performance
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
+// ── Animated dot loader (mirrors the main Search page) ─────────────────────
+const SearchDot = ({ anim, color }) => {
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+  const opacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.15, 1],
+  });
+  return (
+    <Animated.View
+      style={{
+        width: 9,
+        height: 9,
+        borderRadius: 5,
+        backgroundColor: color,
+        transform: [{ scale }],
+        opacity,
+        marginHorizontal: 6,
+      }}
+    />
+  );
 };
 
+const SearchLoader = ({ theme }) => {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const make = (anim, delay) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 380,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 380,
+            useNativeDriver: true,
+          }),
+          Animated.delay(3 * 200 - delay),
+        ]),
+      );
+
+    const p1 = make(dot1, 0);
+    const p2 = make(dot2, 200);
+    const p3 = make(dot3, 400);
+    p1.start();
+    p2.start();
+    p3.start();
+    return () => {
+      p1.stop();
+      p2.stop();
+      p3.stop();
+    };
+  }, []);
+
+  const dotColor = theme.dark ? "#d57a3e" : "#5d3211";
+  const labelColor = theme.dark
+    ? "rgba(255,255,255,0.28)"
+    : "rgba(0,0,0,0.22)";
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 11,
+          letterSpacing: 4,
+          textTransform: "uppercase",
+          color: labelColor,
+          fontFamily: "ZillaSlab",
+          marginBottom: 22,
+        }}
+      >
+        Searching
+      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <SearchDot anim={dot1} color={dotColor} />
+        <SearchDot anim={dot2} color={dotColor} />
+        <SearchDot anim={dot3} color={dotColor} />
+      </View>
+    </View>
+  );
+};
+
+// ───────────────────────────────────────────────────────────────────────────
 const CurrentSermonSearch = ({
   visible,
   onClose,
@@ -44,7 +121,8 @@ const CurrentSermonSearch = ({
   const { theme } = useAppContext();
   const [searchPhrase, setSearchPhrase] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [searching, setSearching] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const searchInputRef = useRef(null);
 
   const [fontsLoaded] = useFonts({
@@ -52,48 +130,43 @@ const CurrentSermonSearch = ({
     ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
 
-  // Debounce search for better performance
-  const debouncedSearchPhrase = useDebounce(searchPhrase, 300);
+  const highlightText = (text, searchTerm) => {
+    if (!searchTerm) return text;
+    const regex = new RegExp(`(${searchTerm})`, "gi");
+    return text.replace(regex, "**$1**");
+  };
 
-  // Enhanced search effect with context extraction
-  useEffect(() => {
-    if (debouncedSearchPhrase.trim()) {
-      setSearching(true);
+  const handleSearch = useCallback(() => {
+    if (!searchPhrase.trim()) return;
+    Keyboard.dismiss();
+
+    // Show loader first — defer the sync search so the UI has time to render
+    setLoading(true);
+    setSearchResults([]);
+
+    setTimeout(() => {
       try {
-        const indices = searchSermon(paragraphs, debouncedSearchPhrase);
+        const indices = searchSermon(paragraphs, searchPhrase);
 
-        // Extract context for each result
         const resultsWithContext = indices.map((index) => {
           const paragraph = paragraphs[index];
-          const lowerPhrase = debouncedSearchPhrase.toLowerCase();
+          const lowerPhrase = searchPhrase.toLowerCase();
           const lowerParagraph = paragraph.toLowerCase();
-
-          // Find the match position
           const matchIndex = lowerParagraph.indexOf(lowerPhrase);
-
-          // Extract context around the match (100 characters before and after)
           const contextStart = Math.max(0, matchIndex - 100);
           const contextEnd = Math.min(
             paragraph.length,
-            matchIndex + debouncedSearchPhrase.length + 100,
+            matchIndex + searchPhrase.length + 100,
           );
 
           let context = paragraph.substring(contextStart, contextEnd);
-
-          // Add ellipsis if we're not at the beginning/end
           if (contextStart > 0) context = "..." + context;
           if (contextEnd < paragraph.length) context = context + "...";
 
-          // Highlight the match in the context
-          const highlightedContext = highlightText(
-            context,
-            debouncedSearchPhrase,
-          );
-
           return {
             index,
-            paragraph: paragraph,
-            context: highlightedContext,
+            paragraph,
+            context: highlightText(context, searchPhrase),
             matchPosition: matchIndex,
           };
         });
@@ -103,22 +176,12 @@ const CurrentSermonSearch = ({
         console.error("Search error:", error);
         setSearchResults([]);
       } finally {
-        setSearching(false);
+        setLoading(false);
+        setHasSearched(true);
       }
-    } else {
-      setSearchResults([]);
-    }
-  }, [debouncedSearchPhrase, paragraphs]);
+    }, 50);
+  }, [searchPhrase, paragraphs]);
 
-  // Function to highlight search terms in text
-  const highlightText = (text, searchTerm) => {
-    if (!searchTerm) return text;
-
-    const regex = new RegExp(`(${searchTerm})`, "gi");
-    return text.replace(regex, "**$1**"); // Using markdown-style highlighting
-  };
-
-  // Focus input when component becomes visible
   useEffect(() => {
     if (visible && searchInputRef.current) {
       setTimeout(() => {
@@ -138,6 +201,8 @@ const CurrentSermonSearch = ({
   const clearSearch = useCallback(() => {
     setSearchPhrase("");
     setSearchResults([]);
+    setHasSearched(false);
+    setLoading(false);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -148,15 +213,15 @@ const CurrentSermonSearch = ({
 
   if (!visible) return null;
 
+  const accentColor = theme.dark ? "#d57a3e" : "#5d3211";
+  const subtleText = theme.dark
+    ? "rgba(255,255,255,0.28)"
+    : "rgba(93,50,17,0.4)";
+
   return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      {/* <StatusBar
-        barStyle={theme.dark ? "light-content" : "dark-content"}
-        backgroundColor={theme.colors.background}
-      /> */}
-
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidingView}
@@ -167,366 +232,351 @@ const CurrentSermonSearch = ({
             styles.header,
             {
               borderBottomColor: theme.dark
-                ? "rgba(80, 61, 49, 0.975)"
-                : "rgba(93, 50, 17, 0.2)",
+                ? "rgba(80, 61, 49, 0.6)"
+                : "rgba(93, 50, 17, 0.1)",
             },
           ]}
         >
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Feather name="arrow-left" size={24} color={theme.colors.text} />
+            <Feather name="arrow-left" size={22} color={theme.colors.text} />
           </TouchableOpacity>
 
-          <Text
-            style={[
-              styles.headerTitle,
-              {
-                color: theme.colors.text,
-                fontFamily: fontsLoaded ? "ZillaSlabsm" : "System",
-              },
-            ]}
-          >
-            Search in Sermon
-          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+              Search
+            </Text>
+            <Text style={[styles.headerSubtitle, { color: subtleText }]}>
+              This Sermon
+            </Text>
+          </View>
 
           {searchPhrase.length > 0 && (
             <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-              <Feather
-                name="x"
-                size={20}
-                color={
-                  theme.dark ? "rgba(255,255,255,0.8)" : "rgba(93, 50, 17, 0.8)"
-                }
-              />
+              <Feather name="x" size={18} color={subtleText} />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Search Input */}
-        <View
-          style={[
-            styles.searchContainer,
-            {
-              borderColor: theme.dark
-                ? "rgba(62, 45, 32, 0.932)"
-                : "rgba(208, 203, 199, 0.932)",
-            },
-          ]}
-        >
-          <Feather
-            name="search"
-            size={20}
-            color={
-              theme.dark ? "rgba(255,255,255,0.6)" : "rgba(93, 50, 17, 0.6)"
-            }
-            style={styles.searchIcon}
-          />
-          <TextInput
-            ref={searchInputRef}
+        {/* Search Input Row */}
+        <View style={styles.searchRow}>
+          <View
             style={[
-              styles.searchInput,
+              styles.inputWrapper,
               {
-                color: theme.colors.text,
-                fontFamily: fontsLoaded ? "ZillaSlab" : "System",
+                backgroundColor: theme.dark
+                  ? "rgba(255,255,255,0.07)"
+                  : "rgba(93, 50, 17, 0.05)",
+                borderColor: theme.dark
+                  ? "rgba(255,255,255,0.09)"
+                  : "rgba(93, 50, 17, 0.18)",
               },
             ]}
-            placeholder="Search for paragraph or phrases..."
-            placeholderTextColor={
-              theme.dark ? theme.colors.text : "rgba(93, 50, 17, 0.6)"
-            }
-            value={searchPhrase}
-            onChangeText={setSearchPhrase}
-            autoCorrect={false}
-            autoCapitalize="none"
-            returnKeyType="search"
-            keyboardAppearance={theme.dark ? "dark" : "light"}
-          />
-          {searching && (
-            <ActivityIndicator
-              size="small"
-              color={theme.colors.primary}
-              style={styles.loadingIndicator}
+          >
+            <Feather
+              name="search"
+              size={18}
+              color={
+                theme.dark ? "rgba(255,255,255,0.4)" : "rgba(93,50,17,0.45)"
+              }
+              style={styles.searchIcon}
             />
-          )}
+            <TextInput
+              ref={searchInputRef}
+              style={[
+                styles.searchInput,
+                {
+                  color: theme.dark ? theme.colors.text : "#1a0e07",
+                  fontFamily: "ZillaSlab",
+                },
+              ]}
+              placeholder="Search paragraphs or phrases..."
+              placeholderTextColor={
+                theme.dark ? "rgba(255,255,255,0.3)" : "rgba(93,50,17,0.35)"
+              }
+              value={searchPhrase}
+              onChangeText={(text) => {
+                setSearchPhrase(text);
+                if (!text.trim()) {
+                  setSearchResults([]);
+                  setHasSearched(false);
+                }
+              }}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+              onSubmitEditing={handleSearch}
+              keyboardAppearance={theme.dark ? "dark" : "light"}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.searchButton, { backgroundColor: "#5d3211" }]}
+            onPress={handleSearch}
+          >
+            <MaterialIcons name="search" size={20} color="white" />
+          </TouchableOpacity>
         </View>
 
         {/* Results Count */}
-        {searchPhrase.trim() && (
+        {hasSearched && !loading && (
           <View style={styles.resultsHeader}>
             <Text
               style={[
                 styles.resultsCount,
-                {
-                  color: theme.dark
-                    ? "rgba(255,255,255,0.7)"
-                    : "rgba(93, 50, 17, 0.7)",
-                  fontFamily: fontsLoaded ? "ZillaSlab" : "System",
-                },
+                { color: subtleText, fontFamily: "ZillaSlab" },
               ]}
             >
-              {searching
-                ? "Searching..."
-                : `${searchResults.length} result${
-                    searchResults.length !== 1 ? "s" : ""
-                  } found`}
+              {searchResults.length} result
+              {searchResults.length !== 1 ? "s" : ""} found
             </Text>
           </View>
         )}
 
-        {/* Results List */}
-        <ScrollView
-          style={styles.resultsContainer}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {searchResults.map((result, index) => (
-            <TouchableOpacity
-              key={`${result.index}-${index}`}
-              style={styles.resultItem}
-              onPress={() => handleResultPress(result)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.resultContent}>
-                {/* Paragraph Info Header */}
-                <View style={styles.paragraphInfo}>
+        {/* Loader / Results / Empty state */}
+        {loading ? (
+          <SearchLoader theme={theme} />
+        ) : (
+          <ScrollView
+            style={styles.resultsContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {searchResults.map((result, index) => (
+              <TouchableOpacity
+                key={`${result.index}-${index}`}
+                style={styles.resultItem}
+                onPress={() => handleResultPress(result)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.resultContent}>
+                  <View style={styles.paragraphInfo}>
+                    <Text
+                      style={[styles.paragraphLabel, { color: accentColor }]}
+                    >
+                      ¶ {result.index + 1}
+                    </Text>
+                    <Feather
+                      name="chevron-right"
+                      size={14}
+                      color={subtleText}
+                    />
+                  </View>
+
                   <Text
                     style={[
-                      styles.paragraphLabel,
+                      styles.resultContext,
                       {
-                        color: theme.colors.text,
-                        fontFamily: fontsLoaded ? "ZillaSlab" : "System",
+                        color: theme.dark
+                          ? "rgba(255,255,255,0.75)"
+                          : "#3a1f08",
+                        fontFamily: "ZillaSlab",
                       },
                     ]}
+                    numberOfLines={4}
                   >
-                    📍 Paragraph {result.index + 1}
-                  </Text>
-                  <MaterialIcons
-                    name="keyboard-arrow-right"
-                    size={16}
-                    color={
-                      theme.dark
-                        ? "rgba(255,255,255,0.6)"
-                        : "rgba(93, 50, 17, 0.6)"
-                    }
-                  />
-                </View>
-
-                {/* Context Text */}
-                <Text
-                  style={[
-                    styles.resultContext,
-                    {
-                      color: theme.dark ? "rgba(255,255,255,0.8)" : "#5d3211",
-                      fontFamily: fontsLoaded ? "ZillaSlab" : "System",
-                    },
-                  ]}
-                  numberOfLines={4}
-                >
-                  {result.context.split("**").map((part, partIndex) => {
-                    const isHighlight = partIndex % 2 === 1;
-                    return (
-                      <Text
-                        key={partIndex}
-                        style={
-                          isHighlight
-                            ? [
-                                styles.highlightText,
-                                {
+                    {result.context.split("**").map((part, partIndex) => {
+                      const isHighlight = partIndex % 2 === 1;
+                      return (
+                        <Text
+                          key={partIndex}
+                          style={
+                            isHighlight
+                              ? {
                                   backgroundColor: theme.dark
                                     ? "#5d3211" + "70"
-                                    : "#5d3211" + "30",
+                                    : "#5d3211" + "25",
                                   color: theme.dark ? "#f8e3d5" : "#5d3211",
-                                  fontWeight: "600",
-                                },
-                              ]
-                            : { color: theme.dark ? "#f8e3d5" : "#5d3211" }
-                        }
-                      >
-                        {part}
-                      </Text>
-                    );
-                  })}
+                                  fontFamily: "ZillaSlabsm",
+                                }
+                              : undefined
+                          }
+                        >
+                          {part}
+                        </Text>
+                      );
+                    })}
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.resultSeparator,
+                    {
+                      backgroundColor: theme.dark
+                        ? "rgba(255,255,255,0.07)"
+                        : "rgba(93,50,17,0.08)",
+                    },
+                  ]}
+                />
+              </TouchableOpacity>
+            ))}
+
+            {/* No Results */}
+            {hasSearched && searchResults.length === 0 && (
+              <View style={styles.emptyStateContainer}>
+                <Feather
+                  name="search"
+                  size={40}
+                  color={
+                    theme.dark
+                      ? "rgba(255,255,255,0.15)"
+                      : "rgba(93,50,17,0.2)"
+                  }
+                  style={{ marginBottom: 16 }}
+                />
+                <Text
+                  style={[
+                    styles.emptyStateTitle,
+                    {
+                      color: theme.dark
+                        ? "rgba(255,255,255,0.5)"
+                        : "rgba(93,50,17,0.6)",
+                    },
+                  ]}
+                >
+                  No matches found
+                </Text>
+                <Text
+                  style={[styles.emptyStateMessage, { color: subtleText }]}
+                >
+                  Try different words or phrases
                 </Text>
               </View>
+            )}
 
-              {/* Bottom separator line */}
-              <View
-                style={[
-                  styles.resultSeparator,
-                  {
-                    backgroundColor: theme.dark
-                      ? "rgba(255,255,255,0.1)"
-                      : "rgba(0,0,0,0.1)",
-                  },
-                ]}
-              />
-            </TouchableOpacity>
-          ))}
-
-          {/* No Results Message */}
-          {searchPhrase.trim() && searchResults.length === 0 && !searching && (
-            <View style={styles.noResultsContainer}>
-              <Feather
-                name="search"
-                size={48}
-                color={
-                  theme.dark ? "rgba(255,255,255,0.3)" : "rgba(93, 50, 17, 0.3)"
-                }
-                style={styles.noResultsIcon}
-              />
-              <Text
-                style={[
-                  styles.noResultsTitle,
-                  {
-                    color: theme.dark
-                      ? "rgba(255,255,255,0.7)"
-                      : "rgba(93, 50, 17, 0.7)",
-                    fontFamily: fontsLoaded ? "ZillaSlabsm" : "System",
-                  },
-                ]}
-              >
-                No matches found
-              </Text>
-              <Text
-                style={[
-                  styles.noResultsMessage,
-                  {
-                    color: theme.dark
-                      ? "rgba(255,255,255,0.5)"
-                      : "rgba(93, 50, 17, 0.5)",
-                    fontFamily: fontsLoaded ? "ZillaSlab" : "System",
-                  },
-                ]}
-              >
-                Try searching for different words or phrases
-              </Text>
-            </View>
-          )}
-
-          {/* Empty State */}
-          {!searchPhrase.trim() && (
-            <View style={styles.emptyStateContainer}>
-              <Feather
-                name="search"
-                size={64}
-                color={
-                  theme.dark ? "rgba(255,255,255,0.2)" : "rgba(93, 50, 17, 0.2)"
-                }
-                style={styles.emptyStateIcon}
-              />
-              <Text
-                style={[
-                  styles.emptyStateTitle,
-                  {
-                    color: theme.dark
-                      ? "rgba(255,255,255,0.6)"
-                      : "rgba(93, 50, 17, 0.6)",
-                    fontFamily: fontsLoaded ? "ZillaSlabsm" : "System",
-                  },
-                ]}
-              >
-                Search within this sermon
-              </Text>
-              <Text
-                style={[
-                  styles.emptyStateMessage,
-                  {
-                    color: theme.dark
-                      ? theme.colors.text
-                      : "rgba(93, 50, 17, 0.4)",
-                    fontFamily: fontsLoaded ? "ZillaSlab" : "System",
-                  },
-                ]}
-              >
-                Enter words or phrases to find them in the sermon text
-              </Text>
-            </View>
-          )}
-        </ScrollView>
+            {/* Empty State */}
+            {!hasSearched && (
+              <View style={styles.emptyStateContainer}>
+                <Feather
+                  name="search"
+                  size={40}
+                  color={
+                    theme.dark
+                      ? "rgba(255,255,255,0.12)"
+                      : "rgba(93,50,17,0.15)"
+                  }
+                  style={{ marginBottom: 16 }}
+                />
+                <Text
+                  style={[
+                    styles.emptyStateTitle,
+                    {
+                      color: theme.dark
+                        ? "rgba(255,255,255,0.45)"
+                        : "rgba(93,50,17,0.55)",
+                    },
+                  ]}
+                >
+                  Search within this sermon
+                </Text>
+                <Text
+                  style={[styles.emptyStateMessage, { color: subtleText }]}
+                >
+                  Enter words or phrases, then press Search
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     position: "absolute",
     top: 0,
     right: 0,
     left: 0,
-    bottom: -50, // Extend beyond bottom to ensure full coverage
+    bottom: -50,
     width: "100%",
-    height: "110%", // Slightly larger than 100% to ensure complete coverage
-    borderRadius: 0, // Remove border radius for full screen
-    backgroundColor: "white",
-    borderWidth: 0,
-    shadowColor: "transparent", // Remove shadow for full screen
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0, // Remove elevation for full screen
-    zIndex: 1000, // Higher than bottom sheet (95)
+    height: "110%",
+    zIndex: 1000,
   },
   keyboardAvoidingView: {
     flex: 1,
     paddingTop:
-      Platform.OS === "ios" ? 44 + 20 : (StatusBar.currentHeight || 0) + 20, // Add top padding for status bar
+      Platform.OS === "ios" ? 44 + 20 : (StatusBar.currentHeight || 0) + 20,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   closeButton: {
     padding: 8,
-    marginRight: 8,
+    marginRight: 12,
   },
   headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 22,
+    fontFamily: "ZillaSlabsm",
+    fontWeight: "300",
+    letterSpacing: 1,
+  },
+  headerSubtitle: {
+    fontSize: 10,
+    letterSpacing: 3,
+    textTransform: "uppercase",
+    marginTop: 2,
+    fontFamily: "ZillaSlab",
   },
   clearButton: {
     padding: 8,
-    marginLeft: 8,
   },
-  searchContainer: {
+  searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 20,
     paddingVertical: 12,
+    gap: 10,
+  },
+  inputWrapper: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    height: 48,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     paddingVertical: 0,
   },
-  loadingIndicator: {
-    marginLeft: 8,
+  searchButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#3d1f08",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
   resultsHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 24,
+    paddingBottom: 8,
   },
   resultsCount: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
   resultsContainer: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   resultItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
   },
   resultContent: {
     flex: 1,
@@ -535,64 +585,40 @@ const styles = {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   paragraphLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    opacity: 0.7,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   resultContext: {
-    fontSize: 15,
-    lineHeight: 18,
-    paddingRight: 25,
-  },
-  highlightText: {
-    fontWeight: "600",
+    fontSize: 14,
+    lineHeight: 21,
   },
   resultSeparator: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     marginTop: 12,
-    marginHorizontal: -16,
-  },
-  noResultsContainer: {
-    alignItems: "center",
-    paddingVertical: 48,
-    paddingHorizontal: 32,
-  },
-  noResultsIcon: {
-    marginBottom: 16,
-  },
-  noResultsTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  noResultsMessage: {
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
   },
   emptyStateContainer: {
     alignItems: "center",
     paddingVertical: 64,
     paddingHorizontal: 32,
   },
-  emptyStateIcon: {
-    marginBottom: 24,
-  },
   emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 12,
+    fontSize: 17,
+    fontFamily: "ZillaSlab",
+    fontWeight: "400",
+    marginBottom: 8,
     textAlign: "center",
   },
   emptyStateMessage: {
-    fontSize: 14,
+    fontSize: 13,
+    fontFamily: "ZillaSlab",
     textAlign: "center",
     lineHeight: 20,
   },
-};
+});
 
 export default CurrentSermonSearch;

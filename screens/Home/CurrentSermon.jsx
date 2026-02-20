@@ -39,13 +39,9 @@ import { useNavigation } from "@react-navigation/native";
 import PlaySermon from "../../components/currentSermon/PlaySermon_SIMPLE";
 import CustomTopCardController from "../../components/currentSermon/BottomSheetController";
 import LoadingScreen, { SermonSkeletonLoader } from "../../components/Loader";
-import { useFonts } from "expo-font";
 import { styles as globalStyles } from "../../styles/Allsermons";
 
 const CurrentSermon = React.memo(({ route }) => {
-  // IMMEDIATE DEBUG LOG
-  console.log("=== CurrentSermon Rendered ===");
-  console.log("Route params:", JSON.stringify(route?.params, null, 2));
 
   const {
     selectedSermon,
@@ -66,17 +62,18 @@ const CurrentSermon = React.memo(({ route }) => {
   // Fetch sermon if coming from search with only sermonId
   useEffect(() => {
     const fetchSermon = async () => {
-      if (sermonIdFromRoute && navigationSource === "search") {
-        console.log("Fetching sermon from database:", sermonIdFromRoute);
-        try {
-          const sermon = await getSermonById(sermonIdFromRoute);
-          if (sermon) {
-            setSelectedSermon(sermon);
-            console.log("Sermon fetched successfully:", sermon.title);
-          }
-        } catch (error) {
-          console.error("Error fetching sermon:", error);
+      if (!sermonIdFromRoute || navigationSource !== "search") return;
+      // Skip if the correct sermon is already selected — avoids a redundant
+      // DB round-trip when the user taps the same sermon from search twice or
+      // when a re-render causes this effect to re-fire.
+      if (selectedSermonRef.current?.id === sermonIdFromRoute) return;
+      try {
+        const sermon = await getSermonById(sermonIdFromRoute);
+        if (sermon) {
+          setSelectedSermon(sermon);
         }
+      } catch (error) {
+        console.error("Error fetching sermon:", error);
       }
     };
 
@@ -97,78 +94,48 @@ const CurrentSermon = React.memo(({ route }) => {
     }
   }, [route?.params]);
 
-  // Reset scroll handling when sermon changes or when search params change
+  // Reset positioning state whenever the sermon or navigation target changes
+  // so the unified positioning effect fires fresh for the new target.
   useEffect(() => {
-    // Reset when sermon changes OR when coming from search/bookmark with new paragraph
-    const shouldReset =
-      selectedSermon?.id ||
-      (route?.params?.source === "search" &&
-        route?.params?.initialParagraph !== undefined) ||
-      (route?.params?.source === "bookmark" &&
-        route?.params?.scrollToParagraph !== undefined);
-
-    if (shouldReset) {
-      console.log("Resetting scroll state for new navigation", {
-        source: route?.params?.source,
-        scrollToParagraph: route?.params?.scrollToParagraph,
-        initialParagraph: route?.params?.initialParagraph,
-      });
-      setHasHandledInitialScroll(false);
-      setHasScrolledToLastPosition(false); // Also reset last position scroll
-      setScrollPriority(null);
-    }
+    setIsPositioningComplete(false);
+    setScrollPriority(null);
   }, [
     selectedSermon?.id,
     route?.params?.source,
-    route?.params?.initialParagraph, // Reset when target paragraph changes
-    route?.params?.scrollToParagraph, // Reset when bookmark paragraph changes
+    route?.params?.initialParagraph,
+    route?.params?.scrollToParagraph,
   ]);
 
-  const [contentHeight, setContentHeight] = useState(0);
-  const [paragraphLayouts, setParagraphLayouts] = useState({});
+  // paragraphLayouts is only read inside scroll handlers — storing it as a ref
+  // avoids the 200 re-renders that would occur if it were useState and every
+  // paragraph fired onLayout on initial render.
+  const paragraphLayoutsRef = useRef({});
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [currentVisibleParagraph, setCurrentVisibleParagraph] = useState(0);
-  const [hasScrolledToLastPosition, setHasScrolledToLastPosition] =
-    useState(false);
-  const [showSelectionTip, setShowSelectionTip] = useState(false);
   const [paragraphs, setParagraphs] = useState([]);
   const [isLoadingParagraphs, setIsLoadingParagraphs] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const [currentSearchPhrase, setCurrentSearchPhrase] = useState(""); // For highlighting search results
+  const [currentSearchPhrase, setCurrentSearchPhrase] = useState("");
+  const [searchNavKey, setSearchNavKey] = useState(0);
+  const [pendingScrollTarget, setPendingScrollTarget] = useState(null);
 
   // Paragraph selection for toolbar
   const [selectedParagraphIndex, setSelectedParagraphIndex] = useState(null);
   const [showToolbarColorPalette, setShowToolbarColorPalette] = useState(false);
 
-  // Scroll management
+  // True once the FlatList has been scrolled to its initial target position.
+  // The skeleton overlay is shown until this is true, so users never see the
+  // list jump/animate to the target paragraph.
+  const [isPositioningComplete, setIsPositioningComplete] = useState(false);
 
-  // Scroll priority management
-  const [scrollPriority, setScrollPriority] = useState(null); // 'search', 'bookmark', 'lastread', 'bottomsheet'
-  const [hasHandledInitialScroll, setHasHandledInitialScroll] = useState(false);
+  const [scrollPriority, setScrollPriority] = useState(null);
 
   const flatListRef = useRef(null);
   const scrollTimeout = useRef(null);
   const isUserScrolling = useRef(false); // Track if user is actively scrolling
   const userScrollTimer = useRef(null); // Timer to detect when user stops scrolling
-
-  // Load fonts to ensure ZillaSlab is available
-  const [fontsLoaded] = useFonts({
-    ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-    ZillaSlabSemiBold: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
-  });
-
-  // Show selection tip on first load
-  useEffect(() => {
-    const tipTimer = setTimeout(() => {
-      setShowSelectionTip(true);
-      // Hide tip after 4 seconds
-      setTimeout(() => setShowSelectionTip(false), 4000);
-    }, 2000);
-
-    return () => clearTimeout(tipTimer);
-  }, [selectedSermon?.id]);
 
   // Cleanup: Save current position immediately when sermon changes or component unmounts
   useEffect(() => {
@@ -184,20 +151,15 @@ const CurrentSermon = React.memo(({ route }) => {
         clearTimeout(userScrollTimer.current);
       }
 
-      // Save the current visible paragraph immediately using the ref value
+      // Use refs to avoid updateLastReadPosition in the deps array —
+      // putting it there would cause a cleanup→setState→recreate loop.
       const lastParagraph = currentVisibleParagraphRef.current;
-      if (
-        currentSermonId &&
-        updateLastReadPosition &&
-        lastParagraph !== undefined
-      ) {
-        console.log(
-          `Cleanup: Saving last read position paragraph ${lastParagraph} for sermon ${currentSermonId}`,
-        );
-        updateLastReadPosition(currentSermonId, lastParagraph);
+      const updater = updateLastReadPositionRef.current;
+      if (currentSermonId && updater && lastParagraph !== undefined) {
+        updater(currentSermonId, lastParagraph);
       }
     };
-  }, [selectedSermon?.id, updateLastReadPosition]); // Removed currentVisibleParagraph from dependencies
+  }, [selectedSermon?.id]); // updateLastReadPosition accessed via ref, not deps
 
   // Format sermon into paragraphs asynchronously
   useEffect(() => {
@@ -267,61 +229,20 @@ const CurrentSermon = React.memo(({ route }) => {
     };
   }, []);
 
-  // Track scroll position and update current visible paragraph
-  const handleScroll = useCallback(
-    (event) => {
-      const scrollY = event.nativeEvent.contentOffset.y;
-
-      // Mark that user is actively scrolling
-      isUserScrolling.current = true;
-
-      // IMMEDIATELY calculate and update visible paragraph (no debounce)
-      let visibleParagraph = 0;
-      for (const [index, layout] of Object.entries(paragraphLayouts)) {
-        const paragraphIndex = parseInt(index);
-        if (
-          layout.y <= scrollY + 200 &&
-          layout.y + layout.height > scrollY + 200
-        ) {
-          visibleParagraph = paragraphIndex;
-          break;
-        }
-      }
-
-      // Update state immediately for UI responsiveness
-      if (visibleParagraph !== currentVisibleParagraphRef.current) {
-        setCurrentVisibleParagraph(visibleParagraph);
-        currentVisibleParagraphRef.current = visibleParagraph;
-      }
-
-      // Clear existing timers
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
-      if (userScrollTimer.current) {
-        clearTimeout(userScrollTimer.current);
-      }
-
-      // Reset user scrolling flag after user stops
-      userScrollTimer.current = setTimeout(() => {
-        isUserScrolling.current = false;
-      }, 300);
-
-      // Only SAVE is debounced, not the tracking
-      scrollTimeout.current = setTimeout(() => {
-        if (selectedSermon && updateLastReadPosition) {
-          console.log(
-            `Saving last read position: paragraph ${visibleParagraph} for sermon ${selectedSermon.id}`,
-          );
-          updateLastReadPosition(selectedSermon.id, visibleParagraph);
-        }
-      }, 300);
-    },
-    [paragraphLayouts, selectedSermon, updateLastReadPosition],
-  );
-
-  // Track visible items more efficiently with FlatList
+  // Track visible items via FlatList's native onViewableItemsChanged.
+  // This is more efficient than an onScroll handler firing at 60fps.
   const currentVisibleParagraphRef = useRef(currentVisibleParagraph);
+
+  // Keep refs current so the stable onViewableItemsChanged callback can read
+  // them without a stale closure.
+  const selectedSermonRef = useRef(selectedSermon);
+  const updateLastReadPositionRef = useRef(updateLastReadPosition);
+  useEffect(() => {
+    selectedSermonRef.current = selectedSermon;
+  }, [selectedSermon]);
+  useEffect(() => {
+    updateLastReadPositionRef.current = updateLastReadPosition;
+  }, [updateLastReadPosition]);
 
   useEffect(() => {
     currentVisibleParagraphRef.current = currentVisibleParagraph;
@@ -334,21 +255,21 @@ const CurrentSermon = React.memo(({ route }) => {
         firstVisibleIndex !== null &&
         firstVisibleIndex !== currentVisibleParagraphRef.current
       ) {
-        // Update the state IMMEDIATELY for UI responsiveness
         setCurrentVisibleParagraph(firstVisibleIndex);
+        currentVisibleParagraphRef.current = firstVisibleIndex;
 
-        // Only debounce the SAVE operation, not the tracking
+        // Debounce the AsyncStorage save — read current values from refs
+        // to avoid stale closures (this callback is created only once).
         if (scrollTimeout.current) {
           clearTimeout(scrollTimeout.current);
         }
         scrollTimeout.current = setTimeout(() => {
-          if (selectedSermon && updateLastReadPosition) {
-            console.log(
-              `Saving last read position (FlatList): paragraph ${firstVisibleIndex} for sermon ${selectedSermon.id}`,
-            );
-            updateLastReadPosition(selectedSermon.id, firstVisibleIndex);
+          const sermon = selectedSermonRef.current;
+          const updater = updateLastReadPositionRef.current;
+          if (sermon && updater) {
+            updater(sermon.id, firstVisibleIndex);
           }
-        }, 500); // Debounce only the save, not the state update
+        }, 500);
       }
     }
   }).current;
@@ -359,318 +280,142 @@ const CurrentSermon = React.memo(({ route }) => {
     waitForInteraction: false, // Start tracking immediately
   }).current;
 
-  // Scroll to initial paragraph from search navigation (HIGHEST PRIORITY)
+  // Initialize search-result highlight phrase from route params.
   useEffect(() => {
-    // Only run when paragraphs are loaded AND we have a valid search navigation
-    const hasSearchParams =
-      route?.params?.initialParagraph !== undefined &&
-      route?.params?.source === "search";
-
-    if (paragraphs.length > 0 && hasSearchParams && !hasHandledInitialScroll) {
-      const targetParagraph = route.params.initialParagraph;
-      console.log(
-        `Scrolling to paragraph ${targetParagraph} from search navigation (total paragraphs: ${paragraphs.length})`,
-      );
-
-      setScrollPriority("search");
-
-      // Different scroll strategies for ScrollView vs FlatList
-      setTimeout(() => {
-        if (
-          flatListRef.current &&
-          targetParagraph >= 0 &&
-          targetParagraph < paragraphs.length
-        ) {
-          console.log(`Attempting to scroll to paragraph ${targetParagraph}`);
-
-          try {
-            flatListRef.current.scrollToIndex({
-              index: targetParagraph,
-              animated: true,
-              viewPosition: 0.1,
-            });
-
-            const message = `Found in paragraph ${targetParagraph + 1}`;
-            if (Platform.OS === "android") {
-              ToastAndroid.show(message, ToastAndroid.SHORT);
-            } else {
-              Alert.alert("Search Result", message);
-            }
-          } catch (error) {
-            console.log(
-              "scrollToIndex failed, will retry in onScrollToIndexFailed",
-            );
-          }
-        } else {
-          console.log(
-            `Cannot scroll: flatListRef=${!!flatListRef.current}, targetParagraph=${targetParagraph}, paragraphs.length=${paragraphs.length}`,
-          );
-        }
-
-        setHasHandledInitialScroll(true);
-        setTimeout(() => setScrollPriority(null), 2000);
-      }, 800);
-    }
-  }, [
-    paragraphs.length,
-    hasHandledInitialScroll,
-    route?.params?.initialParagraph,
-    route?.params?.source,
-  ]);
-
-  // Initialize search phrase from route params
-  useEffect(() => {
-    const searchPhraseFromRoute = route?.params?.searchPhrase;
-    const sourceFromRoute = route?.params?.source;
-
-    console.log("Search phrase useEffect:", {
-      searchPhraseFromRoute,
-      sourceFromRoute,
-      hasSearchPhrase: !!searchPhraseFromRoute,
-      isSearchSource: sourceFromRoute === "search",
-    });
-
-    if (searchPhraseFromRoute && sourceFromRoute === "search") {
-      console.log(
-        `✓ Setting search phrase for highlighting: "${searchPhraseFromRoute}"`,
-      );
-      setCurrentSearchPhrase(searchPhraseFromRoute);
-    } else {
-      console.log("✗ Not setting search phrase:", {
-        reason: !searchPhraseFromRoute ? "no searchPhrase" : "not from search",
-      });
+    if (route?.params?.searchPhrase && route?.params?.source === "search") {
+      setCurrentSearchPhrase(route.params.searchPhrase);
+    } else if (!route?.params?.searchPhrase) {
+      setCurrentSearchPhrase("");
     }
   }, [route?.params?.searchPhrase, route?.params?.source]);
 
-  // Scroll to bookmark paragraph (HIGH-MEDIUM PRIORITY)
+  // Unified initial-positioning effect.
+  //
+  // Runs once per "positioning cycle" (isPositioningComplete resets on sermon
+  // or nav-param changes). Determines the target paragraph from route params
+  // (search > bookmark > last-read > 0), scrolls the hidden FlatList there
+  // instantly with animated:false, then reveals it. Users never see the list
+  // animate or jump — they see skeleton → correct paragraph.
   useEffect(() => {
-    const hasBookmarkParams =
+    if (paragraphs.length === 0 || isPositioningComplete) return;
+
+    // For search: wait until the correct sermon is actually in state.
+    if (route?.params?.source === "search" && sermonIdFromRoute) {
+      if (selectedSermon?.id !== sermonIdFromRoute) return;
+    }
+
+    // Determine target index in priority order.
+    let targetIndex = 0;
+    let toastMessage = null;
+
+    if (
+      route?.params?.source === "search" &&
+      route?.params?.initialParagraph !== undefined
+    ) {
+      targetIndex = route.params.initialParagraph;
+      toastMessage = `Found in paragraph ${targetIndex + 1}`;
+    } else if (
+      route?.params?.source === "bookmark" &&
       scrollToParagraphFromBookmark !== undefined &&
-      scrollToParagraphFromBookmark >= 0 &&
-      route?.params?.source === "bookmark";
-
-    console.log("Bookmark scroll check:", {
-      hasBookmarkParams,
-      scrollToParagraphFromBookmark,
-      paragraphsLength: paragraphs.length,
-      hasHandledInitialScroll,
-      scrollPriority,
-      source: route?.params?.source,
-    });
-
-    if (
-      hasBookmarkParams &&
-      paragraphs.length > 0 &&
-      !hasHandledInitialScroll
+      scrollToParagraphFromBookmark >= 0
     ) {
-      console.log(
-        `✓ Scrolling to bookmarked paragraph ${scrollToParagraphFromBookmark}`,
-      );
-      setScrollPriority("bookmark");
+      targetIndex = scrollToParagraphFromBookmark;
+      toastMessage = `Jumped to paragraph ${targetIndex + 1}`;
+    } else if (selectedSermon?.lastReadParagraph > 2) {
+      targetIndex = selectedSermon.lastReadParagraph;
+      toastMessage = `You reached paragraph ${targetIndex + 1} the last time`;
+    }
 
+    // Clamp to valid range.
+    targetIndex = Math.max(0, Math.min(targetIndex, paragraphs.length - 1));
+
+    // Reveal FlatList and optionally show toast.
+    const reveal = () => {
+      setIsPositioningComplete(true);
+      setScrollPriority(null);
+      if (toastMessage && targetIndex > 0 && Platform.OS === "android") {
+        ToastAndroid.show(toastMessage, ToastAndroid.SHORT);
+      }
+    };
+
+    if (targetIndex === 0 || !flatListRef.current) {
+      reveal();
+      return;
+    }
+
+    if (targetIndex < 20) {
+      // Within the initial render window — direct instant scroll.
+      flatListRef.current.scrollToIndex({
+        index: targetIndex,
+        animated: false,
+        viewPosition: 0.1,
+      });
+      reveal();
+    } else {
+      // Beyond the initial render window. Step 1: jump via offset to bring
+      // items near the target into the render window (uses ~120px estimate).
+      flatListRef.current.scrollToOffset({
+        offset: 120 * targetIndex,
+        animated: false,
+      });
+      // Step 2: precise scroll once items are rendered (~200 ms is enough).
       setTimeout(() => {
-        if (
-          flatListRef.current &&
-          scrollToParagraphFromBookmark >= 0 &&
-          scrollToParagraphFromBookmark < paragraphs.length
-        ) {
-          console.log(
-            `Executing bookmark scroll to paragraph ${scrollToParagraphFromBookmark}`,
-          );
-
-          try {
-            flatListRef.current.scrollToIndex({
-              index: scrollToParagraphFromBookmark,
-              animated: true,
-              viewPosition: 0.1,
-            });
-
-            // Show toast message
-            const message = `Jumped to bookmarked paragraph ${
-              scrollToParagraphFromBookmark + 1
-            }`;
-            if (Platform.OS === "android") {
-              ToastAndroid.show(message, ToastAndroid.SHORT);
-            } else {
-              Alert.alert("Bookmark", message);
-            }
-          } catch (error) {
-            console.log(
-              "scrollToIndex failed for bookmark, will retry in onScrollToIndexFailed",
-            );
-          }
-
-          setHasHandledInitialScroll(true);
-          setHasScrolledToLastPosition(true);
-          setTimeout(() => setScrollPriority(null), 2000);
-        }
-      }, 800);
+        flatListRef.current?.scrollToIndex({
+          index: targetIndex,
+          animated: false,
+          viewPosition: 0.1,
+        });
+        reveal();
+      }, 200);
     }
   }, [
-    scrollToParagraphFromBookmark,
     paragraphs.length,
-    hasHandledInitialScroll,
+    isPositioningComplete,
+    selectedSermon?.id,
+    selectedSermon?.lastReadParagraph,
+    sermonIdFromRoute,
+    scrollToParagraphFromBookmark,
     route?.params?.source,
+    route?.params?.initialParagraph,
   ]);
 
-  // Scroll to last read position when sermon loads (LOWEST PRIORITY)
+  // Reset visible-paragraph counter when sermon changes.
   useEffect(() => {
-    const lastReadParagraph = selectedSermon?.lastReadParagraph;
-    const hasValidLastReadPosition =
-      lastReadParagraph !== undefined && lastReadParagraph > 0; // Only if user has read past first paragraph
-
-    console.log("Last read position check:", {
-      lastReadParagraph,
-      hasValidLastReadPosition,
-      paragraphsLength: paragraphs.length,
-      hasScrolledToLastPosition,
-      hasHandledInitialScroll,
-      scrollPriority,
-      hasSearchParams: route?.params?.initialParagraph !== undefined,
-      isUserScrolling: isUserScrolling.current,
-    });
-
-    if (
-      hasValidLastReadPosition &&
-      paragraphs.length > 0 &&
-      !hasScrolledToLastPosition &&
-      !hasHandledInitialScroll && // Don't interfere with search navigation
-      scrollToParagraphFromBookmark === undefined && // Don't interfere with bookmark navigation
-      scrollPriority === null && // Don't interfere with other scroll operations
-      route?.params?.initialParagraph === undefined && // Don't auto-scroll if coming from search
-      !isUserScrolling.current // CRITICAL: Don't interfere with user scrolling
-    ) {
-      console.log(
-        `✓ Scrolling to last read position: paragraph ${lastReadParagraph}`,
-      );
-      setScrollPriority("lastread");
-
-      setTimeout(() => {
-        // Double-check user isn't scrolling before executing
-        if (!isUserScrolling.current && flatListRef.current) {
-          console.log(`Executing scroll to paragraph ${lastReadParagraph}`);
-
-          try {
-            flatListRef.current.scrollToIndex({
-              index: lastReadParagraph,
-              animated: true,
-              viewPosition: 0.1,
-            });
-
-            // Show toast message only if we're past the first few paragraphs
-            if (lastReadParagraph > 2) {
-              const message = `You reached paragraph ${lastReadParagraph + 1} the last time`;
-              if (Platform.OS === "android") {
-                ToastAndroid.show(message, ToastAndroid.LONG);
-              } else {
-                Alert.alert("Last Position", message);
-              }
-            }
-          } catch (error) {
-            console.log(
-              "scrollToIndex failed for last read position, will retry in onScrollToIndexFailed",
-            );
-          }
-
-          setHasScrolledToLastPosition(true);
-          // Clear priority after successful scroll
-          setTimeout(() => setScrollPriority(null), 2000);
-        }
-      }, 1000); // Delay to ensure paragraphs are rendered
-    }
-  }, [
-    selectedSermon,
-    paragraphs.length,
-    hasScrolledToLastPosition,
-    hasHandledInitialScroll,
-    navigationSource,
-    scrollToParagraphFromBookmark,
-    scrollPriority,
-    scrollToParagraph,
-    route?.params,
-  ]);
-
-  // Reset scroll state when sermon changes
-  useEffect(() => {
-    setHasScrolledToLastPosition(false);
     setCurrentVisibleParagraph(0);
-    setHasHandledInitialScroll(false);
-    setScrollPriority(null);
   }, [selectedSermon?.id]);
 
-  // Store paragraph layout information for scrolling
-  const handleParagraphLayout = useCallback((index, event) => {
-    const layout = event.nativeEvent.layout;
-    setParagraphLayouts((prev) => ({
-      ...prev,
-      [index]: {
-        y: layout.y,
-        height: layout.height,
-      },
-    }));
-  }, []);
-
-  // Effect to collect all paragraph layouts and their positions
+  // Reset layout cache when sermon changes
   useEffect(() => {
-    // Reset layouts when sermon changes
-    setParagraphLayouts({});
+    paragraphLayoutsRef.current = {};
   }, [selectedSermon?.sermon]);
 
-  // Scroll to specific paragraph by index using FlatList
+  // Scroll to a specific paragraph index with animation (user-initiated).
   const scrollToParagraph = useCallback(
-    (index, forcePriority = false) => {
+    (index) => {
       if (flatListRef.current && index >= 0 && index < paragraphs.length) {
-        // CRITICAL: Only block auto-scroll for low-priority operations when user is scrolling
-        // Allow forced navigation scrolls (search, bookmark) to proceed
-        if (
-          !forcePriority &&
-          isUserScrolling.current &&
-          scrollPriority === "lastread"
-        ) {
-          console.log(
-            "User is actively scrolling, cancelling low-priority auto-scroll",
-          );
-          return;
-        }
-
-        // Check if we should respect priority system (unless forced)
-        if (!forcePriority && scrollPriority) {
-          // Priority order: search > bookmark > bottomsheet > lastread
-          if (scrollPriority === "search" || scrollPriority === "bookmark") {
-            return;
-          }
-        }
-
         flatListRef.current.scrollToIndex({
-          index: index,
+          index,
           animated: true,
-          viewPosition: 0.1, // Position item 10% from top for better visibility
+          viewPosition: 0.1,
         });
       }
     },
-    [paragraphs.length, scrollPriority],
+    [paragraphs.length],
   );
 
-  // Scroll to top of sermon
-  const scrollToTop = useCallback(() => {
-    // Clear any ongoing priority operations for manual navigation
+  // Scroll to previous paragraph stop
+  const scrollToPrevParagraph = useCallback(() => {
     setScrollPriority(null);
-    if (flatListRef.current && paragraphs.length > 0) {
-      flatListRef.current.scrollToIndex({ index: 0, animated: true });
-    }
-  }, [paragraphs.length]);
+    const target = Math.max(0, currentVisibleParagraph - 1);
+    scrollToParagraph(target, true);
+  }, [currentVisibleParagraph, scrollToParagraph]);
 
-  // Scroll to bottom of sermon
-  const scrollToBottom = useCallback(() => {
-    // Clear any ongoing priority operations for manual navigation
+  // Scroll to next paragraph stop
+  const scrollToNextParagraph = useCallback(() => {
     setScrollPriority(null);
-    if (flatListRef.current && paragraphs.length > 0) {
-      flatListRef.current.scrollToIndex({
-        index: paragraphs.length - 1,
-        animated: true,
-      });
-    }
-  }, [paragraphs.length]);
+    const target = Math.min(paragraphs.length - 1, currentVisibleParagraph + 1);
+    scrollToParagraph(target, true);
+  }, [currentVisibleParagraph, paragraphs.length, scrollToParagraph]);
 
   // Navigate back to all sermons
   const handleBack = useCallback(() => {
@@ -687,22 +432,27 @@ const CurrentSermon = React.memo(({ route }) => {
     setIsSearchVisible(false);
   }, []);
 
-  // Handle navigating to search result from fullscreen search
+  // Handle navigating to search result from fullscreen search.
+  // State updates (phrase + navKey) are committed first; the actual scroll
+  // is deferred to a useEffect so FlatList cells render with the updated
+  // searchPhrase before they scroll into view.
   const handleSearchNavigateToResult = useCallback(
-    (paragraphIndex, searchPhrase) => {
-      scrollToParagraph(paragraphIndex);
+    (paragraphIndex, phrase) => {
       setIsSearchVisible(false);
-
-      // Store the search phrase temporarily for highlighting
-      setCurrentSearchPhrase(searchPhrase || "");
-
-      // Clear the search phrase after a delay to remove highlighting
-      setTimeout(() => {
-        setCurrentSearchPhrase("");
-      }, 5000); // Clear after 5 seconds
+      setCurrentSearchPhrase(phrase || "");
+      setSearchNavKey((k) => k + 1);
+      setPendingScrollTarget(paragraphIndex);
     },
-    [scrollToParagraph],
+    [],
   );
+
+  // Fire scroll AFTER the new phrase and extraData have been committed.
+  useEffect(() => {
+    if (pendingScrollTarget !== null) {
+      scrollToParagraph(pendingScrollTarget);
+      setPendingScrollTarget(null);
+    }
+  }, [pendingScrollTarget, scrollToParagraph]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -789,23 +539,50 @@ const CurrentSermon = React.memo(({ route }) => {
     [selectedParagraphIndex, addHighlight, removeHighlight, selectedSermon?.id],
   );
 
-  // Render individual paragraph - FlatList handles virtualization
+  // Stable drag/fail handlers — defined with useCallback so FlatList never
+  // receives new function references on unrelated re-renders.
+  const handleScrollBeginDrag = useCallback(() => {
+    isUserScrolling.current = true;
+    if (scrollPriority === "lastread") {
+      setScrollPriority(null);
+    }
+  }, [scrollPriority]);
+
+  const handleScrollEndDrag = useCallback(() => {
+    setTimeout(() => {
+      isUserScrolling.current = false;
+    }, 150);
+  }, []);
+
+  const handleScrollToIndexFailed = useCallback((info) => {
+    // Safety net for user-initiated prev/next scrolls that land beyond the
+    // render window. The initial-positioning path never reaches here (it uses
+    // proactive scrollToOffset + scrollToIndex with animated:false while the
+    // skeleton is visible). Here animated:true is fine — the user triggered it.
+    if (flatListRef.current) {
+      const approxOffset = (info.averageItemLength ?? 120) * info.index;
+      flatListRef.current.scrollToOffset({ offset: approxOffset, animated: false });
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({
+          index: info.index,
+          animated: true,
+          viewPosition: 0.1,
+        });
+      }, 200);
+    }
+  }, []);
+
+  // Render individual paragraph — FlatList handles virtualization.
+  // handleParagraphLayout removed: paragraphLayouts was only consumed by
+  // handleScroll (now removed). onLayout on each paragraph is no longer needed.
   const renderParagraphItem = useCallback(
     ({ item, index }) => {
-      // Debug log for search phrase (only log first paragraph to avoid spam)
-      if (index === 0 && currentSearchPhrase) {
-        console.log(
-          `Rendering paragraphs with searchPhrase: "${currentSearchPhrase}"`,
-        );
-      }
-
       return (
         <ParagraphText
           paragraph={item}
           index={index}
           theme={theme}
           settings={settings}
-          onLayout={(event) => handleParagraphLayout(index, event)}
           selectedSermon={selectedSermon}
           searchPhrase={currentSearchPhrase}
           isSelected={selectedParagraphIndex === index}
@@ -816,7 +593,6 @@ const CurrentSermon = React.memo(({ route }) => {
     [
       theme,
       settings,
-      handleParagraphLayout,
       selectedSermon,
       currentSearchPhrase,
       selectedParagraphIndex,
@@ -827,125 +603,82 @@ const CurrentSermon = React.memo(({ route }) => {
   // Optimization: Extract item key
   const keyExtractor = useCallback((item, index) => `paragraph-${index}`, []);
 
-  // ListHeaderComponent - Decorative title section
+  // ─── Book-style chapter header ────────────────────────────────────────────
   const ListHeader = useMemo(
-    () => (
-      <View style={{ alignItems: "center", marginBottom: 20 }}>
-        <Text
-          style={[
-            styles.titleText,
-            {
-              color: theme.dark ? theme.colors.hlight + "90" : "#5d3211",
-              fontFamily: settings.fontFamily || "System",
-              fontSize: responsiveFontSize(settings.fontSize * 1.5),
-              textAlign: "center",
-              marginBottom: 8,
-              letterSpacing: 1.5,
-              lineHeight: responsiveFontSize(settings.fontSize * 1.75),
-              textShadowColor: theme.dark ? "#00000080" : "#FFFFFF60",
-              textShadowOffset: { width: 0, height: 2 },
-              textShadowRadius: 4,
-            },
-          ]}
-        >
-          {selectedSermon?.title}
-        </Text>
+    () => {
+      const accent = theme.dark ? theme.colors.hlight : "#5d3211";
+      const accentM = theme.dark ? theme.colors.hlight + "70" : "#5d321170";
+      const titleSize = responsiveFontSize(22);
 
-        {/* Highly Decorative Underline */}
-        <View style={{ alignItems: "center", width: "90%" }}>
-          {/* Top ornamental border */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              width: "100%",
-              marginBottom: 3,
-            }}
+      return (
+        <View style={styles.chapterHeader}>
+         
+
+          {/* ── Sermon title ── */}
+          <Text
+            style={[
+              styles.chapterTitle,
+              {
+                color: accent,
+                fontFamily:  "ZillaSlabsm",
+                fontSize: titleSize,
+                lineHeight: titleSize * 1.3,
+              },
+            ]}
           >
+            {selectedSermon?.title}
+          </Text>
+           {/* ── Top ornament: thin line ◆ thin line ── */}
+          <View style={styles.chapterOrnamentTop}>
             <View
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: theme.dark ? theme.colors.hlight : "#5d3211",
-                marginRight: 8,
-              }}
+              style={[styles.chapterOrnamentLine, { backgroundColor: accentM }]}
             />
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <View
-                style={{
-                  height: 2,
-                  width: "100%",
-                  backgroundColor: theme.dark
-                    ? theme.colors.hlight + "40"
-                    : "#5d321140",
-                  borderRadius: 1,
-                }}
-              />
-            </View>
             <View
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: theme.dark ? theme.colors.hlight : "#5d3211",
-                marginLeft: 8,
-              }}
+              style={[styles.chapterOrnamentDiamond, { backgroundColor: accent }]}
+            />
+            <View
+              style={[styles.chapterOrnamentLine, { backgroundColor: accentM }]}
             />
           </View>
 
-          {/* Main thick decorative line */}
-          <View
-            style={{
-              height: 4,
-              width: "85%",
-              backgroundColor: theme.dark
-                ? theme.colors.hlight + "20"
-                : "#5d3211",
-              borderRadius: 3,
-              marginBottom: 3,
-              shadowColor: theme.dark ? theme.colors.hlight + "20" : "#5d3211",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.6,
-              shadowRadius: 3,
-              elevation: 4,
-              borderTopWidth: 0.5,
-              borderTopColor: theme.dark
-                ? theme.colors.hlight + "80"
-                : "#5d321180",
-              borderBottomWidth: 0.5,
-              borderBottomColor: theme.dark ? "#00000040" : "#FFFFFF60",
-            }}
-          />
+          {/* ── Date ── */}
+          {selectedSermon?.date ? (
+            <Text
+              style={[
+                styles.chapterMeta,
+                {
+                  color: theme.colors.text,
+                  fontFamily: settings.fontFamily || "ZillaSlab",
+                  fontSize: responsiveFontSize(settings.fontSize * 0.72),
+                  opacity: 0.65,
+                },
+              ]}
+            >
+              {selectedSermon.date}
+            </Text>
+          ) : null}
 
-          {/* Bottom ornamental flourish */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-            }}
-          >
-            {[1, 2, 3, 4, 5].map((flourish, index) => (
-              <View
-                key={flourish}
-                style={{
-                  width: index === 2 ? 6 : index === 1 || index === 3 ? 4 : 2,
-                  height: index === 2 ? 6 : index === 1 || index === 3 ? 4 : 2,
-                  borderRadius:
-                    index === 2 ? 3 : index === 1 || index === 3 ? 2 : 1,
-                  backgroundColor: theme.dark
-                    ? theme.colors.hlight + (index === 2 ? "" : "80")
-                    : "#5d3211" + (index === 2 ? "" : "80"),
-                }}
-              />
-            ))}
-          </View>
+          {/* ── Location ── */}
+          {selectedSermon?.location ? (
+            <Text
+              style={[
+                styles.chapterMetaLocation,
+                {
+                  color: theme.colors.text,
+                  fontFamily: settings.fontFamily || "ZillaSlab",
+                  fontSize: responsiveFontSize(settings.fontSize * 0.68),
+                  opacity: 0.5,
+                  marginBottom: 0,
+                },
+              ]}
+            >
+              {selectedSermon.location}
+            </Text>
+          ) : null}
         </View>
-      </View>
-    ),
-    [selectedSermon?.title, theme, responsiveFontSize],
+      );
+    },
+    [selectedSermon?.title, selectedSermon?.date, selectedSermon?.location, theme, settings.fontSize, settings.fontFamily],
   );
 
   return (
@@ -982,103 +715,87 @@ const CurrentSermon = React.memo(({ route }) => {
             <PlaySermon />
           ) : (
             <>
-              {/* Show skeleton loader while paragraphs are being processed or fonts are loading */}
-              {isLoadingParagraphs || !fontsLoaded ? (
-                <SermonSkeletonLoader
-                  message={
-                    !fontsLoaded ? "Loading fonts..." : "getting the message..."
-                  }
+              {/* ── Book page container ── */}
+              <View style={[styles.bookPageWrapper, { flex: 1 }]}>
+                {/*
+                  FlatList is always mounted so the positioning effect can call
+                  scrollToIndex on it while it is hidden. The skeleton overlays
+                  it until isPositioningComplete is true, so the user never
+                  sees the list at index 0 or watches it animate to the target.
+                */}
+                <FlatList
+                  ref={flatListRef}
+                  data={paragraphs}
+                  renderItem={renderParagraphItem}
+                  keyExtractor={keyExtractor}
+                  extraData={`${currentSearchPhrase}-${searchNavKey}`}
+                  ListHeaderComponent={ListHeader}
+                  onViewableItemsChanged={onViewableItemsChanged}
+                  viewabilityConfig={viewabilityConfig}
+                  initialNumToRender={20}
+                  maxToRenderPerBatch={20}
+                  windowSize={21}
+                  removeClippedSubviews={true}
+                  onScrollBeginDrag={handleScrollBeginDrag}
+                  onScrollEndDrag={handleScrollEndDrag}
+                  onScrollToIndexFailed={handleScrollToIndexFailed}
+                  style={{ flex: 1, opacity: isPositioningComplete ? 1 : 0 }}
+                  contentContainerStyle={[
+                    styles.scrollViewContainer,
+                    { flexGrow: 1 },
+                  ]}
                 />
-              ) : (
-                <>
-                  <FlatList
-                    ref={flatListRef}
-                    data={paragraphs}
-                    renderItem={renderParagraphItem}
-                    keyExtractor={keyExtractor}
-                    ListHeaderComponent={ListHeader}
-                    onViewableItemsChanged={onViewableItemsChanged}
-                    viewabilityConfig={viewabilityConfig}
-                    initialNumToRender={Math.max(50, initialParagraph + 10)}
-                    maxToRenderPerBatch={20}
-                    windowSize={21}
-                    removeClippedSubviews={true}
-                    onScroll={handleScroll}
-                    scrollEventThrottle={16}
-                    onScrollBeginDrag={() => {
-                      isUserScrolling.current = true;
-                      if (scrollPriority === "lastread") {
-                        setScrollPriority(null);
-                      }
-                    }}
-                    onScrollEndDrag={() => {
-                      setTimeout(() => {
-                        if (!isUserScrolling.current) return;
-                        isUserScrolling.current = false;
-                      }, 150);
-                    }}
-                    onScrollToIndexFailed={(info) => {
-                      console.log(
-                        `scrollToIndexFailed: index=${info.index}, highestMeasuredFrameIndex=${info.highestMeasuredFrameIndex}`,
-                      );
 
-                      setTimeout(() => {
-                        if (flatListRef.current) {
-                          try {
-                            flatListRef.current.scrollToIndex({
-                              index: info.index,
-                              animated: false,
-                              viewPosition: 0.1,
-                            });
-                          } catch (e) {
-                            console.log(
-                              `Single retry failed, giving up on scrollToIndex`,
-                            );
-                          }
-                        }
-                      }, 500);
-                    }}
-                    contentContainerStyle={[
-                      styles.scrollViewContainer,
-                      { flexGrow: 1 },
-                    ]}
-                  />
+                {/* Left page-shadow strip */}
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.pageShadowLeft,
+                    {
+                      background: undefined,
+                      // React Native gradient via inline style not possible;
+                      // use a semi-transparent overlay instead
+                      backgroundColor: theme.dark
+                        ? "rgba(0,0,0,0.18)"
+                        : "rgba(93,50,17,0.06)",
+                    },
+                  ]}
+                />
+                {/* Right page-shadow strip */}
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.pageShadowRight,
+                    {
+                      backgroundColor: theme.dark
+                        ? "rgba(0,0,0,0.18)"
+                        : "rgba(93,50,17,0.06)",
+                    },
+                  ]}
+                />
+              </View>
 
-                  <CustomTopCardController
-                    theme={theme}
-                    scrollToTop={scrollToTop}
-                    scrollToBottom={scrollToBottom}
-                    onOpenSearch={handleOpenSearch}
-                  />
-
-                  <SearchFeedback
-                    isVisible={showFeedback}
-                    message={feedbackMessage}
-                    theme={theme}
-                  />
-
-                  {/* Selection Tip */}
-                  {showSelectionTip && (
-                    <View
-                      style={[
-                        styles.selectionTipContainer,
-                        { backgroundColor: theme.colors.background },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.selectionTipText,
-                          { color: theme.colors.text },
-                        ]}
-                      >
-                        💡 Tip: Double-tap paragraph numbers to enable text
-                        selection, then long-press text to select words or
-                        phrases
-                      </Text>
-                    </View>
-                  )}
-                </>
+              {/* Skeleton overlay — visible while loading paragraphs OR while
+                  the FlatList is being silently scrolled to the target. */}
+              {(isLoadingParagraphs || !isPositioningComplete) && (
+                <View style={StyleSheet.absoluteFillObject}>
+                  <SermonSkeletonLoader message="getting the message..." />
+                </View>
               )}
+
+              <CustomTopCardController
+                theme={theme}
+                onScrollToPrev={scrollToPrevParagraph}
+                onScrollToNext={scrollToNextParagraph}
+                onOpenSearch={handleOpenSearch}
+                sermonTitle={selectedSermon?.title}
+              />
+
+              <SearchFeedback
+                isVisible={showFeedback}
+                message={feedbackMessage}
+                theme={theme}
+              />
             </>
           )}
         </View>

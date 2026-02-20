@@ -3,13 +3,11 @@ import * as SplashScreen from "expo-splash-screen";
 import StackNavigator from "./components/StackNavigator";
 import { NavigationContainer } from "@react-navigation/native";
 import { SermonProvider } from "./Logic/globalState";
-import { Text, BackHandler, Platform } from "react-native";
+import { BackHandler, Platform } from "react-native";
 import AppStatusBar from "./components/StatusBar";
-import * as Font from "expo-font";
 import { useFonts } from "expo-font";
 import UpdateScreen from "./components/Update";
 import LoaderScreen from "./screens/LoadingScreen";
-import { SQLiteProvider } from "expo-sqlite";
 
 // Prevent auto hide of splash screen until we're ready
 SplashScreen.preventAutoHideAsync();
@@ -19,18 +17,14 @@ export default function App() {
 
   const [fontsLoaded] = useFonts({
     ZillaSlab: require("./assets/fonts/ZillaSlab-Regular.ttf"),
+    ZillaSlabsm: require("./assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
 
   useEffect(() => {
     async function prepareApp() {
       try {
         if (fontsLoaded) {
-          // Set default global font
-          Text.defaultProps = Text.defaultProps || {};
-          Text.defaultProps.style = { fontFamily: "MyFont" };
-
-          // Artificial delay (optional)
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          // Fonts are loaded — nothing else to prepare synchronously
         }
       } catch (e) {
         console.warn(e);
@@ -48,19 +42,16 @@ export default function App() {
   }
 
   if (!appIsReady || !fontsLoaded) {
-    return <LoaderScreen />; // or Splash screen
+    return <LoaderScreen />;
   }
 
   return (
-    <SQLiteProvider databaseName="sermons.db">
-      <SermonProvider>
-        <NavigationContainer>
-          {/* <LoaderScreen/> */}
-          <AppStatusBar />
-          <UpdateScreen />
-          <StackNavigator />
-        </NavigationContainer>
-      </SermonProvider>
-    </SQLiteProvider>
+    <SermonProvider>
+      <NavigationContainer>
+        <AppStatusBar />
+        <UpdateScreen />
+        <StackNavigator />
+      </NavigationContainer>
+    </SermonProvider>
   );
 }

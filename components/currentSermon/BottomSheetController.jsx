@@ -1,86 +1,186 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, Text } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import ActionToolbar from "./ActionToolbar";
 import { styles } from "../../styles/currentsermon";
+import { useNavigation } from "@react-navigation/native";
+import { responsiveFontSize } from "../../Utils/responsiveUtils";
 
+/**
+ * CustomTopCardController — sleek bottom pill toolbar for the reading screen.
+ *
+ * Layout (left → right):
+ *   [← back]  |  [↑ prev]  [title/toggle]  [↓ next]  |  [🔍 search]
+ *
+ * Tapping the centre title area toggles the expanded ActionToolbar card above.
+ */
 const CustomTopCardController = ({
   theme,
   onOpenSearch,
-  scrollToTop,
-  scrollToBottom,
+  onScrollToPrev,
+  onScrollToNext,
+  sermonTitle,
 }) => {
-  // Local state for action toolbar
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
+  const navigation = useNavigation();
 
-  const handleTogglePress = () => {
-    setIsToolbarVisible(!isToolbarVisible);
+  const isDark = theme.dark;
+  const accentColor = isDark ? theme.colors.hlight : "#5d3211";
+  const pillBg = isDark
+    ? "rgba(38, 30, 26, 0.96)"
+    : "rgba(250, 238, 209, 0.97)";
+  const pillBorder = isDark
+    ? "rgba(242, 205, 180, 0.14)"
+    : "rgba(93, 50, 17, 0.14)";
+  const iconColor = isDark ? theme.colors.hlight : "#5d3211";
+  const iconColorMuted = isDark
+    ? "rgba(242, 205, 180, 0.55)"
+    : "rgba(93, 50, 17, 0.5)";
+  const dividerColor = isDark
+    ? "rgba(242, 205, 180, 0.18)"
+    : "rgba(93, 50, 17, 0.15)";
+
+  const handleToggle = () => setIsToolbarVisible((v) => !v);
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate("AllSermons");
+    }
   };
 
-  // Handle scroll actions from toolbar
-  const handleScrollToTopFromToolbar = () => {
-    scrollToTop();
+  const handlePrev = () => {
+    onScrollToPrev?.();
     setIsToolbarVisible(false);
   };
 
-  const handleScrollToBottomFromToolbar = () => {
-    scrollToBottom();
+  const handleNext = () => {
+    onScrollToNext?.();
     setIsToolbarVisible(false);
   };
 
-  // Handle search action from toolbar
-  const handleOpenSearchFromToolbar = () => {
-    onOpenSearch();
+  const handleSearch = () => {
+    onOpenSearch?.();
     setIsToolbarVisible(false);
   };
 
   return (
     <>
-      {/* Action Toolbar */}
+      {/* ── Expanded action card (above pill) ── */}
       <ActionToolbar
         theme={theme}
         isVisible={isToolbarVisible}
         onClose={() => setIsToolbarVisible(false)}
-        onOpenSearch={handleOpenSearchFromToolbar}
-        onScrollToTop={handleScrollToTopFromToolbar}
-        onScrollToBottom={handleScrollToBottomFromToolbar}
+        onOpenSearch={handleSearch}
+        onScrollToPrev={handlePrev}
+        onScrollToNext={handleNext}
+        sermonTitle={sermonTitle}
       />
 
-      {/* Toggle button */}
-      <TouchableOpacity
+      {/* ── Bottom pill toolbar ── */}
+      <View
         style={[
-          styles.floatingButton,
+          styles.bottomToolbar,
           {
-            backgroundColor: isToolbarVisible
-              ? theme.dark
-                ? "#f2cdb4"
-                : "#5d3211"
-              : theme.dark
-                ? "rgba(44, 36, 32, 0.95)"
-                : "rgba(255, 255, 255, 0.95)",
-            borderColor: theme.dark
-              ? "rgba(242, 205, 180, 0.2)"
-              : "rgba(93, 50, 17, 0.15)",
-            borderWidth: 1,
+            backgroundColor: pillBg,
+            borderColor: pillBorder,
           },
         ]}
-        onPress={handleTogglePress}
-        activeOpacity={0.8}
       >
-        <MaterialIcons
-          name={isToolbarVisible ? "close" : "more-horiz"}
-          size={22}
-          color={
-            isToolbarVisible
-              ? theme.dark
-                ? "#1a1512"
-                : "#fff"
-              : theme.dark
-                ? "#e6c3b8"
-                : "#5d3211"
-          }
-        />
-      </TouchableOpacity>
+        {/* Back button */}
+        <TouchableOpacity
+          style={styles.toolbarButton}
+          onPress={handleBack}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name="arrow-back"
+            size={responsiveFontSize(20)}
+            color={iconColor}
+          />
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={[styles.toolbarDivider, { backgroundColor: dividerColor }]} />
+
+        {/* Prev paragraph */}
+        <TouchableOpacity
+          style={styles.toolbarButton}
+          onPress={handlePrev}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name="keyboard-arrow-up"
+            size={responsiveFontSize(22)}
+            color={iconColorMuted}
+          />
+        </TouchableOpacity>
+
+        {/* Centre: sermon title / toggle */}
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 4,
+          }}
+          onPress={handleToggle}
+          activeOpacity={0.75}
+        >
+          {isToolbarVisible ? (
+            <MaterialIcons
+              name="close"
+              size={responsiveFontSize(18)}
+              color={accentColor}
+            />
+          ) : (
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={{
+                fontSize: responsiveFontSize(11),
+                fontFamily: "ZillaSlab",
+                color: accentColor,
+                opacity: 0.75,
+                letterSpacing: 0.4,
+                textAlign: "center",
+              }}
+            >
+              {sermonTitle || "···"}
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Next paragraph */}
+        <TouchableOpacity
+          style={styles.toolbarButton}
+          onPress={handleNext}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name="keyboard-arrow-down"
+            size={responsiveFontSize(22)}
+            color={iconColorMuted}
+          />
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={[styles.toolbarDivider, { backgroundColor: dividerColor }]} />
+
+        {/* Search */}
+        <TouchableOpacity
+          style={styles.toolbarButton}
+          onPress={handleSearch}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name="search"
+            size={responsiveFontSize(20)}
+            color={iconColor}
+          />
+        </TouchableOpacity>
+      </View>
     </>
   );
 };

@@ -12,11 +12,12 @@ import Settings from "../screens/settings/Settings";
 import CurrentSermon from "../screens/Home/CurrentSermon";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useScreens } from "react-native-screens";
 import { useAppContext } from "../Logic/globalState";
 import SermonAudioWebScreen from "../screens/SermonAudioWeb";
 import BookmarksScreen from "../screens/Bookmarks/BookmarksScreen";
-// useScreens();
+// Note: @react-navigation/native-stack uses react-native-screens natively by
+// default — no manual enableScreens() call is needed with native-stack.
+
 const Stack = createNativeStackNavigator();
 
 // Custom loading component with transparent background
@@ -45,12 +46,20 @@ const ScreenWithSuspense =
     </Suspense>
   );
 
+// Pre-compute wrapped screen components at module level so React Navigation
+// always receives a stable component reference and never unmounts/remounts screens.
+const WrappedWelcome = ScreenWithSuspense(Welcome);
+const WrappedCurrentSermon = ScreenWithSuspense(CurrentSermon);
+const WrappedSermonList = ScreenWithSuspense(SermonList);
+const WrappedSermonSearch = ScreenWithSuspense(SermonSearch);
+const WrappedSettings = ScreenWithSuspense(Settings);
+const WrappedAbout = ScreenWithSuspense(About);
+const WrappedUpdateScreen = ScreenWithSuspense(UpdateScreen);
+const WrappedSermonAudioWeb = ScreenWithSuspense(SermonAudioWebScreen);
+const WrappedBookmarks = ScreenWithSuspense(BookmarksScreen);
+
 const TransitionScreen = {
   gestureDirection: "horizontal",
-  // transitionSpec: {
-  //   open: TransitionSpecs.TransitionIOSSpec,
-  //   close: TransitionSpecs.TransitionIOSSpec,
-  // },
   cardStyleInterpolator: ({ current, next, layouts }) => {
     return {
       cardStyle: {
@@ -89,24 +98,6 @@ const CardOptions = {
 };
 
 const StackNavigator = () => {
-  // useEffect(() => {
-  //   const hideNavigationBar = async () => {
-  //     try {
-  //       console.log("Hiding navigation bar...");
-  //       // await NavigationBar.setPositionAsync("absolute");
-  //       await NavigationBar.setVisibilityAsync("hidden");
-  //       await NavigationBar.setBehaviorAsync("overlay-swipe");
-  //       console.log("Navigation bar hidden successfully.");
-  //     } catch (error) {
-  //       console.error("Error hiding navigation bar:", error);
-  //     }
-  //   };
-
-  //   if (Platform.OS === "android") {
-  //     hideNavigationBar();
-  //   }
-  // }, []);
-
   const navigation = useNavigation();
   if (Platform.OS === "android" && !BackHandler.removeEventListener) {
     BackHandler.removeEventListener = () => {
@@ -121,13 +112,14 @@ const StackNavigator = () => {
           headerShown: false,
           gestureEnabled: false,
           presentation: "card",
-          detachPreviousScreen: false,
+          // detachPreviousScreen defaults to true — screens are released from
+          // memory when navigated away, preventing all screens from staying
+          // mounted simultaneously.
         }}
-        // detachInactiveScreens={true}
       >
         <Stack.Screen
           name="welcome"
-          component={ScreenWithSuspense(Welcome)}
+          component={WrappedWelcome}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
@@ -136,75 +128,66 @@ const StackNavigator = () => {
         />
         <Stack.Screen
           name="currentsermon"
-          component={ScreenWithSuspense(CurrentSermon)}
+          component={WrappedCurrentSermon}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
-
-            // ...CardOptions,
           }}
         />
         <Stack.Screen
           name="AllSermons"
-          component={ScreenWithSuspense(SermonList)}
+          component={WrappedSermonList}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
-            // ...CardOptions,
           }}
         />
         <Stack.Screen
           name="Search"
-          component={ScreenWithSuspense(SermonSearch)}
+          component={WrappedSermonSearch}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
-            // ...CardOptions,
           }}
         />
         <Stack.Screen
           name="Settings"
-          component={ScreenWithSuspense(Settings)}
+          component={WrappedSettings}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
-            // ...CardOptions,
           }}
         />
         <Stack.Screen
           name="About"
-          component={ScreenWithSuspense(About)}
+          component={WrappedAbout}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
-            // ...CardOptions,
           }}
         />
         <Stack.Screen
           name="updating"
-          component={ScreenWithSuspense(UpdateScreen)}
+          component={WrappedUpdateScreen}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
-            // ...CardOptions,
           }}
         />
         <Stack.Screen
           name="audiowebscreen"
-          component={ScreenWithSuspense(SermonAudioWebScreen)}
+          component={WrappedSermonAudioWeb}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
-            // ...CardOptions,
           }}
         />
         <Stack.Screen
           name="bookmarks"
-          component={ScreenWithSuspense(BookmarksScreen)}
+          component={WrappedBookmarks}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,
-            // ...CardOptions,
           }}
         />
       </Stack.Navigator>

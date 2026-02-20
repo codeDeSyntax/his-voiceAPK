@@ -58,27 +58,29 @@ export const SermonProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
-  const [isDarkMode, setIsDarkMode] = useState(INITIAL_SETTINGS.darkMode);
+  // isDarkMode is derived from settings — no separate state needed.
+  // Keeping setIsDarkMode as a thin wrapper preserves the public context API.
+  const isDarkMode = settings.darkMode;
   const [sermonsLoaded, setSermonsLoaded] = useState(false);
   const [numberOfColumns, setNumberOfColumns] = useState(2);
   const [lastReadPositions, setLastReadPositions] = useState({});
   const [bookmarks, setBookmarks] = useState([]);
   const [highlights, setHighlights] = useState({}); // Store paragraph highlights
 
-  // Theme derived from isDarkMode
+  // Theme derived from settings.darkMode — updates whenever dark mode changes
   const theme = useMemo(
     () => ({
-      dark: isDarkMode,
+      dark: settings.darkMode,
       colors: {
-        primary: isDarkMode ? "#2c2420" : "#faeed1",
-        background: isDarkMode ? "#221b17" : "#faeed1",
-        secondary: isDarkMode ? "#1a1410" : "#f5e6d3",
-        text: isDarkMode ? "#f2cdb4" : "#5d3211",
+        primary: settings.darkMode ? "#2c2420" : "#faeed1",
+        background: settings.darkMode ? "#221b17" : "#faeed1",
+        secondary: settings.darkMode ? "#1a1410" : "#f5e6d3",
+        text: settings.darkMode ? "#f2cdb4" : "#5d3211",
         hlight: "#d57a3e",
         blueText: "",
       },
     }),
-    [isDarkMode],
+    [settings.darkMode],
   );
 
   // Clean up last read positions older than 30 days
@@ -315,27 +317,31 @@ export const SermonProvider = ({ children }) => {
   }, []);
 
   // Update settings
-  const updateSettings = useCallback(
-    async (newSettings) => {
-      try {
-        const updatedSettings = { ...settings, ...newSettings };
-        setSettings(updatedSettings);
-        setIsDarkMode(updatedSettings.darkMode);
-
+  // Uses functional setSettings so this callback never needs to capture the
+  // current `settings` value — keeping it stable (empty deps) and breaking
+  // the cascade that caused infinite re-renders in auto-save effects.
+  const updateSettings = useCallback(async (newSettings) => {
+    try {
+      let merged;
+      setSettings((prev) => {
+        merged = { ...prev, ...newSettings };
+        return merged;
+      });
+      // merged is assigned synchronously by React before the await
+      if (merged) {
         await AsyncStorage.setItem(
           STORAGE_KEYS.SETTINGS,
-          JSON.stringify(updatedSettings),
+          JSON.stringify(merged),
         );
-        return true;
-      } catch (error) {
-        console.error("Failed to update settings:", error);
-        return false;
       }
-    },
-    [settings],
-  );
+      return true;
+    } catch (error) {
+      console.error("Failed to update settings:", error);
+      return false;
+    }
+  }, []);
 
-  // Load data from storage
+  // Load all persisted data from storage — single source of truth on startup.
   const loadStoredData = useCallback(async () => {
     try {
       // Load settings
@@ -343,7 +349,6 @@ export const SermonProvider = ({ children }) => {
       if (storedSettings) {
         const parsedSettings = JSON.parse(storedSettings);
         setSettings(parsedSettings);
-        setIsDarkMode(parsedSettings.darkMode);
       }
 
       // Load last read positions and clean expired ones
@@ -370,15 +375,27 @@ export const SermonProvider = ({ children }) => {
         }
       }
 
-      // Load bookmarks
-      const bookmarksValue = await AsyncStorage.getItem("bookmarks");
-      if (bookmarksValue) {
-        setBookmarks(JSON.parse(bookmarksValue));
+      // Load bookmarks — prefer the canonical key; fall back to the legacy
+      // "bookmarks" key for users upgrading from an older version.
+      let bookmarksRaw = await AsyncStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+      if (!bookmarksRaw) {
+        bookmarksRaw = await AsyncStorage.getItem("bookmarks");
+      }
+      if (bookmarksRaw) {
+        setBookmarks(JSON.parse(bookmarksRaw));
+      }
+
+      // Load highlights
+      const storedHighlights = await AsyncStorage.getItem(
+        STORAGE_KEYS.HIGHLIGHTS,
+      );
+      if (storedHighlights) {
+        setHighlights(JSON.parse(storedHighlights));
       }
     } catch (error) {
       console.error("Failed to load stored data:", error);
     }
-  }, []);
+  }, [cleanExpiredPositions]);
 
   // Initialize app data
   useEffect(() => {
@@ -415,32 +432,9 @@ export const SermonProvider = ({ children }) => {
     handleRandomSermons,
   ]);
 
-  // Load bookmarks from storage on app start
-  useEffect(() => {
-    const loadBookmarks = async () => {
-      try {
-        const savedBookmarks = await AsyncStorage.getItem("bookmarks");
-        if (savedBookmarks) {
-          setBookmarks(JSON.parse(savedBookmarks));
-        }
-      } catch (error) {
-        console.error("Error loading bookmarks:", error);
-      }
-    };
-    loadBookmarks();
-  }, []);
-
-  // Save bookmarks to storage whenever they change
-  useEffect(() => {
-    const saveBookmarks = async () => {
-      try {
-        await AsyncStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-      } catch (error) {
-        console.error("Error saving bookmarks:", error);
-      }
-    };
-    saveBookmarks();
-  }, [bookmarks]);
+  // Bookmarks are loaded once in loadStoredData (called from the main
+  // initializeApp effect above). addBookmark / removeBookmark handle all
+  // subsequent persistence, so no additional effects are needed here.
 
   // Add bookmark with optimistic updates
   const addBookmark = useCallback(
@@ -547,19 +541,6 @@ export const SermonProvider = ({ children }) => {
     [bookmarks],
   );
 
-  // Load bookmarks from storage
-  const loadBookmarks = useCallback(async () => {
-    try {
-      const storedBookmarks = await AsyncStorage.getItem(
-        STORAGE_KEYS.BOOKMARKS,
-      );
-      if (storedBookmarks) {
-        setBookmarks(JSON.parse(storedBookmarks));
-      }
-    } catch (error) {
-      console.error("Failed to load bookmarks:", error);
-    }
-  }, []);
 
   // Optimized highlight management functions for better performance
   const addHighlight = useCallback(
@@ -639,49 +620,32 @@ export const SermonProvider = ({ children }) => {
     [highlights],
   );
 
-  // Initialize app data
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Load settings
-        const storedSettings = await AsyncStorage.getItem(
-          STORAGE_KEYS.SETTINGS,
-        );
-        if (storedSettings) {
-          const parsedSettings = JSON.parse(storedSettings);
-          setSettings(parsedSettings);
-          setIsDarkMode(parsedSettings.darkMode);
-        }
+  // All startup data loading (settings, positions, bookmarks, highlights) is
+  // handled by loadStoredData() called in the main initializeApp effect above.
+  // This duplicate effect has been removed.
 
-        // Load last positions
-        const storedPositions = await AsyncStorage.getItem(
-          STORAGE_KEYS.LAST_POSITIONS,
-        );
-        if (storedPositions) {
-          setLastReadPositions(JSON.parse(storedPositions));
-        }
+  // Thin wrapper so existing consumers of setIsDarkMode from context continue
+  // to work — internally it goes through updateSettings to keep state consistent.
+  const setIsDarkMode = useCallback(
+    (value) => {
+      updateSettings({ darkMode: value });
+    },
+    [updateSettings],
+  );
 
-        // Load bookmarks
-        await loadBookmarks();
+  // Lifted out of the useMemo factory so they are stable useCallback references
+  // with correct deps, rather than inline arrow functions that recreate on every
+  // useMemo recomputation.
+  const filterSermonsByTag = useCallback(
+    (tag) =>
+      allSermons.filter((sermon) => sermon.tags && sermon.tags.includes(tag)),
+    [allSermons],
+  );
 
-        // Load highlights
-        const storedHighlights = await AsyncStorage.getItem(
-          STORAGE_KEYS.HIGHLIGHTS,
-        );
-        if (storedHighlights) {
-          setHighlights(JSON.parse(storedHighlights));
-        }
-
-        // NOTE: loadSermons() is NOT called here - it's already called
-        // in the other useEffect via Promise.all([loadSermons(), loadStoredData()])
-      } catch (error) {
-        console.error("Error initializing app:", error);
-        setError("Failed to initialize app. Please try again later.");
-      }
-    };
-
-    initializeApp();
-  }, [loadBookmarks]);
+  const findSermonInState = useCallback(
+    (id) => allSermons.find((sermon) => sermon.id === id),
+    [allSermons],
+  );
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -719,15 +683,9 @@ export const SermonProvider = ({ children }) => {
       numberOfColumns,
       setNumberOfColumns,
 
-      // Add additional helper functions
-      filterSermonsByTag: (tag) => {
-        return allSermons.filter(
-          (sermon) => sermon.tags && sermon.tags.includes(tag),
-        );
-      },
-      getSermonById: (id) => {
-        return allSermons.find((sermon) => sermon.id === id);
-      },
+      // Helper functions — stable useCallback references defined above
+      filterSermonsByTag,
+      findSermonInState,
 
       // Bookmarks
       bookmarks,
@@ -771,6 +729,8 @@ export const SermonProvider = ({ children }) => {
       addHighlight,
       removeHighlight,
       getHighlight,
+      filterSermonsByTag,
+      findSermonInState,
     ],
   );
 

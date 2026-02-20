@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
@@ -7,8 +7,63 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { closeDatabase, forceStopIndexing } from "../../database/sermonDB";
 import { deleteLocalDatabase } from "../../database/downloadDatabase";
 import { resetAppToFresh } from "../../Utils/resetApp";
+import * as Updates from "expo-updates";
 
 const AppSettings = ({ theme, router, compact = false }) => {
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+
+  const handleCheckForUpdates = async () => {
+    if (__DEV__ || !Updates.isEnabled) {
+      Alert.alert(
+        "Dev Mode",
+        "Update checks are not available in development mode.",
+      );
+      return;
+    }
+
+    setIsCheckingUpdate(true);
+    try {
+      const result = await Updates.checkForUpdateAsync();
+
+      if (result.isAvailable) {
+        // Download the update before prompting
+        await Updates.fetchUpdateAsync();
+
+        Alert.alert(
+          "Update Ready",
+          "A new update has been downloaded and is ready to install.",
+          [
+            {
+              text: "Later",
+              style: "cancel",
+            },
+            {
+              text: "Restart Now",
+              onPress: async () => {
+                await Updates.reloadAsync();
+              },
+            },
+          ],
+        );
+      } else {
+        Alert.alert(
+          "Up to Date",
+          "You're already running the latest version.",
+          [{ text: "OK" }],
+        );
+      }
+    } catch (error) {
+      console.error("Update check error:", error);
+      Alert.alert(
+        "Check Failed",
+        "Could not check for updates. Please try again later.",
+        [{ text: "OK" }],
+      );
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
   const handleDeleteDatabaseFile = async () => {
     Alert.alert(
       "Delete Database",
@@ -311,6 +366,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
     onPress,
     disabled = false,
     rightIcon = "chevron-forward",
+    rightElement = null,
   }) => {
     const [pressed, setPressed] = useState(false);
 
@@ -381,17 +437,19 @@ const AppSettings = ({ theme, router, compact = false }) => {
           </View>
         </View>
 
-        <Ionicons
-          name={rightIcon}
-          size={20}
-          color={
-            disabled
-              ? theme.dark
-                ? "#666666"
-                : "#999999"
-              : theme.colors.text + "40"
-          }
-        />
+        {rightElement ?? (
+          <Ionicons
+            name={rightIcon}
+            size={20}
+            color={
+              disabled
+                ? theme.dark
+                  ? "#666666"
+                  : "#999999"
+                : theme.colors.text + "40"
+            }
+          />
+        )}
       </TouchableOpacity>
     );
   };
@@ -455,11 +513,19 @@ const AppSettings = ({ theme, router, compact = false }) => {
 
       {/* Check for Updates */}
       <SettingItem
-        icon="download-outline"
+        icon="cloud-download-outline"
         title="Check for Updates"
-        subtitle="Current version 1.0.0"
-        disabled={true}
-        rightIcon="chevron-forward"
+        subtitle={isCheckingUpdate ? "Checking..." : "Current version 1.0.0"}
+        onPress={handleCheckForUpdates}
+        disabled={isCheckingUpdate}
+        rightElement={
+          isCheckingUpdate ? (
+            <ActivityIndicator
+              size="small"
+              color={theme.dark ? "#d57a3e" : "#5d3211"}
+            />
+          ) : null
+        }
       />
 
       {/* Feedback */}

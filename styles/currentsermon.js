@@ -11,50 +11,201 @@ const STATUSBAR_HEIGHT = Platform.OS === "ios" ? 44 : StatusBar.currentHeight;
 const TOP_BAR_HEIGHT = 60;
 const BOTTOM_SHEET_HANDLE_HEIGHT = 20;
 
+// Book page horizontal margin — comfortable reading margins
+const PAGE_MARGIN_H = 20;
+// Inner gutter (left margin for paragraph numbers)
+const PAGE_GUTTER = 20;
+
 const styles = StyleSheet.create({
+  // ─── Root container ───────────────────────────────────────────────────────
   container: {
     flex: 1,
     paddingTop: STATUSBAR_HEIGHT,
   },
-  scrollViewContainer: {
-    paddingHorizontal: spacing.sm, // 8px consistent horizontal padding
-    paddingTop: spacing.sm, // 8px consistent top padding
-    paddingBottom: spacing.xxl * 3, // 96px for bottom sheet clearance
+
+  // ─── Book page wrapper ────────────────────────────────────────────────────
+  // Wraps the FlatList to give it a "page" feel with side shadows
+  bookPageWrapper: {
+    flex: 1,
+    marginHorizontal: 0,
   },
-  sermonText: {
-    lineHeight: responsiveFontSize(20), // Tighter line height for better flow
-    marginBottom: 1, // Very tight spacing (1px) for close paragraph flow
+
+  // ─── FlatList content container ───────────────────────────────────────────
+  scrollViewContainer: {
+    paddingHorizontal: PAGE_MARGIN_H,
+    paddingTop: 4,
+    paddingBottom: 120, // clearance for bottom toolbar
+  },
+
+  // ─── Book page side shadow strips ─────────────────────────────────────────
+  // Thin vertical strips on left/right to simulate page depth
+  pageShadowLeft: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: 6,
+    zIndex: 2,
+  },
+  pageShadowRight: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: 6,
+    zIndex: 2,
+  },
+
+  // ─── Chapter / Sermon header ──────────────────────────────────────────────
+  chapterHeader: {
+    alignItems: "center",
+    paddingTop: 4,
+    paddingBottom: 10,
+    paddingHorizontal: 4,
+  },
+  chapterOrnamentTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 10,
+  },
+  chapterOrnamentLine: {
+    flex: 1,
+    height: 1,
+  },
+  chapterOrnamentDiamond: {
+    width: 8,
+    height: 8,
+    transform: [{ rotate: "45deg" }],
+    marginHorizontal: 10,
+  },
+  chapterTitle: {
+    textAlign: "center",
+    letterSpacing: 0.8,
+    marginBottom: 6,
+    lineHeight: undefined, // set dynamically
+  },
+  chapterMeta: {
+    textAlign: "center",
+    // fontStyle: "italic",
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
+  chapterMetaLocation: {
+    textAlign: "center",
+    // fontStyle: "italic",
+    letterSpacing: 0.3,
+    marginBottom: 0,
+  },
+  // kept for legacy compat (no longer rendered in ListHeader)
+  chapterOrnamentBottom: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  chapterOrnamentDot: {
+    borderRadius: 50,
+  },
+  chapterDividerThick: {
+    height: 3,
+    width: "60%",
+    borderRadius: 2,
+    marginBottom: 6,
+  },
+  chapterDividerThin: {
+    height: 1,
+    width: "80%",
+    borderRadius: 1,
+    marginBottom: 8,
+  },
+
+  // ─── Paragraph container ──────────────────────────────────────────────────
+  paragraphContainer: {
+    marginBottom: 18,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    // Constrain width so text never overflows the screen
+    alignSelf: "stretch",
+    overflow: "hidden",
+  },
+
+  // ─── Paragraph number (legacy, kept for compat) ───────────────────────────
+  paragraphNumberContainer: {
+    width: PAGE_GUTTER,
+    alignItems: "flex-end",
+    paddingRight: 6,
+    paddingTop: 3,
+  },
+  paragraphNumber: {
+    fontSize: responsiveFontSize(10),
+    // fontStyle: "italic",
+    opacity: 0.4,
+    lineHeight: responsiveFontSize(16),
+  },
+  paragraphNumberButton: {
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+    borderRadius: 4,
+    minWidth: 20,
+    minHeight: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // ─── Paragraph text ───────────────────────────────────────────────────────
+  paragraphText: {
+    marginBottom: 0,
+    paddingVertical: 0,
+    // textAlign "justify" causes overflow with nested <Text> children in RN
     textAlign: "left",
-    paddingVertical: 0, // Remove vertical padding for tighter gaps
+  },
+  paragraphHeader: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+  },
+  selectableTextContainer: {
+    maxWidth: "100%",
+    overflow: "hidden",
+    alignSelf: "stretch",
+  },
+
+  // ─── Selected paragraph highlight ────────────────────────────────────────
+  // Applied via containerStyle in ParagraphText component
+
+  // ─── Sermon text (legacy, kept for compat) ────────────────────────────────
+  sermonText: {
+    lineHeight: responsiveFontSize(20),
+    marginBottom: 1,
+    textAlign: "justify",
+    paddingVertical: 0,
   },
   highlightedText: {
     backgroundColor: "rgba(59, 130, 246, 0.1)",
     color: "#3B82F6",
-    // fontWeight: "bold",
   },
   endnoteText: {
     textDecorationLine: "underline",
-
     fontWeight: "500",
-    // fontStyle: "italic",
     fontFamily: "",
   },
   titleText: {
-    fontFamily: "ZillaSlab", // Use ZillaSlab instead of serif
-    // fontWeight: "900",
+    fontFamily: "ZillaSlab",
     fontSize: responsiveFontSize(20),
     textAlign: "center",
-    marginBottom: spacing.sm, // 8px consistent spacing
-    // textDecorationLine: "underline",
+    marginBottom: spacing.sm,
   },
   locationText: {
-    fontFamily: "ZillaSlab", // Use ZillaSlab instead of serif
+    fontFamily: "ZillaSlab",
     fontWeight: "500",
     fontSize: responsiveFontSize(14),
     fontStyle: "italic",
-    marginBottom: spacing.lg, // 16px consistent spacing
+    marginBottom: spacing.lg,
     textAlign: "center",
   },
+
+  // ─── Floating action button (bottom-right) ────────────────────────────────
   floatingButton: {
     position: "absolute",
     right: 20,
@@ -72,7 +223,86 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
 
-  // Bottom sheet styles
+  // ─── Bottom pill toolbar ──────────────────────────────────────────────────
+  bottomToolbar: {
+    position: "absolute",
+    bottom: 28,
+    left: 24,
+    right: 24,
+    height: 56,
+    borderRadius: 28,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    paddingHorizontal: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 14,
+    zIndex: 200,
+    borderWidth: 1,
+  },
+  toolbarButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toolbarDivider: {
+    width: 1,
+    height: 22,
+    opacity: 0.25,
+  },
+
+  // ─── Expanded action toolbar (above pill) ────────────────────────────────
+  actionToolbarExpanded: {
+    position: "absolute",
+    bottom: 96,
+    left: 24,
+    right: 24,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 16,
+    zIndex: 199,
+    borderWidth: 1,
+  },
+  actionToolbarTitle: {
+    fontSize: responsiveFontSize(11),
+    fontFamily: "ZillaSlab",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginBottom: 14,
+    opacity: 0.6,
+  },
+  actionToolbarRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  actionToolbarItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 14,
+    gap: 6,
+    borderWidth: 1,
+  },
+  actionToolbarItemLabel: {
+    fontSize: responsiveFontSize(10),
+    fontFamily: "ZillaSlab",
+    letterSpacing: 0.3,
+    textAlign: "center",
+  },
+
+  // ─── Bottom sheet (legacy) ────────────────────────────────────────────────
   backdrop: {
     position: "absolute",
     top: 0,
@@ -100,8 +330,6 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
   },
-
-  // Old styles - keeping for compatibility
   overlay: {
     position: "absolute",
     top: 0,
@@ -122,43 +350,43 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 
+  // ─── Top card (legacy) ────────────────────────────────────────────────────
   topCard: {
     position: "absolute",
     top: 0,
     right: 0,
     left: 0,
-    bottom: -50, // Extend beyond bottom to ensure full coverage
+    bottom: -50,
     width: "100%",
-    height: "110%", // Slightly larger than 100% to ensure complete coverage
-    borderRadius: 0, // Remove border radius for full screen
+    height: "110%",
+    borderRadius: 0,
     backgroundColor: "white",
-    // Receipt-style border pattern removed for full screen
     borderWidth: 0,
-    shadowColor: "transparent", // Remove shadow for full screen
+    shadowColor: "transparent",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
     shadowRadius: 0,
-    elevation: 0, // Remove elevation for full screen
+    elevation: 0,
     zIndex: 95,
   },
   topCardContainer: {
     flex: 1,
-    paddingTop: STATUSBAR_HEIGHT + 50, // Add top padding for status bar and header space
+    paddingTop: STATUSBAR_HEIGHT + 50,
     paddingHorizontal: 4,
-    paddingBottom: 0, // Remove any bottom padding to ensure full screen
-    marginBottom: 0, // Ensure no bottom margin
+    paddingBottom: 0,
+    marginBottom: 0,
   },
   topCardScrollContent: {
     paddingHorizontal: 12,
-    paddingBottom: 50, // Add bottom padding only for content visibility, not layout spacing
-    flexGrow: 1, // Ensure content grows to fill available space
-    minHeight: "100%", // Ensure minimum height covers full container
+    paddingBottom: 50,
+    flexGrow: 1,
+    minHeight: "100%",
   },
   topCardCloseButton: {
     position: "absolute",
-    top: STATUSBAR_HEIGHT + 10, // Position below status bar
-    right: 16, // Move away from edge
-    width: 36, // Make it slightly larger for better touch target
+    top: STATUSBAR_HEIGHT + 10,
+    right: 16,
+    width: 36,
     height: 36,
     borderRadius: 18,
     justifyContent: "center",
@@ -169,7 +397,7 @@ const styles = StyleSheet.create({
     borderStyle: "dotted",
   },
 
-  // Receipt Header Styles
+  // ─── Receipt styles (legacy, kept for compat) ─────────────────────────────
   receiptHeader: {
     alignItems: "center",
     paddingVertical: spacing.sm,
@@ -177,8 +405,6 @@ const styles = StyleSheet.create({
   },
   receiptTitle: {
     fontSize: responsiveFontSize(14),
-    // fontWeight: "900",
-    // letterSpacing: 2,
     textAlign: "center",
   },
   receiptSubtitle: {
@@ -196,8 +422,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     letterSpacing: 0.5,
   },
-
-  // Receipt Separator
   receiptSeparator: {
     paddingVertical: 6,
     alignItems: "center",
@@ -208,8 +432,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     opacity: 0.6,
   },
-
-  // Receipt Sections
   receiptSection: {
     paddingVertical: 6,
     paddingHorizontal: 4,
@@ -217,20 +439,15 @@ const styles = StyleSheet.create({
   receiptSectionHeader: {
     fontSize: responsiveFontSize(14),
     fontFamily: "ZillaSlabsm",
-    // fontWeight: "bold",
     marginBottom: spacing.xs,
     textAlign: "center",
-    // letterSpacing: 1,
   },
-
-  // Receipt Items
   receiptItem: {
     marginBottom: 4,
     paddingHorizontal: 2,
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-start",
-    // alignItems: "center",
   },
   receiptLabel: {
     fontSize: responsiveFontSize(14),
@@ -242,8 +459,6 @@ const styles = StyleSheet.create({
     fontFamily: "ZillaSlab",
     flex: 1,
   },
-
-  // Search Styles
   receiptSearchRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -255,8 +470,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    // borderWidth: 1,
-    // borderStyle: "dashed",
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 6,
@@ -295,8 +508,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     paddingVertical: 10,
   },
-
-  // Loading
   receiptLoadingContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -310,8 +521,6 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     letterSpacing: 1,
   },
-
-  // Loading states
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -324,8 +533,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     opacity: 0.7,
   },
-
-  // Search Results
   receiptResults: {
     marginTop: 6,
     paddingHorizontal: 2,
@@ -368,8 +575,6 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     letterSpacing: 0.5,
   },
-
-  // No Results
   receiptNoResults: {
     alignItems: "center",
     paddingVertical: 8,
@@ -381,8 +586,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textAlign: "center",
   },
-
-  // Actions Grid
   receiptActionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -394,8 +597,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     paddingHorizontal: 6,
-    // borderWidth: 1,
-    // borderStyle: "dashed",
     width: "48%",
     backgroundColor: "rgba(0,0,0,0.02)",
     borderRadius: 10,
@@ -414,8 +615,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textAlign: "center",
   },
-
-  // Receipt Footer
   receiptFooter: {
     alignItems: "center",
     paddingVertical: 8,
@@ -436,53 +635,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Paragraph styles - Consistent spacing system
-  // Container: spacing.xs (4px) between paragraphs for tight reading flow
-  // Text: lineHeight 24px for optimal readability
-  // Numbers: spacing.xs (4px) margin from text
-  paragraphHeader: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-  },
-  paragraphNumberContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 1, // Reduced to 1px for tighter spacing between header and text
-  },
-  paragraphNumber: {
-    fontSize: responsiveFontSize(14),
-    fontWeight: "500",
-    marginRight: spacing.xs,
-  },
-  paragraphNumberButton: {
-    paddingHorizontal: spacing.sm, // Increased from spacing.xs for better touch area
-    paddingVertical: spacing.xs, // Increased vertical padding
-    borderRadius: 12,
-    marginRight: spacing.xs,
-    minWidth: 36, // Increased from 28 for better accessibility
-    minHeight: 36, // Added minimum height for better touch area
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  paragraphText: {
-    flex: 1,
-    // lineHeight removed - will be set dynamically based on user settings
-    paddingLeft: 8,
-    marginBottom: 0, // Remove bottom margin to prevent double spacing
-    paddingVertical: 0, // Remove vertical padding for consistent gaps
-  },
-  paragraphContainer: {
-    flexDirection: "row",
-    marginBottom: 12, // Comfortable spacing between paragraphs
-    paddingHorizontal: 0,
-    paddingVertical: 0, // Remove container padding for consistent spacing
-    // borderRadius: 5,
-    // borderStyle removed from base - will be applied conditionally in component
-  },
-  selectableTextContainer: {
-    flex: 1,
-    paddingLeft: 8,
-  },
+  // ─── Selection / copy styles ──────────────────────────────────────────────
   selectionModeIndicator: {
     position: "absolute",
     top: -25,
@@ -498,8 +651,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#fff",
   },
-
-  // Selection tip styles
   selectionTipContainer: {
     position: "absolute",
     bottom: 150,
@@ -522,179 +673,15 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: "500",
   },
-
-  // Controls in bottom sheet
-  controlSection: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    // justifyContent: "space-around",
-    gap: 2,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  controlButton: {
-    padding: 10,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-    backgroundColor: "#f0f0f0",
-  },
-  controlButtonText: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-
-  // Search section
-  searchContainer: {
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 16,
-    height: 40,
-  },
-  searchResults: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 8,
-    paddingHorizontal: 10,
-  },
-  navigationButtons: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  navButton: {
-    padding: 8,
-    marginHorizontal: 5,
-    backgroundColor: "#2d2d2d",
-    borderRadius: 8,
-  },
-  navButtonText: {
-    color: "white",
-    fontSize: 14,
-  },
-  matchesText: {
-    fontSize: 14,
-    color: "#555",
-    fontFamily: "ZillaSlab",
-  },
-
-  // Sermon info section
-  sermonInfoContainer: {
-    padding: 15,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    marginBottom: 16,
-  },
-  sermonInfoTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    fontFamily: "ZillaSlab",
-  },
-  sermonInfoText: {
-    fontSize: 14,
-    marginBottom: 4,
-    fontFamily: "ZillaSlab",
-  },
-
-  // Top bar styles
-  topBar: {
-    position: "absolute",
-    top: STATUSBAR_HEIGHT,
-    left: 0,
-    right: 0,
-    height: TOP_BAR_HEIGHT,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    zIndex: 1000,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 4,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  topBarTitleContainer: {
-    flex: 1,
-    paddingHorizontal: 10,
-  },
-  topBarTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    fontFamily: "ZillaSlab",
-  },
-  topBarButtonsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  topBarButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 6,
-  },
-
-  // Search Feedback styles
-  feedbackContainer: {
-    position: "absolute",
-    bottom: 100,
-    left: 20,
-    right: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    borderRadius: 8,
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 70,
-  },
-  feedbackText: {
-    color: "white",
-    fontWeight: "bold",
-    fontFamily: "ZillaSlab",
-  },
   copyingParagraph: {
     backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
-
-  // Text selection indication
   textSelectable: {
     backgroundColor: "rgba(0, 123, 255, 0.05)",
     borderWidth: 1,
     borderColor: "rgba(0, 123, 255, 0.2)",
     borderRadius: 4,
   },
-
-  // Optional: Add this toast/notification style for copy feedback
   copyToast: {
     position: "absolute",
     bottom: 40,
@@ -711,33 +698,32 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
+  // ─── Bookmark / highlight buttons (legacy) ────────────────────────────────
   bookmarkButton: {
-    padding: spacing.sm, // Increased from spacing.xs for better touch area
+    padding: spacing.sm,
     marginLeft: spacing.xs / 2,
-    minWidth: 44, // Increased from 32 for better accessibility
-    minHeight: 44, // Increased from 32 for better accessibility
+    minWidth: 44,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8, // Added border radius for better visual feedback
+    borderRadius: 8,
     backgroundColor: "transparent",
   },
   bookmarkButtonActive: {
-    backgroundColor: "rgba(230, 195, 184, 0.2)", // Added background for active state
-    // Remove scale transform to prevent layout shifts
+    backgroundColor: "rgba(230, 195, 184, 0.2)",
   },
   highlightButton: {
-    padding: spacing.sm, // Increased from spacing.xs for better touch area
+    padding: spacing.sm,
     marginLeft: spacing.xs / 2,
     borderRadius: 12,
-    minWidth: 44, // Increased from 32 for better accessibility
-    minHeight: 44, // Increased from 32 for better accessibility
+    minWidth: 44,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
   },
   highlightButtonActive: {
     backgroundColor: "rgba(230, 195, 184, 0.1)",
-    // Remove scale transform to prevent layout shifts
   },
   paletteOverlay: {
     position: "absolute",
@@ -748,14 +734,13 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
 
+  // ─── Search styles ────────────────────────────────────────────────────────
   searchLoader: {
     position: "absolute",
     right: spacing.sm,
     top: "50%",
     transform: [{ translateY: -12 }],
   },
-
-  // Search Section Styles
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -830,7 +815,7 @@ const styles = StyleSheet.create({
   searchIconContainer: {
     position: "absolute",
     right: 20,
-    top: "52%", // Position above the bottom sheet toggler (which is at 60%)
+    top: "52%",
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -838,17 +823,163 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 8,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     borderWidth: 2,
     zIndex: 1000,
   },
 
-  // Modern Bottom Sheet Styles
+  // ─── Search feedback toast ────────────────────────────────────────────────
+  feedbackContainer: {
+    position: "absolute",
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    borderRadius: 8,
+    padding: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 70,
+  },
+  feedbackText: {
+    color: "white",
+    fontWeight: "bold",
+    fontFamily: "ZillaSlab",
+  },
+
+  // ─── Controls (legacy) ────────────────────────────────────────────────────
+  controlSection: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 2,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  controlButton: {
+    padding: 10,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    backgroundColor: "#f0f0f0",
+  },
+  controlButtonText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  searchContainer: {
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  searchResults: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+    paddingHorizontal: 10,
+  },
+  navigationButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  navButton: {
+    padding: 8,
+    marginHorizontal: 5,
+    backgroundColor: "#2d2d2d",
+    borderRadius: 8,
+  },
+  navButtonText: {
+    color: "white",
+    fontSize: 14,
+  },
+  matchesText: {
+    fontSize: 14,
+    color: "#555",
+    fontFamily: "ZillaSlab",
+  },
+  sermonInfoContainer: {
+    padding: 15,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    marginBottom: 16,
+  },
+  sermonInfoTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
+    fontFamily: "ZillaSlab",
+  },
+  sermonInfoText: {
+    fontSize: 14,
+    marginBottom: 4,
+    fontFamily: "ZillaSlab",
+  },
+
+  // ─── Top bar (legacy) ─────────────────────────────────────────────────────
+  topBar: {
+    position: "absolute",
+    top: STATUSBAR_HEIGHT,
+    left: 0,
+    right: 0,
+    height: TOP_BAR_HEIGHT,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    zIndex: 1000,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  topBarTitleContainer: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  topBarTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "ZillaSlab",
+  },
+  topBarButtonsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  topBarButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 6,
+  },
+
+  // ─── Modern bottom sheet styles (legacy) ──────────────────────────────────
   modernHeaderContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -933,8 +1064,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     gap: spacing.sm,
   },
-
-  // New Quick Actions Styles
   quickActionsContainer: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -969,7 +1098,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-
     shadowRadius: 4,
   },
   actionIconWrapper: {

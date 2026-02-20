@@ -3,141 +3,147 @@ import {
   StyleSheet,
   View,
   Text,
-  ActivityIndicator,
-  Dimensions,
-  Platform,
-  Image,
   Animated,
+  Dimensions,
+  Easing,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import { useAppContext } from "../Logic/globalState";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
-const LoaderScreen = () => {
-  const renderContent = () => (
-    <View style={[styles.contentContainer, { backgroundColor: "#2c221a" }]}>
-      {/* Update Image */}
-      <Animated.View style={[styles.imageContainer]}>
-        <Image
-          source={require("../assets/adaptive-icon.png")}
-          style={styles.image}
-          resizeMode="contain"
-          onError={(error) =>
-            console.warn("Image loading error:", error.nativeEvent.error)
-          }
-        />
-      </Animated.View>
+const DOT_COUNT = 3;
+const DOT_SIZE = 8;
 
-      {/* Loading Indicator and Text */}
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator
-          size="large"
-          color="#7a5c2e" // Lighter brown for better contrast
-        />
-        <Text style={styles.updateText}>His voice</Text>
-        <Text style={styles.subText}>Robert Lambert Lee</Text>
-      </View>
+const Dot = ({ delay }) => {
+  const anim = useRef(new Animated.Value(0)).current;
 
-      {/* Version Text */}
-      {/* <Text style={styles.versionText}>Version 2.0.4</Text> */}
-    </View>
-  );
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim, {
+          toValue: 0,
+          duration: 400,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.delay(DOT_COUNT * 200 - delay),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
 
   return (
-    <LinearGradient
-      colors={["#1c1917", "#1c1917"]} // Darker colors
-      style={styles.container}
-      onError={(error) => console.warn("Gradient error:", error)}
-    >
-      {Platform.OS === "ios" ? (
-        <BlurView
-          intensity={20}
-          tint="dark"
-          style={styles.blurContainer}
-          onError={(error) => console.warn("BlurView error:", error)}
-        >
-          {renderContent()}
-        </BlurView>
-      ) : (
-        <View style={styles.androidContainer}>{renderContent()}</View>
-      )}
-    </LinearGradient>
+    <Animated.View
+      style={[
+        styles.dot,
+        { transform: [{ scale }], opacity },
+      ]}
+    />
+  );
+};
+
+const LoaderScreen = () => {
+  const fadeIn = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(24)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideUp, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      <Animated.View
+        style={[
+          styles.content,
+          { opacity: fadeIn, transform: [{ translateY: slideUp }] },
+        ]}
+      >
+        {/* Decorative line */}
+        <View style={styles.line} />
+
+        {/* Title */}
+        <Text style={styles.title}>His Voice</Text>
+        <Text style={styles.subtitle}>Robert Lambert Lee</Text>
+
+        {/* Another decorative line */}
+        <View style={styles.line} />
+
+        {/* Animated dots */}
+        <View style={styles.dotsRow}>
+          {Array.from({ length: DOT_COUNT }).map((_, i) => (
+            <Dot key={i} delay={i * 200} />
+          ))}
+        </View>
+      </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#1a130e",
     justifyContent: "center",
     alignItems: "center",
   },
-  blurContainer: {
-    padding: 32,
-    borderRadius: 24,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#1c1917", // More subtle border
-    backgroundColor: "#202425", // Darker background
-    width: width * 0.85,
+  content: {
     alignItems: "center",
+    gap: 16,
   },
-  androidContainer: {
-    padding: 32,
-    borderRadius: 24,
-    backgroundColor: "#1c1917", // Darker background
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)", // More subtle border
-    width: width * 0.85,
-    alignItems: "center",
+  line: {
+    width: 48,
+    height: 1,
+    backgroundColor: "#7a5230",
+    borderRadius: 1,
   },
-  contentContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
+  title: {
+    fontSize: 36,
+    fontWeight: "300",
+    letterSpacing: 8,
+    color: "#f2cdb4",
+    textTransform: "uppercase",
+    marginTop: 4,
   },
-  imageContainer: {
-    width: 160,
-    height: 160,
-    marginBottom: 32,
-    justifyContent: "center",
-    alignItems: "center",
+  subtitle: {
+    fontSize: 13,
+    letterSpacing: 3,
+    color: "#7a5230",
+    textTransform: "uppercase",
+    marginBottom: 4,
   },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  loadingContainer: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  updateText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#f8fafc", // Lighter text for better contrast
-    marginTop: 16,
-    fontFamily: Platform.OS === "ios" ? "System" : "serif",
-  },
-  subText: {
-    fontSize: 14,
-    color: "#94a3b8", // Lighter gray for better contrast
+  dotsRow: {
+    flexDirection: "row",
+    gap: 10,
     marginTop: 8,
-    fontFamily: Platform.OS === "ios" ? "System" : "serif",
   },
-  migrationText: {
-    fontSize: 12,
-    color: "#d57a3e",
-    marginTop: 12,
-    textAlign: "center",
-    paddingHorizontal: 20,
-    fontFamily: Platform.OS === "ios" ? "System" : "serif",
-  },
-  versionText: {
-    fontSize: 12,
-    color: "#475569", // Darker gray for less emphasis
-    marginTop: 8,
-    fontFamily: Platform.OS === "ios" ? "System" : "serif",
+  dot: {
+    width: DOT_SIZE,
+    height: DOT_SIZE,
+    borderRadius: DOT_SIZE / 2,
+    backgroundColor: "#d57a3e",
   },
 });
 

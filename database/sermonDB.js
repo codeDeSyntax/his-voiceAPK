@@ -497,20 +497,6 @@ export const getAllSermonsMetadata = async () => {
        ORDER BY date DESC`,
     );
 
-    // DEBUG: Log what we got
-    console.log("=== getAllSermonsMetadata result ===");
-    console.log("Total sermons:", sermons?.length || 0);
-    if (sermons && sermons.length > 0) {
-      console.log("First sermon keys:", Object.keys(sermons[0]));
-      console.log("First sermon:", sermons[0]);
-      // Check audio sermons
-      const audioSermons = sermons.filter((s) => s.type === "mp3");
-      console.log("Audio sermons count:", audioSermons.length);
-      if (audioSermons.length > 0) {
-        console.log("First audio sermon:", audioSermons[0]);
-      }
-    }
-
     return sermons || [];
   } catch (error) {
     console.error("Error getting sermons metadata:", error);

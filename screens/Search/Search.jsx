@@ -22,7 +22,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../Logic/globalState";
-import { ActivityIndicator } from "react-native";
 import {
   AntDesign,
   Feather,
@@ -36,6 +35,95 @@ import { useFonts } from "expo-font";
 import { searchSermonsWithFTS } from "../../database/sermonDB";
 
 const CONTEXT_LENGTH = 30;
+
+// ── Animated dot for the search loading indicator ──────────────────────────
+const SearchDot = ({ anim, color }) => {
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 1] });
+  return (
+    <Animated.View
+      style={{
+        width: 9,
+        height: 9,
+        borderRadius: 5,
+        backgroundColor: color,
+        transform: [{ scale }],
+        opacity,
+        marginHorizontal: 6,
+      }}
+    />
+  );
+};
+
+const SearchLoader = ({ theme }) => {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const make = (anim, delay) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 380,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 380,
+            useNativeDriver: true,
+          }),
+          Animated.delay(3 * 200 - delay),
+        ]),
+      );
+
+    const p1 = make(dot1, 0);
+    const p2 = make(dot2, 200);
+    const p3 = make(dot3, 400);
+    p1.start();
+    p2.start();
+    p3.start();
+    return () => {
+      p1.stop();
+      p2.stop();
+      p3.stop();
+    };
+  }, []);
+
+  const dotColor = theme.dark ? "#d57a3e" : "#5d3211";
+  const labelColor = theme.dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.22)";
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 40,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 11,
+          letterSpacing: 4,
+          textTransform: "uppercase",
+          color: labelColor,
+          fontFamily: "ZillaSlab",
+          marginBottom: 22,
+        }}
+      >
+        Searching
+      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <SearchDot anim={dot1} color={dotColor} />
+        <SearchDot anim={dot2} color={dotColor} />
+        <SearchDot anim={dot3} color={dotColor} />
+      </View>
+    </View>
+  );
+};
 const EXPANDED_CONTEXT_LENGTH = 150;
 const POPUP_CONTEXT_LENGTH = 3000;
 
@@ -49,11 +137,12 @@ const SermonSearch = () => {
   const [expandedResults, setExpandedResults] = useState(new Set()); // Track expanded search results
   const [loading, setLoading] = useState(false);
   const [found, setFound] = useState(true);
-  const fadeAnim = new Animated.Value(0);
+  // Stable animated value — must NOT be recreated on every render
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const [fontsLoaded] = useFonts({
     ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-    ZillaSlabSemiBold: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
+    ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
   });
   // Refs
   const scrollViewRef = useRef(null);
@@ -95,7 +184,8 @@ const SermonSearch = () => {
     Keyboard.dismiss();
 
     setLoading(true);
-    setExpandedResults(new Set()); // Clear expanded search results
+    setFilteredSermons([]); // Clear stale results so the loader is always visible
+    setExpandedResults(new Set());
 
     try {
       // Use FTS5 search - much faster!
@@ -142,7 +232,7 @@ const SermonSearch = () => {
     }
   };
 
-  const toggleResultExpanded = (index) => {
+  const toggleResultExpanded = useCallback((index) => {
     setExpandedResults((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(index)) {
@@ -152,7 +242,7 @@ const SermonSearch = () => {
       }
       return newSet;
     });
-  };
+  }, []);
 
   const handleSermonClick = (sermon, paragraphIndex = null) => {
     // Navigate directly to CurrentSermon with only IDs - let CurrentSermon fetch the sermon
@@ -187,10 +277,12 @@ const SermonSearch = () => {
     searchInputRef.current?.focus();
   };
 
-  // Render function for FlatList items
-  const renderSearchResultItem = ({ item: sermon, index }) => {
+  // Render function for FlatList items — memoized so FlatList does not recreate
+  // the callback (and re-render all visible cells) on unrelated state changes.
+  const renderSearchResultItem = useCallback(({ item: sermon, index }) => {
     const showExpanded = expandedResults.has(index);
     const isEven = index % 2 === 0;
+    const accentColor = theme.dark ? "#d57a3e" : "#5d3211";
     const backgroundColor = theme.dark
       ? isEven
         ? theme.colors.primary
@@ -221,7 +313,7 @@ const SermonSearch = () => {
                 styles.resultTitle,
                 {
                   color: theme.colors.text,
-                  fontFamily: "ZillaSlab",
+                  fontFamily: "ZillaSlabsm",
                 },
               ]}
               numberOfLines={1}
@@ -231,11 +323,20 @@ const SermonSearch = () => {
             <View
               style={[
                 styles.resultYearBadge,
-                { backgroundColor: theme.colors.primary },
+                {
+                  backgroundColor: theme.dark
+                    ? "rgba(213, 122, 62, 0.18)"
+                    : "rgba(93, 50, 17, 0.1)",
+                },
               ]}
             >
               <Text
-                style={[styles.resultYearText, { color: theme.colors.text }]}
+                style={[
+                  styles.resultYearText,
+                  {
+                    color: theme.dark ? "#d57a3e" : "#5d3211",
+                  },
+                ]}
               >
                 {sermon.year}
               </Text>
@@ -314,9 +415,9 @@ const SermonSearch = () => {
                         styles.individualMatch,
                         {
                           backgroundColor: theme.dark
-                            ? "rgba(255,255,255,0.05)"
-                            : "rgba(0,0,0,0.03)",
-                          borderLeftColor: theme.colors.text,
+                            ? "rgba(213, 122, 62, 0.06)"
+                            : "rgba(93, 50, 17, 0.04)",
+                          borderLeftColor: theme.dark ? "#d57a3e" : "#5d3211",
                         },
                       ]}
                       onPress={(e) => {
@@ -328,10 +429,10 @@ const SermonSearch = () => {
                       <Text
                         style={[
                           styles.matchLabel,
-                          { color: theme.colors.text, fontFamily: "ZillaSlab" },
+                          { color: accentColor },
                         ]}
                       >
-                        📍 Paragraph {match.paragraphIndex + 1}
+                        ¶ {match.paragraphIndex + 1}
                       </Text>
                       <Text
                         style={[
@@ -356,17 +457,17 @@ const SermonSearch = () => {
                             return (
                               <Text
                                 key={`match-${matchIndex}-${i}`}
-                                style={[
+                                style={
                                   isHighlight
                                     ? {
                                         backgroundColor: theme.dark
                                           ? "#5d3211" + "70"
                                           : "#5d3211" + "30",
-                                        color: theme.dark ? "#fff" : "#5d3211",
-                                        fontWeight: "600",
+                                        color: theme.dark ? "#f8e3d5" : "#5d3211",
+                                        fontFamily: "ZillaSlabsm",
                                       }
-                                    : undefined,
-                                ]}
+                                    : undefined
+                                }
                               >
                                 {text}
                               </Text>
@@ -400,17 +501,17 @@ const SermonSearch = () => {
                     return (
                       <Text
                         key={`context-${i}`}
-                        style={[
+                        style={
                           isHighlight
                             ? {
                                 backgroundColor: theme.dark
                                   ? "#5d3211" + "70"
                                   : "#5d3211" + "30",
-                                color: theme.dark ? "#fff" : "#5d3211",
-                                fontWeight: "600",
+                                color: theme.dark ? "#f8e3d5" : "#5d3211",
+                                fontFamily: "ZillaSlabsm",
                               }
-                            : undefined,
-                        ]}
+                            : undefined
+                        }
                       >
                         {text}
                       </Text>
@@ -434,48 +535,16 @@ const SermonSearch = () => {
         />
       </TouchableOpacity>
     );
-  };
+  }, [searchPhrase, expandedResults, theme, handleSermonClick, toggleResultExpanded]);
 
-  // Key extractor for FlatList
-  const keyExtractor = (item, index) => `search-result-${item.id}-${index}`;
+  // Key extractor for FlatList — stable, no closure deps needed
+  const keyExtractor = useCallback(
+    (item, index) => `search-result-${item.id}-${index}`,
+    [],
+  );
 
-  // Render function for the main FlatList (includes header, results, and footer)
+  // Render function for empty / no-results state
   const renderMainContent = () => {
-    if (loading) {
-      return (
-        <View style={styles.loaderContainer}>
-          <View
-            style={[
-              styles.loaderWrapper,
-              {
-                backgroundColor: theme.dark
-                  ? theme.colors.primary
-                  : "rgba(0,0,0,0.02)",
-              },
-            ]}
-          >
-            <ActivityIndicator size="large" color="#5d3211" />
-            <Text
-              style={[
-                styles.loaderText,
-                {
-                  color: theme.dark
-                    ? "rgba(255,255,255,0.7)"
-                    : "rgba(0,0,0,0.6)",
-                },
-              ]}
-            >
-              Searching through sermons...
-            </Text>
-          </View>
-        </View>
-      );
-    }
-
-    if (filteredSermons.length > 0) {
-      return null; // Results will be rendered by FlatList data
-    }
-
     // No results content
     return (
       <View style={styles.noResultsContainer}>
@@ -562,22 +631,26 @@ const SermonSearch = () => {
     );
   };
 
-  // Header component for FlatList
-  const ListHeaderComponent = () => (
-    <View style={styles.resultsContainer}>
-      <Text
-        style={[
-          styles.resultsCount,
-          {
-            color: theme.dark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)",
-            fontFamily: "ZillaSlab",
-          },
-        ]}
-      >
-        Found {filteredSermons.length} result
-        {filteredSermons.length !== 1 ? "s" : ""}
-      </Text>
-    </View>
+  // Header element for FlatList — useMemo produces a stable element (not a
+  // new component type) so FlatList never unmounts/remounts the header.
+  const ListHeaderComponent = useMemo(
+    () => (
+      <View style={styles.resultsContainer}>
+        <Text
+          style={[
+            styles.resultsCount,
+            {
+              color: theme.dark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)",
+              fontFamily: "ZillaSlab",
+            },
+          ]}
+        >
+          Found {filteredSermons.length} result
+          {filteredSermons.length !== 1 ? "s" : ""}
+        </Text>
+      </View>
+    ),
+    [filteredSermons.length, theme.dark],
   );
 
   return (
@@ -592,15 +665,21 @@ const SermonSearch = () => {
       <DraggableFloatingButton />
       <View style={styles.header}>
         <Text
+          style={[styles.headerTitle, { color: theme.colors.text }]}
+        >
+          Search
+        </Text>
+        <Text
           style={[
-            styles.headerTitle,
+            styles.headerSubtitle,
             {
-              color: theme.colors.text,
-              fontWeight: "bold",
+              color: theme.dark
+                ? "rgba(255,255,255,0.28)"
+                : "rgba(93, 50, 17, 0.45)",
             },
           ]}
         >
-          Sermon Search
+          All Sermons
         </Text>
       </View>
 
@@ -609,20 +688,19 @@ const SermonSearch = () => {
           style={[
             styles.inputWrapper,
             {
-              borderWidth: theme.dark ? 0 : 0,
               backgroundColor: theme.dark
-                ? "rgba(255,255,255,0.08)"
-                : "#f3f0f090",
+                ? "rgba(255,255,255,0.07)"
+                : "rgba(93, 50, 17, 0.05)",
               borderColor: theme.dark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)",
+                ? "rgba(255,255,255,0.09)"
+                : "rgba(93, 50, 17, 0.18)",
             },
           ]}
         >
           <Feather
             name="search"
-            size={20}
-            color={theme.dark ? theme.colors.text : "#494d50"}
+            size={18}
+            color={theme.dark ? "rgba(255,255,255,0.4)" : "rgba(93,50,17,0.45)"}
             style={styles.searchIcon}
           />
           <TextInput
@@ -630,9 +708,9 @@ const SermonSearch = () => {
             style={[
               styles.searchInput,
               {
-                color: theme.dark ? theme.colors.text : "black",
-                fontFamily: "serif",
-                fontSize: 14,
+                color: theme.dark ? theme.colors.text : "#1a0e07",
+                fontFamily: "ZillaSlab",
+                fontSize: 15,
               },
             ]}
             placeholder="Search sermons..."
@@ -680,8 +758,10 @@ const SermonSearch = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Main content with FlatList - no nested ScrollView */}
-      {filteredSermons.length > 0 ? (
+      {/* Main content — loader takes priority over results or empty state */}
+      {loading ? (
+        <SearchLoader theme={theme} />
+      ) : filteredSermons.length > 0 ? (
         <FlatList
           data={filteredSermons}
           renderItem={renderSearchResultItem}
