@@ -40,7 +40,6 @@
           "imageWidth": 200
         }
       ],
-      "expo-asset",
       "expo-sqlite"
     ],
     "updates": {
@@ -50,7 +49,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "8d5b01ec-32cb-4a05-b83f-83c918a5fa98"
+        "projectId": "98a8ca1a-9cc8-4bd9-a298-1e494016c59c"
       }
     },
     "owner": "josiah-ok",
