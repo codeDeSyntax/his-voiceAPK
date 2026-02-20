@@ -41,7 +41,6 @@
         }
       ],
       "expo-asset",
-      "expo-web-browser",
       "expo-sqlite"
     ],
     "updates": {

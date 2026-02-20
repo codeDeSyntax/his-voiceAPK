@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
+
 import { useFonts } from "expo-font";
 import { useAppContext } from "../../Logic/globalState";
 import { useNavigation } from "@react-navigation/native";
