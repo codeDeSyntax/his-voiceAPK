@@ -11,6 +11,7 @@ import {
   Image,
 } from "react-native";
 import * as Updates from "expo-updates";
+import Constants from "expo-constants";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
@@ -140,7 +141,7 @@ export default function UpdateScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>His Voice APK • Version 1.0.0</Text>
+          <Text style={styles.footerText}>His Voice APK • Version {Constants.expoConfig?.version || '1.0.0'}</Text>
         </View>
       </View>
     </Modal>

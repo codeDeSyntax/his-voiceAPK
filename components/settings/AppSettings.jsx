@@ -8,6 +8,7 @@ import { closeDatabase, forceStopIndexing } from "../../database/sermonDB";
 import { deleteLocalDatabase } from "../../database/downloadDatabase";
 import { resetAppToFresh } from "../../Utils/resetApp";
 import * as Updates from "expo-updates";
+import Constants from "expo-constants";
 
 const AppSettings = ({ theme, router, compact = false }) => {
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
@@ -515,7 +516,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
       <SettingItem
         icon="cloud-download-outline"
         title="Check for Updates"
-        subtitle={isCheckingUpdate ? "Checking..." : "Current version 1.0.0"}
+        subtitle={isCheckingUpdate ? "Checking..." : `Version ${Constants.expoConfig?.version || '1.0.0'}`}
         onPress={handleCheckForUpdates}
         disabled={isCheckingUpdate}
         rightElement={
