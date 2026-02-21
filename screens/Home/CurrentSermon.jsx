@@ -131,6 +131,7 @@ const CurrentSermon = React.memo(({ route }) => {
   const [endnoteData, setEndnoteData] = useState(null);
   const [endnoteSearchResults, setEndnoteSearchResults] = useState(null);
   const [isEndnoteLoading, setIsEndnoteLoading] = useState(false);
+  const [endnoteNetworkError, setEndnoteNetworkError] = useState(false);
 
   // True once the FlatList has been scrolled to its initial target position.
   // The skeleton overlay is shown until this is true, so users never see the
@@ -490,6 +491,7 @@ const CurrentSermon = React.memo(({ route }) => {
       setEndnoteData(parsedEndnote);
       setIsEndnoteLoading(true);
       setEndnoteSearchResults(null);
+      setEndnoteNetworkError(false);
 
       try {
         // Search with automatic fallback: quote → paragraph reference
@@ -510,7 +512,14 @@ const CurrentSermon = React.memo(({ route }) => {
         setEndnoteSearchResults(results);
       } catch (error) {
         console.error("[Endnote Click] Error searching for endnote:", error);
-        if (Platform.OS === "android") {
+        const isNetworkError =
+          error instanceof TypeError ||
+          error.message?.toLowerCase().includes("network") ||
+          error.message?.toLowerCase().includes("failed to fetch") ||
+          error.message?.toLowerCase().includes("network request failed");
+        if (isNetworkError) {
+          setEndnoteNetworkError(true);
+        } else if (Platform.OS === "android") {
           ToastAndroid.show("Error searching endnote", ToastAndroid.SHORT);
         }
       } finally {
@@ -527,6 +536,7 @@ const CurrentSermon = React.memo(({ route }) => {
 
       console.log("[Endnote Retry] Searching with type:", searchType);
       setIsEndnoteLoading(true);
+      setEndnoteNetworkError(false);
 
       try {
         const results = await searchEndnoteQuote(endnoteData, { searchType });
@@ -534,7 +544,14 @@ const CurrentSermon = React.memo(({ route }) => {
         setEndnoteSearchResults(results);
       } catch (error) {
         console.error("[Endnote Retry] Error:", error);
-        if (Platform.OS === "android") {
+        const isNetworkError =
+          error instanceof TypeError ||
+          error.message?.toLowerCase().includes("network") ||
+          error.message?.toLowerCase().includes("failed to fetch") ||
+          error.message?.toLowerCase().includes("network request failed");
+        if (isNetworkError) {
+          setEndnoteNetworkError(true);
+        } else if (Platform.OS === "android") {
           ToastAndroid.show("Error searching endnote", ToastAndroid.SHORT);
         }
       } finally {
@@ -893,6 +910,7 @@ const CurrentSermon = React.memo(({ route }) => {
         theme={theme}
         isLoading={isEndnoteLoading}
         onRetrySearch={handleRetryEndnoteSearch}
+        networkError={endnoteNetworkError}
       />
     </View>
   );

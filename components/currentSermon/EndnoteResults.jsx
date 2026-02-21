@@ -446,6 +446,7 @@ const EndnoteResults = ({
   theme,
   isLoading,
   onRetrySearch,
+  networkError,
 }) => {
   const { settings } = useAppContext();
   const [sermonContents, setSermonContents] = useState({}); // Cache by RecordId
@@ -763,9 +764,49 @@ const EndnoteResults = ({
           </View>
         )}
 
-        {/* Loader / Results / Empty state */}
+        {/* Loader / Network Error / Results / Empty state */}
         {isLoading ? (
           <SearchLoader theme={theme} />
+        ) : networkError ? (
+          <View style={styles.emptyStateContainer}>
+            <Feather
+              name="wifi-off"
+              size={38}
+              color={isDark ? "rgba(255,255,255,0.15)" : "rgba(93,50,17,0.2)"}
+              style={{ marginBottom: 18 }}
+            />
+            <Text
+              style={[
+                styles.emptyStateTitle,
+                {
+                  color: isDark
+                    ? "rgba(255,255,255,0.55)"
+                    : "rgba(93,50,17,0.65)",
+                },
+              ]}
+            >
+              No internet connection
+            </Text>
+            <Text style={[styles.emptyStateMessage, { color: subtleText }]}>
+              Connect to the internet and try again
+            </Text>
+            <TouchableOpacity
+              onPress={() => onRetrySearch && onRetrySearch(searchType)}
+              style={[
+                styles.retryButton,
+                {
+                  borderColor: isDark
+                    ? "rgba(213,122,62,0.45)"
+                    : "rgba(93,50,17,0.3)",
+                },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.retryButtonText, { color: accentColor }]}>
+                Try Again
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <ScrollView
             style={styles.resultsContainer}
@@ -1031,6 +1072,19 @@ const styles = StyleSheet.create({
     fontFamily: "ZillaSlab",
     textAlign: "center",
     lineHeight: 20,
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  retryButtonText: {
+    fontSize: 13,
+    fontFamily: "ZillaSlab",
+    fontWeight: "600",
+    letterSpacing: 0.3,
   },
 });
 
