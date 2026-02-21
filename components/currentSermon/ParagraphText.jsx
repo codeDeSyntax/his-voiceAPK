@@ -1,14 +1,16 @@
-import React, { useEffect, useMemo, useCallback } from "react";
-import {
-  Text,
-  View,
-  Pressable,
-} from "react-native";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
+import { Text, View, Pressable } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
 import { useAppContext } from "../../Logic/globalState";
-
+import { parseEndnote } from "../../Utils/endnoteParser";
 
 // Memoized highlight colors - calculate once
 const HIGHLIGHT_COLORS = {
@@ -140,12 +142,12 @@ const renderTextWithStyledNumbersOnly = (
       <Text
         key={`${key}-paragraph-number`}
         style={{
-          fontSize: responsiveFontSize(settings.fontSize),
-          fontFamily: "Roboto Bold",
+          fontSize: responsiveFontSize(80),
+          fontFamily: "Serif",
           color: theme.dark ? theme.colors.hlight : "#5d3211", // Theme-appropriate color
           // fontStyle: "italic", // Italics for paragraph numbers
           // fontWeight: "bold", // Slightly bold
-          lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
+          // lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
         }}
       >
         {paragraphNumber}.{" "}
@@ -366,6 +368,20 @@ const EndnoteWithTitleText = React.memo(
 );
 
 // Module-level mutex — prevents every mounted paragraph firing simultaneously
+
+// Standalone blinking finger — own state so it always ticks independently
+const BlinkingFinger = ({ onPress, color, fontSize }) => {
+  const [right, setRight] = useState(true);
+  useEffect(() => {
+    const t = setInterval(() => setRight((r) => !r), 550);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <Text onPress={onPress} style={{ color, fontSize, fontWeight: "700" }}>
+      {right ? " \u261E" : " \u261C"}
+    </Text>
+  );
+};
 // when the user copies selected text (only the first one to acquire it acts).
 let _clipboardBusy = false;
 
@@ -380,6 +396,7 @@ const ParagraphText = React.memo(
     searchPhrase,
     isSelected = false,
     onParagraphClick,
+    onEndnoteClick,
   }) => {
     const { highlights } = useAppContext();
 
@@ -441,16 +458,14 @@ const ParagraphText = React.memo(
       // Selected state - add underline effect
       if (isSelected) {
         baseStyle.push({
-          borderWidth: 2,
+          // borderWidth: 2,
           borderColor: theme.dark ? "#fee2d072" : "#d57a3e",
           backgroundColor: theme.dark
             ? "rgba(213, 122, 62, 0.08)"
             : "rgba(213, 122, 62, 0.06)",
           marginBottom: 12,
-          borderRadius:5,
-           borderStyle:"dashed",
-          
-         
+          borderRadius: 5,
+          borderStyle: "dashed",
         });
       }
 
@@ -458,14 +473,13 @@ const ParagraphText = React.memo(
       if (selectedSermon?.lastReadParagraph === index) {
         baseStyle.push({
           // borderWidth: 2,
-          borderStyle:"dashed",
+          borderStyle: "dashed",
           border: theme.dark ? "#faeed1" : "#6b320bff",
           backgroundColor: theme.dark
             ? "rgba(213, 122, 62, 0.08)"
             : "rgba(213, 122, 62, 0.06)",
           marginBottom: 12,
-          borderRadius:10,
-         
+          borderRadius: 10,
         });
       }
 
@@ -481,25 +495,48 @@ const ParagraphText = React.memo(
 
     // Memoize text processing for endnotes and titles (search removed)
     const processedText = useMemo(() => {
-      const hasEndnote = paragraph.includes("Endnote");
+      // Require "Endnote:" (with colon) so we don't mistakenly classify paragraphs
+      // that merely mention the word "endnote" in regular prose.
+      const hasEndnote = paragraph.includes("Endnote:");
       const hasWilliamBranham = paragraph.includes("William Marrion Branham");
 
       if (hasEndnote && hasWilliamBranham) {
-        // Split by Endnote and William Marrion Branham to identify title
+        const parts = paragraph.split(/(Endnote|William Marrion Branham)/gi);
+        const endnoteIdx = parts.findIndex(
+          (p) => p.toLowerCase() === "endnote",
+        );
+        const branhamIdx = parts.findIndex(
+          (p) => p.toLowerCase() === "william marrion branham",
+        );
+        // isPureEndnote = true when there is no substantive text before "Endnote:"
+        // (only a paragraph number like "53" or whitespace is acceptable)
+        const preEndnoteText = parts
+          .slice(0, endnoteIdx)
+          .join("")
+          .replace(/^\d+\.?\s*/, "") // strip leading paragraph number
+          .trim();
+        const isPureEndnote = preEndnoteText.length === 0;
         return {
           type: "endnote_with_title",
-          parts: paragraph.split(/(Endnote|William Marrion Branham)/gi),
+          parts,
+          endnoteIdx,
+          branhamIdx,
+          isPureEndnote,
         };
       } else if (hasEndnote) {
-        return {
-          type: "endnote",
-          parts: paragraph.split(/(Endnote)/gi),
-        };
+        const parts = paragraph.split(/(Endnote)/gi);
+        const endnoteIdx = parts.findIndex(
+          (p) => p.toLowerCase() === "endnote",
+        );
+        const preEndnoteText = parts
+          .slice(0, endnoteIdx)
+          .join("")
+          .replace(/^\d+\.?\s*/, "")
+          .trim();
+        const isPureEndnote = preEndnoteText.length === 0;
+        return { type: "endnote", parts, endnoteIdx, isPureEndnote };
       } else {
-        return {
-          type: "normal",
-          text: paragraph,
-        };
+        return { type: "normal", text: paragraph };
       }
     }, [paragraph]);
 
@@ -516,6 +553,19 @@ const ParagraphText = React.memo(
       },
       [onLayout],
     );
+
+    // Handle endnote click — extract endnote data and trigger callback
+    const handleEndnoteClick = useCallback(() => {
+      if (!onEndnoteClick) return;
+
+      console.log("[ParagraphText] Raw paragraph:", paragraph);
+      const endnoteData = parseEndnote(paragraph);
+      console.log("[ParagraphText] Parsed endnote data:", endnoteData);
+
+      if (endnoteData) {
+        onEndnoteClick(endnoteData, index, selectedSermon);
+      }
+    }, [paragraph, index, selectedSermon, onEndnoteClick]);
 
     // Clipboard listener: when the user selects & copies any piece of this
     // paragraph, we prepend the sermon title + paragraph number automatically.
@@ -575,28 +625,30 @@ const ParagraphText = React.memo(
     // Flows through to TextView.setHighlightColor() on Android; on iOS it
     // sets the UITextView selection bar colour via tintColor.
     const selectionColor = theme.dark
-      ? 'rgba(213, 122, 62, 0.45)' // warm orange, dark mode
-      : 'rgba(93, 50, 17, 0.3)'; // deep brown, light mode
+      ? "rgba(213, 122, 62, 0.45)" // warm orange, dark mode
+      : "rgba(93, 50, 17, 0.3)"; // deep brown, light mode
 
     // ── Inline paragraph number style (flows with text) ────────────────────
-    const accentColor = theme.dark ? theme.colors.hlight : "#5d3211";
+    const accentColor = theme.dark ? "#fab17a" : "#5d3211";
     // System font (no fontFamily) so fontWeight:"700" renders properly —
     // ZillaSlab does not ship a bold variant, so bold has no effect on it.
     const inlineNumberStyle = {
-      fontSize: responsiveFontSize((settings?.fontSize || 22) * 0.75),
-      fontWeight: "700",
+      fontSize: responsiveFontSize(30),
+      fontWeight: "100",
       opacity: 0.8,
       color: accentColor,
-      lineHeight: Math.round(responsiveFontSize(settings?.fontSize || 22) * 1.4),
+      fontFamily: "System",
+      // lineHeight: Math.round(
+      //   responsiveFontSize(settings?.fontSize || 22) * 1.4,
+      // ),
     };
 
     return (
       <Pressable
-        onPress={() => onParagraphClick?.(index)}
-        style={({ pressed }) => [
-          containerStyle,
-          pressed && { opacity: 0.88 },
-        ]}
+        onPress={() => {
+          onParagraphClick?.(index);
+        }}
+        style={({ pressed }) => [containerStyle, pressed && { opacity: 0.88 }]}
         onLayout={handleLayout}
         android_ripple={{
           color: theme.dark
@@ -618,84 +670,124 @@ const ParagraphText = React.memo(
             <Text style={inlineNumberStyle}>{index + 1} </Text>
             {processedText.type === "endnote_with_title"
               ? processedText.parts.map((part, partIndex) => {
-                  const lowerPart = part.toLowerCase();
-                  let isTitle = false;
-                  if (partIndex > 0) {
-                    const prevParts = processedText.parts.slice(0, partIndex);
-                    const endnoteIndex = prevParts.findIndex(
-                      (p) => p.toLowerCase() === "endnote",
-                    );
-                    const branhamIndex = processedText.parts.findIndex(
-                      (p) => p.toLowerCase() === "william marrion branham",
-                    );
-                    isTitle =
-                      endnoteIndex !== -1 &&
-                      (branhamIndex === -1 || partIndex <= branhamIndex);
-                  }
-                  if (lowerPart === "endnote") {
+                  const { endnoteIdx, branhamIdx } = processedText;
+                  // Accent section: from the "Endnote" token (inclusive) up to
+                  // "William Marrion Branham" token (exclusive).
+                  // Text BEFORE "Endnote" and WMB + everything after → normal.
+                  const isBeforeEndnote =
+                    endnoteIdx !== -1 && partIndex < endnoteIdx;
+                  const isAtOrAfterBranham =
+                    branhamIdx !== -1 && partIndex >= branhamIdx;
+                  const isEndnoteWord = partIndex === endnoteIdx;
+                  const isAccentSection =
+                    !isBeforeEndnote && !isAtOrAfterBranham;
+
+                  const isBranhamToken = partIndex === branhamIdx;
+
+                  // Link-like color: bright amber/orange in dark, rich brown in light
+                  const linkColor = theme.dark ? "#f0b38b" : "#7a3b10";
+
+                  if (isAccentSection) {
+                    // "Endnote" keyword + datecode/title — styled as a tappable link
                     return (
                       <Text
-                        key={`endnote-${partIndex}-${part.slice(0, 10)}`}
+                        key={`acc-${partIndex}`}
+                        onPress={handleEndnoteClick}
+                        suppressHighlighting={false}
                         style={{
-                          color: theme.dark ? theme.colors.hlight : "#5d3211",
-                          textDecorationLine: "underline",
-                          fontWeight: "500",
+                          color: linkColor,
                           fontFamily: settings?.fontFamily || "ZillaSlab",
-                          fontSize: responsiveFontSize(settings?.fontSize || 22),
-                        }}
-                      >
-                        {part}
-                      </Text>
-                    );
-                  } else if (lowerPart === "william marrion branham") {
-                    return (
-                      <Text
-                        key={`branham-${partIndex}-${part.slice(0, 10)}`}
-                        style={{
-                          color: theme.dark ? "#FFFFFF" : "#000000",
+                          fontSize: responsiveFontSize(
+                            settings?.fontSize || 22,
+                          ),
+                          fontWeight: isEndnoteWord ? "700" : "400",
                           textDecorationLine: "underline",
-                          fontFamily: settings?.fontFamily || "System",
-                          fontSize: responsiveFontSize(settings?.fontSize || 16),
                         }}
                       >
                         {part}
                       </Text>
                     );
-                  } else if (isTitle && part.trim()) {
+                  } else if (isBranhamToken) {
+                    // "William Marrion Branham" + blinking finger
                     return (
-                      <Text
-                        key={`title-${partIndex}-${part.slice(0, 10)}`}
-                        style={{
-                          color: theme.dark ? theme.colors.hlight : "#5d3211",
-                          textDecorationLine: "underline",
-                          fontFamily: settings?.fontFamily || "System",
-                          fontSize: responsiveFontSize(settings?.fontSize || 16),
-                        }}
-                      >
-                        {part}
-                      </Text>
-                    );
-                  } else {
-                    return part;
-                  }
-                })
-              : processedText.type === "endnote"
-                ? processedText.parts.map((part, partIndex) => {
-                    const lowerPart = part.toLowerCase();
-                    if (lowerPart === "endnote" || lowerPart === "reference") {
-                      return (
+                      <React.Fragment key={`wmb-${partIndex}`}>
                         <Text
-                          key={`${lowerPart}-${partIndex}-${part.slice(0, 10)}`}
+                          onPress={handleEndnoteClick}
+                          suppressHighlighting={false}
                           style={{
-                            color: theme.dark ? theme.colors.hlight : "#5d3211",
+                            color: linkColor,
+                            fontFamily: settings?.fontFamily || "ZillaSlab",
+                            fontSize: responsiveFontSize(
+                              settings?.fontSize || 22,
+                            ),
+                            fontWeight: "700",
                             textDecorationLine: "underline",
-                            fontWeight: "500",
-                            fontFamily: settings?.fontFamily || "System",
-                            fontSize: responsiveFontSize(settings?.fontSize || 16),
                           }}
                         >
                           {part}
                         </Text>
+                        <BlinkingFinger
+                          onPress={handleEndnoteClick}
+                          color={linkColor}
+                          fontSize={responsiveFontSize(
+                            (settings?.fontSize || 22) * 1.15,
+                          )}
+                        />
+                      </React.Fragment>
+                    );
+                  } else {
+                    // Pre-Endnote text and the quote after WMB — normal body text
+                    return (
+                      <Text
+                        key={`norm-${partIndex}`}
+                        style={{
+                          color: theme.dark ? theme.colors.text : "#000000",
+                          fontFamily: settings?.fontFamily || "ZillaSlab",
+                          fontSize: responsiveFontSize(
+                            settings?.fontSize || 22,
+                          ),
+                        }}
+                      >
+                        {part}
+                      </Text>
+                    );
+                  }
+                })
+              : processedText.type === "endnote"
+                ? processedText.parts.map((part, partIndex) => {
+                    const { endnoteIdx } = processedText;
+                    const isEndnoteWord = partIndex === endnoteIdx;
+
+                    if (isEndnoteWord) {
+                      // "Endnote" keyword — link style + blinking finger after
+                      return (
+                        <React.Fragment key={`endnote-frag-${partIndex}`}>
+                          <Text
+                            key={`endnote-${partIndex}`}
+                            onPress={handleEndnoteClick}
+                            suppressHighlighting={false}
+                            style={{
+                              color: theme.dark
+                                ? theme.colors.hlight
+                                : "#7a3b10",
+                              fontFamily: settings?.fontFamily || "ZillaSlab",
+                              fontSize: responsiveFontSize(
+                                settings?.fontSize || 22,
+                              ),
+                              fontWeight: "700",
+                              textDecorationLine: "underline",
+                            }}
+                          >
+                            {part}
+                          </Text>
+                          <BlinkingFinger
+                            onPress={handleEndnoteClick}
+                            color={theme.dark ? theme.colors.hlight : "#7a3b10"}
+                            fontSize={responsiveFontSize(
+                              (settings?.fontSize || 22) * 1.15,
+                            )}
+                          />
+                        </React.Fragment>
                       );
                     } else {
                       return part;

@@ -34,6 +34,8 @@ import CustomBottomSheetController from "../../components/currentSermon/BottomSh
 import DraggableFloatingButton from "../../components/FloatButton";
 import SearchFeedback from "../../components/currentSermon/SearchFeedback";
 import CurrentSermonSearch from "../../components/currentSermon/CurrentSermonSearch";
+import EndnoteResults from "../../components/currentSermon/EndnoteResults";
+import { searchEndnoteQuote } from "../../Logic/branhamApi";
 import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
 import PlaySermon from "../../components/currentSermon/PlaySermon_SIMPLE";
@@ -42,7 +44,6 @@ import LoadingScreen, { SermonSkeletonLoader } from "../../components/Loader";
 import { styles as globalStyles } from "../../styles/Allsermons";
 
 const CurrentSermon = React.memo(({ route }) => {
-
   const {
     selectedSermon,
     setSelectedSermon,
@@ -124,6 +125,12 @@ const CurrentSermon = React.memo(({ route }) => {
   // Paragraph selection for toolbar
   const [selectedParagraphIndex, setSelectedParagraphIndex] = useState(null);
   const [showToolbarColorPalette, setShowToolbarColorPalette] = useState(false);
+
+  // Endnote search modal
+  const [showEndnoteModal, setShowEndnoteModal] = useState(false);
+  const [endnoteData, setEndnoteData] = useState(null);
+  const [endnoteSearchResults, setEndnoteSearchResults] = useState(null);
+  const [isEndnoteLoading, setIsEndnoteLoading] = useState(false);
 
   // True once the FlatList has been scrolled to its initial target position.
   // The skeleton overlay is shown until this is true, so users never see the
@@ -436,15 +443,12 @@ const CurrentSermon = React.memo(({ route }) => {
   // State updates (phrase + navKey) are committed first; the actual scroll
   // is deferred to a useEffect so FlatList cells render with the updated
   // searchPhrase before they scroll into view.
-  const handleSearchNavigateToResult = useCallback(
-    (paragraphIndex, phrase) => {
-      setIsSearchVisible(false);
-      setCurrentSearchPhrase(phrase || "");
-      setSearchNavKey((k) => k + 1);
-      setPendingScrollTarget(paragraphIndex);
-    },
-    [],
-  );
+  const handleSearchNavigateToResult = useCallback((paragraphIndex, phrase) => {
+    setIsSearchVisible(false);
+    setCurrentSearchPhrase(phrase || "");
+    setSearchNavKey((k) => k + 1);
+    setPendingScrollTarget(paragraphIndex);
+  }, []);
 
   // Fire scroll AFTER the new phrase and extraData have been committed.
   useEffect(() => {
@@ -476,6 +480,69 @@ const CurrentSermon = React.memo(({ route }) => {
     setSelectedParagraphIndex(null);
     setShowToolbarColorPalette(false);
   }, []);
+
+  // Handle endnote click — fetch search results from API with fallback
+  const handleEndnoteClick = useCallback(
+    async (parsedEndnote, paragraphIndex, sermon) => {
+      console.log("[Endnote Click] Parsed endnote:", parsedEndnote);
+
+      setShowEndnoteModal(true);
+      setEndnoteData(parsedEndnote);
+      setIsEndnoteLoading(true);
+      setEndnoteSearchResults(null);
+
+      try {
+        // Search with automatic fallback: quote → paragraph reference
+        const results = await searchEndnoteQuote(parsedEndnote);
+        console.log("[Endnote Click] API results:", results);
+        console.log(
+          "[Endnote Click] Search method used:",
+          results.searchMethod,
+        );
+
+        if (results.searchMethod === "paragraph_reference") {
+          // Show user that we used fallback method
+          if (Platform.OS === "android") {
+            ToastAndroid.show("Found by sermon reference", ToastAndroid.SHORT);
+          }
+        }
+
+        setEndnoteSearchResults(results);
+      } catch (error) {
+        console.error("[Endnote Click] Error searching for endnote:", error);
+        if (Platform.OS === "android") {
+          ToastAndroid.show("Error searching endnote", ToastAndroid.SHORT);
+        }
+      } finally {
+        setIsEndnoteLoading(false);
+      }
+    },
+    [],
+  );
+
+  // Retry endnote search with different search type
+  const handleRetryEndnoteSearch = useCallback(
+    async (searchType) => {
+      if (!endnoteData) return;
+
+      console.log("[Endnote Retry] Searching with type:", searchType);
+      setIsEndnoteLoading(true);
+
+      try {
+        const results = await searchEndnoteQuote(endnoteData, { searchType });
+        console.log("[Endnote Retry] Results:", results);
+        setEndnoteSearchResults(results);
+      } catch (error) {
+        console.error("[Endnote Retry] Error:", error);
+        if (Platform.OS === "android") {
+          ToastAndroid.show("Error searching endnote", ToastAndroid.SHORT);
+        }
+      } finally {
+        setIsEndnoteLoading(false);
+      }
+    },
+    [endnoteData],
+  );
 
   // Get toolbar props from context
   const {
@@ -561,7 +628,10 @@ const CurrentSermon = React.memo(({ route }) => {
     // skeleton is visible). Here animated:true is fine — the user triggered it.
     if (flatListRef.current) {
       const approxOffset = (info.averageItemLength ?? 120) * info.index;
-      flatListRef.current.scrollToOffset({ offset: approxOffset, animated: false });
+      flatListRef.current.scrollToOffset({
+        offset: approxOffset,
+        animated: false,
+      });
       setTimeout(() => {
         flatListRef.current?.scrollToIndex({
           index: info.index,
@@ -587,6 +657,7 @@ const CurrentSermon = React.memo(({ route }) => {
           searchPhrase={currentSearchPhrase}
           isSelected={selectedParagraphIndex === index}
           onParagraphClick={handleParagraphClick}
+          onEndnoteClick={handleEndnoteClick}
         />
       );
     },
@@ -597,6 +668,7 @@ const CurrentSermon = React.memo(({ route }) => {
       currentSearchPhrase,
       selectedParagraphIndex,
       handleParagraphClick,
+      handleEndnoteClick,
     ],
   );
 
@@ -604,82 +676,84 @@ const CurrentSermon = React.memo(({ route }) => {
   const keyExtractor = useCallback((item, index) => `paragraph-${index}`, []);
 
   // ─── Book-style chapter header ────────────────────────────────────────────
-  const ListHeader = useMemo(
-    () => {
-      const accent = theme.dark ? theme.colors.hlight : "#5d3211";
-      const accentM = theme.dark ? theme.colors.hlight + "70" : "#5d321170";
-      const titleSize = responsiveFontSize(22);
+  const ListHeader = useMemo(() => {
+    const accent = theme.dark ? "#ffb780" : "#5d3211";
+    const accentM = theme.dark ? theme.colors.hlight + "70" : "#5d321170";
+    const titleSize = responsiveFontSize(22);
 
-      return (
-        <View style={styles.chapterHeader}>
-         
+    return (
+      <View style={styles.chapterHeader}>
+        {/* ── Sermon title ── */}
+        <Text
+          style={[
+            styles.chapterTitle,
+            {
+              color: accent,
+              fontFamily: "ZillaSlabsm",
+              fontSize: titleSize,
+              lineHeight: titleSize * 1.3,
+            },
+          ]}
+        >
+          {selectedSermon?.title}
+        </Text>
+        {/* ── Top ornament: thin line ◆ thin line ── */}
+        <View style={styles.chapterOrnamentTop}>
+          <View
+            style={[styles.chapterOrnamentLine, { backgroundColor: accentM }]}
+          />
+          <View
+            style={[styles.chapterOrnamentDiamond, { backgroundColor: accent }]}
+          />
+          <View
+            style={[styles.chapterOrnamentLine, { backgroundColor: accentM }]}
+          />
+        </View>
 
-          {/* ── Sermon title ── */}
+        {/* ── Date ── */}
+        {selectedSermon?.date ? (
           <Text
             style={[
-              styles.chapterTitle,
+              styles.chapterMeta,
               {
-                color: accent,
-                fontFamily:  "ZillaSlabsm",
-                fontSize: titleSize,
-                lineHeight: titleSize * 1.3,
+                color: theme.colors.text,
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                fontSize: responsiveFontSize(settings.fontSize * 0.72),
+                opacity: 0.65,
               },
             ]}
           >
-            {selectedSermon?.title}
+            {selectedSermon.date}
           </Text>
-           {/* ── Top ornament: thin line ◆ thin line ── */}
-          <View style={styles.chapterOrnamentTop}>
-            <View
-              style={[styles.chapterOrnamentLine, { backgroundColor: accentM }]}
-            />
-            <View
-              style={[styles.chapterOrnamentDiamond, { backgroundColor: accent }]}
-            />
-            <View
-              style={[styles.chapterOrnamentLine, { backgroundColor: accentM }]}
-            />
-          </View>
+        ) : null}
 
-          {/* ── Date ── */}
-          {selectedSermon?.date ? (
-            <Text
-              style={[
-                styles.chapterMeta,
-                {
-                  color: theme.colors.text,
-                  fontFamily: settings.fontFamily || "ZillaSlab",
-                  fontSize: responsiveFontSize(settings.fontSize * 0.72),
-                  opacity: 0.65,
-                },
-              ]}
-            >
-              {selectedSermon.date}
-            </Text>
-          ) : null}
-
-          {/* ── Location ── */}
-          {selectedSermon?.location ? (
-            <Text
-              style={[
-                styles.chapterMetaLocation,
-                {
-                  color: theme.colors.text,
-                  fontFamily: settings.fontFamily || "ZillaSlab",
-                  fontSize: responsiveFontSize(settings.fontSize * 0.68),
-                  opacity: 0.5,
-                  marginBottom: 0,
-                },
-              ]}
-            >
-              {selectedSermon.location}
-            </Text>
-          ) : null}
-        </View>
-      );
-    },
-    [selectedSermon?.title, selectedSermon?.date, selectedSermon?.location, theme, settings.fontSize, settings.fontFamily],
-  );
+        {/* ── Location ── */}
+        {selectedSermon?.location ? (
+          <Text
+            style={[
+              styles.chapterMetaLocation,
+              {
+                color: theme.colors.text,
+                fontFamily: settings.fontFamily || "ZillaSlab",
+                fontSize: responsiveFontSize(settings.fontSize * 0.68),
+                opacity: 0.5,
+                marginBottom: 0,
+              },
+            ]}
+          >
+            {selectedSermon.location}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }, [
+    selectedSermon?.title,
+    selectedSermon?.date,
+    selectedSermon?.location,
+    theme,
+    settings.fontSize,
+    settings.fontFamily,
+  ]);
 
   return (
     <View
@@ -732,8 +806,8 @@ const CurrentSermon = React.memo(({ route }) => {
                   ListHeaderComponent={ListHeader}
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
-                  initialNumToRender={20}
-                  maxToRenderPerBatch={20}
+                  initialNumToRender={25}
+                  maxToRenderPerBatch={25}
                   windowSize={21}
                   removeClippedSubviews={true}
                   onScrollBeginDrag={handleScrollBeginDrag}
@@ -808,6 +882,17 @@ const CurrentSermon = React.memo(({ route }) => {
         paragraphs={paragraphs}
         onNavigateToResult={handleSearchNavigateToResult}
         selectedSermon={selectedSermon}
+      />
+
+      {/* Endnote Results Modal */}
+      <EndnoteResults
+        visible={showEndnoteModal}
+        onClose={() => setShowEndnoteModal(false)}
+        endnoteData={endnoteData}
+        searchResults={endnoteSearchResults}
+        theme={theme}
+        isLoading={isEndnoteLoading}
+        onRetrySearch={handleRetryEndnoteSearch}
       />
     </View>
   );

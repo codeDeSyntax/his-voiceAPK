@@ -20,6 +20,7 @@ export default function UpdateScreen() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [progress] = useState(new Animated.Value(0));
 
   useEffect(() => {
@@ -41,10 +42,8 @@ export default function UpdateScreen() {
       // Check if we're running in Expo Go (development)
       if (__DEV__ || !Updates.isEnabled) {
         console.log(
-          "Running in development mode or Expo Go - Updates not supported"
+          "Running in development mode or Expo Go - Updates not supported",
         );
-        console.log("For testing, you can uncomment the line below:");
-        // setModalVisible(true); // Uncomment this line to test the update UI
         return;
       }
 
@@ -53,39 +52,43 @@ export default function UpdateScreen() {
       console.log("Update check result:", update);
 
       if (update.isAvailable) {
-        console.log("Update available, downloading...");
-        const downloaded = await Updates.fetchUpdateAsync();
-        console.log("Update downloaded:", downloaded);
-
+        // Only notify the user — do NOT download yet.
+        // Downloading here would cause Expo to stage the update and apply it
+        // on next launch even if the user taps "Later".
+        console.log("Update available — showing prompt (not yet downloaded)");
         setUpdateAvailable(true);
-        setIsDownloaded(true);
-        setModalVisible(true); // show the modal when update is ready
+        setModalVisible(true);
       } else {
         console.log("No update available");
       }
     } catch (error) {
       console.error("Update check failed:", error);
-
     }
   };
 
   const handleUpdate = async () => {
     try {
-      console.log("Applying update and restarting...");
-      setModalVisible(false);
-
-      // Check if we're in development mode
       if (__DEV__ || !Updates.isEnabled) {
         console.log("In development mode - would restart app in production");
+        setModalVisible(false);
         return;
       }
 
-      // Small delay to ensure modal closes before restart
+      // Download NOW (only when user explicitly chose to update)
+      setIsDownloading(true);
+      console.log("User confirmed update — downloading...");
+      await Updates.fetchUpdateAsync();
+      setIsDownloaded(true);
+      setIsDownloading(false);
+      console.log("Downloaded — reloading app...");
+
+      setModalVisible(false);
       setTimeout(async () => {
         await Updates.reloadAsync();
       }, 100);
     } catch (error) {
       console.error("Error applying update:", error);
+      setIsDownloading(false);
       setModalVisible(false);
     }
   };
@@ -97,7 +100,6 @@ export default function UpdateScreen() {
     setUpdateAvailable(true);
     setIsDownloaded(true);
   };
-
 
   return (
     <Modal
@@ -126,14 +128,25 @@ export default function UpdateScreen() {
         </View>
         {/* Action Buttons */}
         <View style={styles.actionSection}>
-          <TouchableOpacity style={styles.primaryButton} onPress={handleUpdate}>
-            <MaterialIcons name="refresh" size={24} color="#000000" />
-            <Text style={styles.primaryButtonText}>[ RESTART NOW ]</Text>
+          <TouchableOpacity
+            style={[styles.primaryButton, isDownloading && { opacity: 0.7 }]}
+            onPress={handleUpdate}
+            disabled={isDownloading}
+          >
+            <MaterialIcons
+              name={isDownloading ? "cloud-download" : "refresh"}
+              size={24}
+              color="#000000"
+            />
+            <Text style={styles.primaryButtonText}>
+              {isDownloading ? "[ DOWNLOADING... ]" : "[ RESTART NOW ]"}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => setModalVisible(false)}
+            style={[styles.secondaryButton, isDownloading && { opacity: 0.4 }]}
+            onPress={() => !isDownloading && setModalVisible(false)}
+            disabled={isDownloading}
           >
             <Text style={styles.secondaryButtonText}>[ LATER ]</Text>
           </TouchableOpacity>
@@ -141,7 +154,9 @@ export default function UpdateScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>His Voice APK • Version {Constants.expoConfig?.version || '1.0.0'}</Text>
+          <Text style={styles.footerText}>
+            His Voice APK • Version {Constants.expoConfig?.version || "1.0.0"}
+          </Text>
         </View>
       </View>
     </Modal>

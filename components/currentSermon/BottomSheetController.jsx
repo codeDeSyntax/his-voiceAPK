@@ -25,7 +25,7 @@ const CustomTopCardController = ({
   const navigation = useNavigation();
 
   const isDark = theme.dark;
-  const accentColor = isDark ? theme.colors.hlight : "#5d3211";
+  const accentColor = isDark ? "#ffffff" : "#5d3211";
   const pillBg = isDark
     ? "rgba(38, 30, 26, 0.96)"
     : "rgba(250, 238, 209, 0.97)";
@@ -139,10 +139,10 @@ const CustomTopCardController = ({
               numberOfLines={1}
               ellipsizeMode="tail"
               style={{
-                fontSize: responsiveFontSize(11),
+                fontSize: responsiveFontSize(15),
                 fontFamily: "ZillaSlab",
                 color: accentColor,
-                opacity: 0.75,
+                // opacity: 0.75,
                 letterSpacing: 0.4,
                 textAlign: "center",
               }}

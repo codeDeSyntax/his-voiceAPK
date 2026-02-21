@@ -20,7 +20,7 @@ const ActionToolbar = ({
   if (!isVisible) return null;
 
   const isDark = theme.dark;
-  const accentColor = isDark ? theme.colors.hlight : "#5d3211";
+  const accentColor = isDark ? "#f6ceb0" : "#5d3211";
   const cardBg = isDark
     ? "rgba(38, 30, 26, 0.97)"
     : "rgba(250, 238, 209, 0.98)";

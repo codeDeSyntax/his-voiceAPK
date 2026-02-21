@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
 
   // ─── Paragraph container ──────────────────────────────────────────────────
   paragraphContainer: {
-    marginBottom: 18,
+    marginBottom: 10,
     paddingHorizontal: 10,
     paddingVertical: 5,
     // Constrain width so text never overflows the screen
