@@ -50,7 +50,7 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
             {
               flex: 1,
               color: theme.dark ? theme.colors.text : "#5d3211",
-              fontFamily: "serif",
+              fontFamily: "Inter",
               fontSize: 16,
               paddingVertical: 12,
               borderWidth: 0,

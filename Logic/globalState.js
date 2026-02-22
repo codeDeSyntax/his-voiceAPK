@@ -541,7 +541,6 @@ export const SermonProvider = ({ children }) => {
     [bookmarks],
   );
 
-
   // Optimized highlight management functions for better performance
   const addHighlight = useCallback(
     async (sermonId, paragraphIndex, color) => {

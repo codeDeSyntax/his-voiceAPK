@@ -56,7 +56,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
     } catch (error) {
       console.error("Update check error:", error);
       let errorMessage = "Could not check for updates. Please try again later.";
-      
+
       // Provide more specific error messages
       if (error.message?.includes("network")) {
         errorMessage = "Network error. Please check your internet connection.";
@@ -67,12 +67,8 @@ const AppSettings = ({ theme, router, compact = false }) => {
       } else if (error.code === "ERR_UPDATES_NOT_FOUND") {
         errorMessage = "Update server not found. Check your configuration.";
       }
-      
-      Alert.alert(
-        "Check Failed",
-        errorMessage,
-        [{ text: "OK" }],
-      );
+
+      Alert.alert("Check Failed", errorMessage, [{ text: "OK" }]);
     } finally {
       setIsCheckingUpdate(false);
     }
@@ -529,7 +525,11 @@ const AppSettings = ({ theme, router, compact = false }) => {
       <SettingItem
         icon="cloud-download-outline"
         title="Check for Updates"
-        subtitle={isCheckingUpdate ? "Checking..." : `Version ${Constants.expoConfig?.version || '1.0.0'}`}
+        subtitle={
+          isCheckingUpdate
+            ? "Checking..."
+            : `Version ${Constants.expoConfig?.version || "1.0.0"}`
+        }
         onPress={handleCheckForUpdates}
         disabled={isCheckingUpdate}
         rightElement={

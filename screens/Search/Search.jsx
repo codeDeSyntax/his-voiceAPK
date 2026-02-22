@@ -20,7 +20,6 @@ import {
   Dimensions,
   FlatList,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../Logic/globalState";
 import {
   AntDesign,

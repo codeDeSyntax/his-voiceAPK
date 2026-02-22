@@ -156,18 +156,40 @@ const parseEndnoteContent = (endnoteContent) => {
 
   const words = remainder.split(/\s+/).filter((w) => w.length > 0);
 
-  // ExactPhrase: first 8 words (long enough to be genuinely unique)
-  const longQuote = words.slice(0, 8).join(" ");
+  // For ExactPhrase: only lowercase + unify apostrophes — keep ALL punctuation
+  // exactly as-is because the quote is a verbatim copy of the database text
+  // (commas, em-dashes, colons etc. are part of the phrase to match).
+  const normaliseForExact = (w) =>
+    w.toLowerCase().replace(/[\u2018\u2019\u201A\u201B\u02BC\u02BB]/g, "'");
 
-  // AllWords: key words only (strip stop words), up to 6 meaningful words
-  const keywords = words
-    .map((w) => w.replace(/[^a-zA-Z0-9'\-]/g, "").toLowerCase())
-    .filter((w) => w.length > 2 && !STOP_WORDS.has(w))
-    .slice(0, 6)
+  // For AllWords / display: also strip leading/trailing punctuation so
+  // stop-word filtering and length checks work cleanly.
+  const normaliseWord = (w) => {
+    let s = normaliseForExact(w);
+    s = s.replace(/^[^a-z0-9']+|[^a-z0-9']+$/g, "");
+    return s;
+  };
+
+  // ExactPhrase: first 8 words — punctuation kept, only lowercased
+  const longQuote = words
+    .slice(0, 8)
+    .map(normaliseForExact)
+    .filter(Boolean)
     .join(" ");
 
-  // Backwards-compat field: short 5-word quote kept as "quote"
-  const quote = words.slice(0, 5).join(" ");
+  // AllWords: key words only (strip stop words), UP TO 3 most specific words.
+  const keywords = words
+    .map(normaliseWord)
+    .filter((w) => w.length > 3 && !STOP_WORDS.has(w))
+    .slice(0, 3)
+    .join(" ");
+
+  // Backwards-compat field: short 5-word quote
+  const quote = words
+    .slice(0, 5)
+    .map(normaliseForExact)
+    .filter(Boolean)
+    .join(" ");
 
   console.log("[Parser] longQuote:", longQuote, "| keywords:", keywords);
 

@@ -291,6 +291,13 @@ export const searchEndnoteQuote = async (endnoteData, options = {}) => {
     paragraph,
   });
 
+  const isNetworkErr = (e) =>
+    e instanceof TypeError ||
+    e.message?.toLowerCase().includes("network request failed") ||
+    e.message?.toLowerCase().includes("failed to fetch");
+
+  let lastNetworkError = null;
+
   try {
     // Primary: Try searching by quote text
     if (queryText && queryText.trim().length >= 3) {
@@ -392,6 +399,7 @@ export const searchEndnoteQuote = async (endnoteData, options = {}) => {
         );
       } catch (quoteError) {
         console.log("[Endnote API] Quote search failed:", quoteError.message);
+        if (isNetworkErr(quoteError)) lastNetworkError = quoteError;
       }
     }
 
@@ -419,13 +427,17 @@ export const searchEndnoteQuote = async (endnoteData, options = {}) => {
           "[Endnote API] Paragraph reference search failed:",
           paragraphError.message,
         );
+        if (isNetworkErr(paragraphError)) lastNetworkError = paragraphError;
       }
     }
 
-    // If both methods failed, return empty results
+    // If both methods failed, return empty results (or re-throw if it was a network error)
     console.log(
       "[Endnote API] All search methods exhausted, returning empty results",
     );
+    if (lastNetworkError) {
+      throw lastNetworkError;
+    }
     return {
       Status: "Successful",
       Result: { TotalHits: 0, Results: [] },

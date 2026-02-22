@@ -4,12 +4,10 @@ import {
   Text,
   TouchableOpacity,
   Switch,
-  Pressable,
-  Animated,
+
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import Icon from "react-native-vector-icons/Ionicons";
-import styles from "../../styles/settings";
+
 
 const DisplaySettings = ({
   theme,

@@ -110,44 +110,100 @@ const SearchLoader = ({ theme }) => {
   );
 };
 
+// ── Extract highlighted phrase verbatim from API Fragment HTML ─────────────
+// The API wraps matched tokens in <span class="hit-snippet-highlight">.
+// For ExactPhrase we extract the complete contiguous highlighted sequence
+// (including punctuation like em-dashes between consecutive spans) so we
+// get the exact text as stored in the database — correct case, punctuation, etc.
+const extractHighlightedPhrase = (fragment) => {
+  if (!fragment) return null;
+  const spanRe = /<span class="hit-snippet-highlight">([\s\S]*?)<\/span>/g;
+  let match;
+  let phrase = "";
+  let lastEnd = 0;
+
+  while ((match = spanRe.exec(fragment)) !== null) {
+    const between = fragment.slice(lastEnd, match.index);
+    if (phrase.length > 0) {
+      // Only continue the phrase if the gap between spans is punctuation / no plain word
+      if (/^[\s\u2014\u2013\-—–,.:;!?"'()]*$/.test(between)) {
+        phrase += between + match[1];
+      } else {
+        break; // non-punctuation gap means the phrase ended
+      }
+    } else {
+      phrase = match[1];
+    }
+    lastEnd = spanRe.lastIndex;
+  }
+  return phrase.trim() || null;
+};
+
 // ── Highlight search terms in text ─────────────────────────────────────────
-const HighlightedText = ({ text, searchQuery, theme, style = {} }) => {
+const HighlightedText = ({
+  text,
+  searchQuery,
+  theme,
+  style = {},
+  searchType = "AllWords",
+}) => {
   if (!text) return null;
+
+  const isDark = theme.dark;
+  const normalFg = isDark ? "rgba(255,255,255,0.85)" : "#3a1f08";
+  const highlightBg = isDark ? "#5d321170" : "#5d321125";
+  const highlightFg = isDark ? "#f8e3d5" : "#5d3211";
+
   if (!searchQuery) {
     return (
-      <Text
-        style={[
-          styles.fragmentText,
-          style,
-          { color: theme.dark ? "rgba(255,255,255,0.85)" : "#3a1f08" },
-        ]}
-      >
+      <Text style={[styles.fragmentText, style, { color: normalFg }]}>
         {text}
       </Text>
     );
   }
 
-  const isDark = theme.dark;
-  const words = searchQuery
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length > 0);
+  // Escape regex special chars, then replace straight apostrophe with a class
+  // that also matches curly/fancy apostrophes so normalised queries hit both.
+  const escapeAndApostrophe = (s) =>
+    s
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/'/g, "[\u2018\u2019\u201A\u201B\u02BC\u02BB']");
 
-  // Create regex from search words
-  const regex = new RegExp(`(${words.join("|")})`, "gi");
+  let regex;
+  if (searchType === "ExactPhrase") {
+    const escaped = escapeAndApostrophe(searchQuery);
+    regex = new RegExp(`(${escaped})`, "gi");
+  } else {
+    const words = searchQuery
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 0)
+      .map(escapeAndApostrophe);
+    regex = new RegExp(`(${words.join("|")})`, "gi");
+  }
+
+  // Normalise apostrophes for comparison (straight) so isMatch works
+  const normaliseApostrophe = (s) =>
+    s.replace(/[\u2018\u2019\u201A\u201B\u02BC\u02BB]/g, "'");
+
+  const queryNorm = normaliseApostrophe(searchQuery).toLowerCase();
   const parts = text.split(regex);
 
   return (
     <Text style={[styles.fragmentText, style]}>
       {parts.map((part, index) => {
-        const isMatch = words.some((w) => part.toLowerCase() === w);
+        const partNorm = normaliseApostrophe(part).toLowerCase();
+        const isMatch =
+          searchType === "ExactPhrase"
+            ? partNorm === queryNorm
+            : queryNorm.split(/\s+/).some((w) => partNorm === w);
         if (isMatch) {
           return (
             <Text
               key={index}
               style={{
-                backgroundColor: isDark ? "#5d321170" : "#5d321125",
-                color: isDark ? "#f8e3d5" : "#5d3211",
+                backgroundColor: highlightBg,
+                color: highlightFg,
                 fontFamily: "ZillaSlabsm",
               }}
             >
@@ -156,12 +212,7 @@ const HighlightedText = ({ text, searchQuery, theme, style = {} }) => {
           );
         }
         return (
-          <Text
-            key={index}
-            style={{
-              color: isDark ? "rgba(255,255,255,0.85)" : "#3a1f08",
-            }}
-          >
+          <Text key={index} style={{ color: normalFg }}>
             {part}
           </Text>
         );
@@ -199,11 +250,29 @@ const ResultItem = ({
   onFetchContent,
   sermonContent,
   isLoadingContent,
+  searchType,
 }) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const isDark = theme.dark;
   const accentColor = isDark ? "#d57a3e" : "#5d3211";
   const subtleText = isDark ? "rgba(255,255,255,0.28)" : "rgba(93,50,17,0.4)";
+
+  // For ExactPhrase: extract the exact highlighted phrase from the API fragment
+  // so HighlightedText uses the verbatim database text (correct case, em-dashes, etc.)
+  const exactPhraseFromFragment = useMemo(() => {
+    if (searchType !== "ExactPhrase") return null;
+    for (const itm of items) {
+      const phrase = extractHighlightedPhrase(itm.Properties?.Fragment);
+      if (phrase) return phrase;
+    }
+    return null;
+  }, [items, searchType]);
+
+  // Use extracted phrase for ExactPhrase, otherwise use the passed-in searchQuery (keywords)
+  const effectiveSearchQuery =
+    searchType === "ExactPhrase"
+      ? exactPhraseFromFragment || searchQuery
+      : searchQuery;
 
   // Use first item for sermon metadata
   const item = items[0];
@@ -238,6 +307,19 @@ const ResultItem = ({
 
       const earliestMatch = Math.min(...allMatchStarts);
       const latestMatch = Math.max(...allMatchEnds);
+
+      if (searchType === "ExactPhrase") {
+        // ExactPhrase: only show the matched paragraphs themselves, no surrounding context
+        return paragraphs
+          .map((p, i) => {
+            const displayIdx = i + 1;
+            const isMatch = paragraphRanges.some(
+              (range) => displayIdx >= range.start && displayIdx <= range.end,
+            );
+            return { ...p, displayIndex: displayIdx, isMatch };
+          })
+          .filter((p) => p.isMatch);
+      }
 
       if (isBestMatch) {
         // Best Match (first result): 2 paragraphs before earliest + all matches + 50 paragraphs after latest
@@ -293,7 +375,7 @@ const ResultItem = ({
         };
       })
       .filter((p) => p.Text);
-  }, [sermonContent, paragraphRanges, isBestMatch, items]);
+  }, [sermonContent, paragraphRanges, isBestMatch, items, searchType]);
 
   // Fetch content when expanded (only if not already fetched or failed)
   useEffect(() => {
@@ -397,9 +479,10 @@ const ResultItem = ({
                 )}
                 <HighlightedText
                   text={para.Text}
-                  searchQuery={searchQuery}
+                  searchQuery={effectiveSearchQuery}
                   theme={theme}
                   style={para.isMatch && styles.matchText}
+                  searchType={searchType}
                 />
               </View>
             ))
@@ -471,7 +554,10 @@ const EndnoteResults = ({
     searchResults?.Results || searchResults?.Result?.Results || [];
   const totalHits =
     searchResults?.TotalHits || searchResults?.Result?.TotalHits || 0;
-  const searchQuery = endnoteData?.quote || "";
+  const searchQuery =
+    searchType === "ExactPhrase"
+      ? endnoteData?.longQuote || endnoteData?.quote || ""
+      : endnoteData?.keywords || endnoteData?.quote || "";
 
   // Group results by sermon (DocumentRecordId + Title + DateCode)
   const groupedResults = useMemo(() => {
@@ -828,6 +914,7 @@ const EndnoteResults = ({
                   onFetchContent={handleFetchContent}
                   sermonContent={sermonContents[cacheKey]}
                   isLoadingContent={loadingContents[cacheKey]}
+                  searchType={searchType}
                 />
               );
             })}
