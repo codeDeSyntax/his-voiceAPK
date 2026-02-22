@@ -195,7 +195,7 @@ export const styles = StyleSheet.create({
   compactTypeIcon: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,

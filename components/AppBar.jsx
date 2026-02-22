@@ -191,10 +191,10 @@ const ListAppBar = ({
                   style={[
                     menuStyles.dropdown,
                     {
-                      backgroundColor: theme.dark ? "#2c2420" : "#ffffff",
+                      backgroundColor: theme.dark ? "#1e1612" : "#fdfaf7",
                       borderColor: theme.dark
-                        ? "rgba(242, 205, 180, 0.15)"
-                        : "rgba(93, 50, 17, 0.15)",
+                        ? "rgba(242, 205, 180, 0.12)"
+                        : "rgba(93, 50, 17, 0.1)",
                     },
                   ]}
                 >
@@ -207,10 +207,22 @@ const ListAppBar = ({
                     >
                       Filters & Sort
                     </Text>
-                    <TouchableOpacity onPress={() => setFiltersVisible(false)}>
+                    <TouchableOpacity
+                      onPress={() => setFiltersVisible(false)}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 14,
+                        backgroundColor: theme.dark
+                          ? "rgba(255,255,255,0.06)"
+                          : "rgba(93,50,17,0.06)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       <Ionicons
                         name="close"
-                        size={20}
+                        size={16}
                         color={theme.colors.text}
                       />
                     </TouchableOpacity>
@@ -218,7 +230,11 @@ const ListAppBar = ({
 
                   <View style={menuStyles.divider} />
 
-                  <ScrollView style={{ maxHeight: 350 }}>
+                  <ScrollView
+                    style={{ maxHeight: 350 }}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <SectionLabel label="Browse" theme={theme} />
                     <DropdownItem
                       icon="text-outline"
                       label="Filter by Letter"
@@ -239,7 +255,7 @@ const ListAppBar = ({
                     />
 
                     <View style={[menuStyles.divider, { marginVertical: 4 }]} />
-
+                    <SectionLabel label="Content" theme={theme} />
                     <DropdownItem
                       icon="document-text-outline"
                       label="Text Only"
@@ -262,7 +278,7 @@ const ListAppBar = ({
                     />
 
                     <View style={[menuStyles.divider, { marginVertical: 4 }]} />
-
+                    <SectionLabel label="Sort & Reset" theme={theme} />
                     <DropdownItem
                       icon={
                         isOriginalOrder ? "swap-vertical" : "funnel-outline"
@@ -322,10 +338,10 @@ const ListAppBar = ({
                   style={[
                     menuStyles.dropdown,
                     {
-                      backgroundColor: theme.dark ? "#2c2420" : "#ffffff",
+                      backgroundColor: theme.dark ? "#1e1612" : "#fdfaf7",
                       borderColor: theme.dark
-                        ? "rgba(242, 205, 180, 0.15)"
-                        : "rgba(93, 50, 17, 0.15)",
+                        ? "rgba(242, 205, 180, 0.12)"
+                        : "rgba(93, 50, 17, 0.1)",
                     },
                   ]}
                 >
@@ -338,10 +354,22 @@ const ListAppBar = ({
                     >
                       Quick Actions
                     </Text>
-                    <TouchableOpacity onPress={() => setMenuVisible(false)}>
+                    <TouchableOpacity
+                      onPress={() => setMenuVisible(false)}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 14,
+                        backgroundColor: theme.dark
+                          ? "rgba(255,255,255,0.06)"
+                          : "rgba(93,50,17,0.06)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       <Ionicons
                         name="close"
-                        size={20}
+                        size={16}
                         color={theme.colors.text}
                       />
                     </TouchableOpacity>
@@ -349,7 +377,11 @@ const ListAppBar = ({
 
                   <View style={menuStyles.divider} />
 
-                  <ScrollView style={{ maxHeight: 350 }}>
+                  <ScrollView
+                    style={{ maxHeight: 350 }}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <SectionLabel label="Navigate" theme={theme} />
                     <DropdownItem
                       icon="home-outline"
                       label="Home"
@@ -392,7 +424,7 @@ const ListAppBar = ({
                     />
 
                     <View style={[menuStyles.divider, { marginVertical: 4 }]} />
-
+                    <SectionLabel label="App" theme={theme} />
                     <DropdownItem
                       icon="settings-outline"
                       label="Settings"
@@ -494,6 +526,25 @@ const ListAppBar = ({
   );
 };
 
+// Section label inside dropdowns
+const SectionLabel = ({ label, theme }) => (
+  <Text
+    style={{
+      fontSize: 10.5,
+      fontWeight: "700",
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
+      color: theme.dark ? "rgba(242, 205, 180, 0.4)" : "rgba(93, 50, 17, 0.4)",
+      paddingHorizontal: 14,
+      paddingTop: 12,
+      paddingBottom: 4,
+      fontFamily: "ZillaSlab_smb",
+    }}
+  >
+    {label}
+  </Text>
+);
+
 // Dropdown item component
 const DropdownItem = ({
   icon,
@@ -509,39 +560,53 @@ const DropdownItem = ({
       {
         backgroundColor: pressed
           ? theme.dark
-            ? "rgba(242, 205, 180, 0.08)"
+            ? "rgba(242, 205, 180, 0.1)"
             : "rgba(93, 50, 17, 0.08)"
           : "transparent",
+        transform: [{ scale: pressed ? 0.98 : 1 }],
       },
     ]}
     onPress={onPress}
     android_ripple={{
-      color: theme.dark
-        ? "rgba(242, 205, 180, 0.12)"
-        : "rgba(93, 50, 17, 0.12)",
+      color: theme.dark ? "rgba(242, 205, 180, 0.1)" : "rgba(93, 50, 17, 0.08)",
+      borderless: false,
     }}
   >
     <View
       style={{
-        width: 32,
-        height: 32,
-        borderRadius: 8,
+        width: 34,
+        height: 34,
+        borderRadius: 10,
         backgroundColor: highlight
           ? theme.dark
-            ? "rgba(255, 107, 107, 0.12)"
-            : "rgba(231, 76, 60, 0.1)"
+            ? "rgba(255, 107, 107, 0.15)"
+            : "rgba(231, 76, 60, 0.08)"
           : theme.dark
-            ? "rgba(80, 61, 49, 0.4)"
-            : "rgba(93, 50, 17, 0.06)",
+            ? "rgba(242, 205, 180, 0.08)"
+            : "rgba(93, 50, 17, 0.07)",
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 1,
+        borderColor: highlight
+          ? theme.dark
+            ? "rgba(255, 107, 107, 0.2)"
+            : "rgba(231, 76, 60, 0.15)"
+          : theme.dark
+            ? "rgba(242, 205, 180, 0.08)"
+            : "rgba(93, 50, 17, 0.08)",
       }}
     >
       <Ionicons
         name={icon}
-        size={18}
+        size={16}
         color={
-          highlight ? (theme.dark ? "#ff6b6b" : "#e74c3c") : theme.colors.text
+          highlight
+            ? theme.dark
+              ? "#ff8a80"
+              : "#c0392b"
+            : theme.dark
+              ? "rgba(242, 205, 180, 0.85)"
+              : "rgba(93, 50, 17, 0.75)"
         }
       />
     </View>
@@ -551,11 +616,11 @@ const DropdownItem = ({
         {
           color: highlight
             ? theme.dark
-              ? "#ff6b6b"
-              : "#e74c3c"
+              ? "#ff8a80"
+              : "#c0392b"
             : theme.colors.text,
           flex: 1,
-          fontFamily: "ZillaSlab",
+          fontFamily: "Merriweather",
         },
       ]}
     >
@@ -564,8 +629,10 @@ const DropdownItem = ({
     {showChevron && (
       <Ionicons
         name="chevron-forward"
-        size={16}
-        color={theme.colors.text + "60"}
+        size={14}
+        color={
+          theme.dark ? "rgba(242, 205, 180, 0.25)" : "rgba(93, 50, 17, 0.3)"
+        }
       />
     )}
   </Pressable>
@@ -574,49 +641,53 @@ const DropdownItem = ({
 const menuStyles = StyleSheet.create({
   dropdownWrapper: {
     position: "absolute",
-    top: 48,
+    top: 52,
     right: 0,
-    minWidth: 240,
+    minWidth: 250,
     zIndex: 1000,
   },
   dropdown: {
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 10,
     overflow: "hidden",
+    paddingBottom: 8,
   },
   dropdownHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 14,
+    paddingBottom: 10,
   },
   dropdownTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: -0.3,
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0.1,
+    fontFamily: "Merriweather",
   },
   divider: {
     height: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.06)",
-    opacity: 0.3,
+    backgroundColor: "rgba(128, 80, 40, 0.08)",
+    marginHorizontal: 12,
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    gap: 10,
   },
   itemText: {
-    fontSize: 15,
-    fontWeight: "500",
-    letterSpacing: -0.2,
+    fontSize: 14,
+    letterSpacing: 0,
   },
 });
 

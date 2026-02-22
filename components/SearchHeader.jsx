@@ -1,68 +1,83 @@
 import React from "react";
-// import {  TextInput, TouchableOpacity } from "react-native";
-// import Ionicons from "react-native-vector-icons/Ionicons";
-// import { styles } from "../styles/Allsermons";
-// import { MaterialIcons } from "@expo/vector-icons";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { styles } from "../styles/Allsermons";
-import { MaterialIcons, Feather } from "@expo/vector-icons";
+import { View, TextInput, TouchableOpacity } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
 const SearchHeader = ({ theme, searchText, setSearchText }) => {
+  const [focused, setFocused] = React.useState(false);
+
   return (
     <View
       style={{
         paddingHorizontal: 20,
-        paddingVertical: 12,
+        paddingVertical: 10,
         backgroundColor: theme.colors.background,
       }}
     >
       <View
-        style={[
-          styles.searchInputContainer,
-          {
-            backgroundColor: theme.dark
-              ? "rgba(80, 61, 49, 0.4)"
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: theme.dark
+            ? focused
+              ? "rgba(242, 205, 180, 0.08)"
+              : "rgba(80, 61, 49, 0.35)"
+            : focused
+              ? "rgba(93, 50, 17, 0.07)"
               : "rgba(93, 50, 17, 0.04)",
-            borderColor: theme.dark
-              ? "rgba(225, 179, 161, 0.2)"
-              : "rgba(93, 50, 17, 0.1)",
-            borderWidth: 1,
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            flexDirection: "row",
-            alignItems: "center",
-          },
-        ]}
+          borderRadius: 16,
+          borderWidth: 1.5,
+          borderColor: focused
+            ? theme.dark
+              ? "rgba(242, 205, 180, 0.35)"
+              : "rgba(93, 50, 17, 0.35)"
+            : theme.dark
+              ? "rgba(242, 205, 180, 0.1)"
+              : "rgba(93, 50, 17, 0.08)",
+          paddingHorizontal: 14,
+          height: 48,
+          shadowColor: focused
+            ? theme.dark
+              ? "rgba(242, 205, 180, 0.3)"
+              : "#5d3211"
+            : "transparent",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: focused ? 0.12 : 0,
+          shadowRadius: 8,
+          elevation: focused ? 2 : 0,
+        }}
       >
         <Feather
           name="search"
-          size={18}
+          size={17}
           color={
-            theme.dark ? "rgba(255, 255, 255, 0.6)" : "rgba(93, 50, 17, 0.5)"
+            focused
+              ? theme.dark
+                ? "rgba(242, 205, 180, 0.8)"
+                : "rgba(93, 50, 17, 0.8)"
+              : theme.dark
+                ? "rgba(255, 255, 255, 0.4)"
+                : "rgba(93, 50, 17, 0.4)"
           }
-          style={{ marginRight: 12 }}
+          style={{ marginRight: 10 }}
         />
 
         <TextInput
-          style={[
-            styles.searchInput,
-            {
-              flex: 1,
-              color: theme.dark ? theme.colors.text : "#5d3211",
-              fontFamily: "Inter",
-              fontSize: 16,
-              paddingVertical: 12,
-              borderWidth: 0,
-            },
-          ]}
+          style={{
+            flex: 1,
+            color: theme.dark ? theme.colors.text : "#5d3211",
+            fontFamily: "Merriweather",
+            fontSize: 14.5,
+            paddingVertical: 0,
+          }}
           placeholder="Search sermons..."
           value={searchText}
           onChangeText={setSearchText}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholderTextColor={
-            theme.dark ? "rgba(255, 255, 255, 0.5)" : "rgba(93, 50, 17, 0.5)"
+            theme.dark ? "rgba(255, 255, 255, 0.35)" : "rgba(93, 50, 17, 0.4)"
           }
-          selectionColor={theme.dark ? theme.colors.text : "#5d3211"}
+          selectionColor={theme.dark ? "rgba(242, 205, 180, 0.6)" : "#5d3211"}
           spellCheck={false}
           autoCorrect={false}
           keyboardAppearance={theme.dark ? "dark" : "light"}
@@ -72,16 +87,20 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
           <TouchableOpacity
             onPress={() => setSearchText("")}
             style={{
-              padding: 4,
-              borderRadius: 12,
+              width: 26,
+              height: 26,
+              borderRadius: 13,
               backgroundColor: theme.dark
                 ? "rgba(255, 255, 255, 0.1)"
                 : "rgba(93, 50, 17, 0.1)",
+              alignItems: "center",
+              justifyContent: "center",
             }}
+            activeOpacity={0.7}
           >
             <Feather
               name="x"
-              size={14}
+              size={13}
               color={
                 theme.dark
                   ? "rgba(255, 255, 255, 0.6)"
@@ -90,30 +109,6 @@ const SearchHeader = ({ theme, searchText, setSearchText }) => {
             />
           </TouchableOpacity>
         )}
-
-        <TouchableOpacity
-          style={{
-            backgroundColor: theme.dark ? theme.colors.text : "#5d3211",
-            borderRadius: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            marginLeft: 8,
-            shadowColor: theme.dark ? "#000" : "#5d3211",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 4,
-            elevation: 3,
-          }}
-          onPress={() => {
-            /* Implement search action */
-          }}
-        >
-          <MaterialIcons
-            name="search"
-            size={18}
-            color={theme.dark ? "#5d3211" : "white"}
-          />
-        </TouchableOpacity>
       </View>
     </View>
   );

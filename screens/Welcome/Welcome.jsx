@@ -41,6 +41,9 @@ const Welcome = () => {
   const { theme, refreshSermons, allSermons } = useAppContext();
   const [fontsLoaded] = useFonts({
     "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
+    "ZillaSlab-SemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
+    Merriweather: require("../../assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.ttf"),
+    Philosopher: require("../../assets/fonts/Philosopher-Regular.ttf"),
   });
 
   // Download state
@@ -329,92 +332,149 @@ const Welcome = () => {
           },
         ]}
       >
-        {/* Cloud with Audio Lines */}
-        <Animated.View
-          style={[
-            styles.cloudContainer,
-            {
-              backgroundColor: theme.dark
-                ? "rgba(230, 195, 184, 0.1)"
-                : "rgba(93, 50, 17, 0.8)",
-            },
-          ]}
-        >
-          <Image
-            source={require("../../assets/cloud.png")}
-            style={styles.cloudImage}
-            resizeMode="contain"
+        {/* Cloud Badge */}
+        <Animated.View style={styles.cloudOuter}>
+          <View
+            style={[
+              styles.cloudRing,
+              {
+                borderColor: theme.dark
+                  ? "rgba(230, 195, 184, 0.2)"
+                  : "rgba(93, 50, 17, 0.15)",
+              },
+            ]}
           />
-         
+          <Animated.View
+            style={[
+              styles.cloudContainer,
+              {
+                backgroundColor: theme.dark
+                  ? "rgba(230, 195, 184, 0.12)"
+                  : "rgba(93, 50, 17, 0.09)",
+                borderColor: theme.dark
+                  ? "rgba(230, 195, 184, 0.25)"
+                  : "rgba(93, 50, 17, 0.2)",
+              },
+            ]}
+          >
+            <Image
+              source={require("../../assets/cloud.png")}
+              style={styles.cloudImage}
+              resizeMode="contain"
+            />
+          </Animated.View>
         </Animated.View>
 
         {/* Title Section */}
         <Animated.View style={[styles.contentContainer]}>
+          {/* Name tag */}
+          <Text
+            style={[
+              styles.nameLabel,
+              {
+                color: theme.dark
+                  ? "rgba(230, 195, 184, 0.55)"
+                  : "rgba(93, 50, 17, 0.45)",
+              },
+            ]}
+          >
+            SERMONS OF
+          </Text>
+
+          <Text
+            style={[
+              styles.titleHighlight,
+              { color: theme.dark ? "#e6c3b8" : "#5d3211" },
+            ]}
+          >
+            Robert Lambert Lee
+          </Text>
+
           <Text
             style={[
               styles.title,
-              { color: theme.dark ? "rgba(255, 255, 255, 0.95)" : "#1a1a1a" },
+              {
+                color: theme.dark
+                  ? "rgba(255, 255, 255, 0.55)"
+                  : "rgba(93,50,17,0.55)",
+              },
             ]}
           >
-            Transcribed and audio versions of{"\n"}
-            <Text
-              style={[
-                styles.titleHighlight,
-                { color: theme.dark ? "#e6c3b8" : "#5d3211" },
-              ]}
-            >
-              Robert Lambert Lee
-            </Text>
-            {"\n"}
-            sermons
+            Transcribed & Audio Sermons
           </Text>
 
-          <View style={styles.subtitleContainer}>
+          {/* Year badge */}
+          <View
+            style={[
+              styles.yearBadge,
+              {
+                backgroundColor: theme.dark
+                  ? "rgba(230, 195, 184, 0.08)"
+                  : "rgba(93, 50, 17, 0.07)",
+                borderColor: theme.dark
+                  ? "rgba(230, 195, 184, 0.2)"
+                  : "rgba(93, 50, 17, 0.18)",
+              },
+            ]}
+          >
             <View
               style={[
-                styles.divider,
-                {
-                  backgroundColor: theme.dark
-                    ? "rgba(180, 175, 175, 0.5)"
-                    : "rgba(93, 50, 17, 0.3)",
-                },
+                styles.yearDot,
+                { backgroundColor: theme.dark ? "#e6c3b8" : "#5d3211" },
               ]}
             />
             <Text
               style={[
                 styles.subtitle,
-                { color: theme.dark ? "#b4afaf" : "#5d3211" },
+                { color: theme.dark ? "#c4b5b0" : "#5d3211" },
               ]}
             >
-              1964 - 1973
+              1964 – 1973
             </Text>
             <View
               style={[
-                styles.divider,
-                {
-                  backgroundColor: theme.dark
-                    ? "rgba(180, 175, 175, 0.5)"
-                    : "rgba(93, 50, 17, 0.3)",
-                },
+                styles.yearDot,
+                { backgroundColor: theme.dark ? "#e6c3b8" : "#5d3211" },
               ]}
             />
           </View>
 
-          <Text
+          {/* Scripture quote */}
+          <View
             style={[
-              styles.description,
-              { color: theme.dark ? "rgba(255, 255, 255, 0.7)" : "#333" },
+              styles.quoteBlock,
+              {
+                borderLeftColor: theme.dark
+                  ? "rgba(230, 195, 184, 0.35)"
+                  : "rgba(93, 50, 17, 0.3)",
+                backgroundColor: theme.dark
+                  ? "rgba(230, 195, 184, 0.04)"
+                  : "rgba(93, 50, 17, 0.03)",
+              },
             ]}
           >
-            And I saw another mighty angel come down from heaven, clothed with a
-            cloud: and a rainbow was upon his head.
-            {"\n"}
             <Text
-              style={{ fontSize: responsiveFontSize(12), fontStyle: "normal" }}
+              style={[
+                styles.description,
+                { color: theme.dark ? "rgba(255, 255, 255, 0.65)" : "#4a3526" },
+              ]}
+            >
+              And I saw another mighty angel come down from heaven, clothed with
+              a cloud: and a rainbow was upon his head.
+            </Text>
+            <Text
+              style={[
+                styles.reference,
+                {
+                  color: theme.dark
+                    ? "rgba(230, 195, 184, 0.6)"
+                    : "rgba(93, 50, 17, 0.6)",
+                },
+              ]}
             >
               — Revelation 10:1
             </Text>
-          </Text>
+          </View>
         </Animated.View>
 
         {/* Begin Reading / Download Button */}
@@ -476,18 +536,18 @@ const Welcome = () => {
               </TouchableOpacity>
             </View>
           ) : dbExists ? (
-            <TouchableOpacity onPress={handleBeginReading} activeOpacity={0.8}>
+            <TouchableOpacity onPress={handleBeginReading} activeOpacity={0.85}>
               <View style={[styles.button, buttonStyleMemo]}>
-                <Text style={styles.buttonText}>BEGIN READING</Text>
+                <Text style={styles.buttonText}>Begin Reading</Text>
               </View>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
               onPress={handleDownloadDatabase}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <View style={[styles.button, buttonStyleMemo]}>
-                <Text style={styles.buttonText}>DOWNLOAD SERMONS</Text>
+                <Text style={styles.buttonText}>Download Sermons</Text>
               </View>
             </TouchableOpacity>
           )}
@@ -502,6 +562,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  cloudOuter: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.xxl,
+    marginBottom: spacing.lg,
+  },
+  cloudRing: {
+    position: "absolute",
+    width: horizontalScale(130),
+    height: horizontalScale(130),
+    borderRadius: horizontalScale(65),
+    borderWidth: 1,
   },
   patternContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -554,18 +627,16 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   cloudContainer: {
-    marginTop: spacing.xxl,
-    marginBottom: spacing.xl,
     alignItems: "center",
     justifyContent: "center",
-    position: "relative",
     borderRadius: 9999,
-    padding: spacing.md,
+    padding: horizontalScale(22),
+    borderWidth: 1,
   },
   cloudImage: {
-    width: horizontalScale(100),
-    height: verticalScale(100),
-    opacity: 0.85,
+    width: horizontalScale(88),
+    height: verticalScale(88),
+    opacity: 0.9,
   },
   audioLinesContainer: {
     flexDirection: "row",
@@ -581,64 +652,96 @@ const styles = StyleSheet.create({
   contentContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: spacing.xl,
+    marginVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  nameLabel: {
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: responsiveFontSize(11),
+    letterSpacing: 3,
+    marginBottom: spacing.xs,
   },
   title: {
-    fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(22),
+    fontFamily: "Merriweather",
+    fontSize: responsiveFontSize(14),
     textAlign: "center",
     fontWeight: "300",
-    lineHeight: responsiveFontSize(28),
+    lineHeight: responsiveFontSize(22),
     marginBottom: spacing.lg,
+    marginTop: spacing.xs,
   },
   titleHighlight: {
+    fontFamily: "Philosopher",
     fontWeight: "400",
-    fontSize: responsiveFontSize(24),
+    fontSize: responsiveFontSize(28),
+    textAlign: "center",
+    lineHeight: responsiveFontSize(36),
+    marginBottom: spacing.xs,
   },
-  subtitleContainer: {
+  yearBadge: {
     flexDirection: "row",
     alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: 100,
+    borderWidth: 1,
     marginBottom: spacing.lg,
   },
-  divider: {
-    height: 1,
-    width: horizontalScale(40),
-    marginHorizontal: spacing.md,
+  yearDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.6,
   },
   subtitle: {
     fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(16),
+    fontSize: responsiveFontSize(14),
     fontWeight: "300",
-    letterSpacing: 2,
+    letterSpacing: 2.5,
+  },
+  quoteBlock: {
+    borderLeftWidth: 2,
+    borderRadius: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    alignSelf: "stretch",
+    marginHorizontal: spacing.sm,
   },
   description: {
-    fontFamily: "serif",
-    fontSize: responsiveFontSize(14),
-    textAlign: "center",
-    lineHeight: responsiveFontSize(20),
-    fontWeight: "200",
+    fontFamily: "Merriweather",
+    fontSize: responsiveFontSize(13),
+    textAlign: "left",
+    lineHeight: responsiveFontSize(21),
+    fontWeight: "300",
     fontStyle: "italic",
-    marginTop: spacing.md,
+  },
+  reference: {
+    fontFamily: "ZillaSlab-Regular",
+    fontSize: responsiveFontSize(11.5),
+    textAlign: "right",
+    marginTop: spacing.sm,
+    letterSpacing: 0.3,
   },
   buttonContainer: {
     marginBottom: spacing.xxl,
   },
   button: {
-    paddingHorizontal: horizontalScale(50),
-    paddingVertical: verticalScale(16),
-    borderRadius: horizontalScale(12),
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
+    paddingHorizontal: horizontalScale(52),
+    paddingVertical: verticalScale(15),
+    borderRadius: 100,
+    shadowColor: "#5d3211",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   buttonText: {
-    fontFamily: "ZillaSlab-Regular",
+    fontFamily: "Merriweather",
     color: "#fff",
-    fontSize: responsiveFontSize(16),
+    fontSize: responsiveFontSize(14.5),
     fontWeight: "600",
-    letterSpacing: 1.2,
+    letterSpacing: 0.8,
     textAlign: "center",
   },
   downloadContainer: {

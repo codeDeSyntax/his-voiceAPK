@@ -28,6 +28,8 @@ export const FONT_OPTIONS = [
   { name: "System Default", value: "System" },
   { name: "ZillaSlab Regular", value: "ZillaSlab-Regular" },
   { name: "ZillaSlab SemiBold", value: "ZillaSlab-SemiBold" },
+  { name: "Merriweather", value: "Merriweather" },
+  { name: "Lora", value: "Lora" },
   { name: "Merienda", value: "Merienda-VariableFont_wght" },
   { name: "Philosopher", value: "Philosopher-Regular" },
 ];
@@ -46,6 +48,8 @@ const FONTS_CONFIG = {
   "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
   "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
   "ZillaSlab-SemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
+  Merriweather: require("../../assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.ttf"),
+  Lora: require("../../assets/fonts/Lora-VariableFont_wght.ttf"),
 };
 
 // Default settings constant

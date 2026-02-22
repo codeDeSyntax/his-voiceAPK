@@ -1,13 +1,6 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Switch,
-
-} from "react-native";
+import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-
 
 const DisplaySettings = ({
   theme,
@@ -31,6 +24,8 @@ const DisplaySettings = ({
     { name: "System Default", value: "System" },
     { name: "ZillaSlab Regular", value: "ZillaSlab-Regular" },
     { name: "ZillaSlab SemiBold", value: "ZillaSlab-SemiBold" },
+    { name: "Merriweather", value: "Merriweather" },
+    { name: "Lora", value: "Lora" },
     { name: "Merienda", value: "Merienda-VariableFont_wght" },
     { name: "Philosopher", value: "Philosopher-Regular" },
   ];
