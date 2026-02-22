@@ -18,16 +18,17 @@ import {
   horizontalScale,
   spacing,
 } from "../Utils/responsiveUtils";
+import { fontsToLoad } from "../Utils/fonts";
 
 const TableHeader = React.memo(({ theme }) => (
   <View
     style={[
       styles.tableHeader,
       {
-        backgroundColor: theme.dark ? "transparent" : "rgba(93, 50, 17, 0.06)",
+        backgroundColor: theme.dark ? "transparent" : "rgba(93, 50, 17, 0.08)",
         borderColor: theme.dark
-          ? "rgba(242, 205, 180, 0.2)"
-          : "rgba(93, 50, 17, 0.12)",
+          ? "rgba(242, 205, 180, 0.15)"
+          : "rgba(93, 50, 17, 0.15)",
       },
     ]}
   >
@@ -35,7 +36,7 @@ const TableHeader = React.memo(({ theme }) => (
       style={[
         styles.tableHeaderText,
         {
-          color: theme.colors.text,
+          color: theme.dark ? theme.colors.text : "#5d3211",
           flex: 1,
         },
       ]}
@@ -46,7 +47,7 @@ const TableHeader = React.memo(({ theme }) => (
       style={[
         styles.tableHeaderText,
         {
-          color: theme.colors.text,
+          color: theme.dark ? theme.colors.text : "#5d3211",
           flex: 1,
           textAlign: "center",
         },
@@ -58,8 +59,7 @@ const TableHeader = React.memo(({ theme }) => (
       style={[
         styles.tableHeaderText,
         {
-          color: theme.colors.text,
-          // width: responsiveFontSize(20),
+          color: theme.dark ? theme.colors.text : "#5d3211",
           textAlign: "center",
         },
       ]}
@@ -79,9 +79,7 @@ const SermonListView = React.memo(
     setFilteredSermons,
     viewMode = "table",
   }) => {
-    const [fontsLoaded] = useFonts({
-      ZillaSlab_smb: require("../assets/fonts/ZillaSlab-SemiBold.ttf"),
-    });
+    const [fontsLoaded] = useFonts(fontsToLoad);
 
     // Table view with alternating backgrounds - compact spacing
     const renderTableItem = useCallback(
@@ -93,34 +91,44 @@ const SermonListView = React.memo(
               {
                 backgroundColor: pressed
                   ? theme.dark
-                    ? "rgba(242, 205, 180, 0.12)"
-                    : "rgba(93, 50, 17, 0.12)"
-                  : theme.dark
-                    ? "transparent"
-                    : "rgba(93, 50, 17, 0.04)",
-                paddingVertical: spacing.sm,
+                    ? "rgba(242, 205, 180, 0.15)"
+                    : "rgba(93, 50, 17, 0.15)"
+                  : index % 2 === 0
+                    ? theme.dark
+                      ? "rgba(242, 205, 180, 0.03)"
+                      : "rgba(93, 50, 17, 0.03)"
+                    : "transparent",
+                paddingVertical: spacing.md,
                 paddingHorizontal: spacing.md,
-                marginVertical: 0.5,
-                borderRadius: 6,
+                marginVertical: 1,
+                marginHorizontal: spacing.md,
+                borderRadius: 8,
                 flexDirection: "row",
                 alignItems: "center",
+                borderLeftWidth: 3,
+                borderLeftColor: pressed
+                  ? theme.dark
+                    ? theme.colors.primary
+                    : "#5d3211"
+                  : "transparent",
               },
             ]}
             android_ripple={{
               color: theme.dark
-                ? "rgba(242, 205, 180, 0.12)"
-                : "rgba(93, 50, 17, 0.12)",
+                ? "rgba(242, 205, 180, 0.1)"
+                : "rgba(93, 50, 17, 0.1)",
             }}
             onPress={() => handleSermonClick(item)}
           >
-            <View style={{ flex: 2 }}>
+            <View style={{ flex: 2, paddingRight: spacing.sm }}>
               <Text
                 style={[
                   {
-                    fontSize: responsiveFontSize(16),
+                    fontSize: responsiveFontSize(15.5),
                     color: theme.colors.text,
-                    fontFamily: "ZillaSlab_smb",
+                    fontFamily: "Lora",
                     marginBottom: spacing.xs,
+                    fontWeight: "700",
                   },
                 ]}
                 numberOfLines={2}
@@ -137,12 +145,12 @@ const SermonListView = React.memo(
                 <Text
                   style={[
                     {
-                      fontSize: responsiveFontSize(14),
+                      fontSize: responsiveFontSize(13),
                       color: theme.dark
-                        ? theme.colors.text + "80"
-                        : "#5d321190",
+                        ? theme.colors.text + "70"
+                        : "#5d321180",
                       fontStyle: "italic",
-                      fontFamily: "serif",
+                      fontFamily: "Merriweather",
                     },
                   ]}
                 >
@@ -154,10 +162,9 @@ const SermonListView = React.memo(
                       {
                         fontSize: responsiveFontSize(12),
                         color: theme.dark
-                          ? theme.colors.text + "80"
+                          ? theme.colors.text + "60"
                           : "#5d3211",
-                        fontStyle: "italic",
-                        fontFamily: "ZillaSlab",
+                        fontFamily: "Merriweather",
                       },
                     ]}
                     numberOfLines={1}
@@ -170,23 +177,54 @@ const SermonListView = React.memo(
 
             <View
               style={{
-                width: responsiveFontSize(30),
+                width: responsiveFontSize(45),
                 alignItems: "center",
                 justifyContent: "center",
+                backgroundColor: theme.dark
+                  ? "rgba(242, 205, 180, 0.08)"
+                  : "rgba(93, 50, 17, 0.08)",
+                borderRadius: 8,
+                paddingVertical: spacing.sm,
               }}
             >
               {item.type === "mp3" ? (
-                <FontAwesome5
-                  name="microphone"
-                  size={responsiveFontSize(14)}
-                  color={theme.dark ? theme.colors.hlight + "60" : "#5d3211"}
-                />
+                <View>
+                  <FontAwesome5
+                    name="microphone"
+                    size={responsiveFontSize(32)}
+                    color={theme.dark ? theme.colors.primary : "#5d3211"}
+                  />
+                  <Text
+                    style={{
+                      fontSize: responsiveFontSize(10),
+                      color: theme.dark ? theme.colors.primary : "#5d3211",
+                      marginTop: 2,
+                      textAlign: "center",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Audio
+                  </Text>
+                </View>
               ) : (
-                <Ionicons
-                  name="text"
-                  size={responsiveFontSize(14)}
-                  color={theme.dark ? "#906443" : "#5d3211"}
-                />
+                <View>
+                  <Ionicons
+                    name="document-text"
+                    size={responsiveFontSize(16)}
+                    color={theme.dark ? "#906443" : "#5d3211"}
+                  />
+                  <Text
+                    style={{
+                      fontSize: responsiveFontSize(10),
+                      color: theme.dark ? "#906443" : "#5d3211",
+                      marginTop: 2,
+                      textAlign: "center",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Text
+                  </Text>
+                </View>
               )}
             </View>
           </Pressable>
@@ -205,17 +243,25 @@ const SermonListView = React.memo(
               {
                 backgroundColor: pressed
                   ? theme.dark
-                    ? "rgba(242, 205, 180, 0.08)"
-                    : "rgba(93, 50, 17, 0.08)"
-                  : theme.dark
-                    ? "transparent"
-                    : "rgba(93, 50, 17, 0.02)",
+                    ? "rgba(242, 205, 180, 0.12)"
+                    : "rgba(93, 50, 17, 0.10)"
+                  : index % 2 === 0
+                    ? theme.dark
+                      ? "rgba(242, 205, 180, 0.02)"
+                      : "rgba(93, 50, 17, 0.02)"
+                    : "transparent",
+                borderLeftWidth: 2,
+                borderLeftColor: pressed
+                  ? theme.dark
+                    ? theme.colors.primary
+                    : "#5d3211"
+                  : "transparent",
               },
             ]}
             android_ripple={{
               color: theme.dark
-                ? "rgba(242, 205, 180, 0.12)"
-                : "rgba(93, 50, 17, 0.12)",
+                ? "rgba(242, 205, 180, 0.08)"
+                : "rgba(93, 50, 17, 0.08)",
             }}
             onPress={() => handleSermonClick(item)}
           >
@@ -225,21 +271,21 @@ const SermonListView = React.memo(
                   styles.compactTypeIcon,
                   {
                     backgroundColor: theme.dark
-                      ? theme.colors.primary
-                      : "rgba(93, 50, 17, 0.1)",
+                      ? "rgba(242, 205, 180, 0.15)"
+                      : "rgba(93, 50, 17, 0.10)",
                   },
                 ]}
               >
                 {item.type === "mp3" ? (
                   <FontAwesome5
                     name="microphone"
-                    size={responsiveFontSize(12)}
-                    color={theme.dark ? theme.colors.hlight : "#5d3211"}
+                    size={responsiveFontSize(32)}
+                    color={theme.dark ? theme.colors.primary : "#5d3211"}
                   />
                 ) : (
                   <Ionicons
-                    name="text"
-                    size={responsiveFontSize(12)}
+                    name="document-text"
+                    size={responsiveFontSize(32)}
                     color={theme.dark ? "#906443" : "#5d3211"}
                   />
                 )}
@@ -248,10 +294,11 @@ const SermonListView = React.memo(
                 <Text
                   style={[
                     {
-                      fontSize: responsiveFontSize(16),
+                      fontSize: responsiveFontSize(15.5),
                       color: theme.colors.text,
                       fontFamily: "ZillaSlab_smb",
-                      marginBottom: 2,
+                      marginBottom: spacing.xs,
+                      // fontWeight: "700",
                     },
                   ]}
                   numberOfLines={1}
@@ -261,12 +308,11 @@ const SermonListView = React.memo(
                 <Text
                   style={[
                     {
-                      fontSize: responsiveFontSize(14),
+                      fontSize: responsiveFontSize(13),
                       color: theme.dark
                         ? theme.colors.text + "70"
                         : "#5d321180",
-                      fontFamily: "ZillaSlab",
-                      // fontStyle: "italic",
+                      fontFamily: "Merriweather",
                     },
                   ]}
                 >
@@ -278,11 +324,12 @@ const SermonListView = React.memo(
           {/* Separator line */}
           <View
             style={{
-              height: 1,
+              height: 0.8,
               backgroundColor: theme.dark
-                ? "rgba(242, 205, 180, 0.15)"
-                : "rgba(93, 50, 17, 0.2)",
+                ? "rgba(242, 205, 180, 0.10)"
+                : "rgba(93, 50, 17, 0.15)",
               marginHorizontal: spacing.md,
+              marginLeft: spacing.md + 28,
             }}
           />
         </View>
@@ -330,15 +377,40 @@ const SermonListView = React.memo(
             viewMode === "compact" && styles.compactListContent,
           ]}
           ListEmptyComponent={
-            <View style={{ padding: spacing.lg, alignItems: "center" }}>
+            <View
+              style={{
+                padding: spacing.lg,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: spacing.xxl,
+              }}
+            >
+              <Ionicons
+                name="search"
+                size={responsiveFontSize(48)}
+                color={theme.dark ? theme.colors.text + "40" : "#5d321140"}
+                style={{ marginBottom: spacing.md }}
+              />
               <Text
                 style={{
                   color: theme.dark ? theme.colors.text + "80" : "#5d3211",
-                  fontSize: responsiveFontSize(14),
-                  fontFamily: "serif",
+                  fontSize: responsiveFontSize(16),
+                  fontFamily: "ZillaSlab_smb",
+                  fontWeight: "600",
+                  marginBottom: spacing.xs,
                 }}
               >
                 No sermons found
+              </Text>
+              <Text
+                style={{
+                  color: theme.dark ? theme.colors.text + "60" : "#5d321190",
+                  fontSize: responsiveFontSize(13),
+                  fontFamily: "serif",
+                  textAlign: "center",
+                }}
+              >
+                Try adjusting your search filters
               </Text>
             </View>
           }

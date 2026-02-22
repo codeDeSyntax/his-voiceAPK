@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 0,
     paddingBottom: spacing.lg,
     paddingTop: 0,
   },
@@ -31,17 +31,18 @@ export const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     marginHorizontal: spacing.md,
-    marginBottom: spacing.xs,
-    borderBottomWidth: 1,
+    marginBottom: spacing.md,
+    borderBottomWidth: 1.5,
     borderStyle: "solid",
   },
   tableHeaderText: {
-    fontSize: responsiveFontSize(14),
+    fontSize: responsiveFontSize(13),
     fontFamily: "ZillaSlab_smb",
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   tableRow: {
     flexDirection: "row",
@@ -182,34 +183,34 @@ export const styles = StyleSheet.create({
 
   // Compact view styles
   compactRow: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     marginHorizontal: spacing.md,
+    marginVertical: 0,
   },
   compactContent: {
     flexDirection: "row",
     alignItems: "center",
   },
   compactTypeIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(93, 50, 17, 0.1)",
-    marginRight: spacing.sm,
+    marginRight: spacing.md,
   },
   compactTextContainer: {
     flex: 1,
   },
   compactTitle: {
-    fontSize: responsiveFontSize(14),
+    fontSize: responsiveFontSize(15),
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   compactDate: {
-    fontSize: responsiveFontSize(11),
-    fontFamily: "ZillaSlab",
+    fontSize: responsiveFontSize(13),
+    fontFamily: "serif",
   },
   compactListContent: {
     paddingHorizontal: 0,
