@@ -20,6 +20,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useAppContext } from "../Logic/globalState";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const POSITION_KEY = "@floatbtn_position";
 
 const { width, height } = Dimensions.get("window");
 
@@ -65,6 +68,31 @@ const DraggableFloatingButton = React.memo(
         y: Math.max(initialPosition.y, safeAreaBounds.top),
       }),
     ).current;
+
+    // Restore last saved position on mount
+    useEffect(() => {
+      AsyncStorage.getItem(POSITION_KEY).then((json) => {
+        if (!json) return;
+        try {
+          const { x, y } = JSON.parse(json);
+          const clampedX = Math.max(
+            safeAreaBounds.left,
+            Math.min(x, safeAreaBounds.right),
+          );
+          const clampedY = Math.max(
+            safeAreaBounds.top,
+            Math.min(y, safeAreaBounds.bottom),
+          );
+          pan.setValue({ x: clampedX, y: clampedY });
+        } catch (_) {}
+      });
+    }, []);
+
+    const savePosition = useCallback((x, y) => {
+      AsyncStorage.setItem(POSITION_KEY, JSON.stringify({ x, y })).catch(
+        () => {},
+      );
+    }, []);
 
     const [isPressed, setIsPressed] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -131,7 +159,10 @@ const DraggableFloatingButton = React.memo(
                 duration: 200,
                 useNativeDriver: false,
               }),
-            ]).start();
+            ]).start(() => {
+              // Persist after snap animation completes
+              savePosition(snapX, newY);
+            });
           }
         },
       }),

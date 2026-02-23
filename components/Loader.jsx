@@ -7,9 +7,12 @@ import {
   Animated,
   Easing,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { useAppContext } from "../Logic/globalState";
 import { responsiveFontSize, spacing } from "../Utils/responsiveUtils";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const LoadingScreen = ({ message = "Loading..." }) => {
   const { theme } = useAppContext();
@@ -202,6 +205,159 @@ const SermonSkeletonLoader = ({ message = "Loading sermon..." }) => {
   );
 };
 
+// Audio page skeleton loader
+const AudioSkeletonLoader = () => {
+  const { theme } = useAppContext();
+
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const fadeInAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeInAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
+    const shimmerLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+          easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+        }),
+        Animated.timing(shimmerAnim, {
+          toValue: 0,
+          duration: 1200,
+          useNativeDriver: true,
+          easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+        }),
+      ]),
+    );
+    shimmerLoop.start();
+    return () => shimmerLoop.stop();
+  }, []);
+
+  const shimmerOpacity = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.15, 0.5],
+  });
+
+  const skeletonBg = theme.dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
+
+  const Block = ({ style }) => (
+    <Animated.View
+      style={[
+        {
+          borderRadius: 6,
+          backgroundColor: skeletonBg,
+          opacity: shimmerOpacity,
+        },
+        style,
+      ]}
+    />
+  );
+
+  const ARTWORK_SIZE = SCREEN_WIDTH * 0.52;
+
+  return (
+    <Animated.View
+      style={[
+        audioSkeletonStyles.root,
+        { backgroundColor: theme.colors.background, opacity: fadeInAnim },
+      ]}
+    >
+      {/* Artwork circle */}
+      <Block
+        style={{
+          width: ARTWORK_SIZE,
+          height: ARTWORK_SIZE,
+          borderRadius: ARTWORK_SIZE / 2,
+          alignSelf: "center",
+          marginBottom: 32,
+        }}
+      />
+
+      {/* Title lines */}
+      <Block
+        style={{
+          height: 20,
+          width: "60%",
+          alignSelf: "center",
+          marginBottom: 10,
+          borderRadius: 4,
+        }}
+      />
+      <Block
+        style={{
+          height: 14,
+          width: "40%",
+          alignSelf: "center",
+          marginBottom: 32,
+          borderRadius: 4,
+        }}
+      />
+
+      {/* Slider */}
+      <Block
+        style={{
+          height: 4,
+          width: "88%",
+          alignSelf: "center",
+          borderRadius: 2,
+          marginBottom: 8,
+        }}
+      />
+
+      {/* Time stamps */}
+      <View style={audioSkeletonStyles.timeRow}>
+        <Block style={{ height: 11, width: 32, borderRadius: 3 }} />
+        <Block style={{ height: 11, width: 32, borderRadius: 3 }} />
+      </View>
+
+      {/* Controls row: skip | play circle | skip */}
+      <View style={audioSkeletonStyles.controls}>
+        <Block style={{ width: 36, height: 36, borderRadius: 18 }} />
+        <Block style={{ width: 64, height: 64, borderRadius: 32 }} />
+        <Block style={{ width: 36, height: 36, borderRadius: 18 }} />
+      </View>
+
+      {/* Status pill */}
+      <Block
+        style={{
+          height: 28,
+          width: 96,
+          borderRadius: 14,
+          alignSelf: "center",
+          marginTop: 28,
+        }}
+      />
+    </Animated.View>
+  );
+};
+
+const audioSkeletonStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+  },
+  timeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: "6%",
+    marginBottom: 36,
+  },
+  controls: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 36,
+  },
+});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -276,4 +432,4 @@ const styles = StyleSheet.create({
 });
 
 export default LoadingScreen;
-export { SermonSkeletonLoader };
+export { SermonSkeletonLoader, AudioSkeletonLoader };

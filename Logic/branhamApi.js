@@ -55,10 +55,65 @@ export const searchSermons = async (text, options = {}) => {
   }
 };
 
+// In-memory cache for the sermon index (datecode → numeric ID map)
+let sermonIndexMap = null;
+let sermonIndexFetchPromise = null;
+
+/**
+ * Fetch and cache the full sermon index.
+ * Returns a Map of datecode (e.g. "47-1207") → numeric SermonProductIdentityId.
+ */
+const getSermonIndexMap = async () => {
+  if (sermonIndexMap) return sermonIndexMap;
+  // Deduplicate concurrent calls
+  if (sermonIndexFetchPromise) return sermonIndexFetchPromise;
+
+  sermonIndexFetchPromise = (async () => {
+    console.log("[Sermon API] Fetching sermon index...");
+    const response = await fetch(`${API_BASE_URL}/index/allSermons`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ Language: "en" }),
+    });
+    if (!response.ok) throw new Error(`Index fetch failed: ${response.status}`);
+    const data = await response.json();
+    const map = new Map();
+    (data?.Result?.Sermons || data?.Sermons || []).forEach((s) => {
+      if (s.p && s.i != null) map.set(s.p, s.i);
+    });
+    console.log(`[Sermon API] Sermon index loaded: ${map.size} entries`);
+    sermonIndexMap = map;
+    sermonIndexFetchPromise = null;
+    return map;
+  })();
+
+  return sermonIndexFetchPromise;
+};
+
+/**
+ * Resolve a datecode (e.g. "47-1207") to the numeric SermonProductIdentityId.
+ * Returns null if not found.
+ */
+export const resolveSermonNumericId = async (datecode) => {
+  if (!datecode) return null;
+  try {
+    const map = await getSermonIndexMap();
+    const id = map.get(datecode);
+    return id != null ? id : null;
+  } catch (e) {
+    console.error(
+      "[Sermon API] Could not resolve sermon ID for datecode:",
+      datecode,
+      e,
+    );
+    return null;
+  }
+};
+
 /**
  * Get full sermon content by sermon ID
- * @param {number} sermonId - The sermon's DocumentRecordId from search results
- * @returns {Promise<Object>} Full sermon content with paragraphs
+ * @param {number} sermonId - The numeric SermonProductIdentityId
+ * @returns {Promise<Object>} Full sermon content with sections
  */
 export const getSermonContent = async (sermonId) => {
   if (!sermonId) {
@@ -67,13 +122,25 @@ export const getSermonContent = async (sermonId) => {
 
   console.log("[Sermon API] Fetching sermon content for ID:", sermonId);
 
+  // If sermonId is numeric use SermonProductIdentityId; if it's a string
+  // DocumentRecordId (e.g. "620B0009") use SermonRecordId instead.
+  const isNumeric =
+    typeof sermonId === "number" || /^\d+$/.test(String(sermonId));
+
   try {
-    const payload = {
-      Language: "en",
-      SermonProductIdentityId: sermonId,
-      GetAllContent: true,
-      HighlightQuery: null,
-    };
+    const payload = isNumeric
+      ? {
+          Language: "en",
+          SermonProductIdentityId: Number(sermonId),
+          GetAllContent: true,
+          HighlightQuery: null,
+        }
+      : {
+          Language: "en",
+          SermonRecordId: String(sermonId),
+          GetAllContent: true,
+          HighlightQuery: null,
+        };
 
     const response = await fetch(`${API_BASE_URL}/sermons/sermonRequest`, {
       method: "POST",

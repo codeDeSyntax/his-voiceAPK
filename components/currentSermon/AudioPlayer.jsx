@@ -6,16 +6,23 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  Dimensions,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import * as Audio from "expo-audio";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
+import { AudioSkeletonLoader } from "../Loader";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const ARTWORK_SIZE = SCREEN_WIDTH * 0.62;
 
 // Precomputed icon sizes — stable across renders
-const ICON_SIZE_LG = responsiveFontSize(32);
-const ICON_SIZE_MD = responsiveFontSize(24);
+const ICON_SIZE_LG = responsiveFontSize(28);
+const ICON_SIZE_MD = responsiveFontSize(22);
+const ICON_SIZE_SM = responsiveFontSize(18);
+const PLAY_BTN_SIZE = 62;
 
 // Pure utility — no closure dependencies, defined at module level
 const formatTime = (seconds) => {
@@ -35,6 +42,8 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
   // ALL hooks must be called unconditionally before any early return.
   const { theme } = useAppContext();
   const [error, setError] = useState(null);
+  const [looping, setLooping] = useState(false);
+  const [shuffling, setShuffling] = useState(false);
 
   // Reset error state when audio URL changes
   useEffect(() => {
@@ -117,128 +126,232 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
     }
   };
 
+  const toggleLoop = () => {
+    const next = !looping;
+    setLooping(next);
+    try {
+      player.loop = next;
+    } catch (e) {}
+  };
+
+  const toggleShuffle = () => setShuffling((s) => !s);
+
+  const isDark = theme.dark;
+  const accent = isDark ? "#f2cdb4" : "#5d3211";
+  const accentMid = isDark ? "rgba(242,205,180,0.55)" : "rgba(93,50,17,0.5)";
+  const accentMuted = isDark ? "rgba(242,205,180,0.28)" : "rgba(93,50,17,0.7)";
+
   return (
     <View
-      style={[
-        styles.container,
-        { backgroundColor: theme.colors.secondary, borderRadius: 32 },
-      ]}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      {/* Sermon Image - Rounded */}
-      {status.isLoaded && (
-        <View style={styles.imageContainer}>
+      {/* Main player — always rendered so hooks/state stay stable */}
+      <View
+        style={{
+          flex: 1,
+          width: "100%",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: status.isLoaded || error ? 1 : 0,
+          pointerEvents: status.isLoaded || error ? "auto" : "none",
+        }}
+      >
+        {/* Floating artwork disc */}
+        <View
+          style={[
+            styles.artworkWrapper,
+            {
+              shadowColor: isDark ? "#000" : "#7a5a40",
+              shadowOpacity: isDark ? 0.6 : 0.28,
+              
+            },
+          ]}
+        >
           <Image
-            source={require("../../assets/roundedLam.jpg")}
+            source={require("../../assets/bob.png")}
             style={[
-              styles.sermonImage,
-              { backgroundColor: theme.colors.primary + "10" },
+              styles.artwork,
+              {
+                borderColor: isDark
+                  ? "rgba(255,255,255,0.06)"
+                  : "rgba(255,255,255,0.85)",
+                  backgroundColor: isDark ? "#1e1208" : "#fff",
+              },
             ]}
           />
         </View>
-      )}
 
-      {/* Sermon Info */}
-      <View style={styles.infoSection}>
-        <Text style={[styles.sermonTitle, { color: theme.colors.text }]}>
-          {sermonTitle}
-        </Text>
-        <Text style={[styles.label, { color: theme.colors.text + "DD" }]}>
-          Word of God
-        </Text>
-      </View>
+        {/* Title + subtitle */}
+        <View style={styles.infoSection}>
+          <Text
+            style={[styles.sermonTitle, { color: theme.colors.text }]}
+            numberOfLines={2}
+          >
+            {sermonTitle}
+          </Text>
+          <Text style={[styles.label, { color: accentMuted }]}>
+            Robert Lambert Lee
+          </Text>
+        </View>
 
-      {error && (
-        <Text style={[styles.errorText, { color: "#ff6b6b" }]}>{error}</Text>
-      )}
+        {error && (
+          <Text style={[styles.errorText, { color: "#ff6b6b" }]}>{error}</Text>
+        )}
 
-      {/* Progress Bar */}
-      {status.isLoaded && status.duration > 0 && (
-        <View
-          style={[
-            styles.progressSection,
-            { backgroundColor: theme.colors.primary + "08" },
-          ]}
-        >
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={status.duration}
-            value={Math.max(0, Math.min(status.currentTime, status.duration))}
-            onValueChange={handleSliderChange}
-            minimumTrackTintColor={theme.dark ? "#f2cdb4" : "#8b4513"}
-            maximumTrackTintColor={
-              theme.dark ? "rgba(242, 205, 180, 0.2)" : "rgba(93, 50, 17, 0.15)"
-            }
-            thumbTintColor={theme.dark ? "#f2cdb4" : "#5d3211"}
-            disabled={!status.isLoaded}
-            step={1}
-          />
-          <View style={styles.timeRow}>
-            <Text style={[styles.timeText, { color: theme.colors.text }]}>
+        {/* Slider with flanking timestamps + custom thick track */}
+        <View style={styles.sliderSection}>
+          <View style={styles.sliderRow}>
+            <Text
+              style={[
+                styles.timeText,
+                { color: accent, minWidth: 38, textAlign: "left" },
+              ]}
+            >
               {formatTime(status.currentTime)}
             </Text>
-            <Text style={[styles.timeText, { color: theme.colors.text }]}>
+
+            {/* Custom track drawn behind the transparent-track Slider */}
+            <View style={styles.sliderTrackWrap}>
+              {/* Background track */}
+              <View
+                style={[
+                  styles.sliderTrackBg,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(242,205,180,0.18)"
+                      : "rgba(93,50,17,0.18)",
+                  },
+                ]}
+              />
+              {/* Filled portion */}
+              <View
+                style={[
+                  styles.sliderTrackFill,
+                  {
+                    backgroundColor: accent,
+                    width: `${Math.min(100, (status.currentTime / (status.duration || 1)) * 100)}%`,
+                  },
+                ]}
+              />
+              {/* Native slider — transparent tracks, only thumb visible */}
+              <Slider
+                style={styles.sliderOverlay}
+                minimumValue={0}
+                maximumValue={status.duration || 1}
+                value={Math.max(
+                  0,
+                  Math.min(status.currentTime, status.duration || 1),
+                )}
+                onValueChange={handleSliderChange}
+                minimumTrackTintColor="transparent"
+                maximumTrackTintColor="transparent"
+                thumbTintColor={accent}
+                disabled={!status.isLoaded}
+                step={1}
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.timeText,
+                { color: accent, minWidth: 38, textAlign: "right" },
+              ]}
+            >
               {formatTime(status.duration)}
             </Text>
           </View>
         </View>
-      )}
 
-      {/* Controls */}
-      <View style={styles.controlsRow}>
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={handleSkipBackward}
-          disabled={!status.isLoaded}
-        >
-          <MaterialCommunityIcons
-            name="rewind-10"
-            size={ICON_SIZE_MD}
-            color={
-              status.isLoaded
-                ? theme.colors.text + "99"
-                : theme.colors.text + "44"
-            }
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.playButton, { backgroundColor: "#d4a574" }]}
-          onPress={togglePlayPause}
-          disabled={!status.isLoaded}
-        >
-          {!status.isLoaded ? (
-            <ActivityIndicator size="small" color={theme.colors.background} />
-          ) : (
+        {/* Controls — 5 flat buttons: repeat | skip-back | play | skip-forward | shuffle */}
+        <View style={styles.controlsRow}>
+          {/* Repeat */}
+          <TouchableOpacity
+            style={styles.flatBtn}
+            onPress={toggleLoop}
+            activeOpacity={0.65}
+          >
             <Ionicons
-              name={status.playing ? "pause" : "play"}
-              size={ICON_SIZE_LG}
-              color={theme.colors.background}
+              name="repeat"
+              size={ICON_SIZE_SM}
+              color={looping ? accent : accentMuted}
             />
-          )}
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={handleSkipForward}
-          disabled={!status.isLoaded}
-        >
-          <MaterialCommunityIcons
-            name="fast-forward-10"
-            size={ICON_SIZE_MD}
-            color={
-              status.isLoaded
-                ? theme.colors.text + "99"
-                : theme.colors.text + "44"
-            }
-          />
-        </TouchableOpacity>
+          {/* Skip back 10 */}
+          <TouchableOpacity
+            style={styles.flatBtn}
+            onPress={handleSkipBackward}
+            disabled={!status.isLoaded}
+            activeOpacity={0.65}
+          >
+            <MaterialCommunityIcons
+              name="rewind-10"
+              size={ICON_SIZE_MD}
+              color={status.isLoaded ? accentMid : accentMuted}
+            />
+          </TouchableOpacity>
+
+          {/* Play / Pause — filled accent circle */}
+          <TouchableOpacity
+            style={[
+              styles.playBtn,
+              {
+                backgroundColor: isDark ? "#c27b48" : "#5d3211",
+                shadowColor: isDark ? "#c27b48" : "#5d3211",
+              },
+            ]}
+            onPress={togglePlayPause}
+            disabled={!status.isLoaded}
+            activeOpacity={0.8}
+          >
+            {!status.isLoaded ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons
+                name={status.playing ? "pause" : "play"}
+                size={ICON_SIZE_LG}
+                color="#fff"
+                style={!status.playing && { marginLeft: 3 }}
+              />
+            )}
+          </TouchableOpacity>
+
+          {/* Skip forward 10 */}
+          <TouchableOpacity
+            style={styles.flatBtn}
+            onPress={handleSkipForward}
+            disabled={!status.isLoaded}
+            activeOpacity={0.65}
+          >
+            <MaterialCommunityIcons
+              name="fast-forward-10"
+              size={ICON_SIZE_MD}
+              color={status.isLoaded ? accentMid : accentMuted}
+            />
+          </TouchableOpacity>
+
+          {/* Shuffle */}
+          <TouchableOpacity
+            style={styles.flatBtn}
+            onPress={toggleShuffle}
+            activeOpacity={0.65}
+          >
+            <Ionicons
+              name="shuffle"
+              size={ICON_SIZE_SM}
+              color={shuffling ? accent : accentMuted}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
+      {/* end inner player wrapper */}
 
-      {/* Status Text */}
-      <Text style={[styles.statusText, { color: theme.colors.text + "88" }]}>
-        {status.playing ? "Now playing" : "Ready to listen"}
-      </Text>
+      {/* Skeleton overlay — absolutely positioned so it doesn't affect layout */}
+      {!status.isLoaded && !error && (
+        <View style={StyleSheet.absoluteFill}>
+          <AudioSkeletonLoader />
+        </View>
+      )}
     </View>
   );
 };
@@ -246,107 +359,113 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "flex-start",
+  },
+
+  // Artwork — floating neumorphic disc
+  artworkWrapper: {
     alignItems: "center",
-    paddingVertical: 24,
-    paddingHorizontal: 16,
+    justifyContent: "center",
+    marginBottom: 36,
+    shadowOffset: { width: 0, height: 18 },
+    shadowRadius: 28,
   },
-  imageContainer: {
-    marginBottom: 12,
-    alignItems: "center",
+  artwork: {
+    width: ARTWORK_SIZE,
+    height: ARTWORK_SIZE,
+    borderRadius: ARTWORK_SIZE / 2,
+    borderWidth: 3,
   },
-  sermonImage: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    marginBottom: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
+
+  // Info
   infoSection: {
-    width: "100%",
+    width: "88%",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 32,
+    gap: 6,
   },
   sermonTitle: {
-    fontSize: responsiveFontSize(14),
-    fontWeight: "700",
+    fontSize: responsiveFontSize(20),
+    fontFamily: "Merriweather",
     textAlign: "center",
-    marginBottom: 4,
-    lineHeight: 18,
-    fontFamily: "ZillaSlab",
+    lineHeight: 24,
+    // fontWeight: "700",
   },
   label: {
-    fontSize: responsiveFontSize(13),
-    fontWeight: "600",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-    fontFamily: "ZillaSlab",
+    fontSize: responsiveFontSize(12),
+    fontFamily: "Merriweather",
+    letterSpacing: 0.3,
   },
-  progressSection: {
-    width: "100%",
-    marginBottom: 12,
-    borderRadius: 20,
-    padding: 12,
+
+  // Slider — flanked by timestamps on same row
+  sliderSection: {
+    width: "92%",
   },
-  slider: {
-    width: "100%",
-    height: 30,
-    marginVertical: 2,
-  },
-  timeRow: {
+  sliderRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 4,
-    marginTop: 2,
+    alignItems: "center",
+    gap: 6,
+  },
+  sliderTrackWrap: {
+    flex: 1,
+    height: 36,
+    justifyContent: "center",
+  },
+  sliderTrackBg: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 5,
+    borderRadius: 3,
+  },
+  sliderTrackFill: {
+    position: "absolute",
+    left: 0,
+    height: 5,
+    borderRadius: 3,
+  },
+  sliderOverlay: {
+    position: "absolute",
+    left: -8,
+    right: -8,
+    height: 36,
   },
   timeText: {
-    fontSize: responsiveFontSize(14),
-    fontWeight: "700",
-    letterSpacing: 0.3,
-    fontFamily: "ZillaSlab",
+    fontSize: responsiveFontSize(11),
+    fontFamily: "Merriweather",
+    letterSpacing: 0.2,
   },
+
+  // Controls — 5 flat buttons
   controlsRow: {
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    width: "100%",
-    marginBottom: 10,
-    columnGap: 30,
+    justifyContent: "center",
+    width: "92%",
+    marginTop: 32,
+    gap: 0,
+    justifyContent: "space-between",
   },
-  playButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  flatBtn: {
+    width: 44,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+  },
+  playBtn: {
+    width: PLAY_BTN_SIZE,
+    height: PLAY_BTN_SIZE,
+    borderRadius: PLAY_BTN_SIZE / 2,
+    justifyContent: "center",
+    alignItems: "center",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.35,
     shadowRadius: 10,
-    elevation: 6,
+    elevation: 7,
   },
-  secondaryButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "transparent",
-  },
-  statusText: {
-    fontSize: responsiveFontSize(10),
-    fontWeight: "600",
-    letterSpacing: 0.2,
-    textTransform: "capitalize",
-    fontFamily: "ZillaSlab",
-  },
+
   errorText: {
     fontSize: responsiveFontSize(13),
-    marginBottom: 20,
+    marginBottom: 8,
     fontWeight: "600",
     textAlign: "center",
   },

@@ -19,10 +19,8 @@ import {
   Alert,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  Pressable,
-  Image,
 } from "react-native";
+
 import { useAppContext } from "../../Logic/globalState";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -32,13 +30,12 @@ import {
 import { getSermonById, getSermonParagraphs } from "../../database/sermonDB";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
 import ParagraphText from "../../components/currentSermon/ParagraphText";
-import ParagraphToolbar from "../../components/currentSermon/ParagraphToolbar";
+import ParagraphPickerSheet from "../../components/currentSermon/ParagraphPickerSheet";
 import CustomBottomSheetController from "../../components/currentSermon/BottomSheetController";
 import DraggableFloatingButton from "../../components/FloatButton";
 import SearchFeedback from "../../components/currentSermon/SearchFeedback";
 import CurrentSermonSearch from "../../components/currentSermon/CurrentSermonSearch";
-import EndnoteResults from "../../components/currentSermon/EndnoteResults";
-import { searchEndnoteQuote } from "../../Logic/branhamApi";
+import EndnoteSheet from "../../components/currentSermon/EndnoteSheet";
 import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
 import PlaySermon from "../../components/currentSermon/PlaySermon_SIMPLE";
@@ -125,20 +122,13 @@ const CurrentSermon = React.memo(({ route }) => {
   const [searchNavKey, setSearchNavKey] = useState(0);
   const [pendingScrollTarget, setPendingScrollTarget] = useState(null);
 
-  // Paragraph selection for toolbar
-  const [selectedParagraphIndex, setSelectedParagraphIndex] = useState(null);
-  const [showToolbarColorPalette, setShowToolbarColorPalette] = useState(false);
+  // Paragraph picker sheets (bookmark / highlight)
+  const [showBookmarkSheet, setShowBookmarkSheet] = useState(false);
+  const [showHighlightSheet, setShowHighlightSheet] = useState(false);
 
-  // Endnote search modal
-  const [showEndnoteModal, setShowEndnoteModal] = useState(false);
+  // Endnote bottom sheet
+  const [showEndnoteSheet, setShowEndnoteSheet] = useState(false);
   const [endnoteData, setEndnoteData] = useState(null);
-  const [endnoteSearchResults, setEndnoteSearchResults] = useState(null);
-  const [isEndnoteLoading, setIsEndnoteLoading] = useState(false);
-  const [endnoteNetworkError, setEndnoteNetworkError] = useState(false);
-
-  // Endnote preview card (step 1 — shown before opening full results)
-  const [showEndnotePreview, setShowEndnotePreview] = useState(false);
-  const [pendingEndnoteData, setPendingEndnoteData] = useState(null);
 
   // True once the FlatList has been scrolled to its initial target position.
   // The skeleton overlay is shown until this is true, so users never see the
@@ -478,158 +468,20 @@ const CurrentSermon = React.memo(({ route }) => {
     };
   }, []);
 
-  // Paragraph selection handlers
-  const handleParagraphClick = useCallback((index) => {
-    setSelectedParagraphIndex((prev) => (prev === index ? null : index));
-    setShowToolbarColorPalette(false);
-  }, []);
-
-  const handleToolbarClose = useCallback(() => {
-    setSelectedParagraphIndex(null);
-    setShowToolbarColorPalette(false);
-  }, []);
-
-  // Handle endnote click — show preview card first
-  const handleEndnoteClick = useCallback(
-    (parsedEndnote, paragraphIndex, sermon) => {
-      console.log("[Endnote Click] Showing preview for:", parsedEndnote);
-      setPendingEndnoteData(parsedEndnote);
-      setShowEndnotePreview(true);
-    },
-    [],
-  );
-
-  // "Read more" tapped on preview card — close preview, open full results
-  const handleEndnoteReadMore = useCallback(async () => {
-    setShowEndnotePreview(false);
-    const parsedEndnote = pendingEndnoteData;
-    if (!parsedEndnote) return;
-
+  // Handle endnote click — open preview sheet
+  const handleEndnoteClick = useCallback((parsedEndnote) => {
     setEndnoteData(parsedEndnote);
-    setShowEndnoteModal(true);
-    setIsEndnoteLoading(true);
-    setEndnoteSearchResults(null);
-    setEndnoteNetworkError(false);
-
-    try {
-      const results = await searchEndnoteQuote(parsedEndnote);
-      if (
-        results.searchMethod === "paragraph_reference" &&
-        Platform.OS === "android"
-      ) {
-        ToastAndroid.show("Found by sermon reference", ToastAndroid.SHORT);
-      }
-      setEndnoteSearchResults(results);
-    } catch (error) {
-      console.error("[Endnote ReadMore] Error:", error);
-      const isNetworkError =
-        error instanceof TypeError ||
-        error.message?.toLowerCase().includes("network") ||
-        error.message?.toLowerCase().includes("failed to fetch") ||
-        error.message?.toLowerCase().includes("network request failed");
-      if (isNetworkError) {
-        setEndnoteNetworkError(true);
-      } else if (Platform.OS === "android") {
-        ToastAndroid.show("Error searching endnote", ToastAndroid.SHORT);
-      }
-    } finally {
-      setIsEndnoteLoading(false);
-    }
-  }, [pendingEndnoteData]);
-
-  // Retry endnote search with different search type
-  const handleRetryEndnoteSearch = useCallback(
-    async (searchType) => {
-      if (!endnoteData) return;
-
-      console.log("[Endnote Retry] Searching with type:", searchType);
-      setIsEndnoteLoading(true);
-      setEndnoteNetworkError(false);
-
-      try {
-        const results = await searchEndnoteQuote(endnoteData, { searchType });
-        console.log("[Endnote Retry] Results:", results);
-        setEndnoteSearchResults(results);
-      } catch (error) {
-        console.error("[Endnote Retry] Error:", error);
-        const isNetworkError =
-          error instanceof TypeError ||
-          error.message?.toLowerCase().includes("network") ||
-          error.message?.toLowerCase().includes("failed to fetch") ||
-          error.message?.toLowerCase().includes("network request failed");
-        if (isNetworkError) {
-          setEndnoteNetworkError(true);
-        } else if (Platform.OS === "android") {
-          ToastAndroid.show("Error searching endnote", ToastAndroid.SHORT);
-        }
-      } finally {
-        setIsEndnoteLoading(false);
-      }
-    },
-    [endnoteData],
-  );
-
-  // Get toolbar props from context
-  const {
-    addBookmark,
-    removeBookmark,
-    bookmarks,
-    addHighlight,
-    removeHighlight,
-    highlights,
-  } = useAppContext();
-
-  const isToolbarBookmarked = useMemo(() => {
-    if (selectedParagraphIndex === null) return false;
-    const bookmarkKey = `${selectedSermon?.id}-${selectedParagraphIndex}`;
-    return bookmarks.some(
-      (b) => `${b.sermon.id}-${b.paragraphIndex}` === bookmarkKey,
-    );
-  }, [bookmarks, selectedSermon?.id, selectedParagraphIndex]);
-
-  const toolbarHighlight = useMemo(() => {
-    if (selectedParagraphIndex === null) return null;
-    return (
-      highlights[`${selectedSermon?.id}-${selectedParagraphIndex}`] || null
-    );
-  }, [highlights, selectedSermon?.id, selectedParagraphIndex]);
-
-  const handleToolbarBookmark = useCallback(() => {
-    if (selectedParagraphIndex === null) return;
-    if (isToolbarBookmarked) {
-      removeBookmark(selectedSermon, selectedParagraphIndex);
-    } else {
-      addBookmark(
-        selectedSermon,
-        selectedParagraphIndex,
-        paragraphs[selectedParagraphIndex],
-      );
-    }
-  }, [
-    selectedParagraphIndex,
-    isToolbarBookmarked,
-    removeBookmark,
-    addBookmark,
-    selectedSermon,
-    paragraphs,
-  ]);
-
-  const handleToolbarHighlightPress = useCallback(() => {
-    setShowToolbarColorPalette((prev) => !prev);
+    setShowEndnoteSheet(true);
   }, []);
 
-  const handleToolbarColorSelect = useCallback(
-    (color) => {
-      if (selectedParagraphIndex === null) return;
-      setShowToolbarColorPalette(false);
-      if (color) {
-        addHighlight(selectedSermon.id, selectedParagraphIndex, color);
-      } else {
-        removeHighlight(selectedSermon.id, selectedParagraphIndex);
-      }
-    },
-    [selectedParagraphIndex, addHighlight, removeHighlight, selectedSermon?.id],
-  );
+  // Open bookmark / highlight picker sheets
+  const handleOpenBookmarkSheet = useCallback(() => {
+    setShowBookmarkSheet(true);
+  }, []);
+
+  const handleOpenHighlightSheet = useCallback(() => {
+    setShowHighlightSheet(true);
+  }, []);
 
   // Stable drag/fail handlers — defined with useCallback so FlatList never
   // receives new function references on unrelated re-renders.
@@ -680,21 +532,11 @@ const CurrentSermon = React.memo(({ route }) => {
           settings={settings}
           selectedSermon={selectedSermon}
           searchPhrase={currentSearchPhrase}
-          isSelected={selectedParagraphIndex === index}
-          onParagraphClick={handleParagraphClick}
           onEndnoteClick={handleEndnoteClick}
         />
       );
     },
-    [
-      theme,
-      settings,
-      selectedSermon,
-      currentSearchPhrase,
-      selectedParagraphIndex,
-      handleParagraphClick,
-      handleEndnoteClick,
-    ],
+    [theme, settings, selectedSermon, currentSearchPhrase, handleEndnoteClick],
   );
 
   // Optimization: Extract item key
@@ -795,20 +637,6 @@ const CurrentSermon = React.memo(({ route }) => {
       >
         <DraggableFloatingButton />
 
-        {/* Paragraph Toolbar */}
-        <ParagraphToolbar
-          visible={selectedParagraphIndex !== null}
-          selectedParagraphIndex={selectedParagraphIndex}
-          isBookmarked={isToolbarBookmarked}
-          currentHighlight={toolbarHighlight}
-          onBookmarkPress={handleToolbarBookmark}
-          onHighlightPress={handleToolbarHighlightPress}
-          onColorSelect={handleToolbarColorSelect}
-          showColorPalette={showToolbarColorPalette}
-          onClose={handleToolbarClose}
-          theme={theme}
-        />
-
         <View style={[styles.container, { backgroundColor: "transparent" }]}>
           {selectedSermon?.type === "mp3" ? (
             <PlaySermon />
@@ -887,7 +715,8 @@ const CurrentSermon = React.memo(({ route }) => {
                 onScrollToPrev={scrollToPrevParagraph}
                 onScrollToNext={scrollToNextParagraph}
                 onOpenSearch={handleOpenSearch}
-                sermonTitle={selectedSermon?.title}
+                onBookmarkPress={handleOpenBookmarkSheet}
+                onHighlightPress={handleOpenHighlightSheet}
               />
 
               <SearchFeedback
@@ -909,163 +738,37 @@ const CurrentSermon = React.memo(({ route }) => {
         selectedSermon={selectedSermon}
       />
 
-      {/* Endnote Results Modal */}
-      <EndnoteResults
-        visible={showEndnoteModal}
-        onClose={() => setShowEndnoteModal(false)}
+      {/* Endnote Sheet */}
+      <EndnoteSheet
+        visible={showEndnoteSheet}
         endnoteData={endnoteData}
-        searchResults={endnoteSearchResults}
         theme={theme}
-        isLoading={isEndnoteLoading}
-        onRetrySearch={handleRetryEndnoteSearch}
-        networkError={endnoteNetworkError}
+        onClose={() => setShowEndnoteSheet(false)}
       />
 
-      {/* Endnote Preview Card */}
-      <Modal
-        visible={showEndnotePreview}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => setShowEndnotePreview(false)}
-      >
-        <Pressable
-          style={endnotePreviewStyles.overlay}
-          onPress={() => setShowEndnotePreview(false)}
-        >
-          <Pressable
-            style={[
-              endnotePreviewStyles.card,
-              {
-                backgroundColor: theme.dark ? "#1e1612" : "#fdfaf7",
-                shadowColor: theme.dark ? "#000" : "#5d3211",
-              },
-            ]}
-            onPress={() => {}}
-          >
-            {/* WMB Avatar */}
-            <Image
-              source={{
-                uri: "https://www.livingwordbroadcast.org/LWBImages/Pictures/Picture%202.jpg",
-              }}
-              style={endnotePreviewStyles.avatar}
-              resizeMode="cover"
-            />
+      {/* Bookmark Picker Sheet */}
+      <ParagraphPickerSheet
+        visible={showBookmarkSheet}
+        mode="bookmark"
+        paragraphs={paragraphs}
+        currentParagraphIndex={currentVisibleParagraph}
+        selectedSermon={selectedSermon}
+        theme={theme}
+        onClose={() => setShowBookmarkSheet(false)}
+      />
 
-            {/* Right content */}
-            <View style={endnotePreviewStyles.cardContent}>
-              <Text
-                style={[
-                  endnotePreviewStyles.cardLabel,
-                  {
-                    color: theme.dark
-                      ? "rgba(230,195,184,0.55)"
-                      : "rgba(93,50,17,0.5)",
-                  },
-                ]}
-              >
-                WMB QUOTE
-              </Text>
-              <Text
-                style={[
-                  endnotePreviewStyles.cardTitle,
-                  { color: theme.dark ? "#e6c3b8" : "#3a1f0b" },
-                ]}
-                numberOfLines={2}
-              >
-                {pendingEndnoteData?.datecode
-                  ? `${pendingEndnoteData.datecode}  ·  ${pendingEndnoteData.title || ""}`.trim()
-                  : pendingEndnoteData?.title || "Endnote reference"}
-              </Text>
-              <TouchableOpacity
-                onPress={handleEndnoteReadMore}
-                activeOpacity={0.75}
-                style={[
-                  endnotePreviewStyles.readMoreBtn,
-                  {
-                    backgroundColor: theme.dark
-                      ? "rgba(230,195,184,0.12)"
-                      : "rgba(93,50,17,0.09)",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    endnotePreviewStyles.readMoreText,
-                    { color: theme.dark ? "#f0b38b" : "#7a3b10" },
-                  ]}
-                >
-                  Read more
-                </Text>
-                <Feather
-                  name="arrow-right"
-                  size={13}
-                  color={theme.dark ? "#f0b38b" : "#7a3b10"}
-                />
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* Highlight Picker Sheet */}
+      <ParagraphPickerSheet
+        visible={showHighlightSheet}
+        mode="highlight"
+        paragraphs={paragraphs}
+        currentParagraphIndex={currentVisibleParagraph}
+        selectedSermon={selectedSermon}
+        theme={theme}
+        onClose={() => setShowHighlightSheet(false)}
+      />
     </View>
   );
-});
-
-const endnotePreviewStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingBottom: 36,
-  },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 18,
-    padding: 14,
-    gap: 14,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 20,
-    elevation: 12,
-  },
-  avatar: {
-    width: 62,
-    height: 82,
-    borderRadius: 10,
-    backgroundColor: "#3a2010",
-  },
-  cardContent: {
-    flex: 1,
-    gap: 5,
-  },
-  cardLabel: {
-    fontFamily: "ZillaSlabsm",
-    fontSize: 10,
-    letterSpacing: 2.5,
-  },
-  cardTitle: {
-    fontFamily: "Merriweather",
-    fontSize: 13.5,
-    fontWeight: "400",
-    lineHeight: 20,
-  },
-  readMoreBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    marginTop: 4,
-  },
-  readMoreText: {
-    fontFamily: "Merriweather",
-    fontSize: 12.5,
-    fontWeight: "600",
-  },
 });
 
 export default CurrentSermon;

@@ -583,8 +583,15 @@ const ParagraphText = React.memo(
         try {
           const title = selectedSermon?.title ?? "Sermon";
           const date = selectedSermon?.date ? ` · ${selectedSermon.date}` : "";
+          const quotedContent = content
+            .split("\n")
+            .map((line) => `> ${line}`)
+            .join("\n");
+
           await Clipboard.setStringAsync(
-            `${title}\n⁋${index + 1}»${selectedSermon.year} — Robert Lambert Lee — \n\n${content}`,
+            `_${title}_\n` +
+              `\`⁋${index + 1}»${selectedSermon.year}\` *Robert Lambert Lee*\n\n` +
+              quotedContent,
           );
         } finally {
           setTimeout(() => {

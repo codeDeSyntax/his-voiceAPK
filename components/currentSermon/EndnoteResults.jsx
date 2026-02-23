@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
-import { getSermonContent } from "../../Logic/branhamApi";
+import { getSermonContent, resolveSermonNumericId } from "../../Logic/branhamApi";
 
 // ── Animated dot loader (mirrors CurrentSermonSearch) ─────────────────────
 const SearchDot = ({ anim, color }) => {
@@ -95,7 +95,7 @@ const SearchLoader = ({ theme }) => {
           letterSpacing: 4,
           textTransform: "uppercase",
           color: labelColor,
-          fontFamily: "ZillaSlab",
+          fontFamily: "Merriweather",
           marginBottom: 22,
         }}
       >
@@ -146,6 +146,8 @@ const HighlightedText = ({
   theme,
   style = {},
   searchType = "AllWords",
+  prefix = null,
+  prefixStyle = {},
 }) => {
   if (!text) return null;
 
@@ -157,6 +159,7 @@ const HighlightedText = ({
   if (!searchQuery) {
     return (
       <Text style={[styles.fragmentText, style, { color: normalFg }]}>
+        {prefix ? <Text style={prefixStyle}>{prefix}</Text> : null}
         {text}
       </Text>
     );
@@ -191,6 +194,7 @@ const HighlightedText = ({
 
   return (
     <Text style={[styles.fragmentText, style]}>
+      {prefix ? <Text style={prefixStyle}>{prefix}</Text> : null}
       {parts.map((part, index) => {
         const partNorm = normaliseApostrophe(part).toLowerCase();
         const isMatch =
@@ -204,7 +208,7 @@ const HighlightedText = ({
               style={{
                 backgroundColor: highlightBg,
                 color: highlightFg,
-                fontFamily: "ZillaSlabsm",
+                fontFamily: "Merriweather",
               }}
             >
               {part}
@@ -220,6 +224,17 @@ const HighlightedText = ({
     </Text>
   );
 };
+
+// ── Strip HTML tags from sermon section Content ────────────────────────────
+const stripHtml = (html) =>
+  (html || "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 // ── Parse paragraph range from API (e.g., "25-30" or "130") ───────────────
 const parseParagraphRange = (paragraphStr) => {
@@ -251,6 +266,7 @@ const ResultItem = ({
   sermonContent,
   isLoadingContent,
   searchType,
+  targetParagraph,
 }) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const isDark = theme.dark;
@@ -291,11 +307,17 @@ const ResultItem = ({
 
   // Get paragraphs to display based on best match or secondary
   const paragraphsToShow = useMemo(() => {
-    // If we have sermon content with paragraphs, use it
-    if (sermonContent?.Paragraphs && !sermonContent.failed) {
-      const paragraphs = sermonContent.Paragraphs;
+    // API returns Result.Sections — each section has { Paragraph: "20", Content: "...", IsHit: bool }
+    // Filter out the "header" section (Paragraph === "header")
+    const sections = sermonContent?.Sections
+      ? sermonContent.Sections.filter((s) => {
+          const n = parseInt(s.Paragraph);
+          return !isNaN(n) && n > 0;
+        })
+      : null;
 
-      // Find the earliest and latest match positions
+    if (sections && sections.length > 0 && !sermonContent.failed) {
+      // Find the earliest and latest match paragraph numbers from search results
       const allMatchStarts = paragraphRanges
         .map((r) => r.start)
         .filter((s) => s > 0);
@@ -303,62 +325,36 @@ const ResultItem = ({
         .map((r) => r.end)
         .filter((e) => e > 0);
 
-      if (allMatchStarts.length === 0) return [];
+      if (allMatchStarts.length === 0 && !targetParagraph) return [];
 
-      const earliestMatch = Math.min(...allMatchStarts);
-      const latestMatch = Math.max(...allMatchEnds);
+      const anchor = targetParagraph || Math.max(...allMatchEnds);
 
-      if (searchType === "ExactPhrase") {
-        // ExactPhrase: only show the matched paragraphs themselves, no surrounding context
-        return paragraphs
-          .map((p, i) => {
-            const displayIdx = i + 1;
-            const isMatch = paragraphRanges.some(
-              (range) => displayIdx >= range.start && displayIdx <= range.end,
-            );
-            return { ...p, displayIndex: displayIdx, isMatch };
-          })
-          .filter((p) => p.isMatch);
-      }
+      const postContext = isBestMatch ? 50 : 25;
+      const windowStart = anchor - 3;
+      const windowEnd = anchor + postContext;
 
-      if (isBestMatch) {
-        // Best Match (first result): 2 paragraphs before earliest + all matches + 50 paragraphs after latest
-        const startIdx = Math.max(0, earliestMatch - 3);
-        const endIdx = Math.min(paragraphs.length, latestMatch + 51);
-
-        return paragraphs.slice(startIdx, endIdx).map((p, i) => {
-          const displayIdx = startIdx + i + 1;
-          // Check if this paragraph is a match in any of the ranges
-          const isMatch = paragraphRanges.some(
-            (range) => displayIdx >= range.start && displayIdx <= range.end,
+      // Filter sections whose paragraph RANGE overlaps [anchor-3 .. anchor+postContext].
+      // Sections use ranges like "303-308" so we must check overlap, not just start point.
+      return sections
+        .filter((s) => {
+          const r = parseParagraphRange(s.Paragraph);
+          return r.end >= windowStart && r.start <= windowEnd;
+        })
+        .map((s) => {
+          const r = parseParagraphRange(s.Paragraph);
+          const isMatch = s.IsHit || paragraphRanges.some(
+            (range) => r.end >= range.start && r.start <= range.end,
           );
-          return {
-            ...p,
-            displayIndex: displayIdx,
-            isMatch,
-          };
+          return { ...s, Content: stripHtml(s.Content), displayIndex: r.start, isMatch };
         });
-      } else {
-        // Secondary: 2 paragraphs before earliest + all matches + 25 paragraphs after latest
-        const startIdx = Math.max(0, earliestMatch - 3);
-        const endIdx = Math.min(paragraphs.length, latestMatch + 26);
-
-        return paragraphs.slice(startIdx, endIdx).map((p, i) => {
-          const displayIdx = startIdx + i + 1;
-          // Check if this paragraph is a match in any of the ranges
-          const isMatch = paragraphRanges.some(
-            (range) => displayIdx >= range.start && displayIdx <= range.end,
-          );
-          return {
-            ...p,
-            displayIndex: displayIdx,
-            isMatch,
-          };
-        });
-      }
     }
 
-    // Fallback: use fragments from all search results
+    // Fallback: use fragments from search result items directly
+    // Apply the same window so we don't show fragments from paragraph 1 onwards
+    const anchor = targetParagraph || 0;
+    const windowStart = anchor > 0 ? anchor - 3 : 0;
+    const windowEnd = anchor > 0 ? anchor + (isBestMatch ? 50 : 25) : Infinity;
+
     return items
       .map((itm) => {
         const range = parseParagraphRange(itm.Properties?.Paragraph);
@@ -368,14 +364,15 @@ const ResultItem = ({
             "",
           ) || "";
         return {
-          Text: frag,
+          Content: frag,
           displayIndex: range.start,
           isMatch: true,
           isFragment: true,
+          rangeEnd: range.end,
         };
       })
-      .filter((p) => p.Text);
-  }, [sermonContent, paragraphRanges, isBestMatch, items, searchType]);
+      .filter((p) => p.Content && p.rangeEnd >= windowStart && p.displayIndex <= windowEnd);
+  }, [sermonContent, paragraphRanges, isBestMatch, items, targetParagraph]);
 
   // Fetch content when expanded (only if not already fetched or failed)
   useEffect(() => {
@@ -385,7 +382,7 @@ const ResultItem = ({
       !sermonContent &&
       !isLoadingContent
     ) {
-      onFetchContent(item.DocumentRecordId, item.RecordId);
+      onFetchContent(item.DocumentRecordId, item.RecordId, item.Properties?.DateCode);
     }
   }, [expanded, item.DocumentRecordId, sermonContent, isLoadingContent]);
 
@@ -467,23 +464,29 @@ const ResultItem = ({
                   para.isMatch && styles.matchParagraphRow,
                 ]}
               >
-                {!para.isFragment && (
-                  <Text
-                    style={[
-                      styles.paragraphNumber,
-                      { color: para.isMatch ? accentColor : subtleText },
-                    ]}
-                  >
-                    {para.displayIndex}
-                  </Text>
-                )}
-                <HighlightedText
-                  text={para.Text}
-                  searchQuery={effectiveSearchQuery}
-                  theme={theme}
-                  style={para.isMatch && styles.matchText}
-                  searchType={searchType}
-                />
+                {(() => {
+                  // Split leading paragraph number(s) from content text
+                  // e.g. "274 Six months..." → prefix="274 ", body="Six months..."
+                  const match = para.Content.match(/^(\d+(?:-\d+)?\s+)/);
+                  const prefix = match ? match[1] : null;
+                  const body = match ? para.Content.slice(match[1].length) : para.Content;
+                  return (
+                    <HighlightedText
+                      text={body}
+                      searchQuery={effectiveSearchQuery}
+                      theme={theme}
+                      style={para.isMatch && styles.matchText}
+                      searchType={searchType}
+                      prefix={prefix}
+                      prefixStyle={{
+                        color: accentColor,
+                        fontFamily: "Merriweather",
+                        fontWeight: "bold",
+                        fontSize: 11,
+                      }}
+                    />
+                  );
+                })()}
               </View>
             ))
           ) : (
@@ -530,6 +533,7 @@ const EndnoteResults = ({
   isLoading,
   onRetrySearch,
   networkError,
+  embedded = false,
 }) => {
   const { settings } = useAppContext();
   const [sermonContents, setSermonContents] = useState({}); // Cache by RecordId
@@ -577,6 +581,7 @@ const EndnoteResults = ({
           items: [],
           isPrimary: false,
           documentRecordId: result.DocumentRecordId,
+          datecode: result.Properties?.DateCode || null,
           firstSeenIndex: groupOrder.length, // Track when first seen
         };
         groupOrder.push(key);
@@ -602,7 +607,7 @@ const EndnoteResults = ({
   }, [rawResults, endnoteData]);
 
   // Fetch sermon content for a specific result
-  const handleFetchContent = async (documentRecordId, recordId) => {
+  const handleFetchContent = async (documentRecordId, recordId, datecode) => {
     const cacheKey = String(documentRecordId);
 
     // Check cache and loading state (use ref for synchronous check)
@@ -620,7 +625,11 @@ const EndnoteResults = ({
     setLoadingContents((prev) => ({ ...prev, [cacheKey]: true }));
 
     try {
-      const content = await getSermonContent(documentRecordId);
+      // Resolve the numeric SermonProductIdentityId via the sermon index
+      const numericId = datecode ? await resolveSermonNumericId(datecode) : null;
+      const idToFetch = numericId ?? documentRecordId;
+      console.log("[EndnoteResults] Resolved ID:", idToFetch, "(datecode:", datecode, ")");
+      const content = await getSermonContent(idToFetch);
       if (content) {
         setSermonContents((prev) => ({ ...prev, [cacheKey]: content }));
       } else {
@@ -657,6 +666,7 @@ const EndnoteResults = ({
       handleFetchContent(
         bestMatch.documentRecordId,
         bestMatch.items[0]?.RecordId,
+        bestMatch.datecode || endnoteData?.datecode,
       );
     }
   }, [
@@ -671,86 +681,35 @@ const EndnoteResults = ({
 
   return (
     <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={
+        embedded
+          ? { flex: 1, overflow: "hidden" }
+          : [styles.container, { backgroundColor: theme.colors.background }]
+      }
     >
-      <View style={styles.contentWrapper}>
-        {/* Header */}
-        <View
-          style={[
-            styles.header,
-            {
-              borderBottomColor: isDark
-                ? "rgba(80, 61, 49, 0.6)"
-                : "rgba(93, 50, 17, 0.1)",
-            },
-          ]}
-        >
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Feather name="arrow-left" size={22} color={theme.colors.text} />
-          </TouchableOpacity>
-
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.headerTitle, { color: accentColor }]}>
-              WMB
-            </Text>
-            <Text style={[styles.headerSubtitle, { color: subtleText }]}>
-              Endnote Search
-            </Text>
-          </View>
-
-          {/* Search Type Segmented Toggle */}
+      <View
+        style={[
+          styles.contentWrapper,
+          embedded && { paddingTop: 4 },
+        ]}
+      >
+        {/* Header — only shown when not embedded (back arrow navigation) */}
+        {!embedded && (
           <View
-            style={{
-              flexDirection: "row",
-              borderRadius: 6,
-              borderWidth: 1,
-              borderColor: isDark
-                ? "rgba(213, 122, 62, 0.35)"
-                : "rgba(93, 50, 17, 0.25)",
-              overflow: "hidden",
-            }}
+            style={[
+              styles.header,
+              {
+                borderBottomColor: isDark
+                  ? "rgba(80, 61, 49, 0.6)"
+                  : "rgba(93, 50, 17, 0.1)",
+              },
+            ]}
           >
-            {[
-              { label: "Exact", value: "ExactPhrase" },
-              { label: "AllWords", value: "AllWords" },
-            ].map((opt) => {
-              const isActive = searchType === opt.value;
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  onPress={() => {
-                    if (!isActive && !isLoading) handleToggleSearchType();
-                  }}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                    backgroundColor: isActive
-                      ? isDark
-                        ? "rgba(213, 122, 62, 0.85)"
-                        : "#7a3b10"
-                      : "transparent",
-                  }}
-                  disabled={isLoading}
-                >
-                  <Text
-                    style={{
-                      color: isActive
-                        ? "#FFFFFF"
-                        : isDark
-                          ? "rgba(255,255,255,0.45)"
-                          : "rgba(93,50,17,0.45)",
-                      fontSize: 11,
-                      fontWeight: isActive ? "700" : "400",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Feather name="arrow-left" size={22} color={theme.colors.text} />
+            </TouchableOpacity>
           </View>
-        </View>
+        )}
 
         {/* Endnote Details Card */}
         {endnoteData && (
@@ -767,7 +726,7 @@ const EndnoteResults = ({
               },
             ]}
           >
-            {/* Compact meta pill row */}
+            {/* Compact meta pill row — datecode + paragraph + search type toggle */}
             <View style={styles.endnoteMeta}>
               {endnoteData.datecode && (
                 <View
@@ -790,13 +749,64 @@ const EndnoteResults = ({
                   ¶ {endnoteData.paragraph}
                 </Text>
               )}
+
+              {/* Search Type Segmented Toggle — far right */}
+              <View style={{ flex: 1 }} />
+              <View
+                style={{
+                  flexDirection: "row",
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: isDark
+                    ? "rgba(213, 122, 62, 0.35)"
+                    : "rgba(93, 50, 17, 0.25)",
+                  overflow: "hidden",
+                }}
+              >
+                {[
+                  { label: "Exact", value: "ExactPhrase" },
+                  { label: "Words", value: "AllWords" },
+                ].map((opt) => {
+                  const isActive = searchType === opt.value;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      onPress={() => {
+                        if (!isActive && !isLoading) handleToggleSearchType();
+                      }}
+                      style={{
+                        paddingHorizontal: 9,
+                        paddingVertical: 4,
+                        backgroundColor: isActive
+                          ? isDark
+                            ? "rgba(213, 122, 62, 0.85)"
+                            : "#7a3b10"
+                          : "transparent",
+                      }}
+                      disabled={isLoading}
+                    >
+                      <Text
+                        style={{
+                          color: isActive
+                            ? "#FFFFFF"
+                            : isDark
+                              ? "rgba(255,255,255,0.45)"
+                              : "rgba(93,50,17,0.45)",
+                          fontSize: 10,
+                          fontWeight: isActive ? "700" : "400",
+                          textTransform: "uppercase",
+                          letterSpacing: 0.3,
+                        }}
+                      >
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
-            {endnoteData.title && (
-              <Text style={[styles.endnoteTitle, { color: theme.colors.text }]}>
-                {endnoteData.title}
-              </Text>
-            )}
+           
 
             {endnoteData.quote && (
               <View
@@ -915,6 +925,7 @@ const EndnoteResults = ({
                   sermonContent={sermonContents[cacheKey]}
                   isLoadingContent={loadingContents[cacheKey]}
                   searchType={searchType}
+                  targetParagraph={parseInt(endnoteData?.paragraph) || null}
                 />
               );
             })}
@@ -983,8 +994,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontFamily: "ZillaSlabsm",
-    fontWeight: "700",
+    fontFamily: "Merriweather",
+    // fontWeight: "700",
     letterSpacing: 2,
   },
   headerSubtitle: {
@@ -992,7 +1003,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
     textTransform: "uppercase",
     marginTop: 1,
-    fontFamily: "ZillaSlab",
+    fontFamily: "Merriweather",
   },
   endnoteCard: {
     marginHorizontal: 16,
@@ -1020,14 +1031,12 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 11,
-    fontFamily: "ZillaSlab",
-    fontWeight: "600",
+    fontFamily: "Merriweather",
     letterSpacing: 0.3,
   },
   endnoteTitle: {
     fontSize: 15,
-    fontFamily: "ZillaSlab",
-    fontWeight: "600",
+    fontFamily: "Merriweather",
     marginBottom: 8,
     lineHeight: 20,
   },
@@ -1038,8 +1047,7 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     fontSize: 13,
-    fontFamily: "ZillaSlab",
-    fontStyle: "italic",
+    fontFamily: "Merriweather",
     lineHeight: 19,
   },
   resultsHeader: {
@@ -1050,7 +1058,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1,
     textTransform: "uppercase",
-    fontFamily: "ZillaSlab",
+    fontFamily: "Merriweather",
   },
   resultsContainer: {
     flex: 1,
@@ -1091,14 +1099,13 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     fontSize: 14,
-    fontFamily: "ZillaSlab",
-    fontWeight: "600",
+    fontFamily: "Merriweather",
     marginTop: 6,
     lineHeight: 19,
   },
   expandHint: {
     fontSize: 12,
-    fontFamily: "ZillaSlab",
+    fontFamily: "Merriweather",
     marginTop: 6,
   },
   expandedContent: {
@@ -1113,29 +1120,27 @@ const styles = StyleSheet.create({
   },
   paragraphNumber: {
     fontSize: 12,
-    fontFamily: "ZillaSlabsm",
-    fontWeight: "700",
+    fontFamily: "Merriweathersm",
     minWidth: 28,
     paddingTop: 2,
   },
   fragmentText: {
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "ZillaSlab",
+    fontFamily: "Merriweather",
     flex: 1,
   },
   matchText: {
-    fontFamily: "ZillaSlabsm",
+    fontFamily: "Merriweather",
   },
   loadingText: {
     fontSize: 13,
-    fontFamily: "ZillaSlab",
-    fontStyle: "italic",
+    fontFamily: "Merriweather",
     paddingVertical: 12,
   },
   noContentText: {
     fontSize: 13,
-    fontFamily: "ZillaSlab",
+    fontFamily: "Merriweather",
     paddingVertical: 12,
   },
   resultSeparator: {
@@ -1149,14 +1154,13 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     fontSize: 17,
-    fontFamily: "ZillaSlab",
-    fontWeight: "400",
+    fontFamily: "Merriweather",
     marginBottom: 8,
     textAlign: "center",
   },
   emptyStateMessage: {
     fontSize: 13,
-    fontFamily: "ZillaSlab",
+    fontFamily: "Merriweather",
     textAlign: "center",
     lineHeight: 20,
   },
@@ -1169,8 +1173,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     fontSize: 13,
-    fontFamily: "ZillaSlab",
-    fontWeight: "600",
+    fontFamily: "Merriweather",
     letterSpacing: 0.3,
   },
 });
