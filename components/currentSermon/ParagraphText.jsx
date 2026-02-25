@@ -1,11 +1,5 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-} from "react";
-import { Text, View, Pressable } from "react-native";
+import React, { useEffect, useRef, useMemo, useCallback } from "react";
+import { Text, View, Animated } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
@@ -369,17 +363,37 @@ const EndnoteWithTitleText = React.memo(
 
 // Module-level mutex — prevents every mounted paragraph firing simultaneously
 
-// Standalone blinking finger — own state so it always ticks independently
+// Standalone blinking finger — uses Animated opacity so it never triggers a
+// JS re-render on the parent Text while the user has a text selection active.
+// (The old useState/setInterval approach re-rendered the parent Text every 550ms,
+// resetting the selection handles each time.)
 const BlinkingFinger = ({ onPress, color, fontSize }) => {
-  const [right, setRight] = useState(true);
+  const opacity = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    const t = setInterval(() => setRight((r) => !r), 550);
-    return () => clearInterval(t);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.08,
+          duration: 520,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 520,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
   return (
-    <Text onPress={onPress} style={{ color, fontSize, fontWeight: "700" }}>
-      {right ? " \u261E" : " \u261C"}
-    </Text>
+    <Animated.Text
+      onPress={onPress}
+      style={{ color, fontSize, fontWeight: "700", opacity }}
+    >
+      {" \u261E"}
+    </Animated.Text>
   );
 };
 // when the user copies selected text (only the first one to acquire it acts).
@@ -651,19 +665,7 @@ const ParagraphText = React.memo(
     };
 
     return (
-      <Pressable
-        onPress={() => {
-          onParagraphClick?.(index);
-        }}
-        style={({ pressed }) => [containerStyle, pressed && { opacity: 0.88 }]}
-        onLayout={handleLayout}
-        android_ripple={{
-          color: theme.dark
-            ? "rgba(213, 122, 62, 0.12)"
-            : "rgba(93, 50, 17, 0.08)",
-          borderless: false,
-        }}
-      >
+      <View style={containerStyle} onLayout={handleLayout}>
         {/* ── Single text column — number is inline ── */}
         <View style={styles.selectableTextContainer}>
           <Text
@@ -810,7 +812,7 @@ const ParagraphText = React.memo(
                   )}
           </Text>
         </View>
-      </Pressable>
+      </View>
     );
   },
 );
