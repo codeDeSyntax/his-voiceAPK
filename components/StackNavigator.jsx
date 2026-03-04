@@ -119,7 +119,7 @@ const StackNavigator = () => {
       >
         <Stack.Screen
           name="welcome"
-          component={WrappedWelcome}
+          component={Welcome}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,

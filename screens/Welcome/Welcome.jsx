@@ -9,14 +9,12 @@ import {
   Dimensions,
   Platform,
   Vibration,
-  Image,
   ActivityIndicator,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useAppContext } from "../../Logic/globalState";
-import Logo from "../../components/Logo";
 import {
   responsiveFontSize,
   horizontalScale,
@@ -27,18 +25,14 @@ import {
   downloadDatabaseFromGitHub,
   databaseExists,
 } from "../../database/downloadDatabase";
-import {
-  forceStopIndexing,
-  closeDatabase,
-  resetDatabaseState,
-} from "../../database/sermonDB";
+import { forceStopIndexing, closeDatabase } from "../../database/sermonDB";
 import * as Updates from "expo-updates";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const Welcome = () => {
   const navigation = useNavigation();
-  const { theme, refreshSermons, allSermons } = useAppContext();
+  const { theme, allSermons } = useAppContext();
   const [fontsLoaded] = useFonts({
     "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
     "ZillaSlab-SemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
@@ -52,13 +46,7 @@ const Welcome = () => {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadError, setDownloadError] = useState(null);
 
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const logoRotateAnim = useRef(new Animated.Value(0)).current;
-
-  // Check if database exists on component mount and when screen comes into focus
+  // Check if database exists on mount
   useEffect(() => {
     const checkDatabase = async () => {
       try {
@@ -71,19 +59,11 @@ const Welcome = () => {
     checkDatabase();
   }, []);
 
-  // Re-check database when screen comes into focus
+  // Re-check when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      // Primary check: if allSermons is loaded in context, we have a database
       const hasLoadedSermons = allSermons && allSermons.length > 0;
-
-      console.log("📚 Sermons in context:", allSermons?.length || 0);
-      console.log("✅ Database ready:", hasLoadedSermons);
-
-      // Set dbExists based on sermon data in context
       setDbExists(hasLoadedSermons);
-
-      // Reset download state when returning to this screen
       setIsDownloading(false);
       setDownloadProgress(0);
       setDownloadError(null);
@@ -102,51 +82,32 @@ const Welcome = () => {
       setDownloadError(null);
       setDownloadProgress(0);
 
-      console.log("Starting database download...");
-
-      // Only stop indexing and close DB if database already exists
       if (allSermons.length > 0) {
-        console.log("🛑 Stopping any ongoing indexing...");
         forceStopIndexing();
-
         try {
           await closeDatabase();
-          console.log("✅ Database closed before download");
         } catch (closeError) {
-          console.warn("⚠️ Error closing database:", closeError.message);
+          console.warn("Error closing database:", closeError.message);
         }
-
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
-      // Download the database with real progress tracking
-      const result = await downloadDatabaseFromGitHub((percentage, message) => {
+      const result = await downloadDatabaseFromGitHub((percentage) => {
         setDownloadProgress(percentage);
       });
 
       if (result.success) {
         setDownloadProgress(100);
-        console.log("✅ Database downloaded successfully. Restarting app...");
-
-        // Brief delay so user sees 100%
         await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        // Restart the app to load fresh data
         try {
           await Updates.reloadAsync();
         } catch (restartError) {
-          // Fallback for dev mode (Expo Go) where Updates.reloadAsync doesn't work
-          console.warn("⚠️ Updates.reloadAsync failed, trying DevSettings...");
           try {
             const { DevSettings } = require("react-native");
             DevSettings.reload();
           } catch (devError) {
-            console.warn(
-              "⚠️ DevSettings.reload also failed:",
-              devError.message,
-            );
             setDownloadError(
-              "Download complete! Please close and reopen the app to load your sermons.",
+              "Download complete! Please close and reopen the app.",
             );
             setIsDownloading(false);
           }
@@ -162,75 +123,93 @@ const Welcome = () => {
     }
   };
 
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const btnFade = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
   // Reset animations when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       fadeAnim.setValue(0);
-      slideAnim.setValue(50);
-      scaleAnim.setValue(0.8);
-      logoRotateAnim.setValue(0);
+      slideAnim.setValue(40);
+      btnFade.setValue(0);
 
-      // Entrance animations
+      // Content entrance
       Animated.sequence([
         Animated.parallel([
           Animated.timing(fadeAnim, {
             toValue: 1,
-            duration: 800,
+            duration: 700,
             useNativeDriver: true,
-            easing: Easing.out(Easing.ease),
+            easing: Easing.out(Easing.cubic),
           }),
-          Animated.spring(logoRotateAnim, {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 100,
-            friction: 8,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.spring(slideAnim, {
+          Animated.timing(slideAnim, {
             toValue: 0,
+            duration: 700,
             useNativeDriver: true,
-            tension: 120,
-            friction: 8,
-          }),
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 100,
-            friction: 8,
+            easing: Easing.out(Easing.cubic),
           }),
         ]),
+        Animated.timing(btnFade, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.ease),
+        }),
       ]).start();
-    }, [fadeAnim, slideAnim, scaleAnim, logoRotateAnim]),
+
+      // Smooth infinite background spin
+      spinAnim.setValue(0);
+      Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 90000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      ).start();
+    }, [fadeAnim, slideAnim, btnFade, spinAnim]),
   );
 
   // Handle button press
   const handleBeginReading = () => {
-    // Haptic feedback
     if (Platform.OS === "ios") {
       Vibration.vibrate(20);
     } else {
       Vibration.vibrate(50);
     }
-
     navigateToMainScreen();
   };
 
-  const logoRotation = logoRotateAnim.interpolate({
+  // Theme-derived colors
+  const accent = theme.dark ? "#e6c3b8" : "#5d3211";
+  const accentMuted = theme.dark
+    ? "rgba(230, 195, 184, 0.7)"
+    : "rgba(93, 50, 17, 0.6)";
+  const divider = theme.dark
+    ? "rgba(230, 195, 184, 0.15)"
+    : "rgba(93, 50, 17, 0.12)";
+
+  // Background pattern colors
+  const patternColor = theme.dark
+    ? "rgba(230, 195, 184, 0.04)"
+    : "rgba(93, 50, 17, 0.035)";
+  const patternAccent = theme.dark
+    ? "rgba(212, 165, 116, 0.06)"
+    : "rgba(139, 69, 19, 0.045)";
+
+  // Pre-computed pattern data
+  const concentricCircles = [0.18, 0.35, 0.52, 0.7, 0.9, 1.1];
+  const radiatingLines = Array.from({ length: 24 }, (_, i) => i * 15);
+
+  const spinRotation = spinAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
 
-  // Background pattern colors based on theme
-  const patternColor = theme.dark
-    ? "rgba(230, 195, 184, 0.04)"
-    : "rgba(93, 50, 17, 0.04)";
-  const patternAccent = theme.dark
-    ? "rgba(212, 165, 116, 0.06)"
-    : "rgba(139, 69, 19, 0.05)";
-
-  // Memoize button style to prevent recalculation on every render
-  const buttonStyleMemo = useMemo(
+  const buttonBg = useMemo(
     () => ({
       backgroundColor: theme.dark
         ? "rgba(230, 195, 184, 0.1)"
@@ -239,319 +218,196 @@ const Welcome = () => {
     [theme.dark],
   );
 
-  // Generate radiating lines for "truth/light" symbolism
-  const radiatingLines = Array.from({ length: 12 }, (_, i) => i * 30);
-
-  // Generate concentric circles for "peace/harmony" symbolism
-  const concentricCircles = [0.15, 0.3, 0.45, 0.6, 0.8, 1];
-
   return (
     <LinearGradient
       colors={
         theme.dark
-          ? ["#221b17", "#2d1f15", "#221b17"]
-          : ["#faeed1", "#f5e6d3", "#faeed1"]
+          ? ["#1a130e", "#221b17", "#1a130e"]
+          : ["#faf3ea", "#f5e6d3", "#faf3ea"]
       }
       style={styles.mainContainer}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
     >
-      {/* Background Art Pattern - Peace & Truth */}
-      <View style={styles.patternContainer}>
-        {/* Concentric circles - representing peace and harmony */}
-        {concentricCircles.map((scale, index) => (
+      {/* Background Art Pattern — spinning */}
+      <Animated.View
+        style={[
+          styles.patternContainer,
+          { transform: [{ rotate: spinRotation }] },
+        ]}
+      >
+        {/* Concentric circles — eternity / harmony */}
+        {concentricCircles.map((scale, i) => (
           <View
-            key={`circle-${index}`}
+            key={`c-${i}`}
             style={[
               styles.concentricCircle,
               {
-                width: screenWidth * scale * 1.5,
-                height: screenWidth * scale * 1.5,
-                borderRadius: (screenWidth * scale * 1.5) / 2,
-                borderColor: index % 2 === 0 ? patternColor : patternAccent,
-                borderWidth: index === concentricCircles.length - 1 ? 2 : 1,
+                width: screenWidth * scale * 1.2,
+                height: screenWidth * scale * 1.2,
+                borderRadius: (screenWidth * scale * 1.2) / 2,
+                borderColor: i % 2 === 0 ? patternColor : patternAccent,
+                borderWidth: i === concentricCircles.length - 1 ? 1.5 : 1,
               },
             ]}
           />
         ))}
 
-        {/* Radiating lines - representing truth and light */}
-        {radiatingLines.map((angle, index) => (
+        {/* Radiating lines — truth / light */}
+        {radiatingLines.map((angle, i) => (
           <View
-            key={`line-${index}`}
+            key={`r-${i}`}
             style={[
               styles.radiatingLine,
               {
-                backgroundColor: index % 3 === 0 ? patternAccent : patternColor,
+                backgroundColor: i % 3 === 0 ? patternAccent : patternColor,
                 transform: [{ rotate: `${angle}deg` }],
-                height: screenHeight * 0.6,
+                height: screenHeight * 0.55,
               },
             ]}
           />
         ))}
 
-        {/* Dove wings pattern - subtle curved lines for peace */}
+        {/* Gentle arcs — dove-wing motif */}
         <View
           style={[
-            styles.wingPattern,
+            styles.wingArc,
             styles.wingLeft,
             { borderColor: patternAccent },
           ]}
         />
         <View
           style={[
-            styles.wingPattern,
+            styles.wingArc,
             styles.wingRight,
             { borderColor: patternAccent },
           ]}
         />
-
-        {/* Olive branch dots - scattered for peace symbolism */}
-        {[...Array(8)].map((_, i) => (
-          <View
-            key={`dot-${i}`}
-            style={[
-              styles.oliveDot,
-              {
-                backgroundColor: patternAccent,
-                top: `${15 + i * 10}%`,
-                left: i % 2 === 0 ? `${10 + i * 5}%` : undefined,
-                right: i % 2 !== 0 ? `${10 + i * 5}%` : undefined,
-              },
-            ]}
-          />
-        ))}
-      </View>
+      </Animated.View>
 
       <Animated.View
         style={[
           styles.container,
           {
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+            transform: [{ translateY: slideAnim }],
           },
         ]}
       >
-        {/* Cloud Badge */}
-        <Animated.View style={styles.cloudOuter}>
-          <View
-            style={[
-              styles.cloudRing,
-              {
-                borderColor: theme.dark
-                  ? "rgba(230, 195, 184, 0.2)"
-                  : "rgba(93, 50, 17, 0.15)",
-              },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.cloudContainer,
-              {
-                backgroundColor: theme.dark
-                  ? "rgba(230, 195, 184, 0.12)"
-                  : "rgba(93, 50, 17, 0.09)",
-                borderColor: theme.dark
-                  ? "rgba(230, 195, 184, 0.25)"
-                  : "rgba(93, 50, 17, 0.2)",
-              },
-            ]}
-          >
-            <Image
-              source={require("../../assets/cloud.png")}
-              style={styles.cloudImage}
-              resizeMode="contain"
-            />
-          </Animated.View>
-        </Animated.View>
+        {/* Thin decorative line */}
+        <View style={[styles.dividerLine, { backgroundColor: divider }]} />
 
-        {/* Title Section */}
-        <Animated.View style={[styles.contentContainer]}>
-          {/* Name tag */}
+        {/* Small label */}
+        <Text style={[styles.label, { color: accentMuted }]}>SERMONS OF</Text>
+
+        {/* Main title */}
+        <Text style={[styles.mainTitle, { color: accent }]}>
+          Robert Lambert Lee
+        </Text>
+
+        {/* Subtitle */}
+        <Text style={[styles.subtitle, { color: accentMuted }]}>
+          Transcribed & Audio Sermons
+        </Text>
+
+        {/* Year pill */}
+        <View
+          style={[
+            styles.yearPill,
+            {
+              borderColor: divider,
+              backgroundColor: theme.dark
+                ? "rgba(230, 195, 184, 0.04)"
+                : "rgba(93, 50, 17, 0.03)",
+            },
+          ]}
+        >
+          <Text style={[styles.yearText, { color: accentMuted }]}>
+            1964 – 1973
+          </Text>
+        </View>
+
+        {/* Thin decorative line */}
+        <View style={[styles.dividerLine, { backgroundColor: divider }]} />
+
+        {/* Scripture quote */}
+        <View style={styles.quoteWrap}>
+          <Text style={[styles.quoteText, { color: accentMuted }]}>
+            And I saw another mighty angel come down{"\n"}from heaven, clothed
+            with a cloud: and a{"\n"}rainbow was upon his head.
+          </Text>
           <Text
             style={[
-              styles.nameLabel,
+              styles.quoteRef,
               {
                 color: theme.dark
-                  ? "rgba(230, 195, 184, 0.55)"
+                  ? "rgba(230, 195, 184, 0.5)"
                   : "rgba(93, 50, 17, 0.45)",
               },
             ]}
           >
-            SERMONS OF
+            Revelation 10:1
           </Text>
+        </View>
+      </Animated.View>
 
-          <Text
-            style={[
-              styles.titleHighlight,
-              { color: theme.dark ? "#e6c3b8" : "#5d3211" },
-            ]}
-          >
-            Robert Lambert Lee
-          </Text>
-
-          <Text
-            style={[
-              styles.title,
-              {
-                color: theme.dark
-                  ? "rgba(255, 255, 255, 0.55)"
-                  : "rgba(93,50,17,0.55)",
-              },
-            ]}
-          >
-            Transcribed & Audio Sermons
-          </Text>
-
-          {/* Year badge */}
-          <View
-            style={[
-              styles.yearBadge,
-              {
-                backgroundColor: theme.dark
-                  ? "rgba(230, 195, 184, 0.08)"
-                  : "rgba(93, 50, 17, 0.07)",
-                borderColor: theme.dark
-                  ? "rgba(230, 195, 184, 0.2)"
-                  : "rgba(93, 50, 17, 0.18)",
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.yearDot,
-                { backgroundColor: theme.dark ? "#e6c3b8" : "#5d3211" },
-              ]}
-            />
-            <Text
-              style={[
-                styles.subtitle,
-                { color: theme.dark ? "#c4b5b0" : "#5d3211" },
-              ]}
-            >
-              1964 – 1973
+      {/* Button area — separate so it fades in after content */}
+      <Animated.View style={[styles.buttonArea, { opacity: btnFade }]}>
+        {isDownloading ? (
+          <View style={styles.downloadWrap}>
+            <ActivityIndicator size="small" color={accent} />
+            <Text style={[styles.downloadLabel, { color: accent }]}>
+              {downloadProgress >= 100
+                ? "Complete — restarting…"
+                : `Downloading… ${Math.round(downloadProgress)}%`}
             </Text>
-            <View
-              style={[
-                styles.yearDot,
-                { backgroundColor: theme.dark ? "#e6c3b8" : "#5d3211" },
-              ]}
-            />
-          </View>
-
-          {/* Scripture quote */}
-          <View
-            style={[
-              styles.quoteBlock,
-              {
-                borderLeftColor: theme.dark
-                  ? "rgba(230, 195, 184, 0.35)"
-                  : "rgba(93, 50, 17, 0.3)",
-                backgroundColor: theme.dark
-                  ? "rgba(230, 195, 184, 0.04)"
-                  : "rgba(93, 50, 17, 0.03)",
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.description,
-                { color: theme.dark ? "rgba(255, 255, 255, 0.65)" : "#4a3526" },
-              ]}
-            >
-              And I saw another mighty angel come down from heaven, clothed with
-              a cloud: and a rainbow was upon his head.
-            </Text>
-            <Text
-              style={[
-                styles.reference,
-                {
-                  color: theme.dark
-                    ? "rgba(230, 195, 184, 0.6)"
-                    : "rgba(93, 50, 17, 0.6)",
-                },
-              ]}
-            >
-              — Revelation 10:1
-            </Text>
-          </View>
-        </Animated.View>
-
-        {/* Begin Reading / Download Button */}
-        <View style={[styles.buttonContainer]}>
-          {isDownloading ? (
-            <View style={styles.downloadContainer}>
-              <ActivityIndicator
-                size="large"
-                color={theme.dark ? "#e6c3b8" : "#5d3211"}
-              />
-              <Text
-                style={[
-                  styles.downloadText,
-                  { color: theme.dark ? "#e6c3b8" : "#5d3211" },
-                ]}
-              >
-                {downloadProgress >= 100
-                  ? "Download complete! Restarting app..."
-                  : `Downloading... ${Math.round(downloadProgress)}%`}
-              </Text>
+            <View style={[styles.progressTrack, { backgroundColor: divider }]}>
               <View
                 style={[
-                  styles.progressBar,
+                  styles.progressFill,
                   {
-                    backgroundColor: theme.dark
-                      ? "rgba(230, 195, 184, 0.2)"
-                      : "rgba(93, 50, 17, 0.1)",
+                    width: `${downloadProgress}%`,
+                    backgroundColor: accent,
                   },
                 ]}
-              >
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${downloadProgress}%`,
-                      backgroundColor: theme.dark ? "#e6c3b8" : "#5d3211",
-                    },
-                  ]}
-                />
-              </View>
+              />
             </View>
-          ) : downloadError ? (
-            <View style={styles.errorContainer}>
-              <Text
-                style={[
-                  styles.errorText,
-                  { color: theme.dark ? "#ff6b6b" : "#cc0000" },
-                ]}
-              >
-                {downloadError}
-              </Text>
-              <TouchableOpacity
-                onPress={handleDownloadDatabase}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.button, buttonStyleMemo]}>
-                  <Text style={styles.buttonText}>RETRY DOWNLOAD</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          ) : dbExists ? (
-            <TouchableOpacity onPress={handleBeginReading} activeOpacity={0.85}>
-              <View style={[styles.button, buttonStyleMemo]}>
-                <Text style={styles.buttonText}>Begin Reading</Text>
-              </View>
-            </TouchableOpacity>
-          ) : (
+          </View>
+        ) : downloadError ? (
+          <View style={styles.errorWrap}>
+            <Text
+              style={[
+                styles.errorLabel,
+                { color: theme.dark ? "#ff6b6b" : "#cc0000" },
+              ]}
+            >
+              {downloadError}
+            </Text>
             <TouchableOpacity
               onPress={handleDownloadDatabase}
-              activeOpacity={0.85}
+              activeOpacity={0.8}
             >
-              <View style={[styles.button, buttonStyleMemo]}>
-                <Text style={styles.buttonText}>Download Sermons</Text>
+              <View style={[styles.btn, buttonBg]}>
+                <Text style={styles.btnText}>Retry</Text>
               </View>
             </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        ) : dbExists ? (
+          <TouchableOpacity onPress={handleBeginReading} activeOpacity={0.85}>
+            <View style={[styles.btn, buttonBg]}>
+              <Text style={styles.btnText}>Begin Reading</Text>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={handleDownloadDatabase}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.btn, buttonBg]}>
+              <Text style={styles.btnText}>Download Sermons</Text>
+            </View>
+          </TouchableOpacity>
+        )}
       </Animated.View>
     </LinearGradient>
   );
@@ -562,19 +418,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  cloudOuter: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: spacing.xxl,
-    marginBottom: spacing.lg,
-  },
-  cloudRing: {
-    position: "absolute",
-    width: horizontalScale(130),
-    height: horizontalScale(130),
-    borderRadius: horizontalScale(65),
-    borderWidth: 1,
   },
   patternContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -592,189 +435,138 @@ const styles = StyleSheet.create({
     width: 1,
     transformOrigin: "center center",
   },
-  wingPattern: {
+  wingArc: {
     position: "absolute",
-    width: horizontalScale(150),
-    height: verticalScale(80),
+    width: horizontalScale(160),
+    height: verticalScale(90),
     borderWidth: 1.5,
-    borderRadius: horizontalScale(100),
+    borderRadius: horizontalScale(110),
     borderStyle: "solid",
   },
   wingLeft: {
-    top: "25%",
-    left: -horizontalScale(50),
-    transform: [{ rotate: "-30deg" }],
+    top: "22%",
+    left: -horizontalScale(55),
+    transform: [{ rotate: "-25deg" }],
     borderRightWidth: 0,
   },
   wingRight: {
-    top: "25%",
-    right: -horizontalScale(50),
-    transform: [{ rotate: "30deg" }],
+    top: "22%",
+    right: -horizontalScale(55),
+    transform: [{ rotate: "25deg" }],
     borderLeftWidth: 0,
   },
-  oliveDot: {
-    position: "absolute",
-    width: horizontalScale(6),
-    height: horizontalScale(6),
-    borderRadius: horizontalScale(3),
-  },
   container: {
-    flex: 1,
-    justifyContent: "space-around",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxl,
-    width: "100%",
+    gap: 20,
   },
-  cloudContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 9999,
-    padding: horizontalScale(22),
-    borderWidth: 1,
+  dividerLine: {
+    width: 40,
+    height: 1,
+    borderRadius: 1,
   },
-  cloudImage: {
-    width: horizontalScale(88),
-    height: verticalScale(88),
-    opacity: 0.9,
-  },
-  audioLinesContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: horizontalScale(3),
-    position: "absolute",
-  },
-  audioBar: {
-    width: horizontalScale(2),
-    borderRadius: horizontalScale(1),
-  },
-  contentContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-  nameLabel: {
+  label: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(11),
-    letterSpacing: 3,
-    marginBottom: spacing.xs,
+    fontSize: responsiveFontSize(13),
+    letterSpacing: 5,
+    textTransform: "uppercase",
+    marginTop: 4,
   },
-  title: {
-    fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(14),
-    textAlign: "center",
-    fontWeight: "300",
-    lineHeight: responsiveFontSize(22),
-    marginBottom: spacing.lg,
-    marginTop: spacing.xs,
-  },
-  titleHighlight: {
+  mainTitle: {
     fontFamily: "Philosopher",
-    fontWeight: "400",
-    fontSize: responsiveFontSize(28),
+    fontSize: responsiveFontSize(32),
     textAlign: "center",
-    lineHeight: responsiveFontSize(36),
-    marginBottom: spacing.xs,
-  },
-  yearBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: 100,
-    borderWidth: 1,
-    marginBottom: spacing.lg,
-  },
-  yearDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    opacity: 0.6,
+    lineHeight: responsiveFontSize(42),
   },
   subtitle: {
-    fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(14),
-    fontWeight: "300",
-    letterSpacing: 2.5,
-  },
-  quoteBlock: {
-    borderLeftWidth: 2,
-    borderRadius: 4,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    alignSelf: "stretch",
-    marginHorizontal: spacing.sm,
-  },
-  description: {
     fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(13),
-    textAlign: "left",
-    lineHeight: responsiveFontSize(21),
-    fontWeight: "300",
-    fontStyle: "italic",
+    fontSize: responsiveFontSize(14),
+    letterSpacing: 0.6,
+    textAlign: "center",
   },
-  reference: {
+  yearPill: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 6,
+    borderRadius: 100,
+    borderWidth: 1,
+  },
+  yearText: {
     fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(11.5),
-    textAlign: "right",
-    marginTop: spacing.sm,
-    letterSpacing: 0.3,
+    fontSize: responsiveFontSize(13),
+    letterSpacing: 3,
   },
-  buttonContainer: {
-    marginBottom: spacing.xxl,
+  quoteWrap: {
+    alignItems: "center",
+    marginTop: 8,
+    paddingHorizontal: spacing.md,
   },
-  button: {
-    paddingHorizontal: horizontalScale(52),
-    paddingVertical: verticalScale(15),
+  quoteText: {
+    fontFamily: "Merriweather",
+    fontSize: responsiveFontSize(14),
+    // fontStyle: "italic",
+    textAlign: "center",
+    lineHeight: responsiveFontSize(24),
+  },
+  quoteRef: {
+    fontFamily: "ZillaSlab-Regular",
+    fontSize: responsiveFontSize(12),
+    marginTop: 12,
+    letterSpacing: 1.5,
+  },
+
+  /* Button area */
+  buttonArea: {
+    position: "absolute",
+    bottom: verticalScale(56),
+    alignItems: "center",
+    width: "100%",
+  },
+  btn: {
+    paddingHorizontal: horizontalScale(48),
+    paddingVertical: verticalScale(14),
     borderRadius: 100,
     shadowColor: "#5d3211",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  buttonText: {
+  btnText: {
     fontFamily: "Merriweather",
     color: "#fff",
-    fontSize: responsiveFontSize(14.5),
+    fontSize: responsiveFontSize(15),
     fontWeight: "600",
     letterSpacing: 0.8,
     textAlign: "center",
   },
-  downloadContainer: {
+
+  /* Download & error */
+  downloadWrap: {
     alignItems: "center",
     paddingHorizontal: horizontalScale(40),
-    paddingVertical: verticalScale(20),
-    gap: spacing.md,
+    gap: 12,
   },
-  downloadText: {
+  downloadLabel: {
     fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(14),
-    fontWeight: "500",
-    marginTop: spacing.md,
+    fontSize: responsiveFontSize(13),
   },
-  progressBar: {
-    width: "100%",
-    height: verticalScale(8),
-    borderRadius: 4,
+  progressTrack: {
+    width: screenWidth * 0.6,
+    height: 4,
+    borderRadius: 2,
     overflow: "hidden",
-    marginTop: spacing.md,
   },
   progressFill: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: 2,
   },
-  errorContainer: {
+  errorWrap: {
     alignItems: "center",
-    gap: spacing.md,
+    gap: 14,
   },
-  errorText: {
+  errorLabel: {
     fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(14),
-    fontWeight: "500",
+    fontSize: responsiveFontSize(13),
     textAlign: "center",
   },
 });
