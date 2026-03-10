@@ -15,6 +15,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
 import { AudioSkeletonLoader } from "../Loader";
+import { Asset } from "expo-asset";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const ARTWORK_SIZE = SCREEN_WIDTH * 0.62;
@@ -81,14 +82,30 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
   // (without this, audio stops after ~3 min on Android in background)
   useEffect(() => {
     if (!player || !status.isLoaded || !sermonTitle) return;
-    try {
-      player.setActiveForLockScreen?.(true, {
-        title: sermonTitle,
-        artist: "Robert Lambert Lee",
-      });
-    } catch (e) {
-      console.warn("[AudioPlayer] setActiveForLockScreen failed:", e);
-    }
+    const activate = async () => {
+      try {
+        // Resolve bob.png to a local file URI (works in both dev and prod builds)
+        const asset = Asset.fromModule(require("../../assets/bob.png"));
+        await asset.downloadAsync();
+        const artworkUri = asset.localUri ?? asset.uri;
+
+        // Truncate title to fit the media card — 25 chars is safe across devices
+        const displayTitle =
+          sermonTitle.length > 25
+            ? sermonTitle.slice(0, 22) + "..."
+            : sermonTitle;
+
+        player.setActiveForLockScreen?.(true, {
+          title: displayTitle,
+          artist: "Robert Lambert Lee",
+          album: "His Voice",
+          artworkUri,
+        });
+      } catch (e) {
+        console.warn("[AudioPlayer] setActiveForLockScreen failed:", e);
+      }
+    };
+    activate();
   }, [status.isLoaded, sermonTitle]);
 
   // --- Early returns go here, after all hooks ---
