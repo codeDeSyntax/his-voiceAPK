@@ -19,8 +19,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2c221a"
       },
-      "package": "com.boblambert.hisvoice",
-      "edgeToEdgeEnabled": true
+      "package": "com.boblambert.hisvoice"
     },
     "web": {
       "favicon": "./assets/adaptive-icon.png"
@@ -61,9 +60,6 @@
     "owner": "josiah-ok",
     "runtimeVersion": {
       "policy": "sdkVersion"
-    },
-    "cli": {
-      "appVersionSource": "appJson"
     }
   }
 }
