@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import * as Audio from "expo-audio";
+import { setAudioModeAsync } from "expo-audio";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
@@ -50,6 +51,17 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
     setError(null);
   }, [audioUrl]);
 
+  // Configure audio session for background playback on mount
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+      interruptionMode: "doNotMix",
+    }).catch((e) =>
+      console.warn("[AudioPlayer] setAudioModeAsync failed:", e),
+    );
+  }, []);
+
   // updateInterval 500ms → 2 status updates/sec while playing instead of 20.
   // The slider moves smoothly via native animation; the JS label update at 2Hz is enough.
   const player = Audio.useAudioPlayer(audioUrl || "", {
@@ -64,6 +76,20 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
       setError("Failed to load message");
     }
   }, [status.error]);
+
+  // Activate lock screen controls so Android keeps the foreground service alive
+  // (without this, audio stops after ~3 min on Android in background)
+  useEffect(() => {
+    if (!player || !status.isLoaded || !sermonTitle) return;
+    try {
+      player.setActiveForLockScreen?.(true, {
+        title: sermonTitle,
+        artist: "Robert Lambert Lee",
+      });
+    } catch (e) {
+      console.warn("[AudioPlayer] setActiveForLockScreen failed:", e);
+    }
+  }, [status.isLoaded, sermonTitle]);
 
   // --- Early returns go here, after all hooks ---
   if (!audioUrl) {

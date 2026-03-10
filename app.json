@@ -6,12 +6,12 @@
     "orientation": "portrait",
     "scheme": "hisvoice",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.boblambert.hisvoice",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
@@ -28,6 +28,12 @@
     "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
     "plugins": [
       "expo-font",
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
