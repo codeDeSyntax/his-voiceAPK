@@ -40,12 +40,12 @@ const CIRCLE_GAP = 8;
 const ITEM_W = CIRCLE + CIRCLE_GAP;
 
 const COLORS = [
-  { name: "yellow", light: "#F59E0B", dark: "#FCD34D" },
-  { name: "green", light: "#059669", dark: "#34D399" },
-  { name: "brown", light: "#8B4513", dark: "#D2B48C" },
-  { name: "purple", light: "#7C3AED", dark: "#C084FC" },
-  { name: "pink", light: "#DB2777", dark: "#F472B6" },
-  { name: "orange", light: "#EA580C", dark: "#FB923C" },
+  { name: "yellow", light: "#B88808", dark: "#D4A830" }, // warm honey/gold
+  { name: "green",  light: "#4A7028", dark: "#88B060" }, // sage olive
+  { name: "brown",  light: "#8A4820", dark: "#C08050" }, // sienna copper
+  { name: "purple", light: "#6A4870", dark: "#A87CA8" }, // dusty plum
+  { name: "pink",   light: "#904848", dark: "#C08080" }, // dusty rose
+  { name: "orange", light: "#B85820", dark: "#D88040" }, // terracotta
 ];
 
 // â”€â”€â”€ Memoized circle â€” only re-renders when its own props change â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

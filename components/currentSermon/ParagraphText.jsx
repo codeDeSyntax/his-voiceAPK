@@ -8,12 +8,12 @@ import { parseEndnote } from "../../Utils/endnoteParser";
 
 // Memoized highlight colors - calculate once
 const HIGHLIGHT_COLORS = {
-  yellow: { light: "#FEF08A", dark: "#FBBF2499" },
-  green: { light: "#BBF7D0", dark: "#34D39999" },
-  brown: { light: "#D2B48C", dark: "#8B7355" },
-  purple: { light: "#DDD6FE", dark: "#C084FC99" },
-  pink: { light: "#FBCFE8", dark: "#F472B699" },
-  orange: { light: "#FED7AA", dark: "#FB923C99" },
+  yellow: { light: "#B88808", dark: "#D4A830" }, // warm honey/gold
+  green:  { light: "#4A7028", dark: "#88B060" }, // sage olive
+  brown:  { light: "#8A4820", dark: "#C08050" }, // sienna copper
+  purple: { light: "#6A4870", dark: "#A87CA8" }, // dusty plum
+  pink:   { light: "#904848", dark: "#C08080" }, // dusty rose
+  orange: { light: "#B85820", dark: "#D88040" }, // terracotta
 };
 
 // Helper function to render text with styled numbers
@@ -27,12 +27,12 @@ const renderTextWithStyledNumbers = (
 ) => {
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
-    yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
-    green: theme.dark ? "#34D399" : "#059669", // Emerald
-    brown: theme.dark ? "#D2B48C" : "#8B4513", // Brown
-    purple: theme.dark ? "#C084FC" : "#7C3AED", // Violet
-    pink: theme.dark ? "#F472B6" : "#DB2777", // Pink
-    orange: theme.dark ? "#FB923C" : "#EA580C", // Orange
+    yellow: theme.dark ? "#E0B840" : "#8A6400", // golden amber
+    green:  theme.dark ? "#80B858" : "#3A6820", // olive green
+    brown:  theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
+    purple: theme.dark ? "#B888C8" : "#6B3580", // plum purple
+    pink:   theme.dark ? "#D88898" : "#A03050", // crimson rose
+    orange: theme.dark ? "#E08840" : "#C05818", // terracotta orange
   };
 
   // Determine text color based on highlight
@@ -106,12 +106,12 @@ const renderTextWithStyledNumbersOnly = (
 ) => {
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
-    yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
-    green: theme.dark ? "#34D399" : "#059669", // Emerald
-    brown: theme.dark ? "#D2B48C" : "#8B4513", // Brown
-    purple: theme.dark ? "#C084FC" : "#7C3AED", // Violet
-    pink: theme.dark ? "#F472B6" : "#DB2777", // Pink
-    orange: theme.dark ? "#FB923C" : "#EA580C", // Orange
+    yellow: theme.dark ? "#E0B840" : "#8A6400", // golden amber
+    green:  theme.dark ? "#80B858" : "#3A6820", // olive green
+    brown:  theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
+    purple: theme.dark ? "#B888C8" : "#6B3580", // plum purple
+    pink:   theme.dark ? "#D88898" : "#A03050", // crimson rose
+    orange: theme.dark ? "#E08840" : "#C05818", // terracotta orange
   };
 
   // Determine text color based on highlight
@@ -430,12 +430,12 @@ const ParagraphText = React.memo(
 
       // Pre-calculated highlight colors for better performance
       const highlightTextColors = {
-        yellow: theme.dark ? "#FCD34D" : "#F59E0B", // Amber
-        green: theme.dark ? "#34D399" : "#059669", // Emerald
-        brown: theme.dark ? "#D2B48C" : "#8B4513", // Brown
-        purple: theme.dark ? "#C084FC" : "#7C3AED", // Violet
-        pink: theme.dark ? "#F472B6" : "#DB2777", // Pink
-        orange: theme.dark ? "#FB923C" : "#EA580C", // Orange
+        yellow: theme.dark ? "#E0B840" : "#8A6400", // golden amber
+        green:  theme.dark ? "#80B858" : "#3A6820", // olive green
+        brown:  theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
+        purple: theme.dark ? "#B888C8" : "#6B3580", // plum purple
+        pink:   theme.dark ? "#D88898" : "#A03050", // crimson rose
+        orange: theme.dark ? "#E08840" : "#C05818", // terracotta orange
       };
 
       // Use highlight color if available, otherwise default text color
@@ -483,27 +483,11 @@ const ParagraphText = React.memo(
         });
       }
 
-      // Add visual indicator if this is the last read paragraph
-      if (selectedSermon?.lastReadParagraph === index) {
-        baseStyle.push({
-          // borderWidth: 2,
-          borderStyle: "dashed",
-          border: theme.dark ? "#faeed1" : "#6b320bff",
-          backgroundColor: theme.dark
-            ? "rgba(213, 122, 62, 0.08)"
-            : "rgba(213, 122, 62, 0.06)",
-          marginBottom: 12,
-          borderRadius: 10,
-        });
-      }
-
       return baseStyle;
     }, [
       currentHighlight,
       theme.dark,
       theme.colors.hlight,
-      selectedSermon?.lastReadParagraph,
-      index,
       isSelected,
     ]);
 
@@ -642,6 +626,8 @@ const ParagraphText = React.memo(
       }
     }, [processedText, theme, settings, searchPhrase]);
 
+    const isLastRead = selectedSermon?.lastReadParagraph === index;
+
     // Selection highlight colour — warm amber/brown matching the app palette.
     // Flows through to TextView.setHighlightColor() on Android; on iOS it
     // sets the UITextView selection bar colour via tintColor.
@@ -675,6 +661,13 @@ const ParagraphText = React.memo(
             dataDetectorType="none"
             allowFontScaling={false}
           >
+            {/* Last-read "Lr" superscript/subscript inline marker */}
+            {isLastRead && (
+              <Text style={{ color: accentColor, opacity: 0.75 }}>
+                <Text style={{ fontSize: responsiveFontSize(12), fontFamily: "Merriweather" }}>L</Text>
+                <Text style={{ fontSize: responsiveFontSize(8), fontFamily: "Merriweather" }}>r </Text>
+              </Text>
+            )}
             {/* Inline paragraph number */}
             <Text style={inlineNumberStyle}>{index + 1} </Text>
             {processedText.type === "endnote_with_title"
