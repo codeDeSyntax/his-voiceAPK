@@ -140,6 +140,7 @@ const CurrentSermon = React.memo(({ route }) => {
   const flatListRef = useRef(null);
   const scrollTimeout = useRef(null);
   const isUserScrolling = useRef(false); // Track if user is actively scrolling
+  const isSearchJumping = useRef(false); // True while a search-result jump is in progress
   const userScrollTimer = useRef(null); // Timer to detect when user stops scrolling
 
   // Cleanup: Save current position immediately when sermon changes or component unmounts
@@ -304,6 +305,10 @@ const CurrentSermon = React.memo(({ route }) => {
   useEffect(() => {
     if (paragraphs.length === 0 || isPositioningComplete) return;
 
+    // Skip if a search-result jump is driving the skeleton — that flow
+    // manages its own scroll + reveal via pendingScrollTarget.
+    if (isSearchJumping.current) return;
+
     // For search: wait until the correct sermon is actually in state.
     if (route?.params?.source === "search" && sermonIdFromRoute) {
       if (selectedSermon?.id !== sermonIdFromRoute) return;
@@ -395,17 +400,40 @@ const CurrentSermon = React.memo(({ route }) => {
   }, [selectedSermon?.sermon]);
 
   // Scroll to a specific paragraph index with animation (user-initiated).
+  // For far-off paragraphs (beyond ~20 items from current position), uses a
+  // two-step approach: first scrollToOffset to force FlatList to render cells
+  // near the target, then scrollToIndex for precision.
   const scrollToParagraph = useCallback(
-    (index) => {
-      if (flatListRef.current && index >= 0 && index < paragraphs.length) {
+    (index, animated = true) => {
+      if (!flatListRef.current || index < 0 || index >= paragraphs.length) return;
+
+      // If target is far from what's likely rendered, do the two-step jump
+      // (same strategy the initial-positioning effect uses for index >= 20).
+      const estimatedDistance = Math.abs(index - currentVisibleParagraph);
+
+      if (estimatedDistance > 30) {
+        // Step 1: jump to approximate offset so FlatList renders nearby cells
+        flatListRef.current.scrollToOffset({
+          offset: 120 * index,
+          animated: false,
+        });
+        // Step 2: precise scroll once cells near target are rendered
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({
+            index,
+            animated,
+            viewPosition: 0.1,
+          });
+        }, 250);
+      } else {
         flatListRef.current.scrollToIndex({
           index,
-          animated: true,
+          animated,
           viewPosition: 0.1,
         });
       }
     },
-    [paragraphs.length],
+    [paragraphs.length, currentVisibleParagraph],
   );
 
   // Scroll to previous paragraph stop
@@ -438,23 +466,60 @@ const CurrentSermon = React.memo(({ route }) => {
   }, []);
 
   // Handle navigating to search result from fullscreen search.
-  // State updates (phrase + navKey) are committed first; the actual scroll
-  // is deferred to a useEffect so FlatList cells render with the updated
-  // searchPhrase before they scroll into view.
+  // For far paragraphs the FlatList is hidden behind the skeleton while
+  // the jump happens, so the user never sees scroll jumps.
   const handleSearchNavigateToResult = useCallback((paragraphIndex, phrase) => {
+    const isFarJump = Math.abs(paragraphIndex - currentVisibleParagraph) > 30;
+
     setIsSearchVisible(false);
     setCurrentSearchPhrase(phrase || "");
     setSearchNavKey((k) => k + 1);
+
+    if (isFarJump) {
+      // Hide FlatList behind skeleton while we jump silently
+      isSearchJumping.current = true;
+      setIsPositioningComplete(false);
+    }
+
     setPendingScrollTarget(paragraphIndex);
-  }, []);
+  }, [currentVisibleParagraph]);
 
   // Fire scroll AFTER the new phrase and extraData have been committed.
+  // For far jumps the FlatList is hidden (opacity 0) behind the skeleton,
+  // so all jumping happens invisibly — the user sees skeleton → result.
   useEffect(() => {
-    if (pendingScrollTarget !== null) {
-      scrollToParagraph(pendingScrollTarget);
-      setPendingScrollTarget(null);
+    if (pendingScrollTarget === null) return;
+
+    const target = pendingScrollTarget;
+    const isFarJump = Math.abs(target - currentVisibleParagraph) > 30;
+    setPendingScrollTarget(null);
+
+    if (isFarJump && flatListRef.current) {
+      // Step 1: instant offset jump to force FlatList to render nearby cells
+      flatListRef.current.scrollToOffset({
+        offset: 120 * target,
+        animated: false,
+      });
+      // Step 2: precise scroll + reveal after cells have rendered
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({
+          index: target,
+          animated: false,
+          viewPosition: 0.1,
+        });
+        // Reveal after the scroll settles
+        setTimeout(() => {
+          isSearchJumping.current = false;
+          setIsPositioningComplete(true);
+        }, 100);
+      }, 250);
+    } else {
+      // Close paragraph — direct animated scroll, no hiding needed
+      requestAnimationFrame(() => {
+        scrollToParagraph(target);
+      });
     }
-  }, [pendingScrollTarget, scrollToParagraph]);
+  }, [pendingScrollTarget, scrollToParagraph, currentVisibleParagraph]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -499,24 +564,34 @@ const CurrentSermon = React.memo(({ route }) => {
   }, []);
 
   const handleScrollToIndexFailed = useCallback((info) => {
-    // Safety net for user-initiated prev/next scrolls that land beyond the
-    // render window. The initial-positioning path never reaches here (it uses
-    // proactive scrollToOffset + scrollToIndex with animated:false while the
-    // skeleton is visible). Here animated:true is fine — the user triggered it.
-    if (flatListRef.current) {
-      const approxOffset = (info.averageItemLength ?? 120) * info.index;
-      flatListRef.current.scrollToOffset({
-        offset: approxOffset,
-        animated: false,
-      });
-      setTimeout(() => {
-        flatListRef.current?.scrollToIndex({
-          index: info.index,
-          animated: true,
-          viewPosition: 0.1,
-        });
-      }, 200);
+    // Safety net: when scrollToIndex fails because the target cell's layout
+    // isn't known yet, jump to an approximate offset to force FlatList to
+    // render cells near the target, then retry.
+    if (!flatListRef.current) {
+      isSearchJumping.current = false;
+      setIsPositioningComplete(true); // Always reveal if we can't scroll
+      return;
     }
+
+    const approxOffset = (info.averageItemLength ?? 120) * info.index;
+    flatListRef.current.scrollToOffset({
+      offset: approxOffset,
+      animated: false,
+    });
+
+    // Retry after cells near the target have rendered
+    setTimeout(() => {
+      flatListRef.current?.scrollToIndex({
+        index: info.index,
+        animated: false,
+        viewPosition: 0.1,
+      });
+      // Ensure skeleton is always removed even on failure
+      setTimeout(() => {
+        isSearchJumping.current = false;
+        setIsPositioningComplete(true);
+      }, 100);
+    }, 300);
   }, []);
 
   // Render individual paragraph — FlatList handles virtualization.
@@ -662,7 +737,7 @@ const CurrentSermon = React.memo(({ route }) => {
                   initialNumToRender={25}
                   maxToRenderPerBatch={25}
                   windowSize={21}
-                  removeClippedSubviews={true}
+                  removeClippedSubviews={false}
                   onScrollBeginDrag={handleScrollBeginDrag}
                   onScrollEndDrag={handleScrollEndDrag}
                   onScrollToIndexFailed={handleScrollToIndexFailed}

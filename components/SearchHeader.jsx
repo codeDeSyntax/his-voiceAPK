@@ -1,117 +1,146 @@
-import React from "react";
-import { View, TextInput, TouchableOpacity } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { View, TextInput, TouchableOpacity, Animated } from "react-native";
+import { Feather, AntDesign } from "@expo/vector-icons";
 
-const SearchHeader = ({ theme, searchText, setSearchText }) => {
-  const [focused, setFocused] = React.useState(false);
+const DEBOUNCE_MS = 350;
+
+const SearchHeader = React.memo(({ theme, onSearchChange }) => {
+  const [value, setValue] = useState("");
+  const focusAnim = useRef(new Animated.Value(0)).current;
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const handleFocus = useCallback(() => {
+    Animated.timing(focusAnim, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [focusAnim]);
+
+  const handleBlur = useCallback(() => {
+    Animated.timing(focusAnim, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [focusAnim]);
+
+  const handleChange = useCallback(
+    (text) => {
+      setValue(text);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        onSearchChange(text);
+      }, DEBOUNCE_MS);
+    },
+    [onSearchChange],
+  );
+
+  const handleClear = useCallback(() => {
+    setValue("");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    onSearchChange("");
+  }, [onSearchChange]);
+
+  const animatedBg = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [
+      theme.dark ? "rgba(255,255,255,0.07)" : "rgba(93,50,17,0.05)",
+      theme.dark ? "rgba(255,255,255,0.11)" : "rgba(93,50,17,0.08)",
+    ],
+  });
+
+  const animatedBorder = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [
+      theme.dark ? "rgba(255,255,255,0.09)" : "rgba(93,50,17,0.18)",
+      theme.dark ? "rgba(242,205,180,0.30)" : "rgba(93,50,17,0.35)",
+    ],
+  });
 
   return (
     <View
       style={{
         paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingVertical: 8,
         backgroundColor: theme.colors.background,
       }}
     >
-      <View
+      <Animated.View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: theme.dark
-            ? focused
-              ? "rgba(242, 205, 180, 0.08)"
-              : "rgba(80, 61, 49, 0.35)"
-            : focused
-              ? "rgba(93, 50, 17, 0.07)"
-              : "rgba(93, 50, 17, 0.04)",
-          borderRadius: 16,
-          borderWidth: 1.5,
-          borderColor: focused
-            ? theme.dark
-              ? "rgba(242, 205, 180, 0.35)"
-              : "rgba(93, 50, 17, 0.35)"
-            : theme.dark
-              ? "rgba(242, 205, 180, 0.1)"
-              : "rgba(93, 50, 17, 0.08)",
-          paddingHorizontal: 14,
+          backgroundColor: animatedBg,
+          borderRadius: 100,
+          borderWidth: 1,
+          borderColor: animatedBorder,
+          paddingHorizontal: 16,
           height: 48,
-          shadowColor: focused
-            ? theme.dark
-              ? "rgba(242, 205, 180, 0.3)"
-              : "#5d3211"
-            : "transparent",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: focused ? 0.12 : 0,
-          shadowRadius: 8,
-          elevation: focused ? 2 : 0,
         }}
       >
         <Feather
           name="search"
-          size={17}
+          size={18}
           color={
-            focused
-              ? theme.dark
-                ? "rgba(242, 205, 180, 0.8)"
-                : "rgba(93, 50, 17, 0.8)"
-              : theme.dark
-                ? "rgba(255, 255, 255, 0.4)"
-                : "rgba(93, 50, 17, 0.4)"
+            theme.dark ? "rgba(255,255,255,0.4)" : "rgba(93,50,17,0.45)"
           }
-          style={{ marginRight: 10 }}
+          style={{ marginRight: 6 }}
         />
 
         <TextInput
           style={{
             flex: 1,
-            color: theme.dark ? theme.colors.text : "#5d3211",
-            fontFamily: "Merriweather",
-            fontSize: 14.5,
-            paddingVertical: 0,
+            paddingHorizontal: 8,
+            fontSize: 15,
+            height: 48,
+            color: theme.dark ? theme.colors.text : "#1a0e07",
+            fontFamily: "ZillaSlab",
           }}
           placeholder="Search sermons..."
-          value={searchText}
-          onChangeText={setSearchText}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          value={value}
+          onChangeText={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           placeholderTextColor={
-            theme.dark ? "rgba(255, 255, 255, 0.35)" : "rgba(93, 50, 17, 0.4)"
+            theme.dark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)"
           }
-          selectionColor={theme.dark ? "rgba(242, 205, 180, 0.6)" : "#5d3211"}
+          selectionColor={theme.dark ? theme.colors.text : "#5d3211"}
           spellCheck={false}
           autoCorrect={false}
           keyboardAppearance={theme.dark ? "dark" : "light"}
         />
 
-        {searchText.length > 0 && (
+        {value.length > 0 && (
           <TouchableOpacity
-            onPress={() => setSearchText("")}
+            onPress={handleClear}
             style={{
-              width: 26,
-              height: 26,
-              borderRadius: 13,
-              backgroundColor: theme.dark
-                ? "rgba(255, 255, 255, 0.1)"
-                : "rgba(93, 50, 17, 0.1)",
-              alignItems: "center",
+              height: 24,
+              width: 24,
+              borderRadius: 12,
               justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(150,150,150,0.1)",
             }}
             activeOpacity={0.7}
           >
-            <Feather
-              name="x"
-              size={13}
+            <AntDesign
+              name="close"
+              size={14}
               color={
-                theme.dark
-                  ? "rgba(255, 255, 255, 0.6)"
-                  : "rgba(93, 50, 17, 0.6)"
+                theme.dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.4)"
               }
             />
           </TouchableOpacity>
         )}
-      </View>
+      </Animated.View>
     </View>
   );
-};
+});
 
 export default SearchHeader;

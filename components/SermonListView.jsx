@@ -3,14 +3,10 @@ import { View, Text, FlatList, Pressable } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "../styles/Allsermons";
-import { useFonts } from "expo-font";
 import { responsiveFontSize, spacing } from "../Utils/responsiveUtils";
-import { fontsToLoad } from "../Utils/fonts";
 
 const SermonListView = React.memo(
   ({ theme, filteredSermons, handleSermonClick }) => {
-    const [fontsLoaded] = useFonts(fontsToLoad);
-
     // Compact view - minimal list layout with separator
     const renderCompactItem = useCallback(
       ({ item, index }) => (
@@ -122,8 +118,9 @@ const SermonListView = React.memo(
         initialNumToRender={15}
         maxToRenderPerBatch={10}
         windowSize={21}
-        removeClippedSubviews={true}
         updateCellsBatchingPeriod={50}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
         getItemLayout={(data, index) => ({
           length: 50,
           offset: 50 * index,

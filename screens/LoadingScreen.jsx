@@ -20,6 +20,9 @@ const LoaderScreen = () => {
     return () => loop.stop();
   }, []);
 
+  
+
+
   const rotate = spin.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],

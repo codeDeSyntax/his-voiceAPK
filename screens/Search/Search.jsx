@@ -35,6 +35,8 @@ import { searchSermonsWithFTS } from "../../database/sermonDB";
 
 const CONTEXT_LENGTH = 30;
 
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // ── Animated dot for the search loading indicator ──────────────────────────
 const SearchDot = ({ anim, color }) => {
   const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
@@ -193,7 +195,7 @@ const SermonSearch = () => {
       // Transform results to match expected format
       const filtered = results.map((sermon) => {
         const primaryMatch = sermon.matches[0];
-        const regex = new RegExp(`(${searchPhrase})`, "gi");
+        const regex = new RegExp(`(${escapeRegex(searchPhrase)})`, "gi");
 
         return {
           title: sermon.title,
@@ -401,7 +403,7 @@ const SermonSearch = () => {
                       uniqueContext = uniqueContext + "...";
                   }
 
-                  const regex = new RegExp(`(${searchPhrase})`, "gi");
+                  const regex = new RegExp(`(${escapeRegex(searchPhrase)})`, "gi");
                   const highlightedContext = uniqueContext.replace(
                     regex,
                     `<highlight>$1</highlight>`,
@@ -460,9 +462,9 @@ const SermonSearch = () => {
                                   isHighlight
                                     ? {
                                         backgroundColor: theme.dark
-                                          ? "#5d3211" + "70"
-                                          : "#5d3211" + "30",
-                                        color: theme.dark ? "#f8e3d5" : "#5d3211",
+                                          ? "rgba(213,122,62,0.25)"
+                                          : "rgba(213,122,62,0.18)",
+                                        color: theme.dark ? "#f2a86b" : "#b85a1a",
                                         fontFamily: "ZillaSlabsm",
                                       }
                                     : undefined

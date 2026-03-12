@@ -739,6 +739,21 @@ const ParagraphText = React.memo(
                     );
                   } else {
                     // Pre-Endnote text and the quote after WMB — normal body text
+                    // Apply search highlighting if active
+                    if (searchPhrase && searchPhrase.trim()) {
+                      return (
+                        <React.Fragment key={`norm-${partIndex}`}>
+                          {renderTextWithStyledNumbers(
+                            part,
+                            theme,
+                            settings,
+                            `ewt-norm-${partIndex}`,
+                            searchPhrase,
+                            currentHighlight,
+                          )}
+                        </React.Fragment>
+                      );
+                    }
                     return (
                       <Text
                         key={`norm-${partIndex}`}
@@ -792,6 +807,21 @@ const ParagraphText = React.memo(
                         </React.Fragment>
                       );
                     } else {
+                      // Apply search highlighting to non-keyword parts
+                      if (searchPhrase && searchPhrase.trim()) {
+                        return (
+                          <React.Fragment key={`en-norm-${partIndex}`}>
+                            {renderTextWithStyledNumbers(
+                              part,
+                              theme,
+                              settings,
+                              `en-norm-${partIndex}`,
+                              searchPhrase,
+                              currentHighlight,
+                            )}
+                          </React.Fragment>
+                        );
+                      }
                       return part;
                     }
                   })

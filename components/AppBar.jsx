@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,10 +15,9 @@ import { styles } from "../styles/Allsermons";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { responsiveFontSize } from "../Utils/responsiveUtils";
-import { useFonts } from "expo-font";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const ListAppBar = ({
+const ListAppBar = React.memo(({
   theme,
   viewMode = "table",
   toggleViewMode,
@@ -38,11 +37,7 @@ const ListAppBar = ({
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
-  const [fontsLoaded] = useFonts({
-    Philosopher: require("../assets/fonts/Philosopher-Regular.ttf"),
-  });
-
-  const openImageModal = () => {
+  const openImageModal = useCallback(() => {
     setImageModalVisible(true);
     fadeAnim.setValue(0);
     Animated.timing(fadeAnim, {
@@ -51,16 +46,16 @@ const ListAppBar = ({
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
-  };
+  }, [fadeAnim]);
 
-  const closeImageModal = () => {
+  const closeImageModal = useCallback(() => {
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 300,
       easing: Easing.in(Easing.ease),
       useNativeDriver: true,
     }).start(() => setImageModalVisible(false));
-  };
+  }, [fadeAnim]);
 
   return (
     <View
@@ -233,6 +228,7 @@ const ListAppBar = ({
                   <ScrollView
                     style={{ maxHeight: 350 }}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                   >
                     <SectionLabel label="Browse" theme={theme} />
                     <DropdownItem
@@ -380,6 +376,7 @@ const ListAppBar = ({
                   <ScrollView
                     style={{ maxHeight: 350 }}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                   >
                     <SectionLabel label="Navigate" theme={theme} />
                     <DropdownItem
@@ -524,7 +521,7 @@ const ListAppBar = ({
       </Modal>
     </View>
   );
-};
+});
 
 // Section label inside dropdowns
 const SectionLabel = ({ label, theme }) => (

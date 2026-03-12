@@ -132,7 +132,8 @@ const CurrentSermonSearch = ({
 
   const highlightText = (text, searchTerm) => {
     if (!searchTerm) return text;
-    const regex = new RegExp(`(${searchTerm})`, "gi");
+    const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
     return text.replace(regex, "**$1**");
   };
 
@@ -383,9 +384,9 @@ const CurrentSermonSearch = ({
                             isHighlight
                               ? {
                                   backgroundColor: theme.dark
-                                    ? "#5d3211" + "70"
-                                    : "#5d3211" + "25",
-                                  color: theme.dark ? "#f8e3d5" : "#5d3211",
+                                    ? "rgba(213,122,62,0.25)"
+                                    : "rgba(213,122,62,0.18)",
+                                  color: theme.dark ? "#f2a86b" : "#b85a1a",
                                   fontFamily: "ZillaSlabsm",
                                 }
                               : undefined
