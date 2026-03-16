@@ -490,7 +490,7 @@ const ListAppBar = React.memo(({
             onPress={closeImageModal}
           >
             <Image
-              source={require("../assets/roundedLam.jpg")}
+              source={require("../assets/roundedLam.png")}
               style={{
                 width: 220,
                 height: 280,

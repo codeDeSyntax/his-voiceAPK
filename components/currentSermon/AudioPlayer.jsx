@@ -85,22 +85,31 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
     const activate = async () => {
       try {
         // Resolve bob.png to a local file URI (works in both dev and prod builds)
-        const asset = Asset.fromModule(require("../../assets/bob.png"));
+        const asset = Asset.fromModule(require("../../assets/roundedLam.png"));
         await asset.downloadAsync();
         const artworkUri = asset.localUri ?? asset.uri;
 
-        // Truncate title to fit the media card — 25 chars is safe across devices
-        const displayTitle =
-          sermonTitle.length > 25
-            ? sermonTitle.slice(0, 22) + "..."
-            : sermonTitle;
+        // Truncate at word boundary so the media card title looks clean
+        let displayTitle = sermonTitle;
+        if (sermonTitle.length > 10) {
+          const trimmed = sermonTitle.slice(0, 10);
+          const lastSpace = trimmed.lastIndexOf(" ");
+          displayTitle =
+            (lastSpace > 3 ? trimmed.slice(0, lastSpace) : trimmed) + "...";
+        }
 
-        player.setActiveForLockScreen?.(true, {
-          title: displayTitle,
-          artist: "Robert Lambert Lee",
-          album: "His Voice",
-          artworkUri,
-        });
+        player.setActiveForLockScreen?.(true,
+          {
+            title: displayTitle,
+            artist: "Robert Lambert Lee",
+            albumTitle: "His Voice",
+            artworkUrl: artworkUri,
+          },
+          {
+            showSeekBackward: true,
+            showSeekForward: true,
+          },
+        );
       } catch (e) {
         console.warn("[AudioPlayer] setActiveForLockScreen failed:", e);
       }
@@ -186,17 +195,27 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
 
   return (
     <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[styles.container, { backgroundColor: theme.colors.background,padding:10 }]}
     >
-      {/* Main player — always rendered so hooks/state stay stable */}
+      <View 
+      
+      style={{
+      gap:10
+      }}
+      >
+ {/* Main player — always rendered so hooks/state stay stable */}
       <View
         style={{
-          flex: 1,
+         
           width: "100%",
           alignItems: "center",
           justifyContent: "center",
           opacity: status.isLoaded || error ? 1 : 0,
           pointerEvents: status.isLoaded || error ? "auto" : "none",
+           backgroundColor:theme.colors.secondary,
+         paddingVertical:60,
+         borderRadius:40
+         
         }}
       >
         {/* Floating artwork disc */}
@@ -211,14 +230,15 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
           ]}
         >
           <Image
-            source={require("../../assets/bob.png")}
+            source={require("../../assets/roundedLam.png")}
+            resizeMode="contain"
             style={[
               styles.artwork,
               {
                 borderColor: isDark
                   ? "rgba(255,255,255,0.06)"
                   : "rgba(255,255,255,0.85)",
-                  backgroundColor: isDark ? "#1e1208" : "#fff",
+                backgroundColor: isDark ? "#1e1208" : "#fff",
               },
             ]}
           />
@@ -305,7 +325,16 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
           </View>
         </View>
 
-        {/* Controls — 5 flat buttons: repeat | skip-back | play | skip-forward | shuffle */}
+       
+      </View>
+      <View 
+        style={{
+         backgroundColor:theme.colors.secondary,
+         paddingVertical:30,
+         borderRadius:30
+      }}
+      >
+         {/* Controls — 5 flat buttons: repeat | skip-back | play | skip-forward | shuffle */}
         <View style={styles.controlsRow}>
           {/* Repeat */}
           <TouchableOpacity
@@ -339,8 +368,8 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
             style={[
               styles.playBtn,
               {
-                backgroundColor: isDark ? "#c27b48" : "#5d3211",
-                shadowColor: isDark ? "#c27b48" : "#5d3211",
+                backgroundColor: isDark ? "#5a371fff" : "#5d3211",
+                shadowColor: isDark ? "#784724ff" : "#5d3211",
               },
             ]}
             onPress={togglePlayPause}
@@ -388,6 +417,8 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
         </View>
       </View>
       {/* end inner player wrapper */}
+      </View>
+     
 
       {/* Skeleton overlay — absolutely positioned so it doesn't affect layout */}
       {!status.isLoaded && !error && (
@@ -417,6 +448,7 @@ const styles = StyleSheet.create({
     height: ARTWORK_SIZE,
     borderRadius: ARTWORK_SIZE / 2,
     borderWidth: 3,
+    overflow: "hidden",
   },
 
   // Info
@@ -428,7 +460,7 @@ const styles = StyleSheet.create({
   },
   sermonTitle: {
     fontSize: responsiveFontSize(20),
-    fontFamily: "Merriweather",
+    fontFamily: "cursive",
     textAlign: "center",
     lineHeight: 24,
     // fontWeight: "700",
@@ -484,7 +516,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: "92%",
-    marginTop: 32,
     gap: 0,
     justifyContent: "space-between",
   },

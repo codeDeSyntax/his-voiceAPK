@@ -77,9 +77,9 @@ const PlaySermon = () => {
             </Text>
             <Text
               style={[styles.topTitle, { color: accentColor }]}
-              numberOfLines={1}
+              numberOfLines={2}
             >
-              {selectedSermon.title}
+              {selectedSermon.title.slice(0,30)}
             </Text>
           </View>
 
