@@ -84,7 +84,7 @@ const ListAppBar = React.memo(({
           {/* Logo Image */}
           <TouchableOpacity onPress={openImageModal} activeOpacity={0.7}>
             <Image
-              source={require("../assets/roundedLam.jpg")}
+              source={require("../assets/roundedLam.png")}
               style={{
                 width: 40,
                 height: 40,
