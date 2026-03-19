@@ -75,7 +75,7 @@ export const SermonProvider = ({ children }) => {
         primary: settings.darkMode ? "#2c2420" : "#faeed1",
         background: settings.darkMode ? "#221b17" : "#faeed1",
         secondary: settings.darkMode ? "#1a1410" : "#f5e6d3",
-        text: settings.darkMode ? "#f2cdb4" : "#5d3211",
+        text: settings.darkMode ? "#ffffff" : "#5d3211",
         hlight: "#d57a3e",
         blueText: "",
       },

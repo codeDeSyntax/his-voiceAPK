@@ -891,6 +891,11 @@ export const searchSermonsWithFTS = async (searchPhrase) => {
     const database = await openDatabase();
     const pattern = `%${searchPhrase.toLowerCase()}%`;
 
+    // Sanitize for FTS5: strip quotes and special FTS operators, then wrap
+    // in double-quotes so FTS5 treats it as an exact phrase match.
+    const sanitized = searchPhrase.replace(/['"*^(){}:]/g, " ").trim();
+    const ftsQuery = `"${sanitized}"`;
+
     // Use FTS5 to find matching sermons (much faster)
     const matchingSermons = await database.getAllAsync(
       `SELECT DISTINCT s.id, s.title, s.year, s.location
@@ -899,7 +904,7 @@ export const searchSermonsWithFTS = async (searchPhrase) => {
        WHERE sermons_fts MATCH ?
        ORDER BY s.date DESC
        LIMIT 20`,
-      [searchPhrase],
+      [ftsQuery],
     );
 
     const results = [];

@@ -4,7 +4,7 @@ import * as Clipboard from "expo-clipboard";
 import { styles } from "../../styles/currentsermon";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
 import { useAppContext } from "../../Logic/globalState";
-import { parseEndnote } from "../../Utils/endnoteParser";
+import { parseEndnote, extractAllEndnotes } from "../../Utils/endnoteParser";
 
 // Memoized highlight colors - calculate once
 const HIGHLIGHT_COLORS = {
@@ -315,7 +315,7 @@ const EndnoteWithTitleText = React.memo(
                 {part}
               </Text>
             );
-          } else if (lowerPart === "william marrion branham") {
+          } else if (/^william\s+(?:marrion\s+)?branham$/i.test(part)) {
             const titleText = (
               <Text
                 key={`title-${partIndex}-${part.slice(0, 10)}`}
@@ -496,43 +496,53 @@ const ParagraphText = React.memo(
       // Require "Endnote:" (with colon) so we don't mistakenly classify paragraphs
       // that merely mention the word "endnote" in regular prose.
       const hasEndnote = paragraph.includes("Endnote:");
-      const hasWilliamBranham = paragraph.includes("William Marrion Branham");
+      // Match both "William Marrion Branham" and "William Branham"
+      const hasWilliamBranham = /William\s+(?:Marrion\s+)?Branham/i.test(paragraph);
 
       if (hasEndnote && hasWilliamBranham) {
-        const parts = paragraph.split(/(Endnote|William Marrion Branham)/gi);
-        const endnoteIdx = parts.findIndex(
-          (p) => p.toLowerCase() === "endnote",
-        );
-        const branhamIdx = parts.findIndex(
-          (p) => p.toLowerCase() === "william marrion branham",
-        );
-        // isPureEndnote = true when there is no substantive text before "Endnote:"
-        // (only a paragraph number like "53" or whitespace is acceptable)
+        // Split on "Endnote" keyword OR any "William [Marrion] Branham" variant
+        const parts = paragraph.split(/(Endnote|William\s+(?:Marrion\s+)?Branham)/gi);
+        // Collect ALL endnote and WMB indices
+        const endnoteIndices = [];
+        const branhamIndices = [];
+        parts.forEach((p, i) => {
+          const lower = p.toLowerCase();
+          if (lower === "endnote") endnoteIndices.push(i);
+          else if (/^william\s+(?:marrion\s+)?branham$/i.test(p)) branhamIndices.push(i);
+        });
+        // Pair each Endnote with its nearest following WMB
+        const regions = endnoteIndices.map((eIdx, i) => ({
+          endnoteIdx: eIdx,
+          branhamIdx: branhamIndices[i] ?? -1,
+        }));
+        const firstEndnoteIdx = endnoteIndices[0] ?? -1;
         const preEndnoteText = parts
-          .slice(0, endnoteIdx)
+          .slice(0, firstEndnoteIdx)
           .join("")
-          .replace(/^\d+\.?\s*/, "") // strip leading paragraph number
+          .replace(/^\d+\.?\s*/, "")
           .trim();
         const isPureEndnote = preEndnoteText.length === 0;
         return {
           type: "endnote_with_title",
           parts,
-          endnoteIdx,
-          branhamIdx,
+          regions,
           isPureEndnote,
         };
       } else if (hasEndnote) {
         const parts = paragraph.split(/(Endnote)/gi);
-        const endnoteIdx = parts.findIndex(
-          (p) => p.toLowerCase() === "endnote",
-        );
+        // Collect ALL endnote indices
+        const endnoteIndices = [];
+        parts.forEach((p, i) => {
+          if (p.toLowerCase() === "endnote") endnoteIndices.push(i);
+        });
+        const firstEndnoteIdx = endnoteIndices[0] ?? -1;
         const preEndnoteText = parts
-          .slice(0, endnoteIdx)
+          .slice(0, firstEndnoteIdx)
           .join("")
           .replace(/^\d+\.?\s*/, "")
           .trim();
         const isPureEndnote = preEndnoteText.length === 0;
-        return { type: "endnote", parts, endnoteIdx, isPureEndnote };
+        return { type: "endnote", parts, endnoteIndices, isPureEndnote };
       } else {
         return { type: "normal", text: paragraph };
       }
@@ -553,12 +563,14 @@ const ParagraphText = React.memo(
     );
 
     // Handle endnote click — extract endnote data and trigger callback
-    const handleEndnoteClick = useCallback(() => {
+    // endnoteNumber identifies which endnote in the paragraph (0-based)
+    const handleEndnoteClick = useCallback((endnoteNumber = 0) => {
       if (!onEndnoteClick) return;
 
       console.log("[ParagraphText] Raw paragraph:", paragraph);
-      const endnoteData = parseEndnote(paragraph);
-      console.log("[ParagraphText] Parsed endnote data:", endnoteData);
+      const allEndnotes = extractAllEndnotes(paragraph);
+      const endnoteData = allEndnotes[endnoteNumber] || allEndnotes[0];
+      console.log("[ParagraphText] Parsed endnote data:", endnoteData, "index:", endnoteNumber);
 
       if (endnoteData) {
         onEndnoteClick(endnoteData, index, selectedSermon);
@@ -672,29 +684,47 @@ const ParagraphText = React.memo(
             <Text style={inlineNumberStyle}>{index + 1} </Text>
             {processedText.type === "endnote_with_title"
               ? processedText.parts.map((part, partIndex) => {
-                  const { endnoteIdx, branhamIdx } = processedText;
-                  // Accent section: from the "Endnote" token (inclusive) up to
-                  // "William Marrion Branham" token (exclusive).
-                  // Text BEFORE "Endnote" and WMB + everything after → normal.
-                  const isBeforeEndnote =
-                    endnoteIdx !== -1 && partIndex < endnoteIdx;
-                  const isAtOrAfterBranham =
-                    branhamIdx !== -1 && partIndex >= branhamIdx;
-                  const isEndnoteWord = partIndex === endnoteIdx;
-                  const isAccentSection =
-                    !isBeforeEndnote && !isAtOrAfterBranham;
-
-                  const isBranhamToken = partIndex === branhamIdx;
-
+                  const { regions } = processedText;
                   // Link-like color: bright amber/orange in dark, rich brown in light
                   const linkColor = theme.dark ? "#f0b38b" : "#7a3b10";
+
+                  // Determine which endnote region (if any) this part belongs to
+                  let regionIndex = -1;
+                  let isEndnoteWord = false;
+                  let isBranhamToken = false;
+                  let isAccentSection = false;
+
+                  for (let r = 0; r < regions.length; r++) {
+                    const { endnoteIdx, branhamIdx } = regions[r];
+                    if (partIndex === endnoteIdx) {
+                      regionIndex = r;
+                      isEndnoteWord = true;
+                      isAccentSection = true;
+                      break;
+                    } else if (partIndex === branhamIdx) {
+                      regionIndex = r;
+                      isBranhamToken = true;
+                      break;
+                    } else if (
+                      partIndex > endnoteIdx &&
+                      (branhamIdx === -1 || partIndex < branhamIdx)
+                    ) {
+                      regionIndex = r;
+                      isAccentSection = true;
+                      break;
+                    }
+                  }
+
+                  const clickHandler = regionIndex >= 0
+                    ? () => handleEndnoteClick(regionIndex)
+                    : () => handleEndnoteClick(0);
 
                   if (isAccentSection) {
                     // "Endnote" keyword + datecode/title — styled as a tappable link
                     return (
                       <Text
                         key={`acc-${partIndex}`}
-                        onPress={handleEndnoteClick}
+                        onPress={clickHandler}
                         suppressHighlighting={false}
                         style={{
                           color: linkColor,
@@ -714,7 +744,7 @@ const ParagraphText = React.memo(
                     return (
                       <React.Fragment key={`wmb-${partIndex}`}>
                         <Text
-                          onPress={handleEndnoteClick}
+                          onPress={clickHandler}
                           suppressHighlighting={false}
                           style={{
                             color: linkColor,
@@ -729,7 +759,7 @@ const ParagraphText = React.memo(
                           {part}
                         </Text>
                         <BlinkingFinger
-                          onPress={handleEndnoteClick}
+                          onPress={clickHandler}
                           color={linkColor}
                           fontSize={responsiveFontSize(
                             (settings?.fontSize || 22) * 1.15,
@@ -738,8 +768,7 @@ const ParagraphText = React.memo(
                       </React.Fragment>
                     );
                   } else {
-                    // Pre-Endnote text and the quote after WMB — normal body text
-                    // Apply search highlighting if active
+                    // Normal body text (before/between/after endnote regions)
                     if (searchPhrase && searchPhrase.trim()) {
                       return (
                         <React.Fragment key={`norm-${partIndex}`}>
@@ -772,16 +801,19 @@ const ParagraphText = React.memo(
                 })
               : processedText.type === "endnote"
                 ? processedText.parts.map((part, partIndex) => {
-                    const { endnoteIdx } = processedText;
-                    const isEndnoteWord = partIndex === endnoteIdx;
+                    const { endnoteIndices } = processedText;
+                    // Check if this part is any of the endnote tokens
+                    const endnoteNumber = endnoteIndices.indexOf(partIndex);
+                    const isEndnoteWord = endnoteNumber !== -1;
 
                     if (isEndnoteWord) {
+                      const clickHandler = () => handleEndnoteClick(endnoteNumber);
                       // "Endnote" keyword — link style + blinking finger after
                       return (
                         <React.Fragment key={`endnote-frag-${partIndex}`}>
                           <Text
                             key={`endnote-${partIndex}`}
-                            onPress={handleEndnoteClick}
+                            onPress={clickHandler}
                             suppressHighlighting={false}
                             style={{
                               color: theme.dark
@@ -798,7 +830,7 @@ const ParagraphText = React.memo(
                             {part}
                           </Text>
                           <BlinkingFinger
-                            onPress={handleEndnoteClick}
+                            onPress={clickHandler}
                             color={theme.dark ? theme.colors.hlight : "#7a3b10"}
                             fontSize={responsiveFontSize(
                               (settings?.fontSize || 22) * 1.15,

@@ -53,13 +53,15 @@ const parseEndnoteContent = (endnoteContent) => {
     console.log("[Parser] Found dateCode:", dateCode, "Remainder:", remainder);
   }
 
-  // 2. Extract Title (text between start/datecode and "William Marrion Branham")
+  // 2. Extract Title (text between start/datecode and "William [Marrion] Branham")
+  //    Handles both "William Marrion Branham" and "William Branham"
   let title = "";
-  const branhamIndex = remainder.indexOf("William Marrion Branham");
-  if (branhamIndex > -1) {
+  const branhamMatch = remainder.match(/William\s+(?:Marrion\s+)?Branham/i);
+  if (branhamMatch) {
+    const branhamIndex = branhamMatch.index;
     title = remainder.substring(0, branhamIndex).trim();
     remainder = remainder
-      .substring(branhamIndex + "William Marrion Branham".length)
+      .substring(branhamIndex + branhamMatch[0].length)
       .trim();
     console.log("[Parser] Found title:", title, "Remainder:", remainder);
   }
