@@ -619,73 +619,69 @@ const CurrentSermon = React.memo(({ route }) => {
 
   // ─── Book-style chapter header ────────────────────────────────────────────
   const ListHeader = useMemo(() => {
-    const accent = theme.dark ? "#ffb780" : "#5d3211";
-    const accentM = theme.dark ? theme.colors.hlight + "70" : "#5d321170";
+    const isDark = theme.dark;
+    const titleColor = isDark ? "#fce5d8ff" : "#1a0e07";
+    const metaColor = isDark
+      ? "rgba(242, 205, 180, 0.55)"
+      : "rgba(93, 50, 17, 0.5)";
+    const ruleColor = isDark
+      ? "rgba(242, 205, 180, 0.12)"
+      : "rgba(93, 50, 17, 0.10)";
     const titleSize = responsiveFontSize(22);
 
+    // Build meta line: "Date  ·  Location"
+    const metaParts = [];
+    if (selectedSermon?.date) metaParts.push(selectedSermon.date);
+    if (selectedSermon?.location) metaParts.push(selectedSermon.location);
+    const metaLine = metaParts.join("  \u00B7  ");
+
     return (
-      <View style={styles.chapterHeader}>
-        {/* ── Sermon title ── */}
+      <View
+        style={{
+          paddingTop: 10,
+          paddingBottom: 20,
+          paddingHorizontal: 6,
+        }}
+      >
+        {/* Title — large, left-aligned, bold */}
         <Text
-          style={[
-            styles.chapterTitle,
-            {
-              color: accent,
-              fontFamily: "ZillaSlabsm",
-              fontSize: titleSize,
-              lineHeight: titleSize * 1.3,
-            },
-          ]}
+          style={{
+            color: titleColor,
+            fontFamily: "serif",
+            fontWeight:"600",
+            // fontStyle:"italic",
+            fontSize: titleSize,
+            lineHeight: titleSize * 1.20,
+            letterSpacing: 0.2,
+            textAlign: "left",
+            
+          }}
         >
           {selectedSermon?.title}
+         
+          {/* Meta line — date · location */}{"  "}
+        {metaLine ? (
+          <Text
+            style={{
+              color: metaColor,
+              fontFamily: "cursive",
+              
+            }}
+          >
+            {metaLine}
+          </Text>
+        ) : null}
         </Text>
-        {/* ── Top ornament: thin line ◆ thin line ── */}
-        <View style={styles.chapterOrnamentTop}>
-          <View
-            style={[styles.chapterOrnamentLine, { backgroundColor: accentM }]}
-          />
-          <View
-            style={[styles.chapterOrnamentDiamond, { backgroundColor: accent }]}
-          />
-          <View
-            style={[styles.chapterOrnamentLine, { backgroundColor: accentM }]}
-          />
-        </View>
 
-        {/* ── Date ── */}
-        {selectedSermon?.date ? (
-          <Text
-            style={[
-              styles.chapterMeta,
-              {
-                color: theme.colors.text,
-                fontFamily: settings.fontFamily || "ZillaSlab",
-                fontSize: responsiveFontSize(settings.fontSize * 0.72),
-                opacity: 0.65,
-              },
-            ]}
-          >
-            {selectedSermon.date}
-          </Text>
-        ) : null}
+        
 
-        {/* ── Location ── */}
-        {selectedSermon?.location ? (
-          <Text
-            style={[
-              styles.chapterMetaLocation,
-              {
-                color: theme.colors.text,
-                fontFamily: settings.fontFamily || "ZillaSlab",
-                fontSize: responsiveFontSize(settings.fontSize * 0.68),
-                opacity: 0.5,
-                marginBottom: 0,
-              },
-            ]}
-          >
-            {selectedSermon.location}
-          </Text>
-        ) : null}
+        {/* Clean horizontal rule */}
+        <View
+          style={{
+            height: 1,
+            backgroundColor: ruleColor,
+          }}
+        />
       </View>
     );
   }, [
@@ -693,8 +689,6 @@ const CurrentSermon = React.memo(({ route }) => {
     selectedSermon?.date,
     selectedSermon?.location,
     theme,
-    settings.fontSize,
-    settings.fontFamily,
   ]);
 
   return (

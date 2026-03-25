@@ -1,13 +1,6 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useMemo,
-  useCallback,
-} from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   View,
-  StyleSheet,
   Animated,
   PanResponder,
   Dimensions,
@@ -15,421 +8,242 @@ import {
   Vibration,
   TouchableWithoutFeedback,
 } from "react-native";
-const { Easing } = Animated;
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { useAppContext } from "../Logic/globalState";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const POSITION_KEY = "@floatbtn_position";
-
 const { width, height } = Dimensions.get("window");
+const IDLE_TIMEOUT = 4000;
+const SIZE = 50;
+const RADIUS = SIZE / 2;
+const INNER = SIZE - 8;
+const INNER_RADIUS = INNER / 2;
 
-const DraggableFloatingButton = React.memo(
-  ({
-    size = 44,
-    iconSize = 18,
-    iconColor = "white",
-    backgroundColor = "",
-    initialPosition = { x: 20, y: height - 140 },
-    onPress,
-    snapToEdge = true,
-    vibrationEnabled = true,
-    animationEnabled = true,
-  }) => {
-    const { theme } = useAppContext();
-    const route = useRoute();
-    const router = useNavigation();
-    const insets = useSafeAreaInsets();
+const DraggableFloatingButton = React.memo(({ onPress }) => {
+  const { theme } = useAppContext();
+  const router = useNavigation();
+  const insets = useSafeAreaInsets();
+  const dark = theme?.dark;
 
-    // Original theme color integration
-    const isAudioScreen = route.name === "audiowebscreen";
-    const primaryColor = isAudioScreen
-      ? theme.colors.primary
-      : theme.colors.primary;
-    const secondaryColor = isAudioScreen
-      ? theme.colors.secondary
-      : theme.colors.secondary;
+  const safeAreaBounds = useMemo(
+    () => ({
+      top: insets.top + 20,
+      bottom: height - insets.bottom - SIZE - 20,
+      left: 8,
+      right: width - SIZE - 8,
+    }),
+    [insets],
+  );
 
-    const safeAreaBounds = useMemo(
-      () => ({
-        top: insets.top + 20,
-        bottom: height - insets.bottom - size - 20,
-        left: 20,
-        right: width - size - 20,
+  const pan = useRef(new Animated.ValueXY({ x: 8, y: height - 140 })).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+
+  const [isDragging, setIsDragging] = useState(false);
+  const hasMoved = useRef(false);
+  const idleTimer = useRef(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(POSITION_KEY).then((json) => {
+      if (!json) return;
+      try {
+        const { x, y } = JSON.parse(json);
+        pan.setValue({
+          x: Math.max(safeAreaBounds.left, Math.min(x, safeAreaBounds.right)),
+          y: Math.max(safeAreaBounds.top, Math.min(y, safeAreaBounds.bottom)),
+        });
+      } catch (_) {}
+    });
+  }, []);
+
+  const savePosition = useCallback((x, y) => {
+    AsyncStorage.setItem(POSITION_KEY, JSON.stringify({ x, y })).catch(() => {});
+  }, []);
+
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    Animated.timing(opacityAnim, {
+      toValue: 1,
+      duration: 120,
+      useNativeDriver: false,
+    }).start();
+    idleTimer.current = setTimeout(() => {
+      Animated.timing(opacityAnim, {
+        toValue: 0.55,
+        duration: 800,
+        useNativeDriver: false,
+      }).start();
+    }, IDLE_TIMEOUT);
+  }, [opacityAnim]);
+
+  useEffect(() => {
+    resetIdleTimer();
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    };
+  }, []);
+
+  const handlePressAction = useCallback(() => {
+    if (Platform.OS === "android") Vibration.vibrate([0, 20]);
+
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.82,
+        duration: 80,
+        useNativeDriver: false,
       }),
-      [insets, size],
-    );
-
-    const pan = useRef(
-      new Animated.ValueXY({
-        x: Math.max(initialPosition.x, safeAreaBounds.left),
-        y: Math.max(initialPosition.y, safeAreaBounds.top),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        damping: 14,
+        stiffness: 380,
+        useNativeDriver: false,
       }),
-    ).current;
+    ]).start();
 
-    // Restore last saved position on mount
-    useEffect(() => {
-      AsyncStorage.getItem(POSITION_KEY).then((json) => {
-        if (!json) return;
-        try {
-          const { x, y } = JSON.parse(json);
-          const clampedX = Math.max(
-            safeAreaBounds.left,
-            Math.min(x, safeAreaBounds.right),
-          );
-          const clampedY = Math.max(
-            safeAreaBounds.top,
-            Math.min(y, safeAreaBounds.bottom),
-          );
-          pan.setValue({ x: clampedX, y: clampedY });
-        } catch (_) {}
-      });
-    }, []);
+    if (onPress) {
+      onPress();
+    } else if (router) {
+      if (router.canGoBack()) {
+        router.goBack();
+      } else {
+        router.navigate("AllSermons");
+      }
+    }
+  }, [onPress, router, scaleAnim]);
 
-    const savePosition = useCallback((x, y) => {
-      AsyncStorage.setItem(POSITION_KEY, JSON.stringify({ x, y })).catch(
-        () => {},
-      );
-    }, []);
-
-    const [isPressed, setIsPressed] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const hasMoved = useRef(false);
-    const scaleAnim = useRef(new Animated.Value(1)).current;
-    const rotateAnim = useRef(new Animated.Value(0)).current;
-    const breatheAnim = useRef(new Animated.Value(1)).current;
-
-    // Pan responder for drag functionality
-    const panResponder = useRef(
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: () => {
-          hasMoved.current = false;
-          triggerHapticFeedback("light");
-          pan.setOffset({
-            x: pan.x._value,
-            y: pan.y._value,
-          });
-        },
-        onPanResponderMove: (evt, gestureState) => {
-          // Only consider it a drag if moved more than 5 pixels
-          if (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5) {
-            hasMoved.current = true;
-            setIsDragging(true);
-          }
-          pan.x.setValue(gestureState.dx);
-          pan.y.setValue(gestureState.dy);
-        },
-        onPanResponderRelease: (evt, gestureState) => {
-          pan.flattenOffset();
-
-          // If it was a tap (not a drag), trigger the press action
-          if (!hasMoved.current) {
-            setIsDragging(false);
-            handlePressAction();
-          } else {
-            setIsDragging(false);
-          }
-
-          // Snap to nearest edge if enabled
-          if (snapToEdge) {
-            const newX = pan.x._value;
-            const newY = Math.max(
-              Math.min(pan.y._value, safeAreaBounds.bottom),
-              safeAreaBounds.top,
-            );
-
-            // Snap to left or right edge
-            const shouldSnapLeft = newX < width / 2;
-            const snapX = shouldSnapLeft
-              ? safeAreaBounds.left
-              : safeAreaBounds.right;
-
-            Animated.parallel([
-              Animated.timing(pan.x, {
-                toValue: snapX,
-                duration: 200,
-                useNativeDriver: false,
-              }),
-              Animated.timing(pan.y, {
-                toValue: newY,
-                duration: 200,
-                useNativeDriver: false,
-              }),
-            ]).start(() => {
-              // Persist after snap animation completes
-              savePosition(snapX, newY);
-            });
-          }
-        },
-      }),
-    ).current;
-
-    // New sleek effects
-    const opacityAnim = useRef(new Animated.Value(0.9)).current;
-    const blinkAnim = useRef(new Animated.Value(1)).current;
-    const shimmerAnim = useRef(new Animated.Value(0)).current;
-
-    // Simplified animations for maximum performance - only essential animations
-    useEffect(() => {
-      if (!animationEnabled) return;
-
-      // Single breathing animation for subtle life indication
-      const breatheAnimation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(breatheAnim, {
-            toValue: 1.005, // Very subtle scale
-            duration: 4000, // Very slow for minimal CPU usage
-            useNativeDriver: true,
-          }),
-          Animated.timing(breatheAnim, {
-            toValue: 1,
-            duration: 4000,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-
-      breatheAnimation.start();
-      return () => breatheAnimation.stop();
-    }, [animationEnabled]);
-
-    // Enhanced haptic feedback
-    const triggerHapticFeedback = useCallback(
-      (type = "light") => {
-        if (vibrationEnabled && Platform.OS === "android") {
-          const pattern = type === "press" ? [0, 50, 30, 50] : [0, 30];
-          Vibration.vibrate(pattern);
-        }
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        hasMoved.current = false;
+        if (Platform.OS === "android") Vibration.vibrate([0, 10]);
+        pan.setOffset({ x: pan.x._value, y: pan.y._value });
+        resetIdleTimer();
       },
-      [vibrationEnabled],
-    );
+      onPanResponderMove: (_, gs) => {
+        if (Math.abs(gs.dx) > 5 || Math.abs(gs.dy) > 5) {
+          hasMoved.current = true;
+          setIsDragging(true);
+        }
+        pan.x.setValue(gs.dx);
+        pan.y.setValue(gs.dy);
+      },
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
 
-    const handlePressIn = useCallback(() => {
-      setIsPressed(true);
-      triggerHapticFeedback("light");
-
-      if (animationEnabled) {
-        Animated.parallel([
-          Animated.timing(scaleAnim, {
-            toValue: 0.92,
-            duration: 120,
-            useNativeDriver: true,
-          }),
-          Animated.timing(rotateAnim, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }
-    }, [animationEnabled, triggerHapticFeedback]);
-
-    const handlePressOut = useCallback(() => {
-      setIsPressed(false);
-
-      if (animationEnabled) {
-        Animated.parallel([
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            tension: 400,
-            friction: 12,
-            useNativeDriver: true,
-          }),
-          Animated.timing(rotateAnim, {
-            toValue: 0,
-            duration: 180,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }
-    }, [animationEnabled]);
-
-    // Performance optimization - create static handlers when animations disabled
-    const handlePressInOptimized = useMemo(() => {
-      if (!animationEnabled) {
-        return () => {
-          setIsPressed(true);
-          triggerHapticFeedback("light");
-        };
-      }
-      return handlePressIn;
-    }, [animationEnabled, triggerHapticFeedback, handlePressIn]);
-
-    const handlePressOutOptimized = useMemo(() => {
-      if (!animationEnabled) {
-        return () => setIsPressed(false);
-      }
-      return handlePressOut;
-    }, [animationEnabled, handlePressOut]);
-
-    // Core navigation action - extracted for use in panResponder
-    const handlePressAction = useCallback(() => {
-      triggerHapticFeedback("press");
-
-      if (animationEnabled) {
-        Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 0.88,
-            duration: 60,
-            useNativeDriver: true,
-          }),
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            tension: 500,
-            friction: 10,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }
-
-      // Ultra-fast navigation - behaves like native back button
-      if (onPress) {
-        onPress();
-      } else if (router) {
-        // Simply check if we can go back, like native back button
-        if (router.canGoBack()) {
-          router.goBack();
+        if (!hasMoved.current) {
+          setIsDragging(false);
+          handlePressAction();
         } else {
-          // No history - go to sermon list as fallback
-          router.navigate("AllSermons");
+          setIsDragging(false);
         }
-      }
-    }, [onPress, router, triggerHapticFeedback, animationEnabled]);
 
-    const handlePress = useCallback(() => {
-      // Don't trigger action if we were dragging
-      if (isDragging) {
-        return;
-      }
-      handlePressAction();
-    }, [isDragging, handlePressAction]);
+        const newY = Math.max(
+          Math.min(pan.y._value, safeAreaBounds.bottom),
+          safeAreaBounds.top,
+        );
+        const snapX =
+          pan.x._value < width / 2
+            ? safeAreaBounds.left
+            : safeAreaBounds.right;
 
-    // Optimized animation values with memoization
-    const rotateInterpolate = useMemo(
-      () =>
-        rotateAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: ["0deg", "180deg"],
-        }),
-      [rotateAnim],
-    );
+        Animated.spring(pan, {
+          toValue: { x: snapX, y: newY },
+          damping: 22,
+          stiffness: 280,
+          mass: 0.8,
+          useNativeDriver: false,
+        }).start(() => savePosition(snapX, newY));
 
-    // Simplified button style for maximum performance
-    const buttonStyle = useMemo(
-      () => ({
-        ...styles.buttonContainer,
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        opacity: 0.95, // Static opacity for better performance
-        transform: animationEnabled
-          ? [{ scale: Animated.multiply(scaleAnim, breatheAnim) }]
-          : [{ scale: 1 }],
-        ...Platform.select({
-          ios: {
-            shadowColor: theme?.colors?.text || "#1c1917",
-            shadowOffset: { width: 0, height: isPressed ? 2 : 4 },
-            shadowOpacity: isPressed ? 0.1 : 0.08,
-            shadowRadius: isPressed ? 8 : 6,
-          },
-          android: {
-            elevation: isPressed ? 2 : 3,
-          },
-        }),
-      }),
-      [
-        size,
-        animationEnabled,
-        scaleAnim,
-        breatheAnim,
-        theme?.colors?.text,
-        isPressed,
-      ],
-    );
-
-    return (
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            transform: [{ translateX: pan.x }, { translateY: pan.y }],
-            opacity: isDragging ? 0.7 : 1,
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        {/* Main button */}
-        <TouchableWithoutFeedback
-          onPressIn={handlePressInOptimized}
-          onPressOut={handlePressOutOptimized}
-          onPress={handlePress}
-          delayPressIn={0}
-          delayPressOut={0}
-        >
-          <Animated.View style={buttonStyle}>
-            {/* Modern glassmorphism background */}
-            <View
-              style={[
-                styles.buttonGlass,
-                {
-                  backgroundColor: theme?.dark
-                    ? "rgba(45, 35, 30, 0.85)"
-                    : "rgba(255, 255, 255, 0.9)",
-                  borderColor: theme?.dark
-                    ? "rgba(230, 195, 184, 0.2)"
-                    : "rgba(93, 50, 17, 0.15)",
-                },
-              ]}
-            >
-              {/* Chevron icon - more modern than arrow */}
-              <Ionicons
-                name="chevron-back"
-                size={iconSize}
-                color={theme?.dark ? "#e6c3b8" : "#5d3211"}
-              />
-            </View>
-          </Animated.View>
-        </TouchableWithoutFeedback>
-      </Animated.View>
-    );
-  },
-);
-
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 9999,
-  },
-  buttonContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  buttonGlass: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 6,
+        resetIdleTimer();
       },
     }),
-  },
+  ).current;
+
+  const handlePressIn = useCallback(() => {
+    resetIdleTimer();
+    Animated.timing(scaleAnim, {
+      toValue: 0.88,
+      duration: 100,
+      useNativeDriver: false,
+    }).start();
+  }, [scaleAnim, resetIdleTimer]);
+
+  const handlePressOut = useCallback(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      damping: 15,
+      stiffness: 380,
+      useNativeDriver: false,
+    }).start();
+  }, [scaleAnim]);
+
+  const handlePress = useCallback(() => {
+    if (!isDragging) handlePressAction();
+  }, [isDragging, handlePressAction]);
+
+  // Colors for the concentric ring design
+  // Theme-matched concentric ring colors
+  const outerBg = dark ? "rgba(45, 32, 24, 0.95)" : "rgba(200, 175, 155, 0.95)";
+  const innerBg = dark ? "rgba(65, 48, 38, 0.95)" : "rgba(235, 215, 195, 0.95)";
+  const innerBorder = dark
+    ? "rgba(242, 205, 180, 0.25)"
+    : "rgba(255, 255, 255, 0.7)";
+  const iconColor = dark
+    ? "rgba(242, 205, 180, 0.8)"
+    : "rgba(93, 50, 17, 0.6)";
+
+  return (
+    <Animated.View
+      style={{
+        position: "absolute",
+        zIndex: 9999,
+        transform: [{ translateX: pan.x }, { translateY: pan.y }],
+        opacity: opacityAnim,
+      }}
+      {...panResponder.panHandlers}
+    >
+      <TouchableWithoutFeedback
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+        delayPressIn={0}
+        delayPressOut={0}
+      >
+        <Animated.View
+          style={{
+            width: SIZE,
+            height: SIZE,
+            borderRadius: RADIUS,
+            transform: [{ scale: scaleAnim }],
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: outerBg,
+          }}
+        >
+          {/* Inner circle — lighter, creates the concentric ring effect */}
+          <View
+            style={{
+              width: INNER,
+              height: INNER,
+              borderRadius: INNER_RADIUS,
+              backgroundColor: innerBg,
+              borderWidth: 1,
+              borderColor: innerBorder,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="chevron-back" size={20} color={iconColor} />
+          </View>
+        </Animated.View>
+      </TouchableWithoutFeedback>
+    </Animated.View>
+  );
 });
 
 export default DraggableFloatingButton;

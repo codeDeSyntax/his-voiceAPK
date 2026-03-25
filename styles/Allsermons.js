@@ -183,9 +183,9 @@ export const styles = StyleSheet.create({
 
   // Compact view styles
   compactRow: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    marginHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    marginHorizontal: spacing.sm,
     marginVertical: 0,
   },
   compactContent: {

@@ -32,8 +32,8 @@ const styles = StyleSheet.create({
 
   // ─── FlatList content container ───────────────────────────────────────────
   scrollViewContainer: {
-    paddingHorizontal: PAGE_MARGIN_H,
-    paddingTop: 4,
+    paddingHorizontal: PAGE_MARGIN_H + 6,
+    paddingTop: 0,
     paddingBottom: 120, // clearance for bottom toolbar
   },
 
@@ -123,10 +123,9 @@ const styles = StyleSheet.create({
 
   // ─── Paragraph container ──────────────────────────────────────────────────
   paragraphContainer: {
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    // Constrain width so text never overflows the screen
+    marginBottom: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 6,
     alignSelf: "stretch",
     overflow: "hidden",
   },
@@ -229,12 +228,12 @@ const styles = StyleSheet.create({
     bottom: 28,
     left: 24,
     right: 24,
-    height: 56,
-    borderRadius: 28,
+    height: 60,
+    borderRadius: 30,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: 8,
+    justifyContent: "space-evenly",
+    paddingHorizontal: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,

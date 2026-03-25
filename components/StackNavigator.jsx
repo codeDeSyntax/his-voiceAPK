@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAppContext } from "../Logic/globalState";
 import SermonAudioWebScreen from "../screens/SermonAudioWeb";
 import BookmarksScreen from "../screens/Bookmarks/BookmarksScreen";
+import RecentsScreen from "../screens/Recents/RecentsScreen";
 // Note: @react-navigation/native-stack uses react-native-screens natively by
 // default — no manual enableScreens() call is needed with native-stack.
 
@@ -57,6 +58,7 @@ const WrappedAbout = ScreenWithSuspense(About);
 const WrappedUpdateScreen = ScreenWithSuspense(UpdateScreen);
 const WrappedSermonAudioWeb = ScreenWithSuspense(SermonAudioWebScreen);
 const WrappedBookmarks = ScreenWithSuspense(BookmarksScreen);
+const WrappedRecents = ScreenWithSuspense(RecentsScreen);
 
 const TransitionScreen = {
   gestureDirection: "horizontal",
@@ -185,6 +187,14 @@ const StackNavigator = () => {
         <Stack.Screen
           name="bookmarks"
           component={WrappedBookmarks}
+          options={{
+            navigationBarHidden: true,
+            statusBarHidden: true,
+          }}
+        />
+        <Stack.Screen
+          name="Recents"
+          component={WrappedRecents}
           options={{
             navigationBarHidden: true,
             statusBarHidden: true,

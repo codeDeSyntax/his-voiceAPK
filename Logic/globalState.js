@@ -27,6 +27,7 @@ const STORAGE_KEYS = {
   BOOKMARKS: "sermonBookmarks",
   HIGHLIGHTS: "sermonHighlights",
   LAST_SERMON: "lastOpenedSermon", // Store reference to last opened sermon
+  RECENTS: "recentSermons",
 };
 
 const INITIAL_SETTINGS = {
@@ -66,6 +67,7 @@ export const SermonProvider = ({ children }) => {
   const [lastReadPositions, setLastReadPositions] = useState({});
   const [bookmarks, setBookmarks] = useState([]);
   const [highlights, setHighlights] = useState({}); // Store paragraph highlights
+  const [recentSermons, setRecentSermons] = useState([]);
 
   // Theme derived from settings.darkMode — updates whenever dark mode changes
   const theme = useMemo(
@@ -198,6 +200,35 @@ export const SermonProvider = ({ children }) => {
     }
   }, [textSermons, setSelectedSermonWithPosition]);
 
+  // Track recently opened sermons (max 20, deduped, newest first)
+  const MAX_RECENTS = 20;
+  const addToRecents = useCallback(async (sermon) => {
+    try {
+      const entry = {
+        id: sermon.id,
+        title: sermon.title,
+        date: sermon.date,
+        type: sermon.type,
+        location: sermon.location,
+        openedAt: Date.now(),
+      };
+      let updated;
+      setRecentSermons((prev) => {
+        const filtered = prev.filter((r) => r.id !== sermon.id);
+        updated = [entry, ...filtered].slice(0, MAX_RECENTS);
+        return updated;
+      });
+      if (updated) {
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.RECENTS,
+          JSON.stringify(updated),
+        );
+      }
+    } catch (error) {
+      console.error("Failed to update recent sermons:", error);
+    }
+  }, []);
+
   // Enhanced setSelectedSermon to include last read position and lazy load full content
   const setSelectedSermonWithPosition = useCallback(
     async (sermon) => {
@@ -221,6 +252,9 @@ export const SermonProvider = ({ children }) => {
             lastReadParagraph: getLastReadPosition(fullSermon.id),
           };
           setSelectedSermon(sermonWithPosition);
+
+          // Track in recents
+          addToRecents(fullSermon);
 
           // Save as last opened sermon (store only essential data)
           try {
@@ -246,7 +280,7 @@ export const SermonProvider = ({ children }) => {
         setSelectedSermon(null);
       }
     },
-    [getLastReadPosition],
+    [getLastReadPosition, addToRecents],
   );
 
   // Load sermons from SQLite database
@@ -391,6 +425,12 @@ export const SermonProvider = ({ children }) => {
       );
       if (storedHighlights) {
         setHighlights(JSON.parse(storedHighlights));
+      }
+
+      // Load recent sermons
+      const storedRecents = await AsyncStorage.getItem(STORAGE_KEYS.RECENTS);
+      if (storedRecents) {
+        setRecentSermons(JSON.parse(storedRecents));
       }
     } catch (error) {
       console.error("Failed to load stored data:", error);
@@ -696,6 +736,9 @@ export const SermonProvider = ({ children }) => {
       addHighlight,
       removeHighlight,
       getHighlight,
+
+      // Recents
+      recentSermons,
     }),
     [
       selectedSermon,
@@ -730,6 +773,7 @@ export const SermonProvider = ({ children }) => {
       getHighlight,
       filterSermonsByTag,
       findSermonInState,
+      recentSermons,
     ],
   );
 

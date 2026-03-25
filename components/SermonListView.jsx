@@ -4,6 +4,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "../styles/Allsermons";
 import { responsiveFontSize, spacing } from "../Utils/responsiveUtils";
+import { GlassButton } from "../styles/glassButton";
 
 const SermonListView = React.memo(
   ({ theme, filteredSermons, handleSermonClick }) => {
@@ -40,30 +41,21 @@ const SermonListView = React.memo(
             onPress={() => handleSermonClick(item)}
           >
             <View style={styles.compactContent}>
-              <View
-                style={[
-                  styles.compactTypeIcon,
-                  {
-                    backgroundColor: theme.dark
-                      ? "rgba(242, 205, 180, 0.15)"
-                      : "rgba(93, 50, 17, 0.10)",
-                  },
-                ]}
-              >
+              <GlassButton theme={theme} size={36} style={{ marginRight: spacing.sm }}>
                 {item.type === "mp3" ? (
                   <FontAwesome5
                     name="microphone"
-                    size={responsiveFontSize(25)}
-                    color={theme.dark ? "#ffffff80"  : "#5d3211"}
+                    size={responsiveFontSize(22)}
+                    color={theme.dark ? "#ffffff80" : "#5d3211"}
                   />
                 ) : (
                   <Ionicons
                     name="document-text"
-                    size={responsiveFontSize(25)}
+                    size={responsiveFontSize(22)}
                     color={theme.dark ? "#906443" : "#5d3211"}
                   />
                 )}
-              </View>
+              </GlassButton>
               <View style={styles.compactTextContainer}>
                 <Text
                   style={[

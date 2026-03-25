@@ -9,29 +9,18 @@ import { useAppContext } from "../../Logic/globalState";
 // Component imports
 import SearchHeader from "../../components/SearchHeader";
 import SermonListView from "../../components/SermonListView";
-import YearModal from "../../components/YearModal";
-import LetterModal from "../../components/LetterModal";
 import SkeletonLoader from "../../components/SkeletonLoader";
 import { StyleSheet } from "react-native";
 import ListAppBar from "../../components/AppBar";
 import { useNavigation } from "@react-navigation/native";
 import DraggableFloatingButton from "../../components/FloatButton";
 
-const years = Array.from({ length: 10 }, (_, i) => (1973 - i).toString());
-const alphabet = Array.from({ length: 26 }, (_, i) =>
-  String.fromCharCode(65 + i),
-);
-
 const SermonList = React.memo(() => {
   const navigation = useNavigation();
-  const { setSelectedSermon, allSermons, theme, loading } = useAppContext();
+  const { setSelectedSermon, allSermons, theme, loading, settings, updateSettings } = useAppContext();
 
   const [searchText, setSearchText] = useState("");
   const [searchResetKey, setSearchResetKey] = useState(0);
-  const [selectedYear, setSelectedYear] = useState("All Years");
-  const [selectedLetter, setSelectedLetter] = useState("All Letters");
-  const [isYearModalVisible, setIsYearModalVisible] = useState(false);
-  const [isLetterModalVisible, setIsLetterModalVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
   const [isOriginalOrder, setIsOriginalOrder] = useState(true);
   const [typeFilter, setTypeFilter] = useState("all"); // "all", "text", "mp3"
@@ -39,11 +28,7 @@ const SermonList = React.memo(() => {
 
   // Derive filtered sermons synchronously — no useState/useEffect double-render.
   const { filteredSermons, hasActiveFilters } = useMemo(() => {
-    const hasFilters =
-      searchText ||
-      selectedYear !== "All Years" ||
-      selectedLetter !== "All Letters" ||
-      typeFilter !== "all";
+    const hasFilters = searchText || typeFilter !== "all";
 
     if (!hasFilters && isOriginalOrder) {
       return { filteredSermons: allSermons, hasActiveFilters: false };
@@ -52,14 +37,13 @@ const SermonList = React.memo(() => {
     const searchLower = searchText.toLowerCase();
     const filtered = allSermons.filter((sermon) => {
       const titleLower = sermon.title.toLowerCase();
-      const matchesSearch = !searchText || titleLower.includes(searchLower);
-      const matchesYear =
-        selectedYear === "All Years" || sermon.year === selectedYear;
-      const matchesLetter =
-        selectedLetter === "All Letters" ||
-        titleLower.startsWith(selectedLetter.toLowerCase());
+      const matchesSearch =
+        !searchText ||
+        titleLower.includes(searchLower) ||
+        (sermon.date && sermon.date.toLowerCase().includes(searchLower)) ||
+        (sermon.year && sermon.year.includes(searchText));
       const matchesType = typeFilter === "all" || sermon.type === typeFilter;
-      return matchesSearch && matchesYear && matchesLetter && matchesType;
+      return matchesSearch && matchesType;
     });
 
     let sorted;
@@ -73,7 +57,7 @@ const SermonList = React.memo(() => {
     }
 
     return { filteredSermons: sorted, hasActiveFilters: !!hasFilters };
-  }, [allSermons, searchText, selectedYear, selectedLetter, typeFilter, sortOrder, isOriginalOrder]);
+  }, [allSermons, searchText, typeFilter, sortOrder, isOriginalOrder]);
 
   // Type filter buttons — set typeFilter state and let applyFilters do the work.
   const filterOnlyText = useCallback(() => {
@@ -81,8 +65,6 @@ const SermonList = React.memo(() => {
     setIsOriginalOrder(false);
     setSearchText("");
     setSearchResetKey((k) => k + 1);
-    setSelectedYear("All Years");
-    setSelectedLetter("All Letters");
   }, []);
 
   const filterOnlyAudio = useCallback(() => {
@@ -90,8 +72,6 @@ const SermonList = React.memo(() => {
     setIsOriginalOrder(false);
     setSearchText("");
     setSearchResetKey((k) => k + 1);
-    setSelectedYear("All Years");
-    setSelectedLetter("All Letters");
   }, []);
 
   const handleSermonClick = useCallback(
@@ -117,19 +97,12 @@ const SermonList = React.memo(() => {
     [setSelectedSermon, navigation],
   );
 
-  const closeDropdown = useCallback(() => {
-    setIsYearModalVisible(false);
-    setIsLetterModalVisible(false);
-  }, []);
-
   const toggleSortOrder = useCallback(() => {
     setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     setIsOriginalOrder(false);
     setTypeFilter("all");
     setSearchText("");
     setSearchResetKey((k) => k + 1);
-    setSelectedYear("All Years");
-    setSelectedLetter("All Letters");
   }, []);
 
   const toggleViewMode = useCallback(() => {
@@ -139,13 +112,15 @@ const SermonList = React.memo(() => {
     });
   }, []);
 
+  const handleToggleTheme = useCallback(() => {
+    updateSettings({ darkMode: !settings.darkMode });
+  }, [settings.darkMode, updateSettings]);
+
   const restoreOriginalOrder = useCallback(() => {
     setIsOriginalOrder(true);
     setTypeFilter("all");
     setSearchText("");
     setSearchResetKey((k) => k + 1);
-    setSelectedYear("All Years");
-    setSelectedLetter("All Letters");
     setSortOrder("asc");
   }, []);
 
@@ -177,16 +152,13 @@ const SermonList = React.memo(() => {
 
       <ListAppBar
         theme={theme}
-        viewMode={viewMode}
-        toggleViewMode={toggleViewMode}
-        setIsLetterModalVisible={setIsLetterModalVisible}
-        setIsYearModalVisible={setIsYearModalVisible}
         filterOnlyText={filterOnlyText}
         filterOnlyAudio={filterOnlyAudio}
         toggleSortOrder={toggleSortOrder}
         restoreOriginalOrder={restoreOriginalOrder}
         isOriginalOrder={isOriginalOrder}
         hasActiveFilters={hasActiveFilters}
+        onToggleTheme={handleToggleTheme}
       />
 
       <SearchHeader
@@ -208,21 +180,6 @@ const SermonList = React.memo(() => {
         />
       )}
 
-      <YearModal
-        theme={theme}
-        isVisible={isYearModalVisible}
-        closeDropdown={closeDropdown}
-        years={years}
-        setSelectedYear={setSelectedYear}
-      />
-
-      <LetterModal
-        theme={theme}
-        isVisible={isLetterModalVisible}
-        closeDropdown={closeDropdown}
-        alphabet={alphabet}
-        setSelectedLetter={setSelectedLetter}
-      />
     </View>
   );
 });

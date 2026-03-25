@@ -36,9 +36,10 @@ const renderTextWithStyledNumbers = (
   };
 
   // Determine text color based on highlight
+  const defaultText = theme.dark ? "#f8efe8ff" : theme.colors.text;
   const baseTextColor = highlightColor
-    ? highlightTextColors[highlightColor] || theme.colors.text
-    : theme.colors.text;
+    ? highlightTextColors[highlightColor] || defaultText
+    : defaultText;
 
   // If there's a search phrase, first highlight it
   if (searchPhrase && searchPhrase.trim()) {
@@ -66,7 +67,7 @@ const renderTextWithStyledNumbers = (
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 2,
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
+                responsiveFontSize(settings.fontSize) * 1.55,
               ),
             }}
           >
@@ -115,9 +116,10 @@ const renderTextWithStyledNumbersOnly = (
   };
 
   // Determine text color based on highlight
+  const defaultText = theme.dark ? "#f8efe8ff" : theme.colors.text;
   const baseTextColor = highlightColor
-    ? highlightTextColors[highlightColor] || theme.colors.text
-    : theme.colors.text;
+    ? highlightTextColors[highlightColor] || defaultText
+    : defaultText;
 
   // Split text by numbers (including decimals, dates, times, etc.)
   const numberRegex = /(\d+(?:\.\d+)?(?::\d+)?(?:\s*(?:AM|PM|am|pm))?)/g;
@@ -141,7 +143,7 @@ const renderTextWithStyledNumbersOnly = (
           color: theme.dark ? theme.colors.hlight : "#5d3211", // Theme-appropriate color
           // fontStyle: "italic", // Italics for paragraph numbers
           // fontWeight: "bold", // Slightly bold
-          // lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
+          // lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.55),
         }}
       >
         {paragraphNumber}.{" "}
@@ -163,7 +165,7 @@ const renderTextWithStyledNumbersOnly = (
                     ? "#b37407"
                     : "#36240f", // Use highlight color or default amber/orange for numbers
                 lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
+                  responsiveFontSize(settings.fontSize) * 1.55,
                 ),
               }}
             >
@@ -179,7 +181,7 @@ const renderTextWithStyledNumbersOnly = (
                 fontFamily: settings.fontFamily || "ZillaSlab",
                 color: baseTextColor, // Use highlight color or default text color
                 lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
+                  responsiveFontSize(settings.fontSize) * 1.55,
                 ),
               }}
             >
@@ -210,7 +212,7 @@ const renderTextWithStyledNumbersOnly = (
                 ? "#b37407"
                 : "#36240f", // Use highlight color or default amber/orange for numbers
             // fontWeight: "700", // Bold numbers
-            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
+            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.55),
           }}
         >
           {part}
@@ -224,7 +226,7 @@ const renderTextWithStyledNumbersOnly = (
             fontSize: responsiveFontSize(settings.fontSize),
             fontFamily: settings.fontFamily || "ZillaSlab",
             color: baseTextColor, // Use highlight color or default text color
-            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.4), // Restored to 1.4 for readability
+            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.55),
           }}
         >
           {part}
@@ -249,7 +251,7 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
               color: theme.dark ? theme.colors.hlight : "#5d3211",
               textDecorationLine: "underline",
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
+                responsiveFontSize(settings.fontSize) * 1.55,
               ),
             }}
           >
@@ -266,7 +268,7 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
               color: theme.dark ? theme.colors.hlight : "#5d3211",
               textDecorationLine: "underline",
               lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.4, // Tighter line height
+                responsiveFontSize(settings.fontSize) * 1.55,
               ),
             }}
           >
@@ -308,7 +310,7 @@ const EndnoteWithTitleText = React.memo(
                   color: theme.dark ? theme.colors.hlight : "#5d3211",
                   textDecorationLine: "underline",
                   lineHeight: Math.round(
-                    responsiveFontSize(settings.fontSize) * 1.4,
+                    responsiveFontSize(settings.fontSize) * 1.55,
                   ),
                 }}
               >
@@ -325,7 +327,7 @@ const EndnoteWithTitleText = React.memo(
                   color: theme.dark ? "#FFFFFF" : "#000000",
                   textDecorationLine: "underline",
                   lineHeight: Math.round(
-                    responsiveFontSize(settings.fontSize) * 1.4,
+                    responsiveFontSize(settings.fontSize) * 1.55,
                   ),
                 }}
               >
@@ -426,7 +428,7 @@ const ParagraphText = React.memo(
     const textStyle = useMemo(() => {
       const baseSize = responsiveFontSize(settings?.fontSize || 22);
       const fontFamily = settings?.fontFamily || "ZillaSlab";
-      const lineHeight = Math.round(baseSize * 1.4); // Restored to 1.4 for better text readability
+      const lineHeight = Math.round(baseSize * 1.55); // Medium-style generous line spacing
 
       // Pre-calculated highlight colors for better performance
       const highlightTextColors = {
@@ -440,8 +442,8 @@ const ParagraphText = React.memo(
 
       // Use highlight color if available, otherwise default text color
       const textColor = currentHighlight
-        ? highlightTextColors[currentHighlight] || theme.colors.text
-        : theme.colors.text;
+        ? highlightTextColors[currentHighlight] || (theme.dark ? "#f8efe8ff" : theme.colors.text)
+        : (theme.dark ? "#f8efe8ff" : theme.colors.text);
 
       return [
         styles.paragraphText,
@@ -465,7 +467,8 @@ const ParagraphText = React.memo(
       [theme.colors.text],
     );
 
-    // Enhanced container style with selection mode - text color highlighting instead of background
+    // Enhanced container style with
+    //  selection mode - text color highlighting instead of background
     const containerStyle = useMemo(() => {
       const baseStyle = [styles.paragraphContainer];
 

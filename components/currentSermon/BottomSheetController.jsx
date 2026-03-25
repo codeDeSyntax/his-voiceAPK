@@ -1,9 +1,10 @@
-﻿import React, { useCallback } from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useCallback } from "react";
+import { View, StyleSheet } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { styles } from "../../styles/currentsermon";
 import { useNavigation } from "@react-navigation/native";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
+import { GlassButton } from "../../styles/glassButton";
 
 /**
  * CustomTopCardController - sleek bottom pill toolbar for the reading screen.
@@ -23,7 +24,7 @@ const CustomTopCardController = ({
 
   const isDark = theme.dark;
 
-  // -- Colours - derived once per render (theme rarely changes) ---------------
+  // -- Colours ----------------------------------------------------------------
   const pillBg = isDark
     ? "rgba(28, 22, 18, 0.97)"
     : "rgba(252, 242, 220, 0.98)";
@@ -35,10 +36,6 @@ const CustomTopCardController = ({
   const dividerColor = isDark
     ? "rgba(242,205,180,0.15)"
     : "rgba(93,50,17,0.12)";
-  const clusterBg = isDark ? "rgba(242,205,180,0.07)" : "rgba(93,50,17,0.055)";
-  const clusterBorder = isDark
-    ? "rgba(242,205,180,0.12)"
-    : "rgba(93,50,17,0.11)";
 
   // -- Stable handlers --------------------------------------------------------
   const handleBack = useCallback(() => {
@@ -62,9 +59,6 @@ const CustomTopCardController = ({
     onHighlightPress?.();
   }, [onHighlightPress]);
 
-  // -- Shared button hit-slop -------------------------------------------------
-  const hitSlop = { top: 8, bottom: 8, left: 4, right: 4 };
-
   return (
     <View
       style={[
@@ -73,137 +67,73 @@ const CustomTopCardController = ({
       ]}
     >
       {/* Back */}
-      <TouchableOpacity
-        style={p.btn}
-        onPress={handleBack}
-        activeOpacity={0.65}
-        hitSlop={hitSlop}
-      >
+      <GlassButton theme={theme} size={40} onPress={handleBack}>
         <MaterialIcons
           name="arrow-back"
           size={responsiveFontSize(20)}
           color={iconPrimary}
         />
-      </TouchableOpacity>
+      </GlassButton>
 
       <View style={[p.divider, { backgroundColor: dividerColor }]} />
 
       {/* Prev paragraph */}
-      <TouchableOpacity
-        style={p.btn}
-        onPress={handlePrev}
-        activeOpacity={0.65}
-        hitSlop={hitSlop}
-      >
+      <GlassButton theme={theme} size={38} onPress={handlePrev}>
         <MaterialIcons
           name="keyboard-arrow-up"
           size={responsiveFontSize(22)}
           color={iconMuted}
         />
-      </TouchableOpacity>
+      </GlassButton>
 
       {/* Next paragraph */}
-      <TouchableOpacity
-        style={p.btn}
-        onPress={handleNext}
-        activeOpacity={0.65}
-        hitSlop={hitSlop}
-      >
+      <GlassButton theme={theme} size={38} onPress={handleNext}>
         <MaterialIcons
           name="keyboard-arrow-down"
           size={responsiveFontSize(22)}
           color={iconMuted}
         />
-      </TouchableOpacity>
+      </GlassButton>
 
       <View style={[p.divider, { backgroundColor: dividerColor }]} />
 
-      {/* -- Bookmark + Highlight cluster -- */}
-      <View
-        style={[
-          p.cluster,
-          { backgroundColor: clusterBg, borderColor: clusterBorder },
-        ]}
-      >
-        <TouchableOpacity
-          style={p.clusterBtn}
-          onPress={handleBookmark}
-          activeOpacity={0.6}
-          hitSlop={hitSlop}
-        >
-          <Ionicons
-            name="bookmark-outline"
-            size={responsiveFontSize(17)}
-            color={iconPrimary}
-          />
-        </TouchableOpacity>
+      {/* Bookmark */}
+      <GlassButton theme={theme} size={38} onPress={handleBookmark}>
+        <Ionicons
+          name="bookmark-outline"
+          size={responsiveFontSize(17)}
+          color={iconPrimary}
+        />
+      </GlassButton>
 
-        <View style={[p.clusterDivider, { backgroundColor: clusterBorder }]} />
-
-        <TouchableOpacity
-          style={p.clusterBtn}
-          onPress={handleHighlight}
-          activeOpacity={0.6}
-          hitSlop={hitSlop}
-        >
-          <Ionicons
-            name="color-palette-outline"
-            size={responsiveFontSize(17)}
-            color={iconPrimary}
-          />
-        </TouchableOpacity>
-      </View>
+      {/* Highlight */}
+      <GlassButton theme={theme} size={38} onPress={handleHighlight}>
+        <Ionicons
+          name="color-palette-outline"
+          size={responsiveFontSize(17)}
+          color={iconPrimary}
+        />
+      </GlassButton>
 
       <View style={[p.divider, { backgroundColor: dividerColor }]} />
 
       {/* Search */}
-      <TouchableOpacity
-        style={p.btn}
-        onPress={handleSearch}
-        activeOpacity={0.65}
-        hitSlop={hitSlop}
-      >
+      <GlassButton theme={theme} size={40} onPress={handleSearch}>
         <MaterialIcons
           name="search"
           size={responsiveFontSize(20)}
           color={iconPrimary}
         />
-      </TouchableOpacity>
+      </GlassButton>
     </View>
   );
 };
 
-// -- Pill-local stylesheet (no theme values - those are applied inline) --------
 const p = StyleSheet.create({
-  btn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   divider: {
     width: StyleSheet.hairlineWidth * 2,
     height: 22,
     borderRadius: 1,
-  },
-  cluster: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: "hidden",
-    marginHorizontal: 2,
-  },
-  clusterBtn: {
-    width: 40,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  clusterDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 18,
   },
 });
 
