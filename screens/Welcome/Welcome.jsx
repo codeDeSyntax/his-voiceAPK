@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   Animated,
   Easing,
@@ -123,41 +123,68 @@ const Welcome = () => {
     }
   };
 
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current;
-  const btnFade = useRef(new Animated.Value(0)).current;
+  // Animation values — staggered entrance for each element
   const spinAnim = useRef(new Animated.Value(0)).current;
+  const labelFade = useRef(new Animated.Value(0)).current;
+  const labelSlide = useRef(new Animated.Value(20)).current;
+  const titleFade = useRef(new Animated.Value(0)).current;
+  const titleSlide = useRef(new Animated.Value(30)).current;
+  const subtitleFade = useRef(new Animated.Value(0)).current;
+  const yearFade = useRef(new Animated.Value(0)).current;
+  const yearScale = useRef(new Animated.Value(0.85)).current;
+  const quoteFade = useRef(new Animated.Value(0)).current;
+  const quoteSlide = useRef(new Animated.Value(15)).current;
+  const dividerScale = useRef(new Animated.Value(0)).current;
+  const btnFade = useRef(new Animated.Value(0)).current;
+  const btnSlide = useRef(new Animated.Value(20)).current;
 
   // Reset animations when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      fadeAnim.setValue(0);
-      slideAnim.setValue(40);
-      btnFade.setValue(0);
+      // Reset all
+      [labelFade, titleFade, subtitleFade, yearFade, quoteFade, btnFade, dividerScale].forEach(a => a.setValue(0));
+      [labelSlide, quoteSlide, btnSlide].forEach(a => a.setValue(15));
+      titleSlide.setValue(30);
+      yearScale.setValue(0.85);
 
-      // Content entrance
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 700,
-            useNativeDriver: true,
-            easing: Easing.out(Easing.cubic),
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 700,
-            useNativeDriver: true,
-            easing: Easing.out(Easing.cubic),
-          }),
+      const stagger = (delay, anims) =>
+        Animated.sequence([Animated.delay(delay), Animated.parallel(anims)]);
+
+      // Staggered cascade entrance
+      Animated.parallel([
+        // Top divider scales in
+        stagger(200, [
+          Animated.spring(dividerScale, { toValue: 1, damping: 18, stiffness: 200, useNativeDriver: true }),
         ]),
-        Animated.timing(btnFade, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-          easing: Easing.out(Easing.ease),
-        }),
+        // Label
+        stagger(400, [
+          Animated.timing(labelFade, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(labelSlide, { toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        ]),
+        // Title
+        stagger(600, [
+          Animated.timing(titleFade, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(titleSlide, { toValue: 0, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        ]),
+        // Subtitle
+        stagger(900, [
+          Animated.timing(subtitleFade, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        ]),
+        // Year pill
+        stagger(1100, [
+          Animated.timing(yearFade, { toValue: 1, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.spring(yearScale, { toValue: 1, damping: 14, stiffness: 180, useNativeDriver: true }),
+        ]),
+        // Quote
+        stagger(1400, [
+          Animated.timing(quoteFade, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(quoteSlide, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        ]),
+        // Button
+        stagger(1800, [
+          Animated.timing(btnFade, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(btnSlide, { toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        ]),
       ]).start();
 
       // Smooth infinite background spin
@@ -170,7 +197,7 @@ const Welcome = () => {
           useNativeDriver: true,
         }),
       ).start();
-    }, [fadeAnim, slideAnim, btnFade, spinAnim]),
+    }, [spinAnim, labelFade, labelSlide, titleFade, titleSlide, subtitleFade, yearFade, yearScale, quoteFade, quoteSlide, dividerScale, btnFade, btnSlide]),
   );
 
   // Handle button press
@@ -200,23 +227,133 @@ const Welcome = () => {
     ? "rgba(212, 165, 116, 0.06)"
     : "rgba(139, 69, 19, 0.045)";
 
-  // Pre-computed pattern data
-  const concentricCircles = [0.18, 0.35, 0.52, 0.7, 0.9, 1.1];
-  const radiatingLines = Array.from({ length: 24 }, (_, i) => i * 15);
+  // Pre-computed pattern data — more rings for richer depth
+  const concentricCircles = [0.12, 0.24, 0.38, 0.52, 0.68, 0.85, 1.05, 1.3];
+  const radiatingLines = Array.from({ length: 36 }, (_, i) => i * 10);
 
   const spinRotation = spinAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
 
-  const buttonBg = useMemo(
-    () => ({
-      backgroundColor: theme.dark
-        ? "rgba(230, 195, 184, 0.1)"
-        : "rgba(93, 50, 17, 0.8)",
-    }),
-    [theme.dark],
-  );
+  // Premium button component
+  const PremiumButton = useCallback(({ label, onPress }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const glowAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 2200,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: false,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 2200,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: false,
+          }),
+        ]),
+      ).start();
+    }, [glowAnim]);
+
+    const handlePressIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 0.95,
+        damping: 15,
+        stiffness: 300,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handlePressOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        damping: 12,
+        stiffness: 200,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const borderOpacity = glowAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: theme.dark
+        ? ["rgba(230, 195, 184, 0.20)", "rgba(230, 195, 184, 0.45)"]
+        : ["rgba(93, 50, 17, 0.15)", "rgba(93, 50, 17, 0.35)"],
+    });
+
+    const innerBg = theme.dark
+      ? "rgba(40, 30, 24, 0.92)"
+      : "rgba(93, 50, 17, 0.82)";
+    const highlightBg = theme.dark
+      ? "rgba(230, 195, 184, 0.06)"
+      : "rgba(255, 255, 255, 0.12)";
+
+    return (
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <Pressable
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+        >
+          {/* Outer glow border */}
+          <Animated.View
+            style={{
+              borderRadius: 100,
+              borderWidth: 1.5,
+              borderColor: borderOpacity,
+              padding: 2,
+            }}
+          >
+            {/* Main button body */}
+            <View
+              style={{
+                backgroundColor: innerBg,
+                borderRadius: 100,
+                paddingHorizontal: horizontalScale(44),
+                paddingVertical: verticalScale(15),
+                overflow: "hidden",
+                shadowColor: theme.dark ? "#e6c3b8" : "#5d3211",
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: theme.dark ? 0.15 : 0.25,
+                shadowRadius: 16,
+                elevation: 8,
+              }}
+            >
+              {/* Top highlight sheen */}
+              <View
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "50%",
+                  backgroundColor: highlightBg,
+                  borderTopLeftRadius: 100,
+                  borderTopRightRadius: 100,
+                }}
+              />
+              <Text
+                style={{
+                  fontFamily: "Arial",
+                  color: theme.dark ? "#e6c3b8" : "#fff",
+                  fontSize: responsiveFontSize(15),
+                  fontWeight: "900",
+                  letterSpacing: 1.2,
+                  textAlign: "center",
+                }}
+              >
+                {label}
+              </Text>
+            </View>
+          </Animated.View>
+        </Pressable>
+      </Animated.View>
+    );
+  }, [theme.dark]);
 
   return (
     <LinearGradient
@@ -285,74 +422,110 @@ const Welcome = () => {
         />
       </Animated.View>
 
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
-        {/* Thin decorative line */}
-        <View style={[styles.dividerLine, { backgroundColor: divider }]} />
+      {/* ── Cover page layout: top label → big name → bottom quote + button ── */}
 
-        {/* Small label */}
-        <Text style={[styles.label, { color: accentMuted }]}>SERMONS OF</Text>
-
-        {/* Main title */}
-        <Text style={[styles.mainTitle, { color: accent }]}>
-          Robert Lambert Lee
-        </Text>
-
-        {/* Subtitle */}
-        <Text style={[styles.subtitle, { color: accentMuted }]}>
-          Transcribed & Audio Sermons
-        </Text>
-
-        {/* Year pill */}
-        <View
+      {/* Top section — label + divider */}
+      <View style={styles.topSection}>
+        <Animated.View
           style={[
-            styles.yearPill,
-            {
-              borderColor: divider,
-              backgroundColor: theme.dark
-                ? "rgba(230, 195, 184, 0.04)"
-                : "rgba(93, 50, 17, 0.03)",
-            },
+            styles.dividerLine,
+            { backgroundColor: divider, transform: [{ scaleX: dividerScale }] },
+          ]}
+        />
+        <Animated.Text
+          style={[
+            styles.label,
+            { color: accentMuted, opacity: labelFade, transform: [{ translateY: labelSlide }] },
           ]}
         >
-          <Text style={[styles.yearText, { color: accentMuted }]}>
-            1964 – 1973
+          SERMONS OF
+        </Animated.Text>
+        <Animated.View
+          style={[
+            styles.dividerLine,
+            { backgroundColor: divider, transform: [{ scaleX: dividerScale }] },
+          ]}
+        />
+      </View>
+
+      {/* Center — the name, big and commanding */}
+      <View style={styles.centerSection}>
+        <Animated.Text
+          style={[
+            styles.mainTitle,
+            { color: accent, opacity: titleFade, transform: [{ translateY: titleSlide }] },
+          ]}
+        >
+          Robert Lambert Lee
+        </Animated.Text>
+
+        <Animated.View style={{ opacity: subtitleFade, alignItems: "center", gap: 14, marginTop: 16 }}>
+          <View style={[styles.dividerLine, { backgroundColor: divider }]} />
+          <Text style={[styles.subtitle, { color: accentMuted }]}>
+            Transcribed & Audio Sermons
           </Text>
-        </View>
+          <Animated.View
+            style={[
+              styles.yearPill,
+              {
+                borderColor: divider,
+                backgroundColor: theme.dark
+                  ? "rgba(230, 195, 184, 0.04)"
+                  : "rgba(93, 50, 17, 0.03)",
+                opacity: yearFade,
+                transform: [{ scale: yearScale }],
+              },
+            ]}
+          >
+            <Text style={[styles.yearText, { color: accentMuted }]}>
+              1964 – 1973
+            </Text>
+          </Animated.View>
+        </Animated.View>
+      </View>
 
-        {/* Thin decorative line */}
-        <View style={[styles.dividerLine, { backgroundColor: divider }]} />
-
-        {/* Scripture quote */}
-        <View style={styles.quoteWrap}>
+      {/* Bottom section — quote + button */}
+      <View style={styles.bottomSection}>
+        <Animated.View
+          style={[
+            styles.quoteWrap,
+            { opacity: quoteFade, transform: [{ translateY: quoteSlide }] },
+          ]}
+        >
+          <Text
+            style={[
+              styles.quoteOpen,
+              {
+                color: theme.dark
+                  ? "rgba(230, 195, 184, 0.18)"
+                  : "rgba(93, 50, 17, 0.12)",
+              },
+            ]}
+          >
+            {"\u201C"}
+          </Text>
           <Text style={[styles.quoteText, { color: accentMuted }]}>
-            And I saw another mighty angel come down{"\n"}from heaven, clothed
-            with a cloud: and a{"\n"}rainbow was upon his head.
+            And I saw another mighty angel come{"\n"}down from heaven, clothed
+            with a cloud:{"\n"}and a rainbow was upon his head.
           </Text>
           <Text
             style={[
               styles.quoteRef,
               {
                 color: theme.dark
-                  ? "rgba(230, 195, 184, 0.5)"
-                  : "rgba(93, 50, 17, 0.45)",
+                  ? "rgba(230, 195, 184, 0.40)"
+                  : "rgba(93, 50, 17, 0.35)",
               },
             ]}
           >
-            Revelation 10:1
+            — Revelation 10 : 1
           </Text>
-        </View>
-      </Animated.View>
+        </Animated.View>
 
-      {/* Button area — separate so it fades in after content */}
-      <Animated.View style={[styles.buttonArea, { opacity: btnFade }]}>
+        {/* Button */}
+        <Animated.View
+          style={{ opacity: btnFade, transform: [{ translateY: btnSlide }], marginTop: 24 }}
+        >
         {isDownloading ? (
           <View style={styles.downloadWrap}>
             <ActivityIndicator size="small" color={accent} />
@@ -383,32 +556,15 @@ const Welcome = () => {
             >
               {downloadError}
             </Text>
-            <TouchableOpacity
-              onPress={handleDownloadDatabase}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.btn, buttonBg]}>
-                <Text style={styles.btnText}>Retry</Text>
-              </View>
-            </TouchableOpacity>
+            <PremiumButton label="Retry" onPress={handleDownloadDatabase} />
           </View>
         ) : dbExists ? (
-          <TouchableOpacity onPress={handleBeginReading} activeOpacity={0.85}>
-            <View style={[styles.btn, buttonBg]}>
-              <Text style={styles.btnText}>Begin Reading</Text>
-            </View>
-          </TouchableOpacity>
+          <PremiumButton label="Begin Reading" onPress={handleBeginReading} />
         ) : (
-          <TouchableOpacity
-            onPress={handleDownloadDatabase}
-            activeOpacity={0.85}
-          >
-            <View style={[styles.btn, buttonBg]}>
-              <Text style={styles.btnText}>Download Sermons</Text>
-            </View>
-          </TouchableOpacity>
+          <PremiumButton label="Download Sermons" onPress={handleDownloadDatabase} />
         )}
-      </Animated.View>
+        </Animated.View>
+      </View>
     </LinearGradient>
   );
 };
@@ -455,89 +611,83 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "25deg" }],
     borderLeftWidth: 0,
   },
-  container: {
+  topSection: {
+    position: "absolute",
+    top: verticalScale(70),
     alignItems: "center",
-    paddingHorizontal: spacing.xl,
-    gap: 20,
+    gap: 12,
+    width: "100%",
+  },
+  centerSection: {
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    marginTop: -verticalScale(20),
+  },
+  bottomSection: {
+    position: "absolute",
+    bottom: verticalScale(36),
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: spacing.lg,
   },
   dividerLine: {
-    width: 40,
-    height: 1,
+    width: 48,
+    height: 1.5,
     borderRadius: 1,
   },
   label: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(13),
-    letterSpacing: 5,
+    fontSize: responsiveFontSize(15.5),
+    letterSpacing: 6,
     textTransform: "uppercase",
-    marginTop: 4,
+    marginTop: 2,
   },
   mainTitle: {
     fontFamily: "Philosopher",
-    fontSize: responsiveFontSize(32),
+    fontSize: responsiveFontSize(58),
     textAlign: "center",
-    lineHeight: responsiveFontSize(42),
+    lineHeight: responsiveFontSize(66),
   },
   subtitle: {
     fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(14),
-    letterSpacing: 0.6,
+    fontSize: responsiveFontSize(13),
+    letterSpacing: 0.8,
     textAlign: "center",
   },
   yearPill: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 100,
     borderWidth: 1,
   },
   yearText: {
-    fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(13),
-    letterSpacing: 3,
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: responsiveFontSize(12),
+    letterSpacing: 4,
   },
   quoteWrap: {
     alignItems: "center",
-    marginTop: 8,
-    paddingHorizontal: spacing.md,
+    marginTop: 6,
+    paddingHorizontal: spacing.lg,
+  },
+  quoteOpen: {
+    fontFamily: "Philosopher",
+    fontSize: responsiveFontSize(48),
+    lineHeight: responsiveFontSize(48),
+    marginBottom: -8,
   },
   quoteText: {
     fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(14),
+    fontSize: responsiveFontSize(13.5),
     // fontStyle: "italic",
     textAlign: "center",
     lineHeight: responsiveFontSize(24),
   },
   quoteRef: {
-    fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(12),
-    marginTop: 12,
-    letterSpacing: 1.5,
-  },
-
-  /* Button area */
-  buttonArea: {
-    position: "absolute",
-    bottom: verticalScale(56),
-    alignItems: "center",
-    width: "100%",
-  },
-  btn: {
-    paddingHorizontal: horizontalScale(48),
-    paddingVertical: verticalScale(14),
-    borderRadius: 100,
-    shadowColor: "#5d3211",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  btnText: {
-    fontFamily: "Merriweather",
-    color: "#fff",
-    fontSize: responsiveFontSize(15),
-    fontWeight: "600",
-    letterSpacing: 0.8,
-    textAlign: "center",
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: responsiveFontSize(14),
+    marginTop: 14,
+    letterSpacing: 2,
   },
 
   /* Download & error */
