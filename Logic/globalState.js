@@ -56,6 +56,9 @@ export const SermonProvider = ({ children }) => {
   const [allSermons, setAllSermons] = useState([]);
   const [textSermons, setTextSermons] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const [searchPhrase, setSearchPhrase] = useState(""); // Search query
+  const [searchResults, setSearchResults] = useState([]); // Filtered sermons from search
+  const [expandedSearchResults, setExpandedSearchResults] = useState(new Set()); // Track which results are expanded
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
@@ -698,6 +701,12 @@ export const SermonProvider = ({ children }) => {
       // UI state
       searchText,
       setSearchText,
+      searchPhrase,
+      setSearchPhrase,
+      searchResults,
+      setSearchResults,
+      expandedSearchResults,
+      setExpandedSearchResults,
       error,
       loading,
       sermonsLoaded,
@@ -747,6 +756,12 @@ export const SermonProvider = ({ children }) => {
       textSermons,
       searchText,
       setSearchText,
+      searchPhrase,
+      setSearchPhrase,
+      searchResults,
+      setSearchResults,
+      expandedSearchResults,
+      setExpandedSearchResults,
       error,
       loading,
       sermonsLoaded,

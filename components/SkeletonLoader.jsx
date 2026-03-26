@@ -32,12 +32,7 @@ const SkeletonLoader = ({ theme, count = 10 }) => {
       style={[
         styles.skeletonItem,
         {
-          backgroundColor: theme.dark
-            ? "rgba(242, 205, 180, 0.05)"
-            : "rgba(93, 50, 17, 0.03)",
-          borderColor: theme.dark
-            ? "rgba(242, 205, 180, 0.1)"
-            : "rgba(93, 50, 17, 0.08)",
+          backgroundColor: "transparent",
         },
       ]}
     >
@@ -160,25 +155,24 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   skeletonItem: {
-    borderRadius: 12,
-    marginBottom: 12,
-    padding: 16,
-    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 14,
+    padding: 14,
     overflow: "hidden",
   },
   skeletonContent: {
-    gap: 12,
+    gap: 10,
   },
   skeletonTextContainer: {
-    gap: 8,
+    gap: 6,
   },
   skeletonText: {
-    borderRadius: 6,
+    borderRadius: 8,
     overflow: "hidden",
   },
   skeletonTitle: {
-    height: 20,
-    width: "80%",
+    height: 18,
+    width: "85%",
   },
   skeletonMetadata: {
     flexDirection: "row",
@@ -186,11 +180,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   skeletonDate: {
-    height: 14,
+    height: 12,
     width: 100,
   },
   skeletonType: {
-    height: 14,
+    height: 12,
     width: 60,
   },
 });

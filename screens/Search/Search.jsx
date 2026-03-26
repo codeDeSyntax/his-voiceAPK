@@ -19,6 +19,7 @@ import {
   Image,
   Dimensions,
   FlatList,
+  Easing,
 } from "react-native";
 import { useAppContext } from "../../Logic/globalState";
 import {
@@ -37,10 +38,66 @@ const CONTEXT_LENGTH = 30;
 
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Helper function to extract context and guarantee highlight match is visible
+const extractHighlightedContext = (
+  fullText,
+  searchPhrase,
+  contextBefore = 110,
+  contextAfter = 260,
+) => {
+  if (!fullText || !searchPhrase) return fullText;
+
+  const searchLower = searchPhrase.toLowerCase();
+  const textLower = fullText.toLowerCase();
+  const matchPos = textLower.indexOf(searchLower);
+
+  if (matchPos === -1) {
+    // Fallback: return first part of text if match not found
+    return fullText.substring(0, 400);
+  }
+
+  // Calculate context window to ensure match is included and visible
+  const start = Math.max(0, matchPos - contextBefore);
+  const end = Math.min(
+    fullText.length,
+    matchPos + searchPhrase.length + contextAfter,
+  );
+
+  let context = fullText.substring(start, end);
+  if (start > 0) context = "..." + context;
+  if (end < fullText.length) context = context + "...";
+
+  // Now highlight the match in the extracted context
+  // Need to recalculate match position in the new context string
+  const contextLower = context.toLowerCase();
+  const matchInContext = contextLower.indexOf(searchLower);
+
+  if (matchInContext !== -1) {
+    // Extract the actual matched text from the original (preserving case)
+    const actualMatch = fullText.substring(
+      matchPos,
+      matchPos + searchPhrase.length,
+    );
+
+    // Rebuild context with explicit highlight tags around the actual matched text
+    const beforeMatch = context.substring(0, matchInContext);
+    const afterMatch = context.substring(matchInContext + searchPhrase.length);
+
+    return beforeMatch + `<highlight>${actualMatch}</highlight>` + afterMatch;
+  }
+
+  // Fallback: apply regex as before if position-based approach fails
+  const regex = new RegExp(`(${escapeRegex(searchPhrase)})`, "gi");
+  return context.replace(regex, `<highlight>$1</highlight>`);
+};
+
 // ── Animated dot for the search loading indicator ──────────────────────────
 const SearchDot = ({ anim, color }) => {
   const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
-  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 1] });
+  const opacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.15, 1],
+  });
   return (
     <Animated.View
       style={{
@@ -93,7 +150,7 @@ const SearchLoader = ({ theme }) => {
     };
   }, []);
 
-  const dotColor = theme.dark ? "#d57a3e" : "#5d3211";
+  const dotColor = theme.dark ? "#e6c3b8" : "#5d3211";
   const labelColor = theme.dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.22)";
 
   return (
@@ -125,17 +182,131 @@ const SearchLoader = ({ theme }) => {
     </View>
   );
 };
+
+const SearchActionButton = ({ theme, onPress, label = "Enter" }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 1800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [glowAnim]);
+
+  const borderColor = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: theme.dark
+      ? ["rgba(230,195,184,0.22)", "rgba(230,195,184,0.45)"]
+      : ["rgba(93,50,17,0.20)", "rgba(93,50,17,0.42)"],
+  });
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      damping: 16,
+      stiffness: 280,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      damping: 13,
+      stiffness: 220,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleAnim }], width: "100%" }}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+      >
+        <Animated.View
+          style={[
+            styles.searchButtonOuter,
+            {
+              borderColor,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.searchButtonCore,
+              {
+                backgroundColor: theme.dark
+                  ? "rgba(40,30,24,0.94)"
+                  : "rgba(93,50,17,0.88)",
+                shadowColor: theme.dark ? "#e6c3b8" : "#5d3211",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.searchButtonSheen,
+                {
+                  backgroundColor: theme.dark
+                    ? "rgba(230,195,184,0.08)"
+                    : "rgba(255,255,255,0.15)",
+                },
+              ]}
+            />
+            <View style={styles.searchButtonContentRow}>
+              <MaterialIcons
+                name="search"
+                size={18}
+                color={theme.dark ? "#e6c3b8" : "#ffffff"}
+                style={styles.searchButtonIconWrap}
+              />
+              <Text
+                style={[
+                  styles.searchButtonLabel,
+                  { color: theme.dark ? "#e6c3b8" : "#ffffff" },
+                ]}
+              >
+                {label}
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+      </Pressable>
+    </Animated.View>
+  );
+};
 const EXPANDED_CONTEXT_LENGTH = 150;
 const POPUP_CONTEXT_LENGTH = 3000;
 
 const SermonSearch = () => {
-  const { theme, setSelectedSermon } = useAppContext(); // Removed textSermons - we'll query DB directly
+  const {
+    theme,
+    setSelectedSermon,
+    searchPhrase,
+    setSearchPhrase,
+    searchResults,
+    setSearchResults,
+    expandedSearchResults,
+    setExpandedSearchResults,
+  } = useAppContext();
   const navigation = useNavigation();
 
-  const [searchText, setSearchText] = useState(""); // Local search state for Search screen
-  const [searchPhrase, setSearchPhrase] = useState(""); // Local search phrase
-  const [filteredSermons, setFilteredSermons] = useState([]);
-  const [expandedResults, setExpandedResults] = useState(new Set()); // Track expanded search results
   const [loading, setLoading] = useState(false);
   const [found, setFound] = useState(true);
   // Stable animated value — must NOT be recreated on every render
@@ -178,15 +349,15 @@ const SermonSearch = () => {
 
   const handleSearch = async () => {
     if (searchPhrase.trim() === "") {
-      setFilteredSermons([]);
+      setSearchResults([]);
       return;
     }
 
     Keyboard.dismiss();
 
     setLoading(true);
-    setFilteredSermons([]); // Clear stale results so the loader is always visible
-    setExpandedResults(new Set());
+    setSearchResults([]); // Clear stale results so the loader is always visible
+    setExpandedSearchResults(new Set());
 
     try {
       // Use FTS5 search - much faster!
@@ -218,11 +389,11 @@ const SermonSearch = () => {
         setFound(true);
       }
 
-      setFilteredSermons(filtered);
+      setSearchResults(filtered);
     } catch (error) {
       console.log("Could not search sermons", error);
       setFound(false);
-      setFilteredSermons([]);
+      setSearchResults([]);
     } finally {
       setLoading(false);
       Animated.timing(fadeAnim, {
@@ -234,7 +405,7 @@ const SermonSearch = () => {
   };
 
   const toggleResultExpanded = useCallback((index) => {
-    setExpandedResults((prev) => {
+    setExpandedSearchResults((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(index)) {
         newSet.delete(index);
@@ -271,272 +442,313 @@ const SermonSearch = () => {
   };
 
   const handleClearSearch = () => {
-    setSearchText("");
     setSearchPhrase("");
-    setFilteredSermons([]);
-    setExpandedResults(new Set()); // Clear expanded search results
+    setSearchResults([]);
+    setExpandedSearchResults(new Set()); // Clear expanded search results
     searchInputRef.current?.focus();
   };
 
   // Render function for FlatList items — memoized so FlatList does not recreate
   // the callback (and re-render all visible cells) on unrelated state changes.
-  const renderSearchResultItem = useCallback(({ item: sermon, index }) => {
-    const showExpanded = expandedResults.has(index);
-    const isEven = index % 2 === 0;
-    const accentColor = theme.dark ? "#d57a3e" : "#5d3211";
-    const backgroundColor = theme.dark
-      ? isEven
-        ? theme.colors.primary
-        : theme.colors.background
-      : isEven
-        ? "rgba(93, 50, 17, 0.04)"
-        : "rgba(93, 50, 17, 0.02)";
+  const renderSearchResultItem = useCallback(
+    ({ item: sermon, index }) => {
+      const showExpanded = expandedSearchResults.has(index);
+      const isEven = index % 2 === 0;
+      const accentColor = theme.dark ? "rgba(230,195,184,0.92)" : "#5d3211";
+      const highlightBg = theme.dark
+        ? "rgba(230,195,184,0.2)"
+        : "rgba(93,50,17,0.16)";
+      const highlightFg = theme.dark ? "#f8e3d5" : "#5d3211";
+      const metaPrefix = `${sermon.year || "Unknown year"}${sermon.location ? ` • ${sermon.location}` : ""} • ${sermon.totalMatches} ${sermon.totalMatches === 1 ? "match" : "matches"}`;
+      const backgroundColor = theme.dark
+        ? isEven
+          ? theme.colors.primary
+          : theme.colors.background
+        : isEven
+          ? "rgba(93, 50, 17, 0.04)"
+          : "rgba(93, 50, 17, 0.02)";
 
-    return (
-      <TouchableOpacity
-        key={`search-result-${index}`}
-        style={[styles.searchResultItem, { backgroundColor }]}
-        onPress={() => {
-          // If collapsed, expand it; if already expanded, navigate to first match
-          if (!showExpanded) {
+      return (
+        <TouchableOpacity
+          key={`search-result-${index}`}
+          style={[styles.searchResultItem, { backgroundColor }]}
+          onPress={() => {
+            // Toggle card expansion/collapse; navigation stays on individual match taps.
             toggleResultExpanded(index);
-          } else {
-            handleSermonClick(sermon);
-          }
-        }}
-        activeOpacity={0.7}
-      >
-        <View style={styles.resultContent}>
-          {/* Title and Year */}
-          <View style={styles.resultHeader}>
-            <Text
-              style={[
-                styles.resultTitle,
-                {
-                  color: theme.colors.text,
-                  fontFamily: "ZillaSlabsm",
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {sermon.title.trim()}
-            </Text>
-            <View
-              style={[
-                styles.resultYearBadge,
-                {
-                  backgroundColor: theme.dark
-                    ? "rgba(213, 122, 62, 0.18)"
-                    : "rgba(93, 50, 17, 0.1)",
-                },
-              ]}
-            >
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.resultContent}>
+            {/* Sermon title */}
+            <View style={styles.resultHeader}>
               <Text
                 style={[
-                  styles.resultYearText,
-                  {
-                    color: theme.dark ? "#d57a3e" : "#5d3211",
-                  },
-                ]}
-              >
-                {sermon.year}
-              </Text>
-            </View>
-          </View>
-
-          {/* Search context with paragraph info */}
-          <View style={styles.contextContainer}>
-            <View style={styles.paragraphInfo}>
-              <Text
-                style={[
-                  styles.paragraphLabel,
+                  styles.resultTitle,
                   {
                     color: theme.colors.text,
-                    fontFamily: "ZillaSlab",
+                    fontFamily: "ZillaSlabsm",
                   },
                 ]}
+                numberOfLines={1}
               >
-                {sermon.totalMatches}{" "}
-                {sermon.totalMatches === 1 ? "match" : "matches"} found
+                {sermon.title.trim()}
               </Text>
-
-              {/* Show more caret - only if multiple matches */}
-              {sermon.totalMatches > 1 && (
-                <TouchableOpacity
-                  style={styles.expandCaret}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    toggleResultExpanded(index);
-                  }}
-                >
-                  <MaterialIcons
-                    name={showExpanded ? "expand-less" : "expand-more"}
-                    size={24}
-                    color={theme.colors.text}
-                    style={{ opacity: 0.7 }}
-                  />
-                </TouchableOpacity>
-              )}
             </View>
 
-            {/* Show first match when collapsed, all matches when expanded */}
-            {showExpanded && sermon.totalMatches > 1 ? (
-              // Show all matches as separate clickable items
-              <View style={{ marginTop: 8 }}>
-                {sermon.allMatches.map((match, matchIndex) => {
-                  // Generate unique context for this specific match
-                  const paragraphText = match.fullParagraph || match.context;
-                  const searchLower = searchPhrase.toLowerCase();
-                  const textLower = paragraphText.toLowerCase();
-                  const matchIndex2 = textLower.indexOf(searchLower);
-
-                  let uniqueContext = paragraphText;
-                  if (matchIndex2 !== -1) {
-                    const start = Math.max(0, matchIndex2 - 50);
-                    const end = Math.min(
-                      paragraphText.length,
-                      matchIndex2 + searchPhrase.length + 100,
-                    );
-                    uniqueContext = paragraphText.substring(start, end);
-                    if (start > 0) uniqueContext = "..." + uniqueContext;
-                    if (end < paragraphText.length)
-                      uniqueContext = uniqueContext + "...";
-                  }
-
-                  const regex = new RegExp(`(${escapeRegex(searchPhrase)})`, "gi");
-                  const highlightedContext = uniqueContext.replace(
-                    regex,
-                    `<highlight>$1</highlight>`,
-                  );
-
-                  return (
-                    <TouchableOpacity
-                      key={`match-${matchIndex}`}
+            {/* Inline metadata + preview to conserve vertical space */}
+            <View style={styles.contextContainer}>
+              {/* Show first match when collapsed, all matches when expanded */}
+              {showExpanded && sermon.totalMatches > 1 ? (
+                // Show all matches as separate clickable items
+                <View style={{ marginTop: 2 }}>
+                  <View style={styles.expandedMetaRow}>
+                    <Text
                       style={[
-                        styles.individualMatch,
+                        styles.paragraphLabel,
                         {
-                          backgroundColor: theme.dark
-                            ? "rgba(213, 122, 62, 0.06)"
-                            : "rgba(93, 50, 17, 0.04)",
-                          borderLeftColor: theme.dark ? "#d57a3e" : "#5d3211",
+                          color: theme.dark
+                            ? "rgba(255,255,255,0.62)"
+                            : "rgba(93,50,17,0.78)",
+                          fontFamily: "ZillaSlab",
                         },
                       ]}
+                      numberOfLines={1}
+                    >
+                      {metaPrefix}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.expandCaretExpanded}
                       onPress={(e) => {
                         e.stopPropagation();
-                        handleSermonClick(sermon, match.paragraphIndex);
+                        toggleResultExpanded(index);
                       }}
-                      activeOpacity={0.6}
                     >
-                      <Text
-                        style={[
-                          styles.matchLabel,
-                          { color: accentColor },
-                        ]}
-                      >
-                        ¶ {match.paragraphIndex + 1}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.matchContext,
-                          {
-                            color: theme.dark
-                              ? "rgba(255,255,255,0.8)"
-                              : "#5d3211",
-                            fontFamily: "ZillaSlab",
-                          },
-                        ]}
-                        numberOfLines={3}
-                      >
-                        {highlightedContext
-                          .split(/(<highlight>.*?<\/highlight>)/g)
-                          .map((part, i) => {
-                            const isHighlight =
-                              part.startsWith("<highlight>") &&
-                              part.endsWith("</highlight>");
-                            const text = part.replace(/<\/?highlight>/g, "");
-
-                            return (
-                              <Text
-                                key={`match-${matchIndex}-${i}`}
-                                style={
-                                  isHighlight
-                                    ? {
-                                        backgroundColor: theme.dark
-                                          ? "rgba(213,122,62,0.25)"
-                                          : "rgba(213,122,62,0.18)",
-                                        color: theme.dark ? "#f2a86b" : "#b85a1a",
-                                        fontFamily: "ZillaSlabsm",
-                                      }
-                                    : undefined
-                                }
-                              >
-                                {text}
-                              </Text>
-                            );
-                          })}
-                      </Text>
+                      <MaterialIcons
+                        name="expand-less"
+                        size={24}
+                        color={theme.colors.text}
+                        style={{ opacity: 0.7 }}
+                      />
                     </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ) : (
-              // Show only first match when not expanded
-              <Text
-                style={[
-                  styles.resultContext,
-                  {
-                    color: theme.dark ? "rgba(255,255,255,0.8)" : "#5d3211",
-                    fontFamily: "ZillaSlab",
-                  },
-                ]}
-                numberOfLines={2}
-              >
-                {sermon.sentence
-                  .split(/(<highlight>.*?<\/highlight>)/g)
-                  .map((part, i) => {
-                    const isHighlight =
-                      part.startsWith("<highlight>") &&
-                      part.endsWith("</highlight>");
-                    const text = part.replace(/<\/?highlight>/g, "");
+                  </View>
+                  {sermon.allMatches.map((match, matchIndex) => {
+                    // Generate unique context for this specific match
+                    const paragraphText = match.fullParagraph || match.context;
+                    // Use the helper function to guarantee match is highlighted
+                    const highlightedContext = extractHighlightedContext(
+                      paragraphText,
+                      searchPhrase,
+                      90,
+                      220,
+                    );
 
                     return (
-                      <Text
-                        key={`context-${i}`}
-                        style={
-                          isHighlight
-                            ? {
-                                backgroundColor: theme.dark
-                                  ? "#5d3211" + "70"
-                                  : "#5d3211" + "30",
-                                color: theme.dark ? "#f8e3d5" : "#5d3211",
-                                fontFamily: "ZillaSlabsm",
-                              }
-                            : undefined
-                        }
+                      <TouchableOpacity
+                        key={`match-${matchIndex}`}
+                        style={[
+                          styles.individualMatch,
+                          {
+                            backgroundColor: theme.dark
+                              ? "rgba(230, 195, 184, 0.07)"
+                              : "rgba(93, 50, 17, 0.04)",
+                            borderLeftColor: theme.dark
+                              ? "rgba(230,195,184,0.45)"
+                              : "#5d3211",
+                          },
+                        ]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleSermonClick(sermon, match.paragraphIndex);
+                        }}
+                        activeOpacity={0.6}
                       >
-                        {text}
-                      </Text>
+                        <Text
+                          style={[
+                            styles.matchContext,
+                            {
+                              color: theme.dark
+                                ? "rgba(255,255,255,0.8)"
+                                : "#5d3211",
+                              fontFamily: "ZillaSlab",
+                            },
+                          ]}
+                          numberOfLines={4}
+                        >
+                          <Text
+                            style={[
+                              styles.matchLabelInline,
+                              { color: accentColor },
+                            ]}
+                          >
+                            ¶ {match.paragraphIndex + 1} •{" "}
+                          </Text>
+                          {highlightedContext
+                            .split(/(<highlight>.*?<\/highlight>)/g)
+                            .map((part, i) => {
+                              const isHighlight =
+                                part.startsWith("<highlight>") &&
+                                part.endsWith("</highlight>");
+                              const text = part.replace(/<\/?highlight>/g, "");
+
+                              return (
+                                <Text
+                                  key={`match-${matchIndex}-${i}`}
+                                  style={
+                                    isHighlight
+                                      ? {
+                                          backgroundColor: highlightBg,
+                                          color: highlightFg,
+                                          fontFamily: "ZillaSlabsm",
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  {text}
+                                </Text>
+                              );
+                            })}
+                        </Text>
+                      </TouchableOpacity>
                     );
                   })}
-              </Text>
-            )}
-          </View>
-        </View>
+                </View>
+              ) : (
+                // Show compact highlighted snippets for all matches when not expanded
+                <View style={styles.inlinePreviewRow}>
+                  <Text
+                    style={[
+                      styles.inlineMetaText,
+                      {
+                        color: theme.dark
+                          ? "rgba(255,255,255,0.62)"
+                          : "rgba(93,50,17,0.78)",
+                        fontFamily: "ZillaSlabsm",
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {metaPrefix}
+                  </Text>
 
-        {/* Bottom separator line */}
-        <View
-          style={[
-            styles.resultSeparator,
-            {
-              backgroundColor: theme.dark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)",
-            },
-          ]}
-        />
-      </TouchableOpacity>
-    );
-  }, [searchPhrase, expandedResults, theme, handleSermonClick, toggleResultExpanded]);
+                  <View style={styles.previewMatchesStack}>
+                    {sermon.allMatches.map((match, matchIndex) => {
+                      const paragraphText =
+                        match.fullParagraph || match.context;
+                      // Use the helper function to guarantee match is highlighted
+                      const highlightedContext = extractHighlightedContext(
+                        paragraphText,
+                        searchPhrase,
+                        110,
+                        260,
+                      );
+
+                      return (
+                        <TouchableOpacity
+                          key={`preview-match-${matchIndex}`}
+                          style={styles.previewMatchItem}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleSermonClick(sermon, match.paragraphIndex);
+                          }}
+                          activeOpacity={0.75}
+                        >
+                          <Text
+                            style={[
+                              styles.previewMatchText,
+                              {
+                                color: theme.dark
+                                  ? "rgba(255,255,255,0.82)"
+                                  : "#5d3211",
+                                fontFamily: "ZillaSlab",
+                              },
+                            ]}
+                            numberOfLines={2}
+                          >
+                            <Text
+                              style={[
+                                styles.matchLabelInline,
+                                { color: accentColor },
+                              ]}
+                            >
+                              ¶ {match.paragraphIndex + 1} •{" "}
+                            </Text>
+                            {highlightedContext
+                              .split(/(<highlight>.*?<\/highlight>)/g)
+                              .map((part, i) => {
+                                const isHighlight =
+                                  part.startsWith("<highlight>") &&
+                                  part.endsWith("</highlight>");
+                                const text = part.replace(
+                                  /<\/?highlight>/g,
+                                  "",
+                                );
+
+                                return (
+                                  <Text
+                                    key={`preview-context-${matchIndex}-${i}`}
+                                    style={
+                                      isHighlight
+                                        ? {
+                                            backgroundColor: highlightBg,
+                                            color: highlightFg,
+                                            fontFamily: "ZillaSlabsm",
+                                          }
+                                        : undefined
+                                    }
+                                  >
+                                    {text}
+                                  </Text>
+                                );
+                              })}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {sermon.totalMatches > 1 && (
+                    <TouchableOpacity
+                      style={styles.expandCaretInline}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        toggleResultExpanded(index);
+                      }}
+                    >
+                      <MaterialIcons
+                        name={showExpanded ? "expand-less" : "expand-more"}
+                        size={24}
+                        color={theme.colors.text}
+                        style={{ opacity: 0.7 }}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Bottom separator line */}
+          <View
+            style={[
+              styles.resultSeparator,
+              {
+                backgroundColor: theme.dark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.1)",
+              },
+            ]}
+          />
+        </TouchableOpacity>
+      );
+    },
+    [
+      searchPhrase,
+      expandedSearchResults,
+      theme,
+      handleSermonClick,
+      toggleResultExpanded,
+    ],
+  );
 
   // Key extractor for FlatList — stable, no closure deps needed
   const keyExtractor = useCallback(
@@ -549,7 +761,7 @@ const SermonSearch = () => {
     // No results content
     return (
       <View style={styles.noResultsContainer}>
-        {searchText.trim() !== "" && !found ? (
+        {searchPhrase.trim() !== "" && !found ? (
           <>
             <Image
               source={require("../../assets/viewnotfound.png")}
@@ -646,12 +858,12 @@ const SermonSearch = () => {
             },
           ]}
         >
-          Found {filteredSermons.length} result
-          {filteredSermons.length !== 1 ? "s" : ""}
+          Found {searchResults.length} result
+          {searchResults.length !== 1 ? "s" : ""}
         </Text>
       </View>
     ),
-    [filteredSermons.length, theme.dark],
+    [searchResults.length, theme.dark],
   );
 
   return (
@@ -665,9 +877,7 @@ const SermonSearch = () => {
     >
       <DraggableFloatingButton />
       <View style={styles.header}>
-        <Text
-          style={[styles.headerTitle, { color: theme.colors.text }]}
-        >
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
           Search
         </Text>
         <Text
@@ -717,7 +927,6 @@ const SermonSearch = () => {
             placeholder="Search sermons..."
             value={searchPhrase}
             onChangeText={(e) => {
-              setSearchText(e);
               setSearchPhrase(e);
               setFound(true);
             }}
@@ -729,7 +938,7 @@ const SermonSearch = () => {
             onSubmitEditing={handleSearch}
             keyboardAppearance={theme.dark ? "dark" : "light"}
           />
-          {searchText.length > 0 && (
+          {searchPhrase.length > 0 && (
             <TouchableOpacity
               onPress={handleClearSearch}
               style={styles.clearButton}
@@ -742,33 +951,23 @@ const SermonSearch = () => {
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity
-          style={[
-            styles.searchButton,
-            {
-              backgroundColor: theme.dark ? "#5d3211" : "#5d3211",
-            },
-          ]}
+        <SearchActionButton
+          theme={theme}
           onPress={handleSearch}
-        >
-          <MaterialIcons
-            name="search"
-            style={styles.searchButtonText}
-            size={20}
-          />
-        </TouchableOpacity>
+          label="Enter"
+        />
       </View>
 
       {/* Main content — loader takes priority over results or empty state */}
       {loading ? (
         <SearchLoader theme={theme} />
-      ) : filteredSermons.length > 0 ? (
+      ) : searchResults.length > 0 ? (
         <FlatList
-          data={filteredSermons}
+          data={searchResults}
           renderItem={renderSearchResultItem}
           keyExtractor={keyExtractor}
           style={styles.scrollView}
-          contentContainerStyle={{ paddingBottom: 30, paddingHorizontal: 4 }}
+          contentContainerStyle={{ paddingBottom: 10, paddingHorizontal: 4 }}
           showsVerticalScrollIndicator={false}
           removeClippedSubviews={true}
           maxToRenderPerBatch={10}

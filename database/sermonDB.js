@@ -921,15 +921,15 @@ export const searchSermonsWithFTS = async (searchPhrase) => {
       );
 
       if (paragraphMatches.length > 0) {
-        // Extract context (first 200 chars of first match)
+        // Extract a longer context window around the first match for richer previews
         const firstMatch = paragraphMatches[0].paragraph_text;
         const matchIndex = firstMatch
           .toLowerCase()
           .indexOf(searchPhrase.toLowerCase());
-        const start = Math.max(0, matchIndex - 50);
+        const start = Math.max(0, matchIndex - 130);
         const end = Math.min(
           firstMatch.length,
-          matchIndex + searchPhrase.length + 100,
+          matchIndex + searchPhrase.length + 300,
         );
         let context = firstMatch.substring(start, end);
         if (start > 0) context = "..." + context;

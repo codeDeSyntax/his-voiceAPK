@@ -19,93 +19,82 @@ import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { getSermonContent, resolveSermonNumericId } from "../../Logic/branhamApi";
 
-// ── Animated dot loader (mirrors CurrentSermonSearch) ─────────────────────
-const SearchDot = ({ anim, color }) => {
-  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
-  const opacity = anim.interpolate({
+// ── Skeleton loader — mimics the result layout while loading ──────────────
+const SkeletonBar = ({ width, height = 10, style, shimmerAnim, theme }) => {
+  const isDark = theme.dark;
+  const baseColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(93,50,17,0.06)";
+  const shimmerOpacity = shimmerAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.15, 1],
+    outputRange: [0.3, 1],
   });
   return (
     <Animated.View
-      style={{
-        width: 9,
-        height: 9,
-        borderRadius: 5,
-        backgroundColor: color,
-        transform: [{ scale }],
-        opacity,
-        marginHorizontal: 6,
-      }}
+      style={[
+        {
+          width,
+          height,
+          borderRadius: height / 2,
+          backgroundColor: baseColor,
+          opacity: shimmerOpacity,
+        },
+        style,
+      ]}
     />
   );
 };
 
+const SkeletonResultItem = ({ shimmerAnim, theme, delay = 0 }) => {
+  const isDark = theme.dark;
+  const sep = isDark ? "rgba(255,255,255,0.04)" : "rgba(93,50,17,0.04)";
+  // Offset the shimmer for each item for a cascading effect
+  const offset = shimmerAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: delay === 0 ? [0.3, 1, 0.3] : delay === 1 ? [0.6, 0.3, 1] : [1, 0.3, 0.6],
+  });
+  return (
+    <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+      {/* Date pill + badge row */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <SkeletonBar width={72} height={16} shimmerAnim={shimmerAnim} theme={theme} style={{ borderRadius: 10 }} />
+        <SkeletonBar width={48} height={12} shimmerAnim={shimmerAnim} theme={theme} />
+      </View>
+      {/* Title line */}
+      <SkeletonBar width="85%" height={13} shimmerAnim={shimmerAnim} theme={theme} style={{ marginBottom: 6 }} />
+      {/* Subtitle line */}
+      <SkeletonBar width="60%" height={11} shimmerAnim={shimmerAnim} theme={theme} />
+      {/* Separator */}
+      <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: sep, marginTop: 14 }} />
+    </View>
+  );
+};
+
 const SearchLoader = ({ theme }) => {
-  const dot1 = useRef(new Animated.Value(0)).current;
-  const dot2 = useRef(new Animated.Value(0)).current;
-  const dot3 = useRef(new Animated.Value(0)).current;
+  const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const make = (anim, delay) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 380,
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0,
-            duration: 380,
-            useNativeDriver: true,
-          }),
-          Animated.delay(3 * 200 - delay),
-        ]),
-      );
-
-    const p1 = make(dot1, 0);
-    const p2 = make(dot2, 200);
-    const p3 = make(dot3, 400);
-    p1.start();
-    p2.start();
-    p3.start();
-    return () => {
-      p1.stop();
-      p2.stop();
-      p3.stop();
-    };
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmer, {
+          toValue: 0,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
-  const dotColor = theme.dark ? "#d57a3e" : "#5d3211";
-  const labelColor = theme.dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.22)";
-
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 11,
-          letterSpacing: 4,
-          textTransform: "uppercase",
-          color: labelColor,
-          fontFamily: "Merriweather",
-          marginBottom: 22,
-        }}
-      >
-        Searching
-      </Text>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <SearchDot anim={dot1} color={dotColor} />
-        <SearchDot anim={dot2} color={dotColor} />
-        <SearchDot anim={dot3} color={dotColor} />
-      </View>
+    <View style={{ flex: 1, paddingTop: 4 }}>
+      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={0} />
+      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={1} />
+      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={2} />
     </View>
   );
 };
@@ -413,7 +402,7 @@ const ResultItem = ({
           {items.length > 1 ? (
             <Text style={[styles.metaText, { color: subtleText }]}>
               {items.length} matches · ¶{" "}
-              {items.map((i) => i.Properties?.Paragraph).join(", ")}
+             
             </Text>
           ) : (
             item.Properties?.Paragraph && (
@@ -427,9 +416,35 @@ const ResultItem = ({
         <View style={styles.expandIcon}>
           {isBestMatch ? (
             <View
-              style={[styles.primaryBadge, { backgroundColor: accentColor }]}
+              style={[
+                styles.primaryBadge,
+                {
+                  backgroundColor: accentColor,
+                  borderTopColor: isDark
+                    ? "rgba(255,255,255,0.25)"
+                    : "rgba(255,255,255,0.4)",
+                  borderBottomColor: isDark
+                    ? "rgba(0,0,0,0.3)"
+                    : "rgba(93,50,17,0.2)",
+                  shadowColor: isDark ? "#000" : "#5d3211",
+                },
+              ]}
             >
-              <Text style={styles.primaryBadgeText}>BEST MATCH</Text>
+              {/* Top highlight sheen */}
+              <View
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "50%",
+                  borderTopLeftRadius: 20,
+                  borderTopRightRadius: 20,
+                  backgroundColor: "rgba(255,255,255,0.18)",
+                }}
+              />
+              <Text style={styles.primaryBadgeText}>BEST</Text>
             </View>
           ) : (
             <Feather
@@ -690,7 +705,7 @@ const EndnoteResults = ({
       <View
         style={[
           styles.contentWrapper,
-          embedded && { paddingTop: 4 },
+          embedded && { paddingTop: 0 },
         ]}
       >
         {/* Header — only shown when not embedded (back arrow navigation) */}
@@ -711,31 +726,35 @@ const EndnoteResults = ({
           </View>
         )}
 
-        {/* Endnote Details Card */}
+        {/* Compact endnote meta bar — datecode · paragraph · toggle */}
         {endnoteData && (
           <View
             style={[
-              styles.endnoteCard,
+              styles.endnoteBar,
               {
                 backgroundColor: isDark
-                  ? "rgba(255,255,255,0.03)"
-                  : "rgba(93, 50, 17, 0.03)",
-                borderColor: isDark
-                  ? "rgba(242, 205, 180, 0.10)"
-                  : "rgba(93, 50, 17, 0.07)",
+                        ? "rgba(213,122,62,0.12)"
+                        : "rgba(93,50,17,0.06)",
+                        borderRadius:20,
+                borderBottomColor: isDark
+                  ? "rgba(230,195,184,0.06)"
+                  : "rgba(93,50,17,0.05)",
               },
             ]}
           >
-            {/* Compact meta pill row — datecode + paragraph + search type toggle */}
-            <View style={styles.endnoteMeta}>
+            <View style={[styles.endnoteMeta , {}]}>
+              {/* Datecode glass pill */}
               {endnoteData.datecode && (
                 <View
                   style={[
-                    styles.metaPill,
+                    styles.glassPill,
                     {
                       backgroundColor: isDark
-                        ? "rgba(213, 122, 62, 0.15)"
-                        : "rgba(93, 50, 17, 0.08)",
+                        ? "rgba(213,122,62,0.12)"
+                        : "rgba(93,50,17,0.06)",
+                      borderColor: isDark
+                        ? "rgba(213,122,62,0.20)"
+                        : "rgba(93,50,17,0.10)",
                     },
                   ]}
                 >
@@ -750,19 +769,56 @@ const EndnoteResults = ({
                 </Text>
               )}
 
-              {/* Search Type Segmented Toggle — far right */}
+              {/* Search method note */}
+              {!isLoading && searchResults?.searchMethod === "paragraph_reference" && (
+                <Text style={[styles.metaText, { color: subtleText, fontSize: 9.5 }]}>
+                  · by reference
+                </Text>
+              )}
+
               <View style={{ flex: 1 }} />
+
+              {/* Glass segmented toggle */}
               <View
-                style={{
-                  flexDirection: "row",
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: isDark
-                    ? "rgba(213, 122, 62, 0.35)"
-                    : "rgba(93, 50, 17, 0.25)",
-                  overflow: "hidden",
-                }}
+                style={[
+                  styles.segmentedToggle,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(60,50,44,0.85)"
+                      : "rgba(250,238,209,0.85)",
+                    borderColor: isDark
+                      ? "rgba(255,255,255,0.12)"
+                      : "rgba(93,50,17,0.08)",
+                    borderTopColor: isDark
+                      ? "rgba(255,255,255,0.22)"
+                      : "rgba(255,255,255,0.55)",
+                    borderBottomColor: isDark
+                      ? "rgba(0,0,0,0.3)"
+                      : "rgba(93,50,17,0.12)",
+                    shadowColor: isDark ? "#000" : "#5d3211",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0.4 : 0.15,
+                    shadowRadius: 4,
+                    elevation: 4,
+                  },
+                ]}
               >
+                {/* Top highlight sheen */}
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "50%",
+                    borderTopLeftRadius: 5,
+                    borderTopRightRadius: 5,
+                    backgroundColor: isDark
+                      ? "rgba(255,255,255,0.06)"
+                      : "rgba(255,255,255,0.4)",
+                  }}
+                />
                 {[
                   { label: "Exact", value: "ExactPhrase" },
                   { label: "Words", value: "AllWords" },
@@ -774,28 +830,33 @@ const EndnoteResults = ({
                       onPress={() => {
                         if (!isActive && !isLoading) handleToggleSearchType();
                       }}
-                      style={{
-                        paddingHorizontal: 9,
-                        paddingVertical: 4,
-                        backgroundColor: isActive
-                          ? isDark
-                            ? "rgba(213, 122, 62, 0.85)"
-                            : "#7a3b10"
-                          : "transparent",
-                      }}
+                      style={[
+                        styles.segmentBtn,
+                        isActive && {
+                          backgroundColor: isDark
+                            ? "rgba(213,122,62,0.80)"
+                            : "#7a3b10",
+                          borderRadius: 4,
+                          shadowColor: isDark ? "#d57a3e" : "#5d3211",
+                          shadowOffset: { width: 0, height: 1 },
+                          shadowOpacity: 0.3,
+                          shadowRadius: 3,
+                          elevation: 3,
+                        },
+                      ]}
                       disabled={isLoading}
                     >
                       <Text
                         style={{
                           color: isActive
-                            ? "#FFFFFF"
+                            ? "#fff"
                             : isDark
-                              ? "rgba(255,255,255,0.45)"
-                              : "rgba(93,50,17,0.45)",
-                          fontSize: 10,
-                          fontWeight: isActive ? "700" : "400",
+                              ? "rgba(255,255,255,0.35)"
+                              : "rgba(93,50,17,0.35)",
+                          fontSize: 9.5,
+                          fontWeight: isActive ? "700" : "500",
                           textTransform: "uppercase",
-                          letterSpacing: 0.3,
+                          letterSpacing: 0.5,
                         }}
                       >
                         {opt.label}
@@ -806,57 +867,18 @@ const EndnoteResults = ({
               </View>
             </View>
 
-           
-
+            {/* Quote — compact, no italic */}
             {endnoteData.quote && (
-              <View
+              <Text
                 style={[
-                  styles.quoteBox,
-                  {
-                    borderLeftColor: accentColor,
-                  },
+                  styles.inlineQuote,
+                  { color: isDark ? "rgba(248,227,213,0.50)" : "rgba(90,46,15,0.80)" },
                 ]}
+                numberOfLines={2}
               >
-                <Text
-                  style={[
-                    styles.quoteText,
-                    { color: isDark ? "rgba(248,227,213,0.75)" : "#5a2e0f" },
-                  ]}
-                >
-                  {endnoteData.quote}
-                </Text>
-              </View>
+                "{endnoteData.quote}"
+              </Text>
             )}
-          </View>
-        )}
-
-        {/* Results Count */}
-        {!isLoading && groupedResults.length > 0 && (
-          <View style={styles.resultsHeader}>
-            <Text style={[styles.resultsCount, { color: subtleText }]}>
-              {totalHits} result{totalHits !== 1 ? "s" : ""} found in{" "}
-              {groupedResults.length} sermon
-              {groupedResults.length !== 1 ? "s" : ""}
-            </Text>
-            {searchResults?.searchMethod &&
-              searchResults.searchMethod !== "quote" &&
-              searchResults.searchMethod !== "quote_with_context" && (
-                <Text
-                  style={[
-                    styles.searchMethodNote,
-                    {
-                      color: subtleText,
-                      fontSize: 11,
-                      marginTop: 4,
-                      fontStyle: "italic",
-                    },
-                  ]}
-                >
-                  {searchResults.searchMethod === "paragraph_reference"
-                    ? "Found using sermon reference"
-                    : ""}
-                </Text>
-              )}
           </View>
         )}
 
@@ -892,8 +914,11 @@ const EndnoteResults = ({
                 styles.retryButton,
                 {
                   borderColor: isDark
-                    ? "rgba(213,122,62,0.45)"
-                    : "rgba(93,50,17,0.3)",
+                    ? "rgba(213,122,62,0.3)"
+                    : "rgba(93,50,17,0.15)",
+                  backgroundColor: isDark
+                    ? "rgba(213,122,62,0.08)"
+                    : "rgba(93,50,17,0.04)",
                 },
               ]}
               activeOpacity={0.7}
@@ -1005,60 +1030,38 @@ const styles = StyleSheet.create({
     marginTop: 1,
     fontFamily: "Merriweather",
   },
-  endnoteCard: {
-    marginHorizontal: 16,
-    marginVertical: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
+  endnoteBar: {
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   endnoteMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 8,
-  },
-  metaPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 20,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+    gap: 6,
   },
   metaText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontFamily: "Merriweather",
     letterSpacing: 0.3,
   },
-  endnoteTitle: {
-    fontSize: 15,
-    fontFamily: "Merriweather",
-    marginBottom: 8,
-    lineHeight: 20,
+  segmentedToggle: {
+    flexDirection: "row",
+    borderRadius: 5,
+    borderWidth: 1,
+    overflow: "hidden",
   },
-  quoteBox: {
-    paddingLeft: 10,
-    paddingVertical: 6,
-    borderLeftWidth: 2,
+  segmentBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  quoteText: {
-    fontSize: 13,
-    fontFamily: "Merriweather",
-    lineHeight: 19,
-  },
-  resultsHeader: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-  },
-  resultsCount: {
-    fontSize: 11,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    fontFamily: "Merriweather",
+  inlineQuote: {
+    fontSize: 13.5,
+    fontFamily: "ZillaSlabsm",
+    textDecorationLine:"underline",
+    lineHeight: 16,
+    marginTop: 5,
   },
   resultsContainer: {
     flex: 1,
@@ -1082,14 +1085,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(180,120,70,0.25)",
   },
   expandIcon: {
     paddingLeft: 8,
   },
   primaryBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 20,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
   },
   primaryBadgeText: {
     fontSize: 9,
@@ -1145,7 +1157,9 @@ const styles = StyleSheet.create({
   },
   resultSeparator: {
     height: StyleSheet.hairlineWidth,
-    marginTop: 12,
+    marginTop: 14,
+    marginHorizontal: 4,
+    opacity: 0.5,
   },
   emptyStateContainer: {
     alignItems: "center",
@@ -1169,7 +1183,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 9,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
   },
   retryButtonText: {
     fontSize: 13,

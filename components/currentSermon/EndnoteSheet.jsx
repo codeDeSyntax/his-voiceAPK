@@ -23,8 +23,8 @@ import { searchEndnoteQuote } from "../../Logic/branhamApi";
 import EndnoteResults from "./EndnoteResults";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const PREVIEW_HEIGHT = 140;
-const EXPANDED_HEIGHT = Math.round(SCREEN_HEIGHT * 0.84);
+const PREVIEW_HEIGHT = 110;
+const EXPANDED_HEIGHT = Math.round(SCREEN_HEIGHT * 0.95);
 
 const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
   const [expanded, setExpanded] = useState(false);
@@ -148,19 +148,19 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
             },
           ]}
         >
-          {/* Drag handle */}
+          {/* Drag handle — slim */}
           <View
             style={[
               s.dragHandle,
               {
                 backgroundColor: isDark
-                  ? "rgba(230,195,184,0.22)"
-                  : "rgba(93,50,17,0.18)",
+                  ? "rgba(230,195,184,0.18)"
+                  : "rgba(93,50,17,0.14)",
               },
             ]}
           />
 
-          {/* Preview row — always visible */}
+          {/* Compact preview row */}
           <View style={s.previewRow}>
             <Image
               source={{
@@ -171,18 +171,39 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
             />
 
             <View style={s.previewText}>
-              <Text
-                style={[
-                  s.label,
-                  {
-                    color: isDark
-                      ? "rgba(230,195,184,0.5)"
-                      : "rgba(93,50,17,0.45)",
-                  },
-                ]}
-              >
-                WMB QUOTE
-              </Text>
+              <View style={s.labelRow}>
+                <Text
+                  style={[
+                    s.label,
+                    {
+                      color: isDark
+                        ? "rgba(230,195,184,0.45)"
+                        : "rgba(93,50,17,0.40)",
+                    },
+                  ]}
+                >
+                  WMB QUOTE
+                </Text>
+                {!expanded && (
+                  <TouchableOpacity
+                    onPress={handleReadMore}
+                    activeOpacity={0.75}
+                    style={[
+                      s.readMoreBtn,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(230,195,184,0.1)"
+                          : "rgba(93,50,17,0.07)",
+                      },
+                    ]}
+                  >
+                    <Text style={[s.readMoreText, { color: accent }]}>
+                      Read more
+                    </Text>
+                    <Feather name="chevron-up" size={11} color={accent} />
+                  </TouchableOpacity>
+                )}
+              </View>
 
               <Text
                 style={[s.title, { color: isDark ? "#e6c3b8" : "#3a1f0b" }]}
@@ -190,26 +211,6 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
               >
                 {previewTitle}
               </Text>
-
-              {!expanded && (
-                <TouchableOpacity
-                  onPress={handleReadMore}
-                  activeOpacity={0.75}
-                  style={[
-                    s.readMoreBtn,
-                    {
-                      backgroundColor: isDark
-                        ? "rgba(230,195,184,0.1)"
-                        : "rgba(93,50,17,0.08)",
-                    },
-                  ]}
-                >
-                  <Text style={[s.readMoreText, { color: accent }]}>
-                    Read more
-                  </Text>
-                  <Feather name="chevron-up" size={13} color={accent} />
-                </TouchableOpacity>
-              )}
             </View>
 
             {/* Close */}
@@ -220,15 +221,15 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
                 s.closeBtn,
                 {
                   backgroundColor: isDark
-                    ? "rgba(230,195,184,0.08)"
-                    : "rgba(93,50,17,0.06)",
+                    ? "rgba(230,195,184,0.06)"
+                    : "rgba(93,50,17,0.05)",
                 },
               ]}
             >
               <Feather
                 name="x"
-                size={16}
-                color={isDark ? "rgba(230,195,184,0.7)" : "rgba(93,50,17,0.6)"}
+                size={14}
+                color={isDark ? "rgba(230,195,184,0.6)" : "rgba(93,50,17,0.5)"}
               />
             </TouchableOpacity>
           </View>
@@ -241,8 +242,8 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
                   s.divider,
                   {
                     backgroundColor: isDark
-                      ? "rgba(230,195,184,0.1)"
-                      : "rgba(93,50,17,0.08)",
+                      ? "rgba(230,195,184,0.08)"
+                      : "rgba(93,50,17,0.06)",
                   },
                 ]}
               />
@@ -284,67 +285,71 @@ const s = StyleSheet.create({
     elevation: 16,
   },
   dragHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
+    width: 28,
+    height: 3,
+    borderRadius: 1.5,
     alignSelf: "center",
-    marginTop: 10,
-    marginBottom: 2,
+    marginTop: 8,
+    marginBottom: 0,
   },
   previewRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 14,
+    paddingVertical: 8,
+    gap: 12,
   },
   avatar: {
-    width: 56,
-    height: 74,
-    borderRadius: 10,
+    width: 42,
+    height: 56,
+    borderRadius: 8,
     backgroundColor: "#3a2010",
   },
   previewText: {
     flex: 1,
-    gap: 4,
+    gap: 3,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   label: {
     fontFamily: "ZillaSlabsm",
-    fontSize: 9.5,
+    fontSize: 9,
     letterSpacing: 2.5,
   },
   title: {
-    fontFamily: "Merriweather",
-    fontSize: 13,
+    fontFamily: "ZillaSlabsm",
+    fontSize: 15.5,
     fontWeight: "400",
-    lineHeight: 19,
+    lineHeight: 18,
   },
   readMoreBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    alignSelf: "flex-start",
-    paddingHorizontal: 11,
-    paddingVertical: 5,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 100,
-    marginTop: 3,
   },
   readMoreText: {
     fontFamily: "Merriweather",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
   },
   closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "flex-start",
-    marginTop: 2,
+    marginTop: 0,
   },
   divider: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 14,
   },
 });
 
