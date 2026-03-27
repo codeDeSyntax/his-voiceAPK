@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { View, TextInput, TouchableOpacity, Animated } from "react-native";
-import { Feather, AntDesign } from "@expo/vector-icons";
+import { Feather, AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 
 const DEBOUNCE_MS = 350;
 
@@ -84,8 +84,8 @@ const SearchHeader = React.memo(({ theme, onSearchChange }) => {
           height: 48,
         }}
       >
-        <Feather
-          name="search"
+        <MaterialCommunityIcons
+          name="book-search"
           size={18}
           color={
             theme.dark ? "rgba(255,255,255,0.4)" : "rgba(93,50,17,0.45)"

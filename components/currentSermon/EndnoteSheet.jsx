@@ -148,6 +148,34 @@ const ENDNOTE_PALETTES = {
       buttonTextOnAccent: "#ffffff",
     },
   },
+  ruby: {
+    key: "ruby",
+    label: "Ruby",
+    dark: {
+      overlay: "rgba(42, 10, 14, 0.56)",
+      surface: "#301418",
+      text: "#fce8eb",
+      mutedText: "rgba(252, 220, 226, 0.62)",
+      accent: "#e8707e",
+      accentSoft: "rgba(232, 112, 126, 0.18)",
+      highlightBg: "rgba(232, 112, 126, 0.32)",
+      highlightFg: "#fff0f2",
+      divider: "rgba(232, 112, 126, 0.22)",
+      buttonTextOnAccent: "#2e0f14",
+    },
+    light: {
+      overlay: "rgba(60, 14, 20, 0.28)",
+      surface: "#fff0f1",
+      text: "#4a1520",
+      mutedText: "rgba(74, 21, 32, 0.64)",
+      accent: "#c44d5c",
+      accentSoft: "rgba(196, 77, 92, 0.14)",
+      highlightBg: "rgba(196, 77, 92, 0.26)",
+      highlightFg: "#3a0e16",
+      divider: "rgba(196, 77, 92, 0.2)",
+      buttonTextOnAccent: "#ffffff",
+    },
+  },
   metal: {
     key: "metal",
     label: "Metal",
@@ -538,14 +566,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
           {/* Divider + embedded results */}
           {expanded && (
             <>
-              <View
-                style={[
-                  s.divider,
-                  {
-                    backgroundColor: palette.divider,
-                  },
-                ]}
-              />
+              
               <EndnoteResults
                 embedded
                 visible
@@ -565,69 +586,71 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
           {expanded && (
             <View style={s.paletteWrap} pointerEvents="box-none">
               {paletteOpen && (
-                <View
-                  style={[
-                    s.paletteMenu,
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.divider,
-                    },
-                  ]}
-                >
+                <View style={s.paletteGrid}>
                   {Object.values(ENDNOTE_PALETTES).map((item) => {
                     const itemPalette = getEndnotePalette(item.key, isDark);
                     const active = item.key === paletteKey;
                     return (
                       <TouchableOpacity
                         key={item.key}
-                        activeOpacity={0.8}
+                        activeOpacity={0.75}
                         onPress={() => {
                           setPaletteKey(item.key);
                           setPaletteOpen(false);
                         }}
                         style={[
-                          s.paletteItem,
-                          active && {
-                            backgroundColor: palette.accentSoft,
-                            borderColor: palette.divider,
+                          s.paletteCircle,
+                          {
+                            backgroundColor: itemPalette.accent,
+                            borderColor: active
+                              ? palette.text
+                              : "rgba(255,255,255,0.15)",
+                            shadowColor: itemPalette.accent,
                           },
                         ]}
-                      >
-                        <View
-                          style={[
-                            s.paletteDot,
-                            {
-                              backgroundColor: itemPalette.accent,
-                              borderColor: itemPalette.divider,
-                            },
-                          ]}
-                        />
-                        <Text
-                          style={[s.paletteItemText, { color: palette.text }]}
-                        >
-                          {item.label}
-                        </Text>
-                      </TouchableOpacity>
+                      />
                     );
                   })}
                 </View>
               )}
 
+              {/* FAB toggle */}
               <TouchableOpacity
                 style={[
                   s.paletteFab,
                   {
                     backgroundColor: palette.accentSoft,
                     borderColor: palette.divider,
+                    borderTopColor: isDark
+                      ? "rgba(255,255,255,0.12)"
+                      : "rgba(255,255,255,0.5)",
+                    borderBottomColor: isDark
+                      ? "rgba(0,0,0,0.2)"
+                      : "rgba(0,0,0,0.06)",
+                    shadowColor: isDark ? "#000" : palette.accent,
                   },
                 ]}
-                activeOpacity={0.85}
+                activeOpacity={0.8}
                 onPress={() => setPaletteOpen((v) => !v)}
               >
-                <Feather name="droplet" size={15} color={palette.accent} />
-                <Text style={[s.paletteFabText, { color: palette.mutedText }]}>
-                  Theme
-                </Text>
+                {/* Top sheen */}
+                <View
+                  pointerEvents="none"
+                  style={[
+                    s.fabSheen,
+                    {
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.06)"
+                        : "rgba(255,255,255,0.35)",
+                    },
+                  ]}
+                />
+                <View
+                  style={[
+                    s.fabDot,
+                    { backgroundColor: palette.accent },
+                  ]}
+                />
               </TouchableOpacity>
             </View>
           )}
@@ -729,45 +752,49 @@ const s = StyleSheet.create({
     alignItems: "flex-end",
   },
   paletteFab: {
-    flexDirection: "row",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 20,
+    justifyContent: "center",
     borderWidth: 1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+    overflow: "hidden",
   },
-  paletteFabText: {
-    fontFamily: "Merriweather",
-    fontSize: 11,
-    letterSpacing: 0.2,
+  fabSheen: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "48%",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
   },
-  paletteMenu: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 8,
-    marginBottom: 8,
-    minWidth: 116,
+  fabDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
   },
-  paletteItem: {
+  paletteGrid: {
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
+    width: 62,
     gap: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "transparent",
+    justifyContent: "flex-end",
+    marginBottom: 10,
   },
-  paletteDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  paletteItemText: {
-    fontFamily: "Merriweather",
-    fontSize: 12,
+  paletteCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
 

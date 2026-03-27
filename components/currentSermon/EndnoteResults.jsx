@@ -905,7 +905,8 @@ const EndnoteResults = ({
               {
                 backgroundColor: palette.accentSoft,
                 borderRadius: 20,
-                borderBottomColor: palette.divider,
+                // borderBottomColor: palette.divider,
+                marginHorizontal:10
               },
             ]}
           >
@@ -1243,12 +1244,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    
   },
   resultMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     flex: 1,
+    
   },
   datePill: {
     paddingHorizontal: 8,

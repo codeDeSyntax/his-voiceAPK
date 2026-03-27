@@ -145,10 +145,11 @@ const RecentsScreen = () => {
             color={theme.colors.text}
           />
         </GlassButton>
+
         <Text
           style={{
             fontSize: responsiveFontSize(22),
-            fontFamily: "ZillaSlab_smb",
+            fontFamily: "ZillaSlabsm",
             color: theme.colors.text,
           }}
         >
@@ -177,7 +178,7 @@ const RecentsScreen = () => {
             style={{
               color: theme.dark ? theme.colors.text + "80" : "#5d3211",
               fontSize: responsiveFontSize(16),
-              fontFamily: "ZillaSlab_smb",
+              fontFamily: "ZillaSlabsm",
               marginTop: spacing.md,
             }}
           >

@@ -44,15 +44,15 @@ const SermonListView = React.memo(
               <GlassButton theme={theme} size={36} style={{ marginRight: spacing.sm }}>
                 {item.type === "mp3" ? (
                   <MaterialIcons
-                    name="audio-file"
+                    name="multitrack-audio"
                     size={responsiveFontSize(24)}
                     color={theme.dark ? "#faeed180" : "#5d3211"}
                   />
                 ) : (
-                  <Ionicons
-                    name="document-text"
+                  <MaterialIcons
+                    name="format-textdirection-r-to-l"
                     size={responsiveFontSize(24)}
-                    color={theme.dark ? "#906443" : "#5d3211"}
+                    color={theme.dark ? "#fdcfad" : "#5d3211"}
                   />
                 )}
               </GlassButton>

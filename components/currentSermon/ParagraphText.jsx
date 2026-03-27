@@ -540,6 +540,8 @@ const ParagraphText = React.memo(
         });
       }
 
+      
+
       return baseStyle;
     }, [currentHighlight, theme.dark, theme.colors.hlight, isSelected]);
 
