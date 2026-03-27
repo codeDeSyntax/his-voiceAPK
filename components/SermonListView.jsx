@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { styles } from "../styles/Allsermons";
 import { responsiveFontSize, spacing } from "../Utils/responsiveUtils";
 import { GlassButton } from "../styles/glassButton";
@@ -43,15 +43,15 @@ const SermonListView = React.memo(
             <View style={styles.compactContent}>
               <GlassButton theme={theme} size={36} style={{ marginRight: spacing.sm }}>
                 {item.type === "mp3" ? (
-                  <FontAwesome5
-                    name="microphone"
-                    size={responsiveFontSize(22)}
-                    color={theme.dark ? "#ffffff80" : "#5d3211"}
+                  <MaterialIcons
+                    name="audio-file"
+                    size={responsiveFontSize(24)}
+                    color={theme.dark ? "#faeed180" : "#5d3211"}
                   />
                 ) : (
                   <Ionicons
                     name="document-text"
-                    size={responsiveFontSize(22)}
+                    size={responsiveFontSize(24)}
                     color={theme.dark ? "#906443" : "#5d3211"}
                   />
                 )}

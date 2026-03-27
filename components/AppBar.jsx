@@ -10,12 +10,16 @@ import {
   Animated,
   Easing,
   Dimensions,
-  ScrollView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  AntDesign,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GlassButton } from "../styles/glassButton";
+import AppBarMenu from "./AppBarMenu";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -159,123 +163,6 @@ const AnimatedDropdown = ({
     </Modal>
   );
 };
-
-// Sleek menu item with enhanced styling matching the premium design
-const MenuItem = ({
-  icon,
-  label,
-  onPress,
-  theme,
-  highlight = false,
-  showChevron = false,
-  subtitle,
-}) => {
-  const dark = theme.dark;
-  const activeColor = dark
-    ? "rgba(242, 205, 180, 0.92)"
-    : "rgba(93, 50, 17, 0.82)";
-  const textColor = highlight ? activeColor : theme.colors.text;
-  const iconColor = highlight
-    ? activeColor
-    : dark
-      ? "rgba(242, 205, 180, 0.75)"
-      : "rgba(93, 50, 17, 0.68)";
-
-  return (
-    <Pressable
-      style={({ pressed }) => ({
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 7,
-        marginHorizontal: 6,
-        marginVertical: 1,
-        borderRadius: 12,
-        backgroundColor: pressed
-          ? dark
-            ? "rgba(242, 205, 180, 0.07)"
-            : "rgba(93, 50, 17, 0.045)"
-          : "transparent",
-      })}
-      onPress={onPress}
-      android_ripple={{
-        color: dark ? "rgba(242, 205, 180, 0.08)" : "rgba(93, 50, 17, 0.05)",
-        borderless: false,
-      }}
-    >
-      <Ionicons name={icon} size={17} color={iconColor} />
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text
-          style={{
-            fontSize: 14.5,
-            color: textColor,
-            fontFamily: "Merriweather",
-            letterSpacing: 0.1,
-          }}
-        >
-          {label}
-        </Text>
-        {subtitle && (
-          <Text
-            style={{
-              fontSize: 11,
-              color: dark
-                ? "rgba(242, 205, 180, 0.35)"
-                : "rgba(93, 50, 17, 0.35)",
-              fontFamily: "Merriweather",
-              marginTop: 1,
-            }}
-          >
-            {subtitle}
-          </Text>
-        )}
-      </View>
-      {showChevron && (
-        <Ionicons
-          name="chevron-forward"
-          size={14}
-          color={dark ? "rgba(242, 205, 180, 0.2)" : "rgba(93, 50, 17, 0.2)"}
-        />
-      )}
-    </Pressable>
-  );
-};
-
-// Premium section divider with subtle styling
-const SectionDivider = ({ label, theme }) => {
-  const dark = theme.dark;
-  return (
-    <View style={{ marginTop: 4, marginBottom: 3 }}>
-      <View
-        style={{
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: dark
-            ? "rgba(242, 205, 180, 0.1)"
-            : "rgba(93, 50, 17, 0.08)",
-          marginHorizontal: 20,
-          marginBottom: label ? 8 : 0,
-        }}
-      />
-      {label && (
-        <Text
-          style={{
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 0.8,
-            textTransform: "uppercase",
-            color: dark ? "rgba(242, 205, 180, 0.3)" : "rgba(93, 50, 17, 0.3)",
-            paddingHorizontal: 22,
-            paddingBottom: 2,
-            fontFamily: "cursive",
-          }}
-        >
-          {label}
-        </Text>
-      )}
-    </View>
-  );
-};
-
 const ListAppBar = React.memo(
   ({
     theme,
@@ -289,10 +176,8 @@ const ListAppBar = React.memo(
   }) => {
     const router = useNavigation();
     const insets = useSafeAreaInsets();
-    const [menuVisible, setMenuVisible] = useState(false);
-    const [menuModalVisible, setMenuModalVisible] = useState(false);
-    const menuAnim = useRef(new Animated.Value(0)).current;
     const [filtersVisible, setFiltersVisible] = useState(false);
+    const [menuVisible, setMenuVisible] = useState(false);
     const [imageModalVisible, setImageModalVisible] = useState(false);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -315,26 +200,6 @@ const ListAppBar = React.memo(
         useNativeDriver: true,
       }).start(() => setImageModalVisible(false));
     }, [fadeAnim]);
-
-    useEffect(() => {
-      if (menuVisible) {
-        setMenuModalVisible(true);
-        menuAnim.setValue(0);
-        Animated.timing(menuAnim, {
-          toValue: 1,
-          duration: 260,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }).start();
-      } else if (menuModalVisible) {
-        Animated.timing(menuAnim, {
-          toValue: 0,
-          duration: 220,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }).start(() => setMenuModalVisible(false));
-      }
-    }, [menuVisible, menuModalVisible, menuAnim]);
 
     const closeFilters = useCallback(() => setFiltersVisible(false), []);
     const closeMenu = useCallback(() => setMenuVisible(false), []);
@@ -397,8 +262,8 @@ const ListAppBar = React.memo(
 
           <View style={{ flexDirection: "row", gap: 8 }}>
             <GlassButton theme={theme} onPress={onToggleTheme}>
-              <Ionicons
-                name={theme.dark ? "sunny-outline" : "moon-outline"}
+              <MaterialCommunityIcons
+                name={"theme-light-dark"}
                 size={22}
                 color={theme.colors.text}
                 // icons thickness
@@ -409,11 +274,7 @@ const ListAppBar = React.memo(
               theme={theme}
               onPress={() => router?.navigate("Search")}
             >
-              <Ionicons
-                name="search-outline"
-                size={22}
-                color={theme.colors.text}
-              />
+              <AntDesign name="search" size={22} color={theme.colors.text} />
             </GlassButton>
 
             <GlassButton
@@ -422,8 +283,8 @@ const ListAppBar = React.memo(
                 setMenuVisible(!menuVisible);
               }}
             >
-              <Ionicons
-                name="menu-outline"
+              <AntDesign
+                name={"align-left"}
                 size={24}
                 color={theme.colors.text}
               />
@@ -431,250 +292,18 @@ const ListAppBar = React.memo(
           </View>
         </View>
 
-        {/* Filters Panel - Removed, merged into sidebar */}
-
-        {/* Combined Sidebar - Filters + Navigation */}
-        <Modal
-          visible={menuModalVisible}
-          transparent
-          animationType="none"
-          onRequestClose={closeMenu}
-          statusBarTranslucent
-        >
-          {/* Backdrop */}
-          <Animated.View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              opacity: menuAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 1],
-              }),
-            }}
-          >
-            <Pressable style={{ flex: 1 }} onPress={closeMenu} />
-          </Animated.View>
-
-          {/* Sidebar */}
-          <Animated.View
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              bottom: 0,
-              width: "75%",
-              backgroundColor: theme.dark ? "#1a1310" : "#faeed1",
-              paddingTop: insets.top + 16,
-              paddingHorizontal: 8,
-              paddingBottom: insets.bottom + 16,
-              borderLeftWidth: 1,
-              borderLeftColor: theme.dark
-                ? "rgba(242, 205, 180, 0.1)"
-                : "rgba(93, 50, 17, 0.08)",
-              borderTopLeftRadius: 24,
-              borderBottomLeftRadius: 24,
-              transform: [
-                {
-                  translateX: menuAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [46, 0],
-                  }),
-                },
-              ],
-              opacity: menuAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.92, 1],
-              }),
-            }}
-          >
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  paddingHorizontal: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "#341c09",
-                      borderWidth: 1,
-                      borderColor: theme.dark
-                        ? "rgba(242, 205, 180, 0.18)"
-                        : "rgba(93, 50, 17, 0.14)",
-                    }}
-                  >
-                    <Image
-                      source={require("../assets/adaptive-icon.png")}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 9,
-                      }}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      marginLeft: 10,
-                      fontSize: 19,
-                      fontFamily: "cursive",
-                      color: theme.colors.text,
-                      fontWeight: "900",
-                    }}
-                  >
-                    HisVoice
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={closeMenu}
-                  style={({ pressed }) => ({
-                    width: 32,
-                    height: 32,
-                    borderRadius: 8,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: pressed
-                      ? theme.dark
-                        ? "rgba(242, 205, 180, 0.16)"
-                        : "rgba(93, 50, 17, 0.12)"
-                      : theme.dark
-                        ? "rgba(242, 205, 180, 0.1)"
-                        : "rgba(93, 50, 17, 0.08)",
-                  })}
-                >
-                  <Ionicons
-                    name="chevron-back"
-                    size={18}
-                    color={
-                      theme.dark
-                        ? "rgba(242, 205, 180, 0.85)"
-                        : "rgba(93, 50, 17, 0.8)"
-                    }
-                  />
-                </Pressable>
-              </View>
-
-              <SectionDivider label="General" theme={theme} />
-              <MenuItem
-                icon="home-outline"
-                label="Home"
-                onPress={() => {
-                  closeMenu();
-                  router?.navigate("welcome");
-                }}
-                theme={theme}
-                showChevron
-              />
-              <MenuItem
-                icon="search-outline"
-                label="Search"
-                onPress={() => {
-                  closeMenu();
-                  router?.navigate("Search");
-                }}
-                theme={theme}
-                showChevron
-              />
-              <MenuItem
-                icon="bookmark-outline"
-                label="Bookmarks"
-                onPress={() => {
-                  closeMenu();
-                  router?.navigate("bookmarks");
-                }}
-                theme={theme}
-                showChevron
-              />
-              <MenuItem
-                icon="time-outline"
-                label="Recents"
-                onPress={() => {
-                  closeMenu();
-                  router?.navigate("Recents");
-                }}
-                theme={theme}
-                showChevron
-              />
-
-              <SectionDivider label="Tools" theme={theme} />
-              <MenuItem
-                icon="information-circle-outline"
-                label="About"
-                onPress={() => {
-                  closeMenu();
-                  router?.navigate("About");
-                }}
-                theme={theme}
-                showChevron
-              />
-              <MenuItem
-                icon="settings-outline"
-                label="Settings"
-                onPress={() => {
-                  closeMenu();
-                  router?.navigate("Settings");
-                }}
-                theme={theme}
-                showChevron
-              />
-
-              <SectionDivider label="Filters" theme={theme} />
-              <MenuItem
-                icon="document-text-outline"
-                label="Text Only"
-                onPress={() => {
-                  closeMenu();
-                  filterOnlyText();
-                }}
-                theme={theme}
-                highlight={hasActiveFilters}
-              />
-              <MenuItem
-                icon="musical-notes-outline"
-                label="Audio Only"
-                onPress={() => {
-                  closeMenu();
-                  filterOnlyAudio();
-                }}
-                theme={theme}
-                highlight={hasActiveFilters}
-              />
-              <MenuItem
-                icon={isOriginalOrder ? "swap-vertical" : "funnel-outline"}
-                label="Toggle Sort"
-                onPress={() => {
-                  closeMenu();
-                  toggleSortOrder();
-                }}
-                theme={theme}
-              />
-              <MenuItem
-                icon="refresh-outline"
-                label="Reset All"
-                onPress={() => {
-                  closeMenu();
-                  restoreOriginalOrder();
-                }}
-                theme={theme}
-                highlight={hasActiveFilters}
-              />
-            </ScrollView>
-          </Animated.View>
-        </Modal>
+        {/* AppBar Menu Sidebar */}
+        <AppBarMenu
+          visible={menuVisible}
+          onClose={closeMenu}
+          theme={theme}
+          filterOnlyText={filterOnlyText}
+          filterOnlyAudio={filterOnlyAudio}
+          toggleSortOrder={toggleSortOrder}
+          restoreOriginalOrder={restoreOriginalOrder}
+          isOriginalOrder={isOriginalOrder}
+          hasActiveFilters={hasActiveFilters}
+        />
 
         {/* Image Modal - Passport Size */}
         <Modal
@@ -740,16 +369,5 @@ const ListAppBar = React.memo(
     );
   },
 );
-
-const menuStyles = StyleSheet.create({
-  panelHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-});
 
 export default ListAppBar;

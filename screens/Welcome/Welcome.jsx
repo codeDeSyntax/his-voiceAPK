@@ -10,6 +10,7 @@ import {
   Platform,
   Vibration,
   ActivityIndicator,
+  ImageBackground,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
@@ -142,8 +143,16 @@ const Welcome = () => {
   useFocusEffect(
     React.useCallback(() => {
       // Reset all
-      [labelFade, titleFade, subtitleFade, yearFade, quoteFade, btnFade, dividerScale].forEach(a => a.setValue(0));
-      [labelSlide, quoteSlide, btnSlide].forEach(a => a.setValue(15));
+      [
+        labelFade,
+        titleFade,
+        subtitleFade,
+        yearFade,
+        quoteFade,
+        btnFade,
+        dividerScale,
+      ].forEach((a) => a.setValue(0));
+      [labelSlide, quoteSlide, btnSlide].forEach((a) => a.setValue(15));
       titleSlide.setValue(30);
       yearScale.setValue(0.85);
 
@@ -154,36 +163,96 @@ const Welcome = () => {
       Animated.parallel([
         // Top divider scales in
         stagger(200, [
-          Animated.spring(dividerScale, { toValue: 1, damping: 18, stiffness: 200, useNativeDriver: true }),
+          Animated.spring(dividerScale, {
+            toValue: 1,
+            damping: 18,
+            stiffness: 200,
+            useNativeDriver: true,
+          }),
         ]),
         // Label
         stagger(400, [
-          Animated.timing(labelFade, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-          Animated.timing(labelSlide, { toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(labelFade, {
+            toValue: 1,
+            duration: 500,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(labelSlide, {
+            toValue: 0,
+            duration: 500,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
         ]),
         // Title
         stagger(600, [
-          Animated.timing(titleFade, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-          Animated.timing(titleSlide, { toValue: 0, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(titleFade, {
+            toValue: 1,
+            duration: 600,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(titleSlide, {
+            toValue: 0,
+            duration: 700,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
         ]),
         // Subtitle
         stagger(900, [
-          Animated.timing(subtitleFade, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(subtitleFade, {
+            toValue: 1,
+            duration: 500,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
         ]),
         // Year pill
         stagger(1100, [
-          Animated.timing(yearFade, { toValue: 1, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-          Animated.spring(yearScale, { toValue: 1, damping: 14, stiffness: 180, useNativeDriver: true }),
+          Animated.timing(yearFade, {
+            toValue: 1,
+            duration: 400,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.spring(yearScale, {
+            toValue: 1,
+            damping: 14,
+            stiffness: 180,
+            useNativeDriver: true,
+          }),
         ]),
         // Quote
         stagger(1400, [
-          Animated.timing(quoteFade, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-          Animated.timing(quoteSlide, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(quoteFade, {
+            toValue: 1,
+            duration: 600,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(quoteSlide, {
+            toValue: 0,
+            duration: 600,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
         ]),
         // Button
         stagger(1800, [
-          Animated.timing(btnFade, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-          Animated.timing(btnSlide, { toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(btnFade, {
+            toValue: 1,
+            duration: 500,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(btnSlide, {
+            toValue: 0,
+            duration: 500,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
         ]),
       ]).start();
 
@@ -197,7 +266,21 @@ const Welcome = () => {
           useNativeDriver: true,
         }),
       ).start();
-    }, [spinAnim, labelFade, labelSlide, titleFade, titleSlide, subtitleFade, yearFade, yearScale, quoteFade, quoteSlide, dividerScale, btnFade, btnSlide]),
+    }, [
+      spinAnim,
+      labelFade,
+      labelSlide,
+      titleFade,
+      titleSlide,
+      subtitleFade,
+      yearFade,
+      yearScale,
+      quoteFade,
+      quoteSlide,
+      dividerScale,
+      btnFade,
+      btnSlide,
+    ]),
   );
 
   // Handle button press
@@ -237,123 +320,126 @@ const Welcome = () => {
   });
 
   // Premium button component
-  const PremiumButton = useCallback(({ label, onPress }) => {
-    const scaleAnim = useRef(new Animated.Value(1)).current;
-    const glowAnim = useRef(new Animated.Value(0)).current;
+  const PremiumButton = useCallback(
+    ({ label, onPress }) => {
+      const scaleAnim = useRef(new Animated.Value(1)).current;
+      const glowAnim = useRef(new Animated.Value(0)).current;
 
-    useEffect(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowAnim, {
-            toValue: 1,
-            duration: 2200,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
-          }),
-          Animated.timing(glowAnim, {
-            toValue: 0,
-            duration: 2200,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
-          }),
-        ]),
-      ).start();
-    }, [glowAnim]);
+      useEffect(() => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(glowAnim, {
+              toValue: 1,
+              duration: 2200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: false,
+            }),
+            Animated.timing(glowAnim, {
+              toValue: 0,
+              duration: 2200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: false,
+            }),
+          ]),
+        ).start();
+      }, [glowAnim]);
 
-    const handlePressIn = () => {
-      Animated.spring(scaleAnim, {
-        toValue: 0.95,
-        damping: 15,
-        stiffness: 300,
-        useNativeDriver: true,
-      }).start();
-    };
+      const handlePressIn = () => {
+        Animated.spring(scaleAnim, {
+          toValue: 0.95,
+          damping: 15,
+          stiffness: 300,
+          useNativeDriver: true,
+        }).start();
+      };
 
-    const handlePressOut = () => {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        damping: 12,
-        stiffness: 200,
-        useNativeDriver: true,
-      }).start();
-    };
+      const handlePressOut = () => {
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          damping: 12,
+          stiffness: 200,
+          useNativeDriver: true,
+        }).start();
+      };
 
-    const borderOpacity = glowAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: theme.dark
-        ? ["rgba(230, 195, 184, 0.20)", "rgba(230, 195, 184, 0.45)"]
-        : ["rgba(93, 50, 17, 0.15)", "rgba(93, 50, 17, 0.35)"],
-    });
+      const borderOpacity = glowAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: theme.dark
+          ? ["rgba(230, 195, 184, 0.20)", "rgba(230, 195, 184, 0.45)"]
+          : ["rgba(93, 50, 17, 0.15)", "rgba(93, 50, 17, 0.35)"],
+      });
 
-    const innerBg = theme.dark
-      ? "rgba(40, 30, 24, 0.92)"
-      : "rgba(93, 50, 17, 0.82)";
-    const highlightBg = theme.dark
-      ? "rgba(230, 195, 184, 0.06)"
-      : "rgba(255, 255, 255, 0.12)";
+      const innerBg = theme.dark
+        ? "rgba(40, 30, 24, 0.92)"
+        : "rgba(93, 50, 17, 0.82)";
+      const highlightBg = theme.dark
+        ? "rgba(230, 195, 184, 0.06)"
+        : "rgba(255, 255, 255, 0.12)";
 
-    return (
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <Pressable
-          onPress={onPress}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-        >
-          {/* Outer glow border */}
-          <Animated.View
-            style={{
-              borderRadius: 100,
-              borderWidth: 1.5,
-              borderColor: borderOpacity,
-              padding: 2,
-            }}
+      return (
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <Pressable
+            onPress={onPress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
           >
-            {/* Main button body */}
-            <View
+            {/* Outer glow border */}
+            <Animated.View
               style={{
-                backgroundColor: innerBg,
                 borderRadius: 100,
-                paddingHorizontal: horizontalScale(44),
-                paddingVertical: verticalScale(15),
-                overflow: "hidden",
-                shadowColor: theme.dark ? "#e6c3b8" : "#5d3211",
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: theme.dark ? 0.15 : 0.25,
-                shadowRadius: 16,
-                elevation: 8,
+                borderWidth: 1.5,
+                borderColor: borderOpacity,
+                padding: 2,
               }}
             >
-              {/* Top highlight sheen */}
+              {/* Main button body */}
               <View
                 style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "50%",
-                  backgroundColor: highlightBg,
-                  borderTopLeftRadius: 100,
-                  borderTopRightRadius: 100,
-                }}
-              />
-              <Text
-                style={{
-                  fontFamily: "Arial",
-                  color: theme.dark ? "#e6c3b8" : "#fff",
-                  fontSize: responsiveFontSize(15),
-                  fontWeight: "900",
-                  letterSpacing: 1.2,
-                  textAlign: "center",
+                  backgroundColor: innerBg,
+                  borderRadius: 100,
+                  paddingHorizontal: horizontalScale(44),
+                  paddingVertical: verticalScale(15),
+                  overflow: "hidden",
+                  shadowColor: theme.dark ? "#e6c3b8" : "#5d3211",
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: theme.dark ? 0.15 : 0.25,
+                  shadowRadius: 16,
+                  elevation: 8,
                 }}
               >
-                {label}
-              </Text>
-            </View>
-          </Animated.View>
-        </Pressable>
-      </Animated.View>
-    );
-  }, [theme.dark]);
+                {/* Top highlight sheen */}
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "50%",
+                    backgroundColor: highlightBg,
+                    borderTopLeftRadius: 100,
+                    borderTopRightRadius: 100,
+                  }}
+                />
+                <Text
+                  style={{
+                    fontFamily: "Arial",
+                    color: theme.dark ? "#e6c3b8" : "#fff",
+                    fontSize: responsiveFontSize(15),
+                    fontWeight: "900",
+                    letterSpacing: 1.2,
+                    textAlign: "center",
+                  }}
+                >
+                  {label}
+                </Text>
+              </View>
+            </Animated.View>
+          </Pressable>
+        </Animated.View>
+      );
+    },
+    [theme.dark],
+  );
 
   return (
     <LinearGradient
@@ -366,6 +452,33 @@ const Welcome = () => {
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
     >
+      {/* Top-only image overlay that fades into solid background */}
+      <View pointerEvents="none" style={styles.topImageWrap}>
+        <ImageBackground
+          source={require("../../assets/browntrees.jpg")}
+          style={styles.topImage}
+          resizeMode="cover"
+        >
+          <LinearGradient
+            colors={
+              theme.dark
+                ? [
+                    "rgba(26, 19, 14, 0.06)",
+                    "rgba(31, 24, 19, 0.78)",
+                    "#221b17",
+                  ]
+                : [
+                    "rgba(250, 243, 234, 0.04)",
+                    "rgba(245, 230, 211, 0.72)",
+                    "#f5e6d3",
+                  ]
+            }
+            locations={[0, 0.58, 0.9]}
+            style={StyleSheet.absoluteFill}
+          />
+        </ImageBackground>
+      </View>
+
       {/* Background Art Pattern — spinning */}
       <Animated.View
         style={[
@@ -435,7 +548,11 @@ const Welcome = () => {
         <Animated.Text
           style={[
             styles.label,
-            { color: accentMuted, opacity: labelFade, transform: [{ translateY: labelSlide }] },
+            {
+              color: "#ffffff",
+              opacity: labelFade,
+              transform: [{ translateY: labelSlide }],
+            },
           ]}
         >
           SERMONS OF
@@ -453,13 +570,24 @@ const Welcome = () => {
         <Animated.Text
           style={[
             styles.mainTitle,
-            { color: accent, opacity: titleFade, transform: [{ translateY: titleSlide }] },
+            {
+              color: accent,
+              opacity: titleFade,
+              transform: [{ translateY: titleSlide }],
+            },
           ]}
         >
           Robert Lambert Lee
         </Animated.Text>
 
-        <Animated.View style={{ opacity: subtitleFade, alignItems: "center", gap: 14, marginTop: 16 }}>
+        <Animated.View
+          style={{
+            opacity: subtitleFade,
+            alignItems: "center",
+            gap: 14,
+            marginTop: 16,
+          }}
+        >
           <View style={[styles.dividerLine, { backgroundColor: divider }]} />
           <Text style={[styles.subtitle, { color: accentMuted }]}>
             Transcribed & Audio Sermons
@@ -524,45 +652,54 @@ const Welcome = () => {
 
         {/* Button */}
         <Animated.View
-          style={{ opacity: btnFade, transform: [{ translateY: btnSlide }], marginTop: 24 }}
+          style={{
+            opacity: btnFade,
+            transform: [{ translateY: btnSlide }],
+            marginTop: 24,
+          }}
         >
-        {isDownloading ? (
-          <View style={styles.downloadWrap}>
-            <ActivityIndicator size="small" color={accent} />
-            <Text style={[styles.downloadLabel, { color: accent }]}>
-              {downloadProgress >= 100
-                ? "Complete — restarting…"
-                : `Downloading… ${Math.round(downloadProgress)}%`}
-            </Text>
-            <View style={[styles.progressTrack, { backgroundColor: divider }]}>
+          {isDownloading ? (
+            <View style={styles.downloadWrap}>
+              <ActivityIndicator size="small" color={accent} />
+              <Text style={[styles.downloadLabel, { color: accent }]}>
+                {downloadProgress >= 100
+                  ? "Complete — restarting…"
+                  : `Downloading… ${Math.round(downloadProgress)}%`}
+              </Text>
               <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${downloadProgress}%`,
-                    backgroundColor: accent,
-                  },
-                ]}
-              />
+                style={[styles.progressTrack, { backgroundColor: divider }]}
+              >
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${downloadProgress}%`,
+                      backgroundColor: accent,
+                    },
+                  ]}
+                />
+              </View>
             </View>
-          </View>
-        ) : downloadError ? (
-          <View style={styles.errorWrap}>
-            <Text
-              style={[
-                styles.errorLabel,
-                { color: theme.dark ? "#ff6b6b" : "#cc0000" },
-              ]}
-            >
-              {downloadError}
-            </Text>
-            <PremiumButton label="Retry" onPress={handleDownloadDatabase} />
-          </View>
-        ) : dbExists ? (
-          <PremiumButton label="Begin Reading" onPress={handleBeginReading} />
-        ) : (
-          <PremiumButton label="Download Sermons" onPress={handleDownloadDatabase} />
-        )}
+          ) : downloadError ? (
+            <View style={styles.errorWrap}>
+              <Text
+                style={[
+                  styles.errorLabel,
+                  { color: theme.dark ? "#ff6b6b" : "#cc0000" },
+                ]}
+              >
+                {downloadError}
+              </Text>
+              <PremiumButton label="Retry" onPress={handleDownloadDatabase} />
+            </View>
+          ) : dbExists ? (
+            <PremiumButton label="Begin Reading" onPress={handleBeginReading} />
+          ) : (
+            <PremiumButton
+              label="Download Sermons"
+              onPress={handleDownloadDatabase}
+            />
+          )}
         </Animated.View>
       </View>
     </LinearGradient>
@@ -574,6 +711,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  topImageWrap: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "40%",
+    overflow: "hidden",
+  },
+  topImage: {
+    width: "100%",
+    height: "100%",
   },
   patternContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -631,13 +780,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   dividerLine: {
-    width: 48,
+    width: 50,
     height: 1.5,
     borderRadius: 1,
   },
   label: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(15.5),
+    // fontSize: responsiveFontSize(15.5),
     letterSpacing: 6,
     textTransform: "uppercase",
     marginTop: 2,

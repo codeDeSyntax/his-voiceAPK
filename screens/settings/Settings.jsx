@@ -1,5 +1,11 @@
 // File: Settings.js
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -101,6 +107,7 @@ const Settings = React.memo(() => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const saveTimerRef = useRef(null);
 
   // Memoized animation value to prevent recreation
   const animation = useMemo(() => new Animated.Value(isDarkMode ? 1 : 0), []);
@@ -134,10 +141,37 @@ const Settings = React.memo(() => {
     }).start();
   }, [isDarkMode, animation]);
 
+  // Ensure pending save timers do not outlive the screen
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, []);
+
+  const beginSaving = useCallback(() => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    setIsSaving(true);
+  }, []);
+
+  const endSavingAfter = useCallback((ms = 300) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      setIsSaving(false);
+      saveTimerRef.current = null;
+    }, ms);
+  }, []);
+
   // Optimized toggle theme function with useCallback
   const toggleTheme = useCallback(async () => {
     try {
-      setIsSaving(true);
+      beginSaving();
       const newMode = !isDarkMode;
 
       const updatedSettings = {
@@ -155,9 +189,7 @@ const Settings = React.memo(() => {
       await updateSettings(updatedSettings);
 
       // Slightly delayed to show animation
-      setTimeout(() => {
-        setIsSaving(false);
-      }, 400);
+      endSavingAfter(400);
     } catch (error) {
       console.error("Error saving theme settings:", error);
       setIsSaving(false);
@@ -172,6 +204,8 @@ const Settings = React.memo(() => {
     numberOfColumns,
     setIsDarkMode,
     updateSettings,
+    beginSaving,
+    endSavingAfter,
   ]);
 
   // Auto-save font size changes
@@ -179,13 +213,9 @@ const Settings = React.memo(() => {
     if (settings.fontSize !== fontSize) {
       const autoSaveFontSize = async () => {
         try {
-          setIsSaving(true);
-          const updatedSettings = {
-            ...settings,
-            fontSize,
-          };
-          await updateSettings(updatedSettings);
-          setTimeout(() => setIsSaving(false), 300);
+          beginSaving();
+          await updateSettings({ fontSize });
+          endSavingAfter(300);
         } catch (error) {
           console.error("Error auto-saving font size:", error);
           setIsSaving(false);
@@ -193,20 +223,22 @@ const Settings = React.memo(() => {
       };
       autoSaveFontSize();
     }
-  }, [fontSize, settings, updateSettings]);
+  }, [
+    fontSize,
+    settings.fontSize,
+    updateSettings,
+    beginSaving,
+    endSavingAfter,
+  ]);
 
   // Auto-save font family changes
   useEffect(() => {
     if (settings.fontFamily !== fontFamily) {
       const autoSaveFontFamily = async () => {
         try {
-          setIsSaving(true);
-          const updatedSettings = {
-            ...settings,
-            fontFamily,
-          };
-          await updateSettings(updatedSettings);
-          setTimeout(() => setIsSaving(false), 300);
+          beginSaving();
+          await updateSettings({ fontFamily });
+          endSavingAfter(300);
         } catch (error) {
           console.error("Error auto-saving font family:", error);
           setIsSaving(false);
@@ -214,20 +246,22 @@ const Settings = React.memo(() => {
       };
       autoSaveFontFamily();
     }
-  }, [fontFamily, settings, updateSettings]);
+  }, [
+    fontFamily,
+    settings.fontFamily,
+    updateSettings,
+    beginSaving,
+    endSavingAfter,
+  ]);
 
   // Auto-save accent color changes
   useEffect(() => {
     if (settings.accentColor !== accentColor) {
       const autoSaveAccentColor = async () => {
         try {
-          setIsSaving(true);
-          const updatedSettings = {
-            ...settings,
-            accentColor,
-          };
-          await updateSettings(updatedSettings);
-          setTimeout(() => setIsSaving(false), 300);
+          beginSaving();
+          await updateSettings({ accentColor });
+          endSavingAfter(300);
         } catch (error) {
           console.error("Error auto-saving accent color:", error);
           setIsSaving(false);
@@ -235,12 +269,18 @@ const Settings = React.memo(() => {
       };
       autoSaveAccentColor();
     }
-  }, [accentColor, settings, updateSettings]);
+  }, [
+    accentColor,
+    settings.accentColor,
+    updateSettings,
+    beginSaving,
+    endSavingAfter,
+  ]);
 
   // Optimized save settings function with useCallback (for theme and other settings)
   const saveSettings = useCallback(async () => {
     try {
-      setIsSaving(true);
+      beginSaving();
       const updatedSettings = {
         ...settings,
         darkMode: isDarkMode,
@@ -252,11 +292,8 @@ const Settings = React.memo(() => {
         numberOfColumns,
       };
 
-      updateSettings(updatedSettings);
-
-      setTimeout(() => {
-        setIsSaving(false);
-      }, 400);
+      await updateSettings(updatedSettings);
+      endSavingAfter(400);
     } catch (error) {
       console.error("Error saving settings:", error);
       setIsSaving(false);
@@ -271,12 +308,14 @@ const Settings = React.memo(() => {
     accentColor,
     numberOfColumns,
     updateSettings,
+    beginSaving,
+    endSavingAfter,
   ]);
 
   // Optimized restore default function with useCallback
   const restoreDefault = useCallback(async () => {
     try {
-      setIsSaving(true);
+      beginSaving();
 
       setFontSize(DEFAULT_SETTINGS.fontSize);
       setFontFamily(DEFAULT_SETTINGS.fontFamily);
@@ -286,14 +325,12 @@ const Settings = React.memo(() => {
       setIsDarkMode(DEFAULT_SETTINGS.darkMode);
       await updateSettings(DEFAULT_SETTINGS);
 
-      setTimeout(() => {
-        setIsSaving(false);
-      }, 800);
+      endSavingAfter(800);
     } catch (error) {
       console.error("Error restoring settings:", error);
       setIsSaving(false);
     }
-  }, [updateSettings, setIsDarkMode]);
+  }, [updateSettings, setIsDarkMode, beginSaving, endSavingAfter]);
 
   // Early return for updating state - render content while updating in background
   // if (isUpdating) {

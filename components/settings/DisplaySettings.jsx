@@ -269,8 +269,7 @@ const DisplaySettings = ({
                         ? theme.colors.hlight
                         : "#5d3211"
                       : theme.colors.text,
-                  fontFamily:
-                    font.value !== "System Default" ? font.value : undefined,
+                  fontFamily: font.value !== "System" ? font.value : undefined,
                 }}
               >
                 {font.name}

@@ -14,10 +14,30 @@ import {
   StatusBar,
   Platform,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
-import { getSermonContent, resolveSermonNumericId } from "../../Logic/branhamApi";
+import {
+  getSermonContent,
+  resolveSermonNumericId,
+} from "../../Logic/branhamApi";
+
+const getFallbackPalette = (theme) => {
+  const dark = theme?.dark || false;
+  return {
+    isDark: dark,
+    surface: dark ? "#1b1310" : "#fdfaf7",
+    text: dark ? "rgba(255,255,255,0.88)" : "#3a1f08",
+    mutedText: dark ? "rgba(255,255,255,0.42)" : "rgba(93,50,17,0.4)",
+    accent: dark ? "#d57a3e" : "#5d3211",
+    accentSoft: dark ? "rgba(213,122,62,0.14)" : "rgba(93,50,17,0.08)",
+    highlightBg: dark ? "rgba(213,122,62,0.28)" : "rgba(93,50,17,0.24)",
+    highlightFg: dark ? "#fff0e4" : "#3a1f08",
+    divider: dark ? "rgba(255,255,255,0.08)" : "rgba(93,50,17,0.08)",
+    buttonTextOnAccent: "#ffffff",
+  };
+};
 
 // ── Skeleton loader — mimics the result layout while loading ──────────────
 const SkeletonBar = ({ width, height = 10, style, shimmerAnim, theme }) => {
@@ -49,21 +69,57 @@ const SkeletonResultItem = ({ shimmerAnim, theme, delay = 0 }) => {
   // Offset the shimmer for each item for a cascading effect
   const offset = shimmerAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: delay === 0 ? [0.3, 1, 0.3] : delay === 1 ? [0.6, 0.3, 1] : [1, 0.3, 0.6],
+    outputRange:
+      delay === 0 ? [0.3, 1, 0.3] : delay === 1 ? [0.6, 0.3, 1] : [1, 0.3, 0.6],
   });
   return (
     <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
       {/* Date pill + badge row */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <SkeletonBar width={72} height={16} shimmerAnim={shimmerAnim} theme={theme} style={{ borderRadius: 10 }} />
-        <SkeletonBar width={48} height={12} shimmerAnim={shimmerAnim} theme={theme} />
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 8,
+        }}
+      >
+        <SkeletonBar
+          width={72}
+          height={16}
+          shimmerAnim={shimmerAnim}
+          theme={theme}
+          style={{ borderRadius: 10 }}
+        />
+        <SkeletonBar
+          width={48}
+          height={12}
+          shimmerAnim={shimmerAnim}
+          theme={theme}
+        />
       </View>
       {/* Title line */}
-      <SkeletonBar width="85%" height={13} shimmerAnim={shimmerAnim} theme={theme} style={{ marginBottom: 6 }} />
+      <SkeletonBar
+        width="85%"
+        height={13}
+        shimmerAnim={shimmerAnim}
+        theme={theme}
+        style={{ marginBottom: 6 }}
+      />
       {/* Subtitle line */}
-      <SkeletonBar width="60%" height={11} shimmerAnim={shimmerAnim} theme={theme} />
+      <SkeletonBar
+        width="60%"
+        height={11}
+        shimmerAnim={shimmerAnim}
+        theme={theme}
+      />
       {/* Separator */}
-      <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: sep, marginTop: 14 }} />
+      <View
+        style={{
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: sep,
+          marginTop: 14,
+        }}
+      />
     </View>
   );
 };
@@ -92,9 +148,90 @@ const SearchLoader = ({ theme }) => {
 
   return (
     <View style={{ flex: 1, paddingTop: 4 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6 }}>
+        <Text
+          style={{
+            color: theme.dark ? "rgba(242,205,180,0.55)" : "rgba(93,50,17,0.5)",
+            fontSize: 11,
+            fontFamily: "Merriweather",
+            letterSpacing: 0.4,
+            textTransform: "uppercase",
+          }}
+        >
+          Re-searching endnote...
+        </Text>
+      </View>
       <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={0} />
       <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={1} />
       <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={2} />
+    </View>
+  );
+};
+
+const CacheLoader = ({ palette }) => {
+  const pulse = useRef(new Animated.Value(0.65)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 520,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.65,
+          duration: 520,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+      }}
+    >
+      <Animated.View
+        style={{
+          transform: [{ scale: pulse }],
+          opacity: pulse,
+          marginBottom: 12,
+        }}
+      >
+        <Feather name="archive" size={28} color={palette.accent} />
+      </Animated.View>
+
+      <Text
+        style={{
+          color: palette.text,
+          fontFamily: "Merriweather",
+          fontSize: 14,
+          marginBottom: 6,
+        }}
+      >
+        Loading cached results
+      </Text>
+
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <ActivityIndicator size="small" color={palette.accent} />
+        <Text
+          style={{
+            color: palette.mutedText,
+            fontFamily: "Merriweather",
+            fontSize: 12,
+          }}
+        >
+          Restoring previous search
+        </Text>
+      </View>
     </View>
   );
 };
@@ -133,21 +270,28 @@ const HighlightedText = ({
   text,
   searchQuery,
   theme,
+  palette,
   style = {},
   searchType = "AllWords",
   prefix = null,
   prefixStyle = {},
+  selectable = true,
 }) => {
   if (!text) return null;
 
-  const isDark = theme.dark;
-  const normalFg = isDark ? "rgba(255,255,255,0.85)" : "#3a1f08";
-  const highlightBg = isDark ? "#5d321170" : "#5d321125";
-  const highlightFg = isDark ? "#f8e3d5" : "#5d3211";
+  const isDark = palette?.isDark ?? theme.dark;
+  const normalFg =
+    palette?.text || (isDark ? "rgba(255,255,255,0.85)" : "#3a1f08");
+  const highlightBg =
+    palette?.highlightBg || (isDark ? "#5d321170" : "#5d321125");
+  const highlightFg = palette?.highlightFg || (isDark ? "#f8e3d5" : "#5d3211");
 
   if (!searchQuery) {
     return (
-      <Text style={[styles.fragmentText, style, { color: normalFg }]}>
+      <Text
+        selectable={selectable}
+        style={[styles.fragmentText, style, { color: normalFg }]}
+      >
         {prefix ? <Text style={prefixStyle}>{prefix}</Text> : null}
         {text}
       </Text>
@@ -182,7 +326,7 @@ const HighlightedText = ({
   const parts = text.split(regex);
 
   return (
-    <Text style={[styles.fragmentText, style]}>
+    <Text selectable={selectable} style={[styles.fragmentText, style]}>
       {prefix ? <Text style={prefixStyle}>{prefix}</Text> : null}
       {parts.map((part, index) => {
         const partNorm = normaliseApostrophe(part).toLowerCase();
@@ -250,6 +394,7 @@ const ResultItem = ({
   isBestMatch,
   searchQuery,
   theme,
+  palette,
   defaultExpanded,
   onFetchContent,
   sermonContent,
@@ -258,9 +403,11 @@ const ResultItem = ({
   targetParagraph,
 }) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const isDark = theme.dark;
-  const accentColor = isDark ? "#d57a3e" : "#5d3211";
-  const subtleText = isDark ? "rgba(255,255,255,0.28)" : "rgba(93,50,17,0.4)";
+  const isDark = palette?.isDark ?? theme.dark;
+  const accentColor = palette?.accent || (isDark ? "#d57a3e" : "#5d3211");
+  const subtleText =
+    palette?.mutedText ||
+    (isDark ? "rgba(255,255,255,0.28)" : "rgba(93,50,17,0.4)");
 
   // For ExactPhrase: extract the exact highlighted phrase from the API fragment
   // so HighlightedText uses the verbatim database text (correct case, em-dashes, etc.)
@@ -331,10 +478,17 @@ const ResultItem = ({
         })
         .map((s) => {
           const r = parseParagraphRange(s.Paragraph);
-          const isMatch = s.IsHit || paragraphRanges.some(
-            (range) => r.end >= range.start && r.start <= range.end,
-          );
-          return { ...s, Content: stripHtml(s.Content), displayIndex: r.start, isMatch };
+          const isMatch =
+            s.IsHit ||
+            paragraphRanges.some(
+              (range) => r.end >= range.start && r.start <= range.end,
+            );
+          return {
+            ...s,
+            Content: stripHtml(s.Content),
+            displayIndex: r.start,
+            isMatch,
+          };
         });
     }
 
@@ -360,7 +514,10 @@ const ResultItem = ({
           rangeEnd: range.end,
         };
       })
-      .filter((p) => p.Content && p.rangeEnd >= windowStart && p.displayIndex <= windowEnd);
+      .filter(
+        (p) =>
+          p.Content && p.rangeEnd >= windowStart && p.displayIndex <= windowEnd,
+      );
   }, [sermonContent, paragraphRanges, isBestMatch, items, targetParagraph]);
 
   // Fetch content when expanded (only if not already fetched or failed)
@@ -371,7 +528,11 @@ const ResultItem = ({
       !sermonContent &&
       !isLoadingContent
     ) {
-      onFetchContent(item.DocumentRecordId, item.RecordId, item.Properties?.DateCode);
+      onFetchContent(
+        item.DocumentRecordId,
+        item.RecordId,
+        item.Properties?.DateCode,
+      );
     }
   }, [expanded, item.DocumentRecordId, sermonContent, isLoadingContent]);
 
@@ -388,9 +549,8 @@ const ResultItem = ({
               style={[
                 styles.datePill,
                 {
-                  backgroundColor: isDark
-                    ? "rgba(213,122,62,0.15)"
-                    : "rgba(93,50,17,0.08)",
+                  backgroundColor: palette?.accentSoft || "rgba(93,50,17,0.08)",
+                  borderColor: palette?.divider || "rgba(180,120,70,0.25)",
                 },
               ]}
             >
@@ -402,7 +562,6 @@ const ResultItem = ({
           {items.length > 1 ? (
             <Text style={[styles.metaText, { color: subtleText }]}>
               {items.length} matches · ¶{" "}
-             
             </Text>
           ) : (
             item.Properties?.Paragraph && (
@@ -458,7 +617,12 @@ const ResultItem = ({
 
       {/* Title */}
       {item.Properties?.Title && (
-        <Text style={[styles.resultTitle, { color: theme.colors.text }]}>
+        <Text
+          style={[
+            styles.resultTitle,
+            { color: palette?.text || theme.colors.text },
+          ]}
+        >
           {item.Properties.Title}
         </Text>
       )}
@@ -484,12 +648,15 @@ const ResultItem = ({
                   // e.g. "274 Six months..." → prefix="274 ", body="Six months..."
                   const match = para.Content.match(/^(\d+(?:-\d+)?\s+)/);
                   const prefix = match ? match[1] : null;
-                  const body = match ? para.Content.slice(match[1].length) : para.Content;
+                  const body = match
+                    ? para.Content.slice(match[1].length)
+                    : para.Content;
                   return (
                     <HighlightedText
                       text={body}
                       searchQuery={effectiveSearchQuery}
                       theme={theme}
+                      palette={palette}
                       style={para.isMatch && styles.matchText}
                       searchType={searchType}
                       prefix={prefix}
@@ -525,9 +692,7 @@ const ResultItem = ({
         style={[
           styles.resultSeparator,
           {
-            backgroundColor: isDark
-              ? "rgba(255,255,255,0.07)"
-              : "rgba(93,50,17,0.08)",
+            backgroundColor: palette?.divider || "rgba(93,50,17,0.08)",
           },
         ]}
       />
@@ -545,7 +710,9 @@ const EndnoteResults = ({
   endnoteData,
   searchResults,
   theme,
+  endnotePalette,
   isLoading,
+  loadingSource,
   onRetrySearch,
   networkError,
   embedded = false,
@@ -556,9 +723,10 @@ const EndnoteResults = ({
   const loadingRef = useRef({}); // Track loading state synchronously to prevent duplicate fetches
   const [searchType, setSearchType] = useState("ExactPhrase"); // ExactPhrase or AllWords
 
-  const isDark = theme?.dark || false;
-  const accentColor = isDark ? "#d57a3e" : "#5d3211";
-  const subtleText = isDark ? "rgba(255,255,255,0.28)" : "rgba(93,50,17,0.4)";
+  const palette = endnotePalette || getFallbackPalette(theme);
+  const isDark = palette.isDark;
+  const accentColor = palette.accent;
+  const subtleText = palette.mutedText;
 
   // Toggle search type and retry search
   const handleToggleSearchType = useCallback(() => {
@@ -641,9 +809,17 @@ const EndnoteResults = ({
 
     try {
       // Resolve the numeric SermonProductIdentityId via the sermon index
-      const numericId = datecode ? await resolveSermonNumericId(datecode) : null;
+      const numericId = datecode
+        ? await resolveSermonNumericId(datecode)
+        : null;
       const idToFetch = numericId ?? documentRecordId;
-      console.log("[EndnoteResults] Resolved ID:", idToFetch, "(datecode:", datecode, ")");
+      console.log(
+        "[EndnoteResults] Resolved ID:",
+        idToFetch,
+        "(datecode:",
+        datecode,
+        ")",
+      );
       const content = await getSermonContent(idToFetch);
       if (content) {
         setSermonContents((prev) => ({ ...prev, [cacheKey]: content }));
@@ -699,15 +875,10 @@ const EndnoteResults = ({
       style={
         embedded
           ? { flex: 1, overflow: "hidden" }
-          : [styles.container, { backgroundColor: theme.colors.background }]
+          : [styles.container, { backgroundColor: palette.surface }]
       }
     >
-      <View
-        style={[
-          styles.contentWrapper,
-          embedded && { paddingTop: 0 },
-        ]}
-      >
+      <View style={[styles.contentWrapper, embedded && { paddingTop: 0 }]}>
         {/* Header — only shown when not embedded (back arrow navigation) */}
         {!embedded && (
           <View
@@ -715,13 +886,13 @@ const EndnoteResults = ({
               styles.header,
               {
                 borderBottomColor: isDark
-                  ? "rgba(80, 61, 49, 0.6)"
-                  : "rgba(93, 50, 17, 0.1)",
+                  ? "rgba(255,255,255,0.12)"
+                  : palette.divider,
               },
             ]}
           >
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Feather name="arrow-left" size={22} color={theme.colors.text} />
+              <Feather name="arrow-left" size={22} color={palette.text} />
             </TouchableOpacity>
           </View>
         )}
@@ -732,29 +903,23 @@ const EndnoteResults = ({
             style={[
               styles.endnoteBar,
               {
-                backgroundColor: isDark
-                        ? "rgba(213,122,62,0.12)"
-                        : "rgba(93,50,17,0.06)",
-                        borderRadius:20,
-                borderBottomColor: isDark
-                  ? "rgba(230,195,184,0.06)"
-                  : "rgba(93,50,17,0.05)",
+                backgroundColor: palette.accentSoft,
+                borderRadius: 20,
+                borderBottomColor: palette.divider,
               },
             ]}
           >
-            <View style={[styles.endnoteMeta , {}]}>
+            <View style={[styles.endnoteMeta, {}]}>
               {/* Datecode glass pill */}
               {endnoteData.datecode && (
                 <View
                   style={[
                     styles.glassPill,
                     {
-                      backgroundColor: isDark
-                        ? "rgba(213,122,62,0.12)"
-                        : "rgba(93,50,17,0.06)",
+                      backgroundColor: palette.accentSoft,
                       borderColor: isDark
-                        ? "rgba(213,122,62,0.20)"
-                        : "rgba(93,50,17,0.10)",
+                        ? "rgba(255,255,255,0.16)"
+                        : palette.divider,
                     },
                   ]}
                 >
@@ -770,11 +935,17 @@ const EndnoteResults = ({
               )}
 
               {/* Search method note */}
-              {!isLoading && searchResults?.searchMethod === "paragraph_reference" && (
-                <Text style={[styles.metaText, { color: subtleText, fontSize: 9.5 }]}>
-                  · by reference
-                </Text>
-              )}
+              {!isLoading &&
+                searchResults?.searchMethod === "paragraph_reference" && (
+                  <Text
+                    style={[
+                      styles.metaText,
+                      { color: subtleText, fontSize: 9.5 },
+                    ]}
+                  >
+                    · by reference
+                  </Text>
+                )}
 
               <View style={{ flex: 1 }} />
 
@@ -784,18 +955,18 @@ const EndnoteResults = ({
                   styles.segmentedToggle,
                   {
                     backgroundColor: isDark
-                      ? "rgba(60,50,44,0.85)"
-                      : "rgba(250,238,209,0.85)",
+                      ? "rgba(20, 33, 57, 0.85)"
+                      : "rgba(255,255,255,0.85)",
                     borderColor: isDark
                       ? "rgba(255,255,255,0.12)"
-                      : "rgba(93,50,17,0.08)",
+                      : palette.divider,
                     borderTopColor: isDark
                       ? "rgba(255,255,255,0.22)"
                       : "rgba(255,255,255,0.55)",
                     borderBottomColor: isDark
                       ? "rgba(0,0,0,0.3)"
-                      : "rgba(93,50,17,0.12)",
-                    shadowColor: isDark ? "#000" : "#5d3211",
+                      : palette.divider,
+                    shadowColor: isDark ? "#000" : palette.accent,
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: isDark ? 0.4 : 0.15,
                     shadowRadius: 4,
@@ -834,10 +1005,10 @@ const EndnoteResults = ({
                         styles.segmentBtn,
                         isActive && {
                           backgroundColor: isDark
-                            ? "rgba(213,122,62,0.80)"
-                            : "#7a3b10",
+                            ? palette.accent
+                            : palette.accent,
                           borderRadius: 4,
-                          shadowColor: isDark ? "#d57a3e" : "#5d3211",
+                          shadowColor: isDark ? palette.accent : palette.accent,
                           shadowOffset: { width: 0, height: 1 },
                           shadowOpacity: 0.3,
                           shadowRadius: 3,
@@ -849,10 +1020,8 @@ const EndnoteResults = ({
                       <Text
                         style={{
                           color: isActive
-                            ? "#fff"
-                            : isDark
-                              ? "rgba(255,255,255,0.35)"
-                              : "rgba(93,50,17,0.35)",
+                            ? palette.buttonTextOnAccent
+                            : subtleText,
                           fontSize: 9.5,
                           fontWeight: isActive ? "700" : "500",
                           textTransform: "uppercase",
@@ -872,7 +1041,12 @@ const EndnoteResults = ({
               <Text
                 style={[
                   styles.inlineQuote,
-                  { color: isDark ? "rgba(248,227,213,0.50)" : "rgba(90,46,15,0.80)" },
+                  {
+                    color: isDark
+                      ? "rgba(248,227,213,0.50)"
+                      : "rgba(90,46,15,0.80)",
+                  },
+                  { color: subtleText },
                 ]}
                 numberOfLines={2}
               >
@@ -884,22 +1058,24 @@ const EndnoteResults = ({
 
         {/* Loader / Network Error / Results / Empty state */}
         {isLoading ? (
-          <SearchLoader theme={theme} />
+          loadingSource === "cache" ? (
+            <CacheLoader palette={palette} />
+          ) : (
+            <SearchLoader theme={theme} />
+          )
         ) : networkError ? (
           <View style={styles.emptyStateContainer}>
             <Feather
               name="wifi-off"
               size={38}
-              color={isDark ? "rgba(255,255,255,0.15)" : "rgba(93,50,17,0.2)"}
+              color={subtleText}
               style={{ marginBottom: 18 }}
             />
             <Text
               style={[
                 styles.emptyStateTitle,
                 {
-                  color: isDark
-                    ? "rgba(255,255,255,0.55)"
-                    : "rgba(93,50,17,0.65)",
+                  color: palette.text,
                 },
               ]}
             >
@@ -913,12 +1089,8 @@ const EndnoteResults = ({
               style={[
                 styles.retryButton,
                 {
-                  borderColor: isDark
-                    ? "rgba(213,122,62,0.3)"
-                    : "rgba(93,50,17,0.15)",
-                  backgroundColor: isDark
-                    ? "rgba(213,122,62,0.08)"
-                    : "rgba(93,50,17,0.04)",
+                  borderColor: palette.divider,
+                  backgroundColor: palette.accentSoft,
                 },
               ]}
               activeOpacity={0.7}
@@ -945,6 +1117,7 @@ const EndnoteResults = ({
                   isBestMatch={index === 0}
                   searchQuery={searchQuery}
                   theme={theme}
+                  palette={palette}
                   defaultExpanded={index === 0}
                   onFetchContent={handleFetchContent}
                   sermonContent={sermonContents[cacheKey]}
@@ -961,18 +1134,14 @@ const EndnoteResults = ({
                 <Feather
                   name="search"
                   size={40}
-                  color={
-                    isDark ? "rgba(255,255,255,0.15)" : "rgba(93,50,17,0.2)"
-                  }
+                  color={subtleText}
                   style={{ marginBottom: 16 }}
                 />
                 <Text
                   style={[
                     styles.emptyStateTitle,
                     {
-                      color: isDark
-                        ? "rgba(255,255,255,0.5)"
-                        : "rgba(93,50,17,0.6)",
+                      color: palette.text,
                     },
                   ]}
                 >
@@ -1059,7 +1228,7 @@ const styles = StyleSheet.create({
   inlineQuote: {
     fontSize: 13.5,
     fontFamily: "ZillaSlabsm",
-    textDecorationLine:"underline",
+    textDecorationLine: "underline",
     lineHeight: 16,
     marginTop: 5,
   },

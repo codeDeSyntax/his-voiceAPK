@@ -18,8 +18,12 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     ZillaSlab: require("./assets/fonts/ZillaSlab-Regular.ttf"),
     ZillaSlabsm: require("./assets/fonts/ZillaSlab-SemiBold.ttf"),
+    "ZillaSlab-Regular": require("./assets/fonts/ZillaSlab-Regular.ttf"),
+    "ZillaSlab-SemiBold": require("./assets/fonts/ZillaSlab-SemiBold.ttf"),
     Merriweather: require("./assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.ttf"),
     Philosopher: require("./assets/fonts/Philosopher-Regular.ttf"),
+    Lora: require("./assets/fonts/Lora-VariableFont_wght.ttf"),
+    "Merienda-VariableFont_wght": require("./assets/fonts/Merienda-VariableFont_wght.ttf"),
   });
 
   useEffect(() => {

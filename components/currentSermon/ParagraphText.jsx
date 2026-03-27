@@ -9,11 +9,19 @@ import { parseEndnote, extractAllEndnotes } from "../../Utils/endnoteParser";
 // Memoized highlight colors - calculate once
 const HIGHLIGHT_COLORS = {
   yellow: { light: "#B88808", dark: "#D4A830" }, // warm honey/gold
-  green:  { light: "#4A7028", dark: "#88B060" }, // sage olive
-  brown:  { light: "#8A4820", dark: "#C08050" }, // sienna copper
+  green: { light: "#4A7028", dark: "#88B060" }, // sage olive
+  brown: { light: "#8A4820", dark: "#C08050" }, // sienna copper
   purple: { light: "#6A4870", dark: "#A87CA8" }, // dusty plum
-  pink:   { light: "#904848", dark: "#C08080" }, // dusty rose
+  pink: { light: "#904848", dark: "#C08080" }, // dusty rose
   orange: { light: "#B85820", dark: "#D88040" }, // terracotta
+};
+
+// Map persisted settings values to runtime font keys loaded in App.js.
+const resolveReaderFontFamily = (fontFamily) => {
+  if (!fontFamily || fontFamily === "System") return undefined;
+  if (fontFamily === "ZillaSlab-Regular") return "ZillaSlab";
+  if (fontFamily === "ZillaSlab-SemiBold") return "ZillaSlabsm";
+  return fontFamily;
 };
 
 // Helper function to render text with styled numbers
@@ -25,13 +33,16 @@ const renderTextWithStyledNumbers = (
   searchPhrase = "",
   highlightColor = null,
 ) => {
+  const resolvedFontFamily =
+    resolveReaderFontFamily(settings?.fontFamily) || "ZillaSlab";
+
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
     yellow: theme.dark ? "#E0B840" : "#8A6400", // golden amber
-    green:  theme.dark ? "#80B858" : "#3A6820", // olive green
-    brown:  theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
+    green: theme.dark ? "#80B858" : "#3A6820", // olive green
+    brown: theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
     purple: theme.dark ? "#B888C8" : "#6B3580", // plum purple
-    pink:   theme.dark ? "#D88898" : "#A03050", // crimson rose
+    pink: theme.dark ? "#D88898" : "#A03050", // crimson rose
     orange: theme.dark ? "#E08840" : "#C05818", // terracotta orange
   };
 
@@ -61,7 +72,7 @@ const renderTextWithStyledNumbers = (
             key={`${key}-search-${partIndex}-${part.slice(0, 5)}`}
             style={{
               fontSize: responsiveFontSize(settings.fontSize),
-              fontFamily: "ZillaSlabsm",
+              fontFamily: resolvedFontFamily,
               color: theme.dark ? "#FBBF24" : "#D97706", // Bright amber/orange text
               textShadowColor: theme.dark ? "#00000050" : "#FFFFFF80", // Subtle shadow for visibility
               textShadowOffset: { width: 0, height: 1 },
@@ -105,13 +116,16 @@ const renderTextWithStyledNumbersOnly = (
   key = "",
   highlightColor = null,
 ) => {
+  const resolvedFontFamily =
+    resolveReaderFontFamily(settings?.fontFamily) || "ZillaSlab";
+
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
     yellow: theme.dark ? "#E0B840" : "#8A6400", // golden amber
-    green:  theme.dark ? "#80B858" : "#3A6820", // olive green
-    brown:  theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
+    green: theme.dark ? "#80B858" : "#3A6820", // olive green
+    brown: theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
     purple: theme.dark ? "#B888C8" : "#6B3580", // plum purple
-    pink:   theme.dark ? "#D88898" : "#A03050", // crimson rose
+    pink: theme.dark ? "#D88898" : "#A03050", // crimson rose
     orange: theme.dark ? "#E08840" : "#C05818", // terracotta orange
   };
 
@@ -158,7 +172,7 @@ const renderTextWithStyledNumbersOnly = (
               key={`${key}-number-${index}-${part.slice(0, 5)}`}
               style={{
                 fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: settings.fontFamily || "ZillaSlab",
+                fontFamily: resolvedFontFamily,
                 color: highlightColor
                   ? baseTextColor
                   : theme.dark
@@ -178,7 +192,7 @@ const renderTextWithStyledNumbersOnly = (
               key={`${key}-text-${index}-${part.slice(0, 10)}`}
               style={{
                 fontSize: responsiveFontSize(settings.fontSize),
-                fontFamily: settings.fontFamily || "ZillaSlab",
+                fontFamily: resolvedFontFamily,
                 color: baseTextColor, // Use highlight color or default text color
                 lineHeight: Math.round(
                   responsiveFontSize(settings.fontSize) * 1.55,
@@ -205,14 +219,16 @@ const renderTextWithStyledNumbersOnly = (
           key={`${key}-number-${index}-${part.slice(0, 5)}`}
           style={{
             fontSize: responsiveFontSize(settings.fontSize),
-            fontFamily: settings.fontFamily || "ZillaSlab",
+            fontFamily: resolvedFontFamily,
             color: highlightColor
               ? baseTextColor
               : theme.dark
                 ? "#b37407"
                 : "#36240f", // Use highlight color or default amber/orange for numbers
             // fontWeight: "700", // Bold numbers
-            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.55),
+            lineHeight: Math.round(
+              responsiveFontSize(settings.fontSize) * 1.55,
+            ),
           }}
         >
           {part}
@@ -224,9 +240,11 @@ const renderTextWithStyledNumbersOnly = (
           key={`${key}-text-${index}-${part.slice(0, 10)}`}
           style={{
             fontSize: responsiveFontSize(settings.fontSize),
-            fontFamily: settings.fontFamily || "ZillaSlab",
+            fontFamily: resolvedFontFamily,
             color: baseTextColor, // Use highlight color or default text color
-            lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.55),
+            lineHeight: Math.round(
+              responsiveFontSize(settings.fontSize) * 1.55,
+            ),
           }}
         >
           {part}
@@ -427,23 +445,27 @@ const ParagraphText = React.memo(
     // Optimized text style with highlight color support - memoized for performance
     const textStyle = useMemo(() => {
       const baseSize = responsiveFontSize(settings?.fontSize || 22);
-      const fontFamily = settings?.fontFamily || "ZillaSlab";
+      const fontFamily =
+        resolveReaderFontFamily(settings?.fontFamily) || "ZillaSlab";
       const lineHeight = Math.round(baseSize * 1.55); // Medium-style generous line spacing
 
       // Pre-calculated highlight colors for better performance
       const highlightTextColors = {
         yellow: theme.dark ? "#E0B840" : "#8A6400", // golden amber
-        green:  theme.dark ? "#80B858" : "#3A6820", // olive green
-        brown:  theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
+        green: theme.dark ? "#80B858" : "#3A6820", // olive green
+        brown: theme.dark ? "#D09060" : "#8B4010", // sienna (reddish, distinct from default)
         purple: theme.dark ? "#B888C8" : "#6B3580", // plum purple
-        pink:   theme.dark ? "#D88898" : "#A03050", // crimson rose
+        pink: theme.dark ? "#D88898" : "#A03050", // crimson rose
         orange: theme.dark ? "#E08840" : "#C05818", // terracotta orange
       };
 
       // Use highlight color if available, otherwise default text color
       const textColor = currentHighlight
-        ? highlightTextColors[currentHighlight] || (theme.dark ? "#f8efe8ff" : theme.colors.text)
-        : (theme.dark ? "#f8efe8ff" : theme.colors.text);
+        ? highlightTextColors[currentHighlight] ||
+          (theme.dark ? "#f8efe8ff" : theme.colors.text)
+        : theme.dark
+          ? "#f8efe8ff"
+          : theme.colors.text;
 
       return [
         styles.paragraphText,
@@ -472,6 +494,38 @@ const ParagraphText = React.memo(
     const containerStyle = useMemo(() => {
       const baseStyle = [styles.paragraphContainer];
 
+      const highlightBgColors = {
+        yellow: theme.dark ? "rgba(212,168,48,0.14)" : "rgba(184,136,8,0.11)",
+        green: theme.dark ? "rgba(136,176,96,0.15)" : "rgba(74,112,40,0.11)",
+        brown: theme.dark ? "rgba(192,128,80,0.14)" : "rgba(138,72,32,0.11)",
+        purple: theme.dark ? "rgba(168,124,168,0.15)" : "rgba(106,72,112,0.11)",
+        pink: theme.dark ? "rgba(192,128,128,0.15)" : "rgba(144,72,72,0.11)",
+        orange: theme.dark ? "rgba(216,128,64,0.15)" : "rgba(184,88,32,0.11)",
+      };
+
+      const highlightBorderColors = {
+        yellow: theme.dark ? "rgba(212,168,48,0.36)" : "rgba(184,136,8,0.32)",
+        green: theme.dark ? "rgba(136,176,96,0.38)" : "rgba(74,112,40,0.32)",
+        brown: theme.dark ? "rgba(192,128,80,0.36)" : "rgba(138,72,32,0.32)",
+        purple: theme.dark ? "rgba(168,124,168,0.38)" : "rgba(106,72,112,0.32)",
+        pink: theme.dark ? "rgba(192,128,128,0.38)" : "rgba(144,72,72,0.32)",
+        orange: theme.dark ? "rgba(216,128,64,0.38)" : "rgba(184,88,32,0.32)",
+      };
+
+      if (currentHighlight) {
+        baseStyle.push({
+          backgroundColor:
+            highlightBgColors[currentHighlight] ||
+            (theme.dark ? "rgba(242,205,180,0.1)" : "rgba(93,50,17,0.08)"),
+          borderWidth: 0,
+          borderColor:
+            highlightBorderColors[currentHighlight] ||
+            (theme.dark ? "rgba(242,205,180,0.35)" : "rgba(93,50,17,0.32)"),
+          borderRadius: 20,
+          paddingLeft: 6,
+        });
+      }
+
       // Selected state - add underline effect
       if (isSelected) {
         baseStyle.push({
@@ -487,12 +541,7 @@ const ParagraphText = React.memo(
       }
 
       return baseStyle;
-    }, [
-      currentHighlight,
-      theme.dark,
-      theme.colors.hlight,
-      isSelected,
-    ]);
+    }, [currentHighlight, theme.dark, theme.colors.hlight, isSelected]);
 
     // Memoize text processing for endnotes and titles (search removed)
     const processedText = useMemo(() => {
@@ -500,18 +549,23 @@ const ParagraphText = React.memo(
       // that merely mention the word "endnote" in regular prose.
       const hasEndnote = paragraph.includes("Endnote:");
       // Match both "William Marrion Branham" and "William Branham"
-      const hasWilliamBranham = /William\s+(?:Marrion\s+)?Branham/i.test(paragraph);
+      const hasWilliamBranham = /William\s+(?:Marrion\s+)?Branham/i.test(
+        paragraph,
+      );
 
       if (hasEndnote && hasWilliamBranham) {
         // Split on "Endnote" keyword OR any "William [Marrion] Branham" variant
-        const parts = paragraph.split(/(Endnote|William\s+(?:Marrion\s+)?Branham)/gi);
+        const parts = paragraph.split(
+          /(Endnote|William\s+(?:Marrion\s+)?Branham)/gi,
+        );
         // Collect ALL endnote and WMB indices
         const endnoteIndices = [];
         const branhamIndices = [];
         parts.forEach((p, i) => {
           const lower = p.toLowerCase();
           if (lower === "endnote") endnoteIndices.push(i);
-          else if (/^william\s+(?:marrion\s+)?branham$/i.test(p)) branhamIndices.push(i);
+          else if (/^william\s+(?:marrion\s+)?branham$/i.test(p))
+            branhamIndices.push(i);
         });
         // Pair each Endnote with its nearest following WMB
         const regions = endnoteIndices.map((eIdx, i) => ({
@@ -567,18 +621,26 @@ const ParagraphText = React.memo(
 
     // Handle endnote click — extract endnote data and trigger callback
     // endnoteNumber identifies which endnote in the paragraph (0-based)
-    const handleEndnoteClick = useCallback((endnoteNumber = 0) => {
-      if (!onEndnoteClick) return;
+    const handleEndnoteClick = useCallback(
+      (endnoteNumber = 0) => {
+        if (!onEndnoteClick) return;
 
-      console.log("[ParagraphText] Raw paragraph:", paragraph);
-      const allEndnotes = extractAllEndnotes(paragraph);
-      const endnoteData = allEndnotes[endnoteNumber] || allEndnotes[0];
-      console.log("[ParagraphText] Parsed endnote data:", endnoteData, "index:", endnoteNumber);
+        console.log("[ParagraphText] Raw paragraph:", paragraph);
+        const allEndnotes = extractAllEndnotes(paragraph);
+        const endnoteData = allEndnotes[endnoteNumber] || allEndnotes[0];
+        console.log(
+          "[ParagraphText] Parsed endnote data:",
+          endnoteData,
+          "index:",
+          endnoteNumber,
+        );
 
-      if (endnoteData) {
-        onEndnoteClick(endnoteData, index, selectedSermon);
-      }
-    }, [paragraph, index, selectedSermon, onEndnoteClick]);
+        if (endnoteData) {
+          onEndnoteClick(endnoteData, index, selectedSermon);
+        }
+      },
+      [paragraph, index, selectedSermon, onEndnoteClick],
+    );
 
     // Clipboard listener: when the user selects & copies any piece of this
     // paragraph, we prepend the sermon title + paragraph number automatically.
@@ -598,7 +660,7 @@ const ParagraphText = React.memo(
           const date = selectedSermon?.date ? ` · ${selectedSermon.date}` : "";
           const quotedContent = content
             .split("\n")
-            .map((line) => `> ${line}`)
+            .map((line) => ` ${line}`)
             .join("\n");
 
           await Clipboard.setStringAsync(
@@ -679,8 +741,22 @@ const ParagraphText = React.memo(
             {/* Last-read "Lr" superscript/subscript inline marker */}
             {isLastRead && (
               <Text style={{ color: accentColor, opacity: 0.75 }}>
-                <Text style={{ fontSize: responsiveFontSize(12), fontFamily: "Merriweather" }}>L</Text>
-                <Text style={{ fontSize: responsiveFontSize(8), fontFamily: "Merriweather" }}>r </Text>
+                <Text
+                  style={{
+                    fontSize: responsiveFontSize(12),
+                    fontFamily: "Merriweather",
+                  }}
+                >
+                  L
+                </Text>
+                <Text
+                  style={{
+                    fontSize: responsiveFontSize(8),
+                    fontFamily: "Merriweather",
+                  }}
+                >
+                  r{" "}
+                </Text>
               </Text>
             )}
             {/* Inline paragraph number */}
@@ -718,9 +794,10 @@ const ParagraphText = React.memo(
                     }
                   }
 
-                  const clickHandler = regionIndex >= 0
-                    ? () => handleEndnoteClick(regionIndex)
-                    : () => handleEndnoteClick(0);
+                  const clickHandler =
+                    regionIndex >= 0
+                      ? () => handleEndnoteClick(regionIndex)
+                      : () => handleEndnoteClick(0);
 
                   if (isAccentSection) {
                     // "Endnote" keyword + datecode/title — styled as a tappable link
@@ -731,7 +808,9 @@ const ParagraphText = React.memo(
                         suppressHighlighting={false}
                         style={{
                           color: linkColor,
-                          fontFamily: settings?.fontFamily || "ZillaSlab",
+                          fontFamily:
+                            resolveReaderFontFamily(settings?.fontFamily) ||
+                            "ZillaSlab",
                           fontSize: responsiveFontSize(
                             settings?.fontSize || 22,
                           ),
@@ -751,7 +830,9 @@ const ParagraphText = React.memo(
                           suppressHighlighting={false}
                           style={{
                             color: linkColor,
-                            fontFamily: settings?.fontFamily || "ZillaSlab",
+                            fontFamily:
+                              resolveReaderFontFamily(settings?.fontFamily) ||
+                              "ZillaSlab",
                             fontSize: responsiveFontSize(
                               settings?.fontSize || 22,
                             ),
@@ -791,7 +872,9 @@ const ParagraphText = React.memo(
                         key={`norm-${partIndex}`}
                         style={{
                           color: theme.dark ? theme.colors.text : "#000000",
-                          fontFamily: settings?.fontFamily || "ZillaSlab",
+                          fontFamily:
+                            resolveReaderFontFamily(settings?.fontFamily) ||
+                            "ZillaSlab",
                           fontSize: responsiveFontSize(
                             settings?.fontSize || 22,
                           ),
@@ -810,7 +893,8 @@ const ParagraphText = React.memo(
                     const isEndnoteWord = endnoteNumber !== -1;
 
                     if (isEndnoteWord) {
-                      const clickHandler = () => handleEndnoteClick(endnoteNumber);
+                      const clickHandler = () =>
+                        handleEndnoteClick(endnoteNumber);
                       // "Endnote" keyword — link style + blinking finger after
                       return (
                         <React.Fragment key={`endnote-frag-${partIndex}`}>
@@ -822,7 +906,9 @@ const ParagraphText = React.memo(
                               color: theme.dark
                                 ? theme.colors.hlight
                                 : "#7a3b10",
-                              fontFamily: settings?.fontFamily || "ZillaSlab",
+                              fontFamily:
+                                resolveReaderFontFamily(settings?.fontFamily) ||
+                                "ZillaSlab",
                               fontSize: responsiveFontSize(
                                 settings?.fontSize || 22,
                               ),

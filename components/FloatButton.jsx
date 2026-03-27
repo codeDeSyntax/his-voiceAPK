@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   View,
   Animated,
@@ -8,7 +14,7 @@ import {
   Vibration,
   TouchableWithoutFeedback,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useAppContext } from "../Logic/globalState";
@@ -60,7 +66,9 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
   }, []);
 
   const savePosition = useCallback((x, y) => {
-    AsyncStorage.setItem(POSITION_KEY, JSON.stringify({ x, y })).catch(() => {});
+    AsyncStorage.setItem(POSITION_KEY, JSON.stringify({ x, y })).catch(
+      () => {},
+    );
   }, []);
 
   const resetIdleTimer = useCallback(() => {
@@ -147,9 +155,7 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
           safeAreaBounds.top,
         );
         const snapX =
-          pan.x._value < width / 2
-            ? safeAreaBounds.left
-            : safeAreaBounds.right;
+          pan.x._value < width / 2 ? safeAreaBounds.left : safeAreaBounds.right;
 
         Animated.spring(pan, {
           toValue: { x: snapX, y: newY },
@@ -193,9 +199,7 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
   const innerBorder = dark
     ? "rgba(242, 205, 180, 0.25)"
     : "rgba(255, 255, 255, 0.7)";
-  const iconColor = dark
-    ? "rgba(242, 205, 180, 0.8)"
-    : "rgba(93, 50, 17, 0.6)";
+  const iconColor = dark ? "rgba(242, 205, 180, 0.8)" : "rgba(93, 50, 17, 0.6)";
 
   return (
     <Animated.View
@@ -238,7 +242,11 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
               justifyContent: "center",
             }}
           >
-            <Ionicons name="chevron-back" size={20} color={iconColor} />
+            <MaterialCommunityIcons
+              name="backburger"
+              size={20}
+              color={iconColor}
+            />
           </View>
         </Animated.View>
       </TouchableWithoutFeedback>
