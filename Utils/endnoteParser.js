@@ -35,7 +35,7 @@ export const parseEndnote = (fullText) => {
  * @returns {Object} Parsed endnote with { datecode, title, paragraph, quote }
  */
 const parseEndnoteContent = (endnoteContent) => {
-  console.log("[Parser] Parsing endnote content:", endnoteContent);
+  if (__DEV__) console.log("[Parser] Parsing endnote content:", endnoteContent);
 
   // Parse: DateCode - Title William Marrion Branham ParagraphNumber QUOTE
   // Example: "56-0527 - At Kadesh-Barnea William Marrion Branham 130 THE PEOPLE, AT..."
@@ -50,7 +50,7 @@ const parseEndnoteContent = (endnoteContent) => {
   if (dateMatch) {
     dateCode = dateMatch[1];
     remainder = remainder.substring(dateMatch[0].length);
-    console.log("[Parser] Found dateCode:", dateCode, "Remainder:", remainder);
+    if (__DEV__) console.log("[Parser] Found dateCode:", dateCode, "Remainder:", remainder);
   }
 
   // 2. Extract Title (text between start/datecode and "William [Marrion] Branham")
@@ -63,7 +63,7 @@ const parseEndnoteContent = (endnoteContent) => {
     remainder = remainder
       .substring(branhamIndex + branhamMatch[0].length)
       .trim();
-    console.log("[Parser] Found title:", title, "Remainder:", remainder);
+    if (__DEV__) console.log("[Parser] Found title:", title, "Remainder:", remainder);
   }
 
   // 3. Extract Paragraph Number (first number after "William Marrion Branham")
@@ -72,7 +72,7 @@ const parseEndnoteContent = (endnoteContent) => {
   if (paragraphMatch) {
     paragraph = paragraphMatch[1];
     remainder = remainder.substring(paragraphMatch[0].length).trim();
-    console.log(
+    if (__DEV__) console.log(
       "[Parser] Found paragraph:",
       paragraph,
       "Remainder:",
@@ -193,7 +193,7 @@ const parseEndnoteContent = (endnoteContent) => {
     .filter(Boolean)
     .join(" ");
 
-  console.log("[Parser] longQuote:", longQuote, "| keywords:", keywords);
+  if (__DEV__) console.log("[Parser] longQuote:", longQuote, "| keywords:", keywords);
 
   return {
     datecode: dateCode || null,

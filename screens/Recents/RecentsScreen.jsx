@@ -184,6 +184,7 @@ const RecentsScreen = () => {
           >
             No recent sermons
           </Text>
+          
           <Text
             style={{
               color: theme.dark ? theme.colors.text + "60" : "#5d321190",

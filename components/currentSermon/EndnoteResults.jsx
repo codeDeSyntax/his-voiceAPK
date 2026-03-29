@@ -369,6 +369,50 @@ const stripHtml = (html) =>
     .replace(/\s+/g, " ")
     .trim();
 
+// Split a section's Content into individual paragraphs by detecting
+// embedded paragraph numbers like "74 text... 75 text... 76 text..."
+// Returns array of { paraNum: "74", text: "text..." }
+const splitIntoParagraphs = (content) => {
+  if (!content) return [];
+  // Match paragraph numbers that appear at the start or after whitespace.
+  // A paragraph number is 1-4 digits, followed by a space and then a letter or quote.
+  const parts = content.split(/(?:^|\s)(?=(\d{1,4})\s+(?=[A-Z"'\u201C\u201D\u2018\u2019]))/);
+
+  // Simple approach: scan for paragraph number boundaries
+  const re = /(?:^|(?<=\s))(\d{1,4})\s+/g;
+  const boundaries = [];
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    // Only treat as paragraph number if followed by uppercase letter or quote
+    const afterNum = content.charAt(m.index + m[0].length);
+    if (/[A-Z"'\u201C\u201D\u2018\u2019]/.test(afterNum)) {
+      boundaries.push({ index: m.index, num: m[1], contentStart: m.index + m[0].length });
+    }
+  }
+
+  if (boundaries.length === 0) {
+    return [{ paraNum: null, text: content }];
+  }
+
+  const result = [];
+  // Text before the first paragraph number (if any)
+  if (boundaries[0].index > 0) {
+    const pre = content.slice(0, boundaries[0].index).trim();
+    if (pre) result.push({ paraNum: null, text: pre });
+  }
+
+  for (let i = 0; i < boundaries.length; i++) {
+    const start = boundaries[i].contentStart;
+    const end = i + 1 < boundaries.length ? boundaries[i + 1].index : content.length;
+    const text = content.slice(start, end).trim();
+    if (text) {
+      result.push({ paraNum: boundaries[i].num, text });
+    }
+  }
+
+  return result;
+};
+
 // ── Parse paragraph range from API (e.g., "25-30" or "130") ───────────────
 const parseParagraphRange = (paragraphStr) => {
   if (!paragraphStr) return { start: 0, end: 0 };
@@ -453,49 +497,60 @@ const ResultItem = ({
       : null;
 
     if (sections && sections.length > 0 && !sermonContent.failed) {
-      // Find the earliest and latest match paragraph numbers from search results
+      // Find the earliest match paragraph number from search results
       const allMatchStarts = paragraphRanges
         .map((r) => r.start)
         .filter((s) => s > 0);
-      const allMatchEnds = paragraphRanges
-        .map((r) => r.end)
-        .filter((e) => e > 0);
 
       if (allMatchStarts.length === 0 && !targetParagraph) return [];
 
-      const anchor = targetParagraph || Math.max(...allMatchEnds);
+      // Prefer the actual search-result paragraph range as anchor (API numbering)
+      const anchor =
+        allMatchStarts.length > 0
+          ? Math.min(...allMatchStarts)
+          : targetParagraph;
 
       const postContext = isBestMatch ? 50 : 25;
-      const windowStart = anchor - 3;
+      const windowStart = anchor - 1;
       const windowEnd = anchor + postContext;
 
-      // Filter sections whose paragraph RANGE overlaps [anchor-3 .. anchor+postContext].
-      // Sections use ranges like "303-308" so we must check overlap, not just start point.
-      return sections
-        .filter((s) => {
-          const r = parseParagraphRange(s.Paragraph);
-          return r.end >= windowStart && r.start <= windowEnd;
-        })
-        .map((s) => {
-          const r = parseParagraphRange(s.Paragraph);
+      // Split each section's content into individual paragraphs
+      const allParagraphs = [];
+      sections.forEach((s) => {
+        const r = parseParagraphRange(s.Paragraph);
+        // Quick skip if entire section is outside a generous range
+        if (r.end < windowStart - 5 || r.start > windowEnd) return;
+
+        const stripped = stripHtml(s.Content);
+        const subParas = splitIntoParagraphs(stripped);
+
+        subParas.forEach((sub, idx) => {
+          const subNum = sub.paraNum ? parseInt(sub.paraNum) : (subParas.length === 1 ? r.start : r.start + idx);
           const isMatch =
             s.IsHit ||
             paragraphRanges.some(
-              (range) => r.end >= range.start && r.start <= range.end,
+              (range) => subNum >= range.start && subNum <= range.end,
             );
-          return {
-            ...s,
-            Content: stripHtml(s.Content),
-            displayIndex: r.start,
+          allParagraphs.push({
+            Content: sub.text,
+            displayIndex: subNum,
+            paraNum: sub.paraNum,
             isMatch,
-          };
+            Paragraph: sub.paraNum || s.Paragraph,
+          });
         });
+      });
+
+      // Apply window filter on individual paragraphs (after splitting)
+      return allParagraphs.filter(
+        (p) => p.displayIndex >= windowStart && p.displayIndex <= windowEnd,
+      );
     }
 
     // Fallback: use fragments from search result items directly
     // Apply the same window so we don't show fragments from paragraph 1 onwards
     const anchor = targetParagraph || 0;
-    const windowStart = anchor > 0 ? anchor - 3 : 0;
+    const windowStart = anchor > 0 ? anchor - 1 : 0;
     const windowEnd = anchor > 0 ? anchor + (isBestMatch ? 50 : 25) : Infinity;
 
     return items
@@ -644,13 +699,18 @@ const ResultItem = ({
                 ]}
               >
                 {(() => {
-                  // Split leading paragraph number(s) from content text
-                  // e.g. "274 Six months..." → prefix="274 ", body="Six months..."
-                  const match = para.Content.match(/^(\d+(?:-\d+)?\s+)/);
-                  const prefix = match ? match[1] : null;
-                  const body = match
-                    ? para.Content.slice(match[1].length)
-                    : para.Content;
+                  // Use pre-split paraNum if available, else try leading number
+                  let prefix = para.paraNum ? `${para.paraNum} ` : null;
+                  let body = para.Content;
+
+                  if (!prefix) {
+                    const match = para.Content.match(/^(\d+(?:-\d+)?\s+)/);
+                    if (match) {
+                      prefix = match[1];
+                      body = para.Content.slice(match[1].length);
+                    }
+                  }
+
                   return (
                     <HighlightedText
                       text={body}
@@ -795,15 +855,15 @@ const EndnoteResults = ({
 
     // Check cache and loading state (use ref for synchronous check)
     if (sermonContents[cacheKey]) {
-      console.log("[EndnoteResults] Content already cached for:", cacheKey);
+      if (__DEV__) console.log("[EndnoteResults] Content already cached for:", cacheKey);
       return;
     }
     if (loadingRef.current[cacheKey]) {
-      console.log("[EndnoteResults] Already loading content for:", cacheKey);
+      if (__DEV__) console.log("[EndnoteResults] Already loading content for:", cacheKey);
       return;
     }
 
-    console.log("[EndnoteResults] Fetching content for:", cacheKey);
+    if (__DEV__) console.log("[EndnoteResults] Fetching content for:", cacheKey);
     loadingRef.current[cacheKey] = true; // Set synchronously
     setLoadingContents((prev) => ({ ...prev, [cacheKey]: true }));
 
@@ -813,7 +873,7 @@ const EndnoteResults = ({
         ? await resolveSermonNumericId(datecode)
         : null;
       const idToFetch = numericId ?? documentRecordId;
-      console.log(
+      if (__DEV__) console.log(
         "[EndnoteResults] Resolved ID:",
         idToFetch,
         "(datecode:",
@@ -825,7 +885,7 @@ const EndnoteResults = ({
         setSermonContents((prev) => ({ ...prev, [cacheKey]: content }));
       } else {
         // Mark as failed so we don't retry indefinitely
-        console.log(
+        if (__DEV__) console.log(
           "[EndnoteResults] Sermon content unavailable for:",
           cacheKey,
         );

@@ -69,7 +69,7 @@ const getSermonIndexMap = async () => {
   if (sermonIndexFetchPromise) return sermonIndexFetchPromise;
 
   sermonIndexFetchPromise = (async () => {
-    console.log("[Sermon API] Fetching sermon index...");
+    if (__DEV__) console.log("[Sermon API] Fetching sermon index...");
     const response = await fetch(`${API_BASE_URL}/index/allSermons`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -81,7 +81,7 @@ const getSermonIndexMap = async () => {
     (data?.Result?.Sermons || data?.Sermons || []).forEach((s) => {
       if (s.p && s.i != null) map.set(s.p, s.i);
     });
-    console.log(`[Sermon API] Sermon index loaded: ${map.size} entries`);
+    if (__DEV__) console.log(`[Sermon API] Sermon index loaded: ${map.size} entries`);
     sermonIndexMap = map;
     sermonIndexFetchPromise = null;
     return map;
@@ -120,7 +120,7 @@ export const getSermonContent = async (sermonId) => {
     throw new Error("Sermon ID is required");
   }
 
-  console.log("[Sermon API] Fetching sermon content for ID:", sermonId);
+  if (__DEV__) console.log("[Sermon API] Fetching sermon content for ID:", sermonId);
 
   // If sermonId is numeric use SermonProductIdentityId; if it's a string
   // DocumentRecordId (e.g. "620B0009") use SermonRecordId instead.
@@ -157,10 +157,10 @@ export const getSermonContent = async (sermonId) => {
     const data = await response.json();
 
     if (data?.Status === "Successful") {
-      console.log("[Sermon API] Successfully fetched sermon content");
+      if (__DEV__) console.log("[Sermon API] Successfully fetched sermon content");
       return data.Result;
     } else {
-      console.log(
+      if (__DEV__) console.log(
         "[Sermon API] API returned non-success status:",
         data?.Status,
       );
@@ -232,11 +232,11 @@ export const searchByParagraphReference = async (endnoteData) => {
   const { datecode, title, paragraph } = endnoteData;
 
   if (!datecode && !title) {
-    console.log("[Endnote API] No datecode or title for paragraph search");
+    if (__DEV__) console.log("[Endnote API] No datecode or title for paragraph search");
     throw new Error("Datecode or title is required for paragraph search");
   }
 
-  console.log("[Endnote API] Searching by paragraph reference:", {
+  if (__DEV__) console.log("[Endnote API] Searching by paragraph reference:", {
     datecode,
     title,
     paragraph,
@@ -251,7 +251,7 @@ export const searchByParagraphReference = async (endnoteData) => {
     });
 
     const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
-    console.log(
+    if (__DEV__) console.log(
       "[Endnote API] Initial paragraph reference search - results found:",
       totalHits,
     );
@@ -290,14 +290,14 @@ export const searchByParagraphReference = async (endnoteData) => {
         return aPara - bPara;
       });
 
-      console.log(
+      if (__DEV__) console.log(
         `[Endnote API] Filtered to ${filteredResults.length} results near paragraph ${paragraph}`,
       );
 
       // If filtering resulted in no matches, return unfiltered results from the sermon
       // (better to show the whole sermon than nothing)
       if (filteredResults.length === 0) {
-        console.log(
+        if (__DEV__) console.log(
           "[Endnote API] No results after filtering, returning all sermon results",
         );
         return result;
@@ -350,7 +350,7 @@ export const searchEndnoteQuote = async (endnoteData, options = {}) => {
       ? longQuote || quote || "" // prefer 8-word form
       : keywords || quote || ""; // prefer key-words-only form
 
-  console.log("[Endnote API] Starting endnote search with:", {
+  if (__DEV__) console.log("[Endnote API] Starting endnote search with:", {
     queryText,
     searchType,
     datecode,
@@ -368,7 +368,7 @@ export const searchEndnoteQuote = async (endnoteData, options = {}) => {
   try {
     // Primary: Try searching by quote text
     if (queryText && queryText.trim().length >= 3) {
-      console.log(
+      if (__DEV__) console.log(
         "[Endnote API] Primary search - using queryText:",
         queryText,
         "with type:",
@@ -382,124 +382,35 @@ export const searchEndnoteQuote = async (endnoteData, options = {}) => {
         });
 
         const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
-        console.log("[Endnote API] Quote search results:", totalHits);
+        if (__DEV__) console.log("[Endnote API] Quote search results:", totalHits);
 
-        // If we got results, enhance with nearby context if we have paragraph info
+        // If we got results, return them directly (paragraph context disabled)
         if (totalHits > 0) {
-          // If we have datecode/title and paragraph, enhance with nearby context
-          if ((datecode || title) && paragraph) {
-            console.log(
-              "[Endnote API] Enhancing quote results with nearby context",
-            );
-            try {
-              const contextResult = await searchByParagraphReference({
-                datecode,
-                title,
-                paragraph,
-              });
-
-              // Separate quote matches into source sermon vs other sermons
-              const sourceSermonQuotes = [];
-              const otherSermonQuotes = [];
-
-              result.Result.Results.forEach((r) => {
-                const matchesSource =
-                  (datecode && r.Properties?.DateCode === datecode) ||
-                  (title &&
-                    r.Properties?.Title?.toLowerCase().includes(
-                      title.toLowerCase(),
-                    ));
-
-                if (matchesSource) {
-                  sourceSermonQuotes.push(r);
-                } else {
-                  otherSermonQuotes.push(r);
-                }
-              });
-
-              // Deduplicate: prioritize context results (already sorted with target first)
-              const contextIds = new Set(
-                contextResult.Result.Results.map((r) => r.RecordId),
-              );
-
-              // Get source sermon quotes that aren't already in context
-              const additionalSourceQuotes = sourceSermonQuotes.filter(
-                (r) => !contextIds.has(r.RecordId),
-              );
-
-              // Merge with priority: source sermon context (pre-sorted with target ¶ first) + additional source quotes + other sermon quotes
-              const enhancedResults = [
-                ...contextResult.Result.Results, // Already sorted: 53, 52, 54, 51, 55
-                ...additionalSourceQuotes,
-                ...otherSermonQuotes,
-              ];
-
-              console.log(
-                `[Endnote API] Enhanced: ${contextResult.Result.Results.length} source context (¶${paragraph} first), ${additionalSourceQuotes.length} source quotes, ${otherSermonQuotes.length} other quotes`,
-              );
-
-              return {
-                ...result,
-                Result: {
-                  ...result.Result,
-                  Results: enhancedResults,
-                  TotalHits: enhancedResults.length,
-                },
-                searchMethod: "quote_with_context",
-              };
-            } catch (contextError) {
-              console.log(
-                "[Endnote API] Could not enhance with context:",
-                contextError.message,
-              );
-              // Return original quote results if context enhancement fails
-              return { ...result, searchMethod: "quote" };
-            }
-          }
-
-          // Return quote results as-is if no paragraph info
           return { ...result, searchMethod: "quote" };
         }
 
-        console.log(
+        if (__DEV__) console.log(
           "[Endnote API] No results from quote search, trying fallback...",
         );
       } catch (quoteError) {
-        console.log("[Endnote API] Quote search failed:", quoteError.message);
+        if (__DEV__) console.log("[Endnote API] Quote search failed:", quoteError.message);
         if (isNetworkErr(quoteError)) lastNetworkError = quoteError;
       }
     }
 
-    // Fallback: Try searching by paragraph reference if we have datecode/title and paragraph
-    if ((datecode || title) && paragraph) {
-      console.log("[Endnote API] Fallback search - using paragraph reference");
-
-      try {
-        const result = await searchByParagraphReference({
-          datecode,
-          title,
-          paragraph,
-        });
-        const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
-
-        if (totalHits > 0) {
-          console.log(
-            "[Endnote API] Paragraph reference search successful:",
-            totalHits,
-          );
-          return { ...result, searchMethod: "paragraph_reference" };
-        }
-      } catch (paragraphError) {
-        console.log(
-          "[Endnote API] Paragraph reference search failed:",
-          paragraphError.message,
-        );
-        if (isNetworkErr(paragraphError)) lastNetworkError = paragraphError;
-      }
-    }
+    // Fallback: paragraph reference search — temporarily disabled
+    // if ((datecode || title) && paragraph) {
+    //   try {
+    //     const result = await searchByParagraphReference({ datecode, title, paragraph });
+    //     const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
+    //     if (totalHits > 0) return { ...result, searchMethod: "paragraph_reference" };
+    //   } catch (paragraphError) {
+    //     if (isNetworkErr(paragraphError)) lastNetworkError = paragraphError;
+    //   }
+    // }
 
     // If both methods failed, return empty results (or re-throw if it was a network error)
-    console.log(
+    if (__DEV__) console.log(
       "[Endnote API] All search methods exhausted, returning empty results",
     );
     if (lastNetworkError) {

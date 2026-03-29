@@ -263,7 +263,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
           setPaletteKey(stored);
         }
       } catch (error) {
-        console.warn("Failed to load endnote palette:", error);
+        if (__DEV__) console.warn("Failed to load endnote palette:", error);
       }
     };
     loadPalette();
@@ -275,7 +275,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
   // Persist palette whenever it changes
   useEffect(() => {
     AsyncStorage.setItem(ENDNOTE_THEME_KEY, paletteKey).catch((error) => {
-      console.warn("Failed to save endnote palette:", error);
+      if (__DEV__) console.warn("Failed to save endnote palette:", error);
     });
   }, [paletteKey]);
 
