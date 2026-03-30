@@ -139,7 +139,9 @@ const spinnerStyles = StyleSheet.create({
 
 const SermonSkeletonLoader = () => <Spinner />;
 
-const AudioSkeletonLoader = () => <Spinner />;
+const AudioSkeletonLoader = ({ backgroundColor }) => (
+  <Spinner backgroundColor={backgroundColor} />
+);
 
 const styles = StyleSheet.create({
   container: {

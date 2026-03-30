@@ -706,7 +706,7 @@ const CurrentSermon = React.memo(({ route }) => {
       >
         <DraggableFloatingButton />
 
-        <View style={[styles.container, { backgroundColor: "transparent" }]}>
+        <View style={[styles.container, { backgroundColor: "transparent" }, selectedSermon?.type === "mp3" && { paddingTop: 0 }]}>
           {selectedSermon?.type === "mp3" ? (
             <PlaySermon />
           ) : (

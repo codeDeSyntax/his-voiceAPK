@@ -1,21 +1,51 @@
-import React from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  StatusBar,
   SafeAreaView,
+  StatusBar,
+  Platform,
 } from "react-native";
 import { useAppContext } from "../../Logic/globalState";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import AudioPlayer from "./AudioPlayer";
-import { Ionicons } from "@expo/vector-icons";
+import AudioPlaylist from "./AudioPlaylist";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { responsiveFontSize } from "../../Utils/responsiveUtils";
 
 const PlaySermon = () => {
-  const { selectedSermon, theme } = useAppContext();
+  const { selectedSermon, setSelectedSermon, theme } = useAppContext();
   const navigation = useNavigation();
+  const [showPlaylist, setShowPlaylist] = useState(false);
+
+  // Use app theme colors
+  const bgColor = theme.colors.background;
+  const textColor = theme.dark ? "#f2cdb4" : "#5d3211";
+  const mutedColor = theme.dark ? "rgba(242,205,180,0.4)" : "rgba(93,50,17,0.4)";
+
+  const handleOpenPlaylist = useCallback(() => {
+    setShowPlaylist(true);
+  }, []);
+
+  const handleClosePlaylist = useCallback(() => {
+    setShowPlaylist(false);
+  }, []);
+
+  const handleSermonSelect = useCallback((sermon) => {
+    setSelectedSermon(sermon);
+  }, [setSelectedSermon]);
+
+  // Override native-stack hidden + force colors over the global AppStatusBar
+  useEffect(() => {
+    navigation.setOptions({ statusBarHidden: false });
+    StatusBar.setBarStyle("light-content");
+    if (Platform.OS === "android") {
+      StatusBar.setTranslucent(false);
+      StatusBar.setBackgroundColor(bgColor);
+    }
+  }, [bgColor, navigation]);
 
   if (!selectedSermon) {
     return (
@@ -36,10 +66,6 @@ const PlaySermon = () => {
   const downloadLink =
     selectedSermon.downloadLink || selectedSermon.audioUrl || "";
 
-  const isDark = theme.dark;
-  const accentColor = isDark ? "#f2cdb4" : "#5d3211";
-  const mutedColor = isDark ? "rgba(242,205,180,0.4)" : "rgba(93,50,17,0.4)";
-
   const handleBack = () => {
     const navigationState = navigation.getState();
     const canGoBack = navigationState && navigationState.index > 0;
@@ -53,12 +79,7 @@ const PlaySermon = () => {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <StatusBar
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={theme.colors.background}
-      />
-
+    <View style={[styles.root, { backgroundColor: "transparent" }]}>
       <SafeAreaView style={styles.safeArea}>
         {/* Top bar */}
         <View style={styles.topBar}>
@@ -68,7 +89,7 @@ const PlaySermon = () => {
             activeOpacity={0.65}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="chevron-back" size={24} color={accentColor} />
+            <Ionicons name="chevron-back" size={24} color={textColor} />
           </TouchableOpacity>
 
           <View style={styles.topCenter}>
@@ -76,24 +97,24 @@ const PlaySermon = () => {
               PLAYING NOW
             </Text>
             <Text
-              style={[styles.topTitle, { color: accentColor }]}
+              style={[styles.topTitle, { color: textColor }]}
               numberOfLines={2}
             >
-              {selectedSermon.title.slice(0,30)}
+              {selectedSermon.title.slice(0, 30)}
             </Text>
           </View>
 
-          {/* Menu icon balances the back button, mirrors the reference design */}
           <TouchableOpacity
             style={styles.menuBtn}
             activeOpacity={0.65}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={handleOpenPlaylist}
           >
-            <Ionicons name="menu" size={22} color={accentColor} />
+            <AntDesign name="align-left" size={22} color={textColor} />
           </TouchableOpacity>
         </View>
 
-        {/* Player — fills remaining height */}
+        {/* Player */}
         {downloadLink ? (
           <AudioPlayer
             audioUrl={downloadLink}
@@ -113,6 +134,14 @@ const PlaySermon = () => {
           </View>
         )}
       </SafeAreaView>
+
+      {/* Audio Playlist Modal */}
+      <AudioPlaylist
+        visible={showPlaylist}
+        onClose={handleClosePlaylist}
+        currentSermon={selectedSermon}
+        onSermonSelect={handleSermonSelect}
+      />
     </View>
   );
 };
@@ -129,7 +158,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 8 : 12,
+    paddingBottom: 12,
   },
   backBtn: {
     width: 40,
