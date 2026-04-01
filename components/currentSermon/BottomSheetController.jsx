@@ -24,7 +24,9 @@ const CustomTopCardController = ({
   onScrollToNext,
   onBookmarkPress,
   onHighlightPress,
+  isVisible = true,
 }) => {
+  if (!isVisible) return null;
   const navigation = useNavigation();
 
   const isDark = theme.dark;

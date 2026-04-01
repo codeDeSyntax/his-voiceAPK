@@ -405,7 +405,8 @@ const CurrentSermon = React.memo(({ route }) => {
   // near the target, then scrollToIndex for precision.
   const scrollToParagraph = useCallback(
     (index, animated = true) => {
-      if (!flatListRef.current || index < 0 || index >= paragraphs.length) return;
+      if (!flatListRef.current || index < 0 || index >= paragraphs.length)
+        return;
 
       // If target is far from what's likely rendered, do the two-step jump
       // (same strategy the initial-positioning effect uses for index >= 20).
@@ -468,21 +469,24 @@ const CurrentSermon = React.memo(({ route }) => {
   // Handle navigating to search result from fullscreen search.
   // For far paragraphs the FlatList is hidden behind the skeleton while
   // the jump happens, so the user never sees scroll jumps.
-  const handleSearchNavigateToResult = useCallback((paragraphIndex, phrase) => {
-    const isFarJump = Math.abs(paragraphIndex - currentVisibleParagraph) > 30;
+  const handleSearchNavigateToResult = useCallback(
+    (paragraphIndex, phrase) => {
+      const isFarJump = Math.abs(paragraphIndex - currentVisibleParagraph) > 30;
 
-    setIsSearchVisible(false);
-    setCurrentSearchPhrase(phrase || "");
-    setSearchNavKey((k) => k + 1);
+      setIsSearchVisible(false);
+      setCurrentSearchPhrase(phrase || "");
+      setSearchNavKey((k) => k + 1);
 
-    if (isFarJump) {
-      // Hide FlatList behind skeleton while we jump silently
-      isSearchJumping.current = true;
-      setIsPositioningComplete(false);
-    }
+      if (isFarJump) {
+        // Hide FlatList behind skeleton while we jump silently
+        isSearchJumping.current = true;
+        setIsPositioningComplete(false);
+      }
 
-    setPendingScrollTarget(paragraphIndex);
-  }, [currentVisibleParagraph]);
+      setPendingScrollTarget(paragraphIndex);
+    },
+    [currentVisibleParagraph],
+  );
 
   // Fire scroll AFTER the new phrase and extraData have been committed.
   // For far jumps the FlatList is hidden (opacity 0) behind the skeleton,
@@ -648,32 +652,29 @@ const CurrentSermon = React.memo(({ route }) => {
           style={{
             color: titleColor,
             fontFamily: "serif",
-            fontWeight:"600",
+            fontWeight: "600",
             // fontStyle:"italic",
             fontSize: titleSize,
-            lineHeight: titleSize * 1.20,
+            lineHeight: titleSize * 1.2,
             letterSpacing: 0.2,
             textAlign: "left",
-            
           }}
         >
           {selectedSermon?.title}
-         
-          {/* Meta line — date · location */}{"  "}
-        {metaLine ? (
-          <Text
-            style={{
-              color: metaColor,
-              fontFamily: "cursive",
-              
-            }}
-          >
-            {metaLine}
-          </Text>
-        ) : null}
-        </Text>
 
-        
+          {/* Meta line — date · location */}
+          {"  "}
+          {metaLine ? (
+            <Text
+              style={{
+                color: metaColor,
+                fontFamily: "cursive",
+              }}
+            >
+              {metaLine}
+            </Text>
+          ) : null}
+        </Text>
 
         {/* Clean horizontal rule */}
         <View
@@ -706,7 +707,13 @@ const CurrentSermon = React.memo(({ route }) => {
       >
         <DraggableFloatingButton />
 
-        <View style={[styles.container, { backgroundColor: "transparent" }, selectedSermon?.type === "mp3" && { paddingTop: 0 }]}>
+        <View
+          style={[
+            styles.container,
+            { backgroundColor: "transparent" },
+            selectedSermon?.type === "mp3" && { paddingTop: 0 },
+          ]}
+        >
           {selectedSermon?.type === "mp3" ? (
             <PlaySermon />
           ) : (
@@ -786,6 +793,7 @@ const CurrentSermon = React.memo(({ route }) => {
                 onOpenSearch={handleOpenSearch}
                 onBookmarkPress={handleOpenBookmarkSheet}
                 onHighlightPress={handleOpenHighlightSheet}
+                isVisible={isPositioningComplete}
               />
 
               <SearchFeedback
