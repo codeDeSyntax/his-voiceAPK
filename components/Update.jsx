@@ -7,99 +7,203 @@ import {
   StyleSheet,
   StatusBar,
   Dimensions,
-  Animated,
-  Image,
+  Linking,
 } from "react-native";
 import * as Updates from "expo-updates";
 import Constants from "expo-constants";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
+
+const RELEASE_CONFIG =
+  Constants.expoConfig?.extra?.releaseConfig ||
+  Constants.expoConfig?.extra?.updates ||
+  {};
+
+const GITHUB_OWNER = RELEASE_CONFIG.owner;
+const GITHUB_REPO = RELEASE_CONFIG.repo;
+const APK_ASSET_PATTERN = RELEASE_CONFIG.apkAssetPattern || ".apk";
+
+const normalizeVersion = (version) => String(version || "").replace(/^v/i, "");
+
+const compareSemver = (a, b) => {
+  const aParts = normalizeVersion(a)
+    .split(".")
+    .map((part) => parseInt(part, 10) || 0);
+  const bParts = normalizeVersion(b)
+    .split(".")
+    .map((part) => parseInt(part, 10) || 0);
+
+  const length = Math.max(aParts.length, bParts.length);
+  for (let index = 0; index < length; index += 1) {
+    const aValue = aParts[index] || 0;
+    const bValue = bParts[index] || 0;
+    if (aValue > bValue) return 1;
+    if (aValue < bValue) return -1;
+  }
+
+  return 0;
+};
+
+const detectMandatoryFlag = (body = "") => {
+  const normalizedBody = body.toLowerCase();
+  return (
+    normalizedBody.includes("mandatory: true") ||
+    normalizedBody.includes("mandatory=true") ||
+    normalizedBody.includes("#mandatory")
+  );
+};
 
 export default function UpdateScreen() {
-  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [updateType, setUpdateType] = useState(null);
+  const [releaseData, setReleaseData] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [isDownloaded, setIsDownloaded] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [progress] = useState(new Animated.Value(0));
+  const [isApplyingOta, setIsApplyingOta] = useState(false);
+  const [isOpeningApk, setIsOpeningApk] = useState(false);
 
   useEffect(() => {
-    checkForOTAUpdate();
-    // Animate progress bar for visual effect
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: 2000,
-      useNativeDriver: false,
-    }).start();
-
-    // 🧪 FOR TESTING UPDATE UI IN DEVELOPMENT:
-    // Uncomment the line below to test the update screen in Expo Go
-    // setTimeout(() => showUpdateModalForTesting(), 1000);
+    checkForAnyUpdate();
   }, []);
 
   const checkForOTAUpdate = async () => {
     try {
-      // Check if we're running in Expo Go (development)
       if (__DEV__ || !Updates.isEnabled) {
-        console.log(
-          "Running in development mode or Expo Go - Updates not supported",
-        );
-        return;
+        return { available: false };
       }
 
-      console.log("Checking for updates...");
       const update = await Updates.checkForUpdateAsync();
-      console.log("Update check result:", update);
-
-      if (update.isAvailable) {
-        // Only notify the user — do NOT download yet.
-        // Downloading here would cause Expo to stage the update and apply it
-        // on next launch even if the user taps "Later".
-        console.log("Update available — showing prompt (not yet downloaded)");
-        setUpdateAvailable(true);
-        setModalVisible(true);
-      } else {
-        console.log("No update available");
-      }
+      return { available: update.isAvailable };
     } catch (error) {
-      console.error("Update check failed:", error);
+      console.error("OTA update check failed:", error);
+      return { available: false };
+    }
+  };
+
+  const checkForGithubReleaseUpdate = async () => {
+    try {
+      if (!GITHUB_OWNER || !GITHUB_REPO) {
+        return { available: false };
+      }
+
+      const endpoint = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+      const response = await fetch(endpoint, {
+        headers: {
+          Accept: "application/vnd.github+json",
+        },
+      });
+
+      if (!response.ok) {
+        console.log(
+          "GitHub release check skipped with status",
+          response.status,
+        );
+        return { available: false };
+      }
+
+      const latestRelease = await response.json();
+      const currentVersion = normalizeVersion(Constants.expoConfig?.version);
+      const latestVersion = normalizeVersion(latestRelease?.tag_name);
+
+      if (!latestVersion || compareSemver(latestVersion, currentVersion) <= 0) {
+        return { available: false };
+      }
+
+      const apkAsset = (latestRelease.assets || []).find((asset) =>
+        String(asset.name || "")
+          .toLowerCase()
+          .includes(APK_ASSET_PATTERN.toLowerCase()),
+      );
+
+      const apkUrl = apkAsset?.browser_download_url;
+      if (!apkUrl) {
+        return { available: false };
+      }
+
+      return {
+        available: true,
+        data: {
+          latestVersion,
+          currentVersion,
+          apkUrl,
+          releaseName: latestRelease?.name || latestRelease?.tag_name,
+          mandatory: detectMandatoryFlag(latestRelease?.body),
+        },
+      };
+    } catch (error) {
+      console.error("GitHub release check failed:", error);
+      return { available: false };
+    }
+  };
+
+  const checkForAnyUpdate = async () => {
+    const [otaResult, releaseResult] = await Promise.all([
+      checkForOTAUpdate(),
+      checkForGithubReleaseUpdate(),
+    ]);
+
+    // Native build update takes priority if both exist.
+    if (releaseResult.available) {
+      setReleaseData(releaseResult.data);
+      setUpdateType("apk");
+      setModalVisible(true);
+      return;
+    }
+
+    if (otaResult.available) {
+      setUpdateType("ota");
+      setModalVisible(true);
     }
   };
 
   const handleUpdate = async () => {
     try {
-      if (__DEV__ || !Updates.isEnabled) {
-        console.log("In development mode - would restart app in production");
+      if (updateType === "apk") {
+        if (!releaseData?.apkUrl) {
+          return;
+        }
+
+        setIsOpeningApk(true);
+        await Linking.openURL(releaseData.apkUrl);
+        setIsOpeningApk(false);
         setModalVisible(false);
         return;
       }
 
-      // Download NOW (only when user explicitly chose to update)
-      setIsDownloading(true);
-      console.log("User confirmed update — downloading...");
-      await Updates.fetchUpdateAsync();
-      setIsDownloaded(true);
-      setIsDownloading(false);
-      console.log("Downloaded — reloading app...");
+      if (__DEV__ || !Updates.isEnabled) {
+        setModalVisible(false);
+        return;
+      }
 
+      setIsApplyingOta(true);
+      await Updates.fetchUpdateAsync();
       setModalVisible(false);
+      setIsApplyingOta(false);
+
       setTimeout(async () => {
         await Updates.reloadAsync();
       }, 100);
     } catch (error) {
       console.error("Error applying update:", error);
-      setIsDownloading(false);
+      setIsApplyingOta(false);
+      setIsOpeningApk(false);
       setModalVisible(false);
     }
   };
 
-  // For testing purposes - you can call this manually to see the update UI
-  const showUpdateModalForTesting = () => {
-    console.log("🧪 Showing update modal for testing purposes");
-    setModalVisible(true);
-    setUpdateAvailable(true);
-    setIsDownloaded(true);
-  };
+  const isBusy = isApplyingOta || isOpeningApk;
+
+  const isApkUpdate = updateType === "apk";
+  const titleText = isApkUpdate ? "New Build Available" : "Update Available";
+  const bodyText = isApkUpdate
+    ? `A newer APK (${releaseData?.latestVersion}) is available. Download and install to continue on the latest build.`
+    : "An over-the-air update is available. Apply now to restart with the latest fixes.";
+  const primaryText = isApkUpdate
+    ? isOpeningApk
+      ? "[ OPENING DOWNLOAD... ]"
+      : "[ DOWNLOAD APK ]"
+    : isApplyingOta
+      ? "[ APPLYING UPDATE... ]"
+      : "[ UPDATE NOW ]";
 
   return (
     <Modal
@@ -115,44 +219,56 @@ export default function UpdateScreen() {
         translucent={true}
       />
       <View style={styles.fullScreenContainer}>
-        {/* Simple Update Message */}
         <View>
-          <Text style={styles.message}>
-            Update Available.{"\n"}RESTART TO APPLY UPDATE?
-          </Text>
+          <Text style={styles.title}>{titleText}</Text>
+          <Text style={styles.message}>{bodyText}</Text>
         </View>
 
-        {/* App icon image */}
         <View style={{ alignItems: "center", marginBottom: 20 }}>
-          <MaterialIcons name="cloud" size={200} color="#7e5619" />
+          <MaterialIcons
+            name={isApkUpdate ? "system-update-alt" : "cloud-download"}
+            size={160}
+            color="#7e5619"
+          />
         </View>
-        {/* Action Buttons */}
+
+        {isApkUpdate && releaseData?.releaseName ? (
+          <Text style={styles.releaseText}>{releaseData.releaseName}</Text>
+        ) : null}
+
+        {isApkUpdate && releaseData?.mandatory ? (
+          <Text style={styles.mandatoryText}>
+            This build is marked mandatory.
+          </Text>
+        ) : null}
+
         <View style={styles.actionSection}>
           <TouchableOpacity
-            style={[styles.primaryButton, isDownloading && { opacity: 0.7 }]}
+            style={[styles.primaryButton, isBusy && { opacity: 0.7 }]}
             onPress={handleUpdate}
-            disabled={isDownloading}
+            disabled={isBusy}
           >
             <MaterialIcons
-              name={isDownloading ? "cloud-download" : "refresh"}
+              name={isApkUpdate ? "download" : "refresh"}
               size={24}
               color="#000000"
             />
-            <Text style={styles.primaryButtonText}>
-              {isDownloading ? "[ DOWNLOADING... ]" : "[ RESTART NOW ]"}
-            </Text>
+            <Text style={styles.primaryButtonText}>{primaryText}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.secondaryButton, isDownloading && { opacity: 0.4 }]}
-            onPress={() => !isDownloading && setModalVisible(false)}
-            disabled={isDownloading}
+            style={[styles.secondaryButton, isBusy && { opacity: 0.4 }]}
+            onPress={() => !isBusy && setModalVisible(false)}
+            disabled={isBusy || (isApkUpdate && releaseData?.mandatory)}
           >
-            <Text style={styles.secondaryButtonText}>[ LATER ]</Text>
+            <Text style={styles.secondaryButtonText}>
+              {isApkUpdate && releaseData?.mandatory
+                ? "[ UPDATE REQUIRED ]"
+                : "[ LATER ]"}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             His Voice APK • Version {Constants.expoConfig?.version || "1.0.0"}
@@ -201,6 +317,23 @@ const styles = StyleSheet.create({
     fontFamily: "ZillaSlab-Regular",
     letterSpacing: 1,
     paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  releaseText: {
+    color: "#D4AF37",
+    textAlign: "center",
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: 14,
+    letterSpacing: 0.7,
+    marginBottom: 8,
+  },
+  mandatoryText: {
+    color: "#ffcf8a",
+    textAlign: "center",
+    fontFamily: "ZillaSlab-Regular",
+    fontSize: 13,
+    letterSpacing: 0.4,
+    marginBottom: 16,
   },
   actionSection: {
     paddingHorizontal: 30,

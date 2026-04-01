@@ -55,11 +55,16 @@
     "extra": {
       "eas": {
         "projectId": "98a8ca1a-9cc8-4bd9-a298-1e494016c59c"
+      },
+      "releaseConfig": {
+        "owner": "codeDeSyntax",
+        "repo": "his-voiceAPK",
+        "apkAssetPattern": ".apk"
       }
     },
     "owner": "josiah-ok",
     "runtimeVersion": {
-      "policy": "sdkVersion"
+      "policy": "appVersion"
     }
   }
 }
