@@ -376,7 +376,9 @@ const splitIntoParagraphs = (content) => {
   if (!content) return [];
   // Match paragraph numbers that appear at the start or after whitespace.
   // A paragraph number is 1-4 digits, followed by a space and then a letter or quote.
-  const parts = content.split(/(?:^|\s)(?=(\d{1,4})\s+(?=[A-Z"'\u201C\u201D\u2018\u2019]))/);
+  const parts = content.split(
+    /(?:^|\s)(?=(\d{1,4})\s+(?=[A-Z"'\u201C\u201D\u2018\u2019]))/,
+  );
 
   // Simple approach: scan for paragraph number boundaries
   const re = /(?:^|(?<=\s))(\d{1,4})\s+/g;
@@ -386,7 +388,11 @@ const splitIntoParagraphs = (content) => {
     // Only treat as paragraph number if followed by uppercase letter or quote
     const afterNum = content.charAt(m.index + m[0].length);
     if (/[A-Z"'\u201C\u201D\u2018\u2019]/.test(afterNum)) {
-      boundaries.push({ index: m.index, num: m[1], contentStart: m.index + m[0].length });
+      boundaries.push({
+        index: m.index,
+        num: m[1],
+        contentStart: m.index + m[0].length,
+      });
     }
   }
 
@@ -403,7 +409,8 @@ const splitIntoParagraphs = (content) => {
 
   for (let i = 0; i < boundaries.length; i++) {
     const start = boundaries[i].contentStart;
-    const end = i + 1 < boundaries.length ? boundaries[i + 1].index : content.length;
+    const end =
+      i + 1 < boundaries.length ? boundaries[i + 1].index : content.length;
     const text = content.slice(start, end).trim();
     if (text) {
       result.push({ paraNum: boundaries[i].num, text });
@@ -525,7 +532,11 @@ const ResultItem = ({
         const subParas = splitIntoParagraphs(stripped);
 
         subParas.forEach((sub, idx) => {
-          const subNum = sub.paraNum ? parseInt(sub.paraNum) : (subParas.length === 1 ? r.start : r.start + idx);
+          const subNum = sub.paraNum
+            ? parseInt(sub.paraNum)
+            : subParas.length === 1
+              ? r.start
+              : r.start + idx;
           const isMatch =
             s.IsHit ||
             paragraphRanges.some(
@@ -769,6 +780,7 @@ const EndnoteResults = ({
   onClose,
   endnoteData,
   searchResults,
+  activeSearchType = "ExactPhrase",
   theme,
   endnotePalette,
   isLoading,
@@ -781,12 +793,17 @@ const EndnoteResults = ({
   const [sermonContents, setSermonContents] = useState({}); // Cache by RecordId
   const [loadingContents, setLoadingContents] = useState({});
   const loadingRef = useRef({}); // Track loading state synchronously to prevent duplicate fetches
-  const [searchType, setSearchType] = useState("ExactPhrase"); // ExactPhrase or AllWords
+  const [searchType, setSearchType] = useState(activeSearchType); // ExactPhrase or AllWords
 
   const palette = endnotePalette || getFallbackPalette(theme);
   const isDark = palette.isDark;
   const accentColor = palette.accent;
   const subtleText = palette.mutedText;
+
+  // Keep local tab state aligned with the search type source of truth in parent.
+  useEffect(() => {
+    setSearchType(activeSearchType || "ExactPhrase");
+  }, [activeSearchType]);
 
   // Toggle search type and retry search
   const handleToggleSearchType = useCallback(() => {
@@ -855,15 +872,18 @@ const EndnoteResults = ({
 
     // Check cache and loading state (use ref for synchronous check)
     if (sermonContents[cacheKey]) {
-      if (__DEV__) console.log("[EndnoteResults] Content already cached for:", cacheKey);
+      if (__DEV__)
+        console.log("[EndnoteResults] Content already cached for:", cacheKey);
       return;
     }
     if (loadingRef.current[cacheKey]) {
-      if (__DEV__) console.log("[EndnoteResults] Already loading content for:", cacheKey);
+      if (__DEV__)
+        console.log("[EndnoteResults] Already loading content for:", cacheKey);
       return;
     }
 
-    if (__DEV__) console.log("[EndnoteResults] Fetching content for:", cacheKey);
+    if (__DEV__)
+      console.log("[EndnoteResults] Fetching content for:", cacheKey);
     loadingRef.current[cacheKey] = true; // Set synchronously
     setLoadingContents((prev) => ({ ...prev, [cacheKey]: true }));
 
@@ -873,22 +893,24 @@ const EndnoteResults = ({
         ? await resolveSermonNumericId(datecode)
         : null;
       const idToFetch = numericId ?? documentRecordId;
-      if (__DEV__) console.log(
-        "[EndnoteResults] Resolved ID:",
-        idToFetch,
-        "(datecode:",
-        datecode,
-        ")",
-      );
+      if (__DEV__)
+        console.log(
+          "[EndnoteResults] Resolved ID:",
+          idToFetch,
+          "(datecode:",
+          datecode,
+          ")",
+        );
       const content = await getSermonContent(idToFetch);
       if (content) {
         setSermonContents((prev) => ({ ...prev, [cacheKey]: content }));
       } else {
         // Mark as failed so we don't retry indefinitely
-        if (__DEV__) console.log(
-          "[EndnoteResults] Sermon content unavailable for:",
-          cacheKey,
-        );
+        if (__DEV__)
+          console.log(
+            "[EndnoteResults] Sermon content unavailable for:",
+            cacheKey,
+          );
         setSermonContents((prev) => ({
           ...prev,
           [cacheKey]: { failed: true },
@@ -964,9 +986,9 @@ const EndnoteResults = ({
               styles.endnoteBar,
               {
                 backgroundColor: palette.accentSoft,
-                borderRadius: 20,
+                // borderRadius: 20,
                 // borderBottomColor: palette.divider,
-                marginHorizontal:10
+                // marginHorizontal: 10,
               },
             ]}
           >
@@ -1016,7 +1038,7 @@ const EndnoteResults = ({
                   styles.segmentedToggle,
                   {
                     backgroundColor: isDark
-                      ? "rgba(20, 33, 57, 0.85)"
+                      ? "rgba(64, 65, 66, 0.85)"
                       : "rgba(255,255,255,0.85)",
                     borderColor: isDark
                       ? "rgba(255,255,255,0.12)"
@@ -1073,7 +1095,7 @@ const EndnoteResults = ({
                           shadowOffset: { width: 0, height: 1 },
                           shadowOpacity: 0.3,
                           shadowRadius: 3,
-                          elevation: 3,
+                          // elevation: 3,
                         },
                       ]}
                       disabled={isLoading}
@@ -1109,9 +1131,9 @@ const EndnoteResults = ({
                   },
                   { color: subtleText },
                 ]}
-                numberOfLines={2}
+                numberOfLines={1}
               >
-                "{endnoteData.quote}"
+                {endnoteData.quote}”
               </Text>
             )}
           </View>
@@ -1164,7 +1186,7 @@ const EndnoteResults = ({
         ) : (
           <ScrollView
             style={styles.resultsContainer}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
             showsVerticalScrollIndicator={false}
           >
             {groupedResults.map((group, index) => {
@@ -1264,7 +1286,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 6,
     paddingBottom: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  
   },
   endnoteMeta: {
     flexDirection: "row",
@@ -1298,20 +1320,18 @@ const styles = StyleSheet.create({
   },
   resultItem: {
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 4,
   },
   resultHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    
   },
   resultMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     flex: 1,
-    
   },
   datePill: {
     paddingHorizontal: 8,

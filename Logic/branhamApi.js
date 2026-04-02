@@ -81,7 +81,8 @@ const getSermonIndexMap = async () => {
     (data?.Result?.Sermons || data?.Sermons || []).forEach((s) => {
       if (s.p && s.i != null) map.set(s.p, s.i);
     });
-    if (__DEV__) console.log(`[Sermon API] Sermon index loaded: ${map.size} entries`);
+    if (__DEV__)
+      console.log(`[Sermon API] Sermon index loaded: ${map.size} entries`);
     sermonIndexMap = map;
     sermonIndexFetchPromise = null;
     return map;
@@ -120,7 +121,8 @@ export const getSermonContent = async (sermonId) => {
     throw new Error("Sermon ID is required");
   }
 
-  if (__DEV__) console.log("[Sermon API] Fetching sermon content for ID:", sermonId);
+  if (__DEV__)
+    console.log("[Sermon API] Fetching sermon content for ID:", sermonId);
 
   // If sermonId is numeric use SermonProductIdentityId; if it's a string
   // DocumentRecordId (e.g. "620B0009") use SermonRecordId instead.
@@ -157,13 +159,15 @@ export const getSermonContent = async (sermonId) => {
     const data = await response.json();
 
     if (data?.Status === "Successful") {
-      if (__DEV__) console.log("[Sermon API] Successfully fetched sermon content");
+      if (__DEV__)
+        console.log("[Sermon API] Successfully fetched sermon content");
       return data.Result;
     } else {
-      if (__DEV__) console.log(
-        "[Sermon API] API returned non-success status:",
-        data?.Status,
-      );
+      if (__DEV__)
+        console.log(
+          "[Sermon API] API returned non-success status:",
+          data?.Status,
+        );
       return null;
     }
   } catch (error) {
@@ -232,15 +236,17 @@ export const searchByParagraphReference = async (endnoteData) => {
   const { datecode, title, paragraph } = endnoteData;
 
   if (!datecode && !title) {
-    if (__DEV__) console.log("[Endnote API] No datecode or title for paragraph search");
+    if (__DEV__)
+      console.log("[Endnote API] No datecode or title for paragraph search");
     throw new Error("Datecode or title is required for paragraph search");
   }
 
-  if (__DEV__) console.log("[Endnote API] Searching by paragraph reference:", {
-    datecode,
-    title,
-    paragraph,
-  });
+  if (__DEV__)
+    console.log("[Endnote API] Searching by paragraph reference:", {
+      datecode,
+      title,
+      paragraph,
+    });
 
   try {
     // Search using datecode or title to narrow down to the specific sermon
@@ -251,10 +257,11 @@ export const searchByParagraphReference = async (endnoteData) => {
     });
 
     const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
-    if (__DEV__) console.log(
-      "[Endnote API] Initial paragraph reference search - results found:",
-      totalHits,
-    );
+    if (__DEV__)
+      console.log(
+        "[Endnote API] Initial paragraph reference search - results found:",
+        totalHits,
+      );
 
     // If we have a paragraph number, filter results to only those matching or near it
     if (paragraph && result?.Result?.Results) {
@@ -290,16 +297,18 @@ export const searchByParagraphReference = async (endnoteData) => {
         return aPara - bPara;
       });
 
-      if (__DEV__) console.log(
-        `[Endnote API] Filtered to ${filteredResults.length} results near paragraph ${paragraph}`,
-      );
+      if (__DEV__)
+        console.log(
+          `[Endnote API] Filtered to ${filteredResults.length} results near paragraph ${paragraph}`,
+        );
 
       // If filtering resulted in no matches, return unfiltered results from the sermon
       // (better to show the whole sermon than nothing)
       if (filteredResults.length === 0) {
-        if (__DEV__) console.log(
-          "[Endnote API] No results after filtering, returning all sermon results",
-        );
+        if (__DEV__)
+          console.log(
+            "[Endnote API] No results after filtering, returning all sermon results",
+          );
         return result;
       }
 
@@ -342,21 +351,44 @@ export const searchEndnoteQuote = async (endnoteData, options = {}) => {
     endnoteData;
   const { searchType = "ExactPhrase" } = options;
 
+  const normalizeQuery = (text) => {
+    if (!text) return "";
+    return String(text)
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, "-")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const buildQueryVariants = (text) => {
+    const normalized = normalizeQuery(text);
+    if (!normalized) return [];
+
+    const variants = new Set([normalized]);
+    // Branham API content can vary between apostrophe forms.
+    variants.add(normalized.replace(/'/g, "\u2019"));
+    variants.add(normalized.replace(/\u2019/g, "'"));
+    return [...variants].filter((item) => item.length >= 3);
+  };
+
   // Choose the right query text based on search mode:
   //   ExactPhrase → use the longer quote (8 words) for a tighter, more meaningful match
   //   AllWords    → use keyword-only text (no stop words) for a broader match
-  const queryText =
+  const queryTextRaw =
     searchType === "ExactPhrase"
       ? longQuote || quote || "" // prefer 8-word form
       : keywords || quote || ""; // prefer key-words-only form
+  const queryText = normalizeQuery(queryTextRaw);
 
-  if (__DEV__) console.log("[Endnote API] Starting endnote search with:", {
-    queryText,
-    searchType,
-    datecode,
-    title,
-    paragraph,
-  });
+  if (__DEV__)
+    console.log("[Endnote API] Starting endnote search with:", {
+      queryText,
+      searchType,
+      datecode,
+      title,
+      paragraph,
+    });
 
   const isNetworkErr = (e) =>
     e instanceof TypeError ||
@@ -366,53 +398,94 @@ export const searchEndnoteQuote = async (endnoteData, options = {}) => {
   let lastNetworkError = null;
 
   try {
-    // Primary: Try searching by quote text
-    if (queryText && queryText.trim().length >= 3) {
-      if (__DEV__) console.log(
-        "[Endnote API] Primary search - using queryText:",
-        queryText,
-        "with type:",
-        searchType,
-      );
+    // Primary: Try searching by quote text (with normalized variants)
+    if (queryText && queryText.length >= 3) {
+      if (__DEV__)
+        console.log(
+          "[Endnote API] Primary search - using queryText:",
+          queryText,
+          "with type:",
+          searchType,
+        );
 
       try {
-        const result = await searchSermons(queryText, {
-          searchType,
-          pageSize: 50,
-        });
+        const variants = buildQueryVariants(queryText);
+        for (const variant of variants) {
+          const result = await searchSermons(variant, {
+            searchType,
+            pageSize: 50,
+          });
 
-        const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
-        if (__DEV__) console.log("[Endnote API] Quote search results:", totalHits);
+          const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
+          if (__DEV__) {
+            console.log(
+              "[Endnote API] Quote search results:",
+              totalHits,
+              "for variant:",
+              variant,
+            );
+          }
 
-        // If we got results, return them directly (paragraph context disabled)
-        if (totalHits > 0) {
-          return { ...result, searchMethod: "quote" };
+          if (totalHits > 0) {
+            return { ...result, searchMethod: "quote" };
+          }
         }
 
-        if (__DEV__) console.log(
-          "[Endnote API] No results from quote search, trying fallback...",
-        );
+        if (__DEV__)
+          console.log(
+            "[Endnote API] No results from quote search, trying fallback...",
+          );
       } catch (quoteError) {
-        if (__DEV__) console.log("[Endnote API] Quote search failed:", quoteError.message);
+        if (__DEV__)
+          console.log("[Endnote API] Quote search failed:", quoteError.message);
         if (isNetworkErr(quoteError)) lastNetworkError = quoteError;
       }
     }
 
-    // Fallback: paragraph reference search — temporarily disabled
-    // if ((datecode || title) && paragraph) {
-    //   try {
-    //     const result = await searchByParagraphReference({ datecode, title, paragraph });
-    //     const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
-    //     if (totalHits > 0) return { ...result, searchMethod: "paragraph_reference" };
-    //   } catch (paragraphError) {
-    //     if (isNetworkErr(paragraphError)) lastNetworkError = paragraphError;
-    //   }
-    // }
+    // Fallback 1: if ExactPhrase misses, try AllWords automatically.
+    if (searchType === "ExactPhrase") {
+      try {
+        const allWordsQuery = normalizeQuery(keywords || quote || queryText);
+        if (allWordsQuery && allWordsQuery.length >= 3) {
+          const result = await searchSermons(allWordsQuery, {
+            searchType: "AllWords",
+            pageSize: 50,
+          });
+          const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
+          if (__DEV__) {
+            console.log("[Endnote API] AllWords fallback results:", totalHits);
+          }
+          if (totalHits > 0) {
+            return { ...result, searchMethod: "quote_fallback_all_words" };
+          }
+        }
+      } catch (allWordsError) {
+        if (isNetworkErr(allWordsError)) lastNetworkError = allWordsError;
+      }
+    }
+
+    // Fallback 2: paragraph reference search
+    if ((datecode || title) && paragraph) {
+      try {
+        const result = await searchByParagraphReference({
+          datecode,
+          title,
+          paragraph,
+        });
+        const totalHits = result?.Result?.TotalHits || result?.TotalHits || 0;
+        if (totalHits > 0) {
+          return { ...result, searchMethod: "paragraph_reference" };
+        }
+      } catch (paragraphError) {
+        if (isNetworkErr(paragraphError)) lastNetworkError = paragraphError;
+      }
+    }
 
     // If both methods failed, return empty results (or re-throw if it was a network error)
-    if (__DEV__) console.log(
-      "[Endnote API] All search methods exhausted, returning empty results",
-    );
+    if (__DEV__)
+      console.log(
+        "[Endnote API] All search methods exhausted, returning empty results",
+      );
     if (lastNetworkError) {
       throw lastNetworkError;
     }

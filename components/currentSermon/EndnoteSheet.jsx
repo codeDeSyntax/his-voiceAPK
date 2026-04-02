@@ -31,7 +31,7 @@ import { searchEndnoteQuote } from "../../Logic/branhamApi";
 import EndnoteResults from "./EndnoteResults";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const PREVIEW_HEIGHT = 110;
+const PREVIEW_HEIGHT = 124;
 const EXPANDED_HEIGHT = Math.round(SCREEN_HEIGHT * 0.95);
 const ENDNOTE_THEME_KEY = "endnoteThemePalette";
 
@@ -253,6 +253,48 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
     [endnoteData],
   );
 
+  const getCachedByType = useCallback((cachedEntry) => {
+    if (!cachedEntry) return {};
+    if (cachedEntry.byType && typeof cachedEntry.byType === "object") {
+      return cachedEntry.byType;
+    }
+    // Backward compatibility for legacy cache shape.
+    if (cachedEntry.results) {
+      const legacyType = cachedEntry.searchType || "ExactPhrase";
+      return { [legacyType]: cachedEntry.results };
+    }
+    return {};
+  }, []);
+
+  const getEffectiveSearchType = useCallback((requestedType, results) => {
+    if (results?.searchMethod === "quote_fallback_all_words") {
+      return "AllWords";
+    }
+    return requestedType || "ExactPhrase";
+  }, []);
+
+  const persistCachedResults = useCallback(
+    (requestedType, effectiveType, results) => {
+      if (!endnoteCacheKey) return;
+
+      const existing = searchCacheRef.current.get(endnoteCacheKey);
+      const byType = getCachedByType(existing);
+      byType[effectiveType] = results;
+
+      // Keep alias for requested tab so users don't re-hit network when API
+      // internally falls back but they revisit the requested mode.
+      if (!byType[requestedType]) {
+        byType[requestedType] = results;
+      }
+
+      searchCacheRef.current.set(endnoteCacheKey, {
+        byType,
+        lastSearchType: effectiveType,
+      });
+    },
+    [endnoteCacheKey, getCachedByType],
+  );
+
   // Load persisted palette once
   useEffect(() => {
     let mounted = true;
@@ -307,17 +349,19 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
       const cached = endnoteCacheKey
         ? searchCacheRef.current.get(endnoteCacheKey)
         : null;
+      const byType = getCachedByType(cached);
+      const initialType = cached?.lastSearchType || "ExactPhrase";
 
       setExpanded(false);
-      setSearchResults(cached?.results || null);
+      setSearchResults(byType[initialType] || null);
       setIsLoading(false);
       setLoadingSource(null);
       setNetworkError(false);
-      setSearchType(cached?.searchType || "ExactPhrase");
+      setSearchType(initialType);
       setPaletteOpen(false);
       heightAnim.setValue(PREVIEW_HEIGHT);
     }
-  }, [visible, endnoteCacheKey, heightAnim]);
+  }, [visible, endnoteCacheKey, heightAnim, getCachedByType]);
 
   useEffect(() => {
     if (!expanded) {
@@ -344,15 +388,18 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
     }).start();
 
     // Re-use previous results for the same endnote to avoid repeated fetches.
+    const requestedType = searchType || "ExactPhrase";
+
     const cached = endnoteCacheKey
       ? searchCacheRef.current.get(endnoteCacheKey)
       : null;
-    if (cached?.results) {
+    const byType = getCachedByType(cached);
+    if (byType[requestedType]) {
       setLoadingSource("cache");
       setIsLoading(true);
       setTimeout(() => {
-        setSearchType(cached.searchType || "ExactPhrase");
-        setSearchResults(cached.results);
+        setSearchType(requestedType);
+        setSearchResults(byType[requestedType]);
         setIsLoading(false);
         setLoadingSource(null);
       }, 320);
@@ -364,20 +411,21 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
     setSearchResults(null);
 
     try {
-      const results = await searchEndnoteQuote(endnoteData);
+      const results = await searchEndnoteQuote(endnoteData, {
+        searchType: requestedType,
+      });
+      const effectiveType = getEffectiveSearchType(requestedType, results);
+
       if (
         results.searchMethod === "paragraph_reference" &&
         Platform.OS === "android"
       ) {
         ToastAndroid.show("Found by sermon reference", ToastAndroid.SHORT);
       }
+
+      setSearchType(effectiveType);
       setSearchResults(results);
-      if (endnoteCacheKey) {
-        searchCacheRef.current.set(endnoteCacheKey, {
-          results,
-          searchType: "ExactPhrase",
-        });
-      }
+      persistCachedResults(requestedType, effectiveType, results);
     } catch (err) {
       const isNetwork =
         err instanceof TypeError ||
@@ -393,26 +441,44 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
       setIsLoading(false);
       setLoadingSource(null);
     }
-  }, [endnoteData, heightAnim, endnoteCacheKey]);
+  }, [
+    endnoteData,
+    heightAnim,
+    endnoteCacheKey,
+    searchType,
+    getCachedByType,
+    getEffectiveSearchType,
+    persistCachedResults,
+  ]);
 
   const handleRetry = useCallback(
     async (type) => {
       if (!endnoteData) return;
+      const requestedType = type || "ExactPhrase";
+
+      const cached = endnoteCacheKey
+        ? searchCacheRef.current.get(endnoteCacheKey)
+        : null;
+      const byType = getCachedByType(cached);
+      if (byType[requestedType]) {
+        setSearchType(requestedType);
+        setSearchResults(byType[requestedType]);
+        setNetworkError(false);
+        return;
+      }
+
       setLoadingSource("network");
       setIsLoading(true);
       setNetworkError(false);
-      setSearchType(type);
+      setSearchType(requestedType);
       try {
         const results = await searchEndnoteQuote(endnoteData, {
-          searchType: type,
+          searchType: requestedType,
         });
+        const effectiveType = getEffectiveSearchType(requestedType, results);
+        setSearchType(effectiveType);
         setSearchResults(results);
-        if (endnoteCacheKey) {
-          searchCacheRef.current.set(endnoteCacheKey, {
-            results,
-            searchType: type,
-          });
-        }
+        persistCachedResults(requestedType, effectiveType, results);
       } catch (err) {
         const isNetwork =
           err instanceof TypeError ||
@@ -424,7 +490,13 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
         setLoadingSource(null);
       }
     },
-    [endnoteData, endnoteCacheKey],
+    [
+      endnoteData,
+      endnoteCacheKey,
+      getCachedByType,
+      getEffectiveSearchType,
+      persistCachedResults,
+    ],
   );
 
   const previewTitle = endnoteData?.datecode
@@ -489,15 +561,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
             },
           ]}
         >
-          {/* Drag handle — slim */}
-          <View
-            style={[
-              s.dragHandle,
-              {
-                backgroundColor: palette.divider,
-              },
-            ]}
-          />
+          
 
           {/* Compact preview row */}
           <View style={s.previewRow}>
@@ -510,7 +574,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
             />
 
             <View style={s.previewText}>
-              <View style={s.labelRow}>
+              <View style={s.previewHeaderRow}>
                 <Text
                   style={[
                     s.label,
@@ -521,23 +585,20 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
                 >
                   WMB QUOTE
                 </Text>
-                {!expanded && (
-                  <TouchableOpacity
-                    onPress={handleReadMore}
-                    activeOpacity={0.75}
-                    style={[
-                      s.readMoreBtn,
-                      {
-                        backgroundColor: palette.accentSoft,
-                      },
-                    ]}
-                  >
-                    <Text style={[s.readMoreText, { color: accent }]}>
-                      Read more
-                    </Text>
-                    <Feather name="chevron-up" size={11} color={accent} />
-                  </TouchableOpacity>
-                )}
+
+                {/* Close */}
+                <TouchableOpacity
+                  onPress={handleClose}
+                  activeOpacity={0.7}
+                  style={[
+                    s.closeBtn,
+                    {
+                      backgroundColor: palette.accentSoft,
+                    },
+                  ]}
+                >
+                  <Feather name="x" size={14} color={palette.mutedText} />
+                </TouchableOpacity>
               </View>
 
               <Text
@@ -546,33 +607,72 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
               >
                 {previewTitle}
               </Text>
-            </View>
 
-            {/* Close */}
-            <TouchableOpacity
-              onPress={handleClose}
-              activeOpacity={0.7}
-              style={[
-                s.closeBtn,
-                {
-                  backgroundColor: palette.accentSoft,
-                },
-              ]}
-            >
-              <Feather name="x" size={14} color={palette.mutedText} />
-            </TouchableOpacity>
+              {!expanded && (
+                <View style={s.previewActionRow}>
+                  <Text style={[s.previewHint, { color: palette.mutedText }]}>
+                    Tap to read the full quote 
+                  </Text>
+                  <View
+                    style={[
+                      s.readMoreBtnOuter,
+                      {
+                        borderColor: isDark
+                          ? "rgba(255,255,255,0.16)"
+                          : "rgba(20,34,60,0.14)",
+                      },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      onPress={handleReadMore}
+                      activeOpacity={0.8}
+                      style={[
+                        s.readMoreBtnCore,
+                        {
+                          backgroundColor: palette.accentSoft,
+                          borderTopColor: isDark
+                            ? "rgba(255,255,255,0.18)"
+                            : "rgba(255,255,255,0.44)",
+                          borderBottomColor: isDark
+                            ? "rgba(0,0,0,0.26)"
+                            : "rgba(0,0,0,0.08)",
+                          shadowColor: accent,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          s.readMoreBtnSheen,
+                          {
+                            backgroundColor: isDark
+                              ? "rgba(255,255,255,0.08)"
+                              : "rgba(255,255,255,0.32)",
+                          },
+                        ]}
+                      />
+                      <View style={s.readMoreBtnRow}>
+                        <Text style={[s.readMoreText, { color: accent }]}>
+                          Open Quote
+                        </Text>
+                        <Feather name="chevron-up" size={11} color={accent} />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Divider + embedded results */}
           {expanded && (
             <>
-              
               <EndnoteResults
                 embedded
                 visible
                 onClose={handleClose}
                 endnoteData={endnoteData}
                 searchResults={searchResults}
+                activeSearchType={searchType}
                 theme={theme}
                 endnotePalette={palette}
                 isLoading={isLoading}
@@ -645,12 +745,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }) => {
                     },
                   ]}
                 />
-                <View
-                  style={[
-                    s.fabDot,
-                    { backgroundColor: palette.accent },
-                  ]}
-                />
+                <View style={[s.fabDot, { backgroundColor: palette.accent }]} />
               </TouchableOpacity>
             </View>
           )}
@@ -694,16 +789,16 @@ const s = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 42,
-    height: 56,
+    width: 52,
+    height: 70,
     borderRadius: 8,
     backgroundColor: "#3a2010",
   },
   previewText: {
     flex: 1,
-    gap: 3,
+    gap: 6,
   },
-  labelRow: {
+  previewHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -714,22 +809,62 @@ const s = StyleSheet.create({
     letterSpacing: 2.5,
   },
   title: {
-    fontFamily: "ZillaSlabsm",
+    fontFamily: "ZillaSlab",
     fontSize: 15.5,
     fontWeight: "400",
     lineHeight: 18,
   },
-  readMoreBtn: {
+  previewActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 2,
+  },
+  previewHint: {
+    flex: 1,
+    fontFamily: "Merriweather",
+    fontSize: 10.5,
+    lineHeight: 14,
+    opacity: 0.86,
+  },
+  readMoreBtnOuter: {
+    borderRadius: 100,
+    borderWidth: 1.2,
+    padding: 1.8,
+  },
+  readMoreBtnCore: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderRadius: 100,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  readMoreBtnSheen: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "52%",
+    borderTopLeftRadius: 100,
+    borderTopRightRadius: 100,
+  },
+  readMoreBtnRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 100,
   },
   readMoreText: {
     fontFamily: "Merriweather",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
   },
   closeBtn: {
@@ -738,8 +873,6 @@ const s = StyleSheet.create({
     borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "flex-start",
-    marginTop: 0,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

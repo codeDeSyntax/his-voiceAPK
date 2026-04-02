@@ -134,6 +134,8 @@ const CurrentSermon = React.memo(({ route }) => {
   // The skeleton overlay is shown until this is true, so users never see the
   // list jump/animate to the target paragraph.
   const [isPositioningComplete, setIsPositioningComplete] = useState(false);
+  const isPositioningCompleteRef = useRef(false);
+  const paragraphsLengthRef = useRef(0);
 
   const [scrollPriority, setScrollPriority] = useState(null);
 
@@ -142,6 +144,14 @@ const CurrentSermon = React.memo(({ route }) => {
   const isUserScrolling = useRef(false); // Track if user is actively scrolling
   const isSearchJumping = useRef(false); // True while a search-result jump is in progress
   const userScrollTimer = useRef(null); // Timer to detect when user stops scrolling
+
+  useEffect(() => {
+    isPositioningCompleteRef.current = isPositioningComplete;
+  }, [isPositioningComplete]);
+
+  useEffect(() => {
+    paragraphsLengthRef.current = paragraphs.length;
+  }, [paragraphs.length]);
 
   // Cleanup: Save current position immediately when sermon changes or component unmounts
   useEffect(() => {
@@ -161,7 +171,15 @@ const CurrentSermon = React.memo(({ route }) => {
       // putting it there would cause a cleanup→setState→recreate loop.
       const lastParagraph = currentVisibleParagraphRef.current;
       const updater = updateLastReadPositionRef.current;
-      if (currentSermonId && updater && lastParagraph !== undefined) {
+      const canPersistPosition =
+        isPositioningCompleteRef.current && paragraphsLengthRef.current > 0;
+
+      if (
+        currentSermonId &&
+        updater &&
+        lastParagraph !== undefined &&
+        canPersistPosition
+      ) {
         updater(currentSermonId, lastParagraph);
       }
     };
@@ -331,7 +349,7 @@ const CurrentSermon = React.memo(({ route }) => {
     ) {
       targetIndex = scrollToParagraphFromBookmark;
       toastMessage = `Jumped to paragraph ${targetIndex + 1}`;
-    } else if (selectedSermon?.lastReadParagraph > 2) {
+    } else if (selectedSermon?.lastReadParagraph > 0) {
       targetIndex = selectedSermon.lastReadParagraph;
       toastMessage = `You reached paragraph ${targetIndex + 1} the last time`;
     }

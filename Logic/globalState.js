@@ -121,26 +121,52 @@ export const SermonProvider = ({ children }) => {
   const updateLastReadPosition = useCallback(
     async (sermonId, paragraphIndex) => {
       try {
-        const updatedPositions = {
-          ...lastReadPositions,
-          [sermonId]: {
-            paragraph: paragraphIndex,
-            timestamp: Date.now(),
-          },
-        };
+        let updatedPositions = null;
+        let didChange = false;
 
-        setLastReadPositions(updatedPositions);
+        setLastReadPositions((prevPositions) => {
+          if (!sermonId || paragraphIndex < 0) {
+            updatedPositions = prevPositions;
+            return prevPositions;
+          }
 
-        // Save to AsyncStorage
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.LAST_POSITIONS,
-          JSON.stringify(updatedPositions),
-        );
+          const existing = prevPositions[sermonId];
+          const existingParagraph =
+            typeof existing === "number"
+              ? existing
+              : (existing?.paragraph ?? 0);
+
+          // Guard against accidental resets when cleanup runs before a list has
+          // fully positioned and still reports paragraph 0.
+          if (paragraphIndex === 0 && existingParagraph > 0) {
+            updatedPositions = prevPositions;
+            return prevPositions;
+          }
+
+          const nextPositions = {
+            ...prevPositions,
+            [sermonId]: {
+              paragraph: paragraphIndex,
+              timestamp: Date.now(),
+            },
+          };
+
+          updatedPositions = nextPositions;
+          didChange = true;
+          return nextPositions;
+        });
+
+        if (didChange && updatedPositions) {
+          await AsyncStorage.setItem(
+            STORAGE_KEYS.LAST_POSITIONS,
+            JSON.stringify(updatedPositions),
+          );
+        }
       } catch (error) {
         console.error("Failed to update last read position:", error);
       }
     },
-    [lastReadPositions],
+    [],
   );
 
   // Get last read position for a sermon
