@@ -45,15 +45,18 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
   const isDark = theme.dark;
   const bgColor = isDark ? "#221b17" : "#faeed1";
   const textColor = isDark ? "#f2cdb4" : "#5d3211";
-  const mutedTextColor = isDark ? "rgba(242,205,180,0.5)" : "rgba(93,50,17,0.5)";
+  const mutedTextColor = isDark
+    ? "rgba(242,205,180,0.5)"
+    : "rgba(93,50,17,0.5)";
   const accentColor = "#d57a3e";
   const ringColor = isDark ? "rgba(213,122,62,0.12)" : "rgba(93,50,17,0.08)";
   const buttonBg = "rgba(255,255,255,0.92)";
   const buttonIcon = isDark ? "#2c2420" : "#5d3211";
   const sliderBg = isDark ? "rgba(213,122,62,0.2)" : "rgba(93,50,17,0.15)";
 
-
-  useEffect(() => { setError(null); }, [audioUrl]);
+  useEffect(() => {
+    setError(null);
+  }, [audioUrl]);
 
   useEffect(() => {
     setAudioModeAsync({
@@ -88,12 +91,19 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
           displayTitle =
             (lastSpace > 3 ? trimmed.slice(0, lastSpace) : trimmed) + "...";
         }
-        player.setActiveForLockScreen?.(true,
-          { title: displayTitle, artist: "Robert Lambert Lee", albumTitle: "His Voice", artworkUrl: artworkUri },
+        player.setActiveForLockScreen?.(
+          true,
+          {
+            title: displayTitle,
+            artist: "Robert Lambert Lee",
+            albumTitle: "His Voice",
+            artworkUrl: artworkUri,
+          },
           { showSeekBackward: true, showSeekForward: true },
         );
       } catch (e) {
-        if (__DEV__) console.warn("[AudioPlayer] setActiveForLockScreen failed:", e);
+        if (__DEV__)
+          console.warn("[AudioPlayer] setActiveForLockScreen failed:", e);
       }
     };
     activate();
@@ -120,21 +130,35 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
   };
 
   const handleSliderChange = (value) => {
-    try { player.seekTo(value); } catch (err) { console.error("Error seeking:", err); }
+    try {
+      player.seekTo(value);
+    } catch (err) {
+      console.error("Error seeking:", err);
+    }
   };
 
   const handleSkipBackward = () => {
-    try { player.seekTo(Math.max(0, status.currentTime - 10)); } catch (err) { console.error("Error skipping:", err); }
+    try {
+      player.seekTo(Math.max(0, status.currentTime - 10));
+    } catch (err) {
+      console.error("Error skipping:", err);
+    }
   };
 
   const handleSkipForward = () => {
-    try { player.seekTo(Math.min(status.duration, status.currentTime + 10)); } catch (err) { console.error("Error skipping:", err); }
+    try {
+      player.seekTo(Math.min(status.duration, status.currentTime + 10));
+    } catch (err) {
+      console.error("Error skipping:", err);
+    }
   };
 
   const toggleLoop = () => {
     const next = !looping;
     setLooping(next);
-    try { player.loop = next; } catch (e) {}
+    try {
+      player.loop = next;
+    } catch (e) {}
   };
 
   const toggleShuffle = () => setShuffling((s) => !s);
@@ -148,7 +172,9 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
           style={[
             styles.wave,
             {
-              backgroundColor: isDark ? "rgba(213,122,62,0.06)" : "rgba(93,50,17,0.04)",
+              backgroundColor: isDark
+                ? "rgba(213,122,62,0.06)"
+                : "rgba(93,50,17,0.04)",
               top: 20,
               right: 0,
               left: -SCREEN_WIDTH * 0.1,
@@ -163,7 +189,9 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
           style={[
             styles.wave,
             {
-              backgroundColor: isDark ? "rgba(213,122,62,0.04)" : "rgba(93,50,17,0.03)",
+              backgroundColor: isDark
+                ? "rgba(213,122,62,0.04)"
+                : "rgba(93,50,17,0.03)",
               bottom: -50,
               left: -60,
               width: SCREEN_WIDTH * 1.4,
@@ -177,7 +205,9 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
           style={[
             styles.wave,
             {
-              backgroundColor: isDark ? "rgba(213,122,62,0.03)" : "rgba(93,50,17,0.02)",
+              backgroundColor: isDark
+                ? "rgba(213,122,62,0.03)"
+                : "rgba(93,50,17,0.02)",
               top: "60%",
               left: "50%",
               marginLeft: -(SCREEN_WIDTH * 0.8) / 2,
@@ -191,15 +221,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
       </View>
 
       {/* ── Main content ─────────────────────────────────────────────── */}
-      <View
-        style={[
-          styles.mainContent,
-          {
-            opacity: status.isLoaded || error ? 1 : 0,
-            pointerEvents: status.isLoaded || error ? "auto" : "none",
-          },
-        ]}
-      >
+      <View style={styles.mainContent}>
         {/* Sermon title — large, centered over the background */}
         <View style={styles.titleArea}>
           <Text
@@ -217,7 +239,11 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
         <Text style={[styles.timerText, { color: accentColor }]}>
           {formatTime(status.currentTime)}
         </Text>
-
+        {!status.isLoaded && !error && (
+          <Text style={[styles.loadingHint, { color: mutedTextColor }]}>
+            \ Loading audio…
+          </Text>
+        )}
         {error && (
           <Text style={[styles.errorText, { color: "#ff6b6b" }]}>{error}</Text>
         )}
@@ -242,7 +268,10 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
                 style={styles.sliderOverlay}
                 minimumValue={0}
                 maximumValue={status.duration || 1}
-                value={Math.max(0, Math.min(status.currentTime, status.duration || 1))}
+                value={Math.max(
+                  0,
+                  Math.min(status.currentTime, status.duration || 1),
+                )}
                 onValueChange={handleSliderChange}
                 minimumTrackTintColor="transparent"
                 maximumTrackTintColor="transparent"
@@ -278,7 +307,10 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
           {/* Glass sheen */}
           <View
             pointerEvents="none"
-            style={[styles.playBtnSheen, { backgroundColor: "rgba(255,255,255,0.5)" }]}
+            style={[
+              styles.playBtnSheen,
+              { backgroundColor: "rgba(255,255,255,0.5)" },
+            ]}
           />
           {!status.isLoaded ? (
             <ActivityIndicator size="small" color={buttonIcon} />
@@ -294,30 +326,57 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
 
         {/* Secondary controls */}
         <View style={styles.controlsRow}>
-          <TouchableOpacity style={styles.flatBtn} onPress={toggleLoop} activeOpacity={0.65}>
-            <Ionicons name="repeat" size={ICON_SIZE_SM} color={looping ? textColor : mutedTextColor} />
+          <TouchableOpacity
+            style={styles.flatBtn}
+            onPress={toggleLoop}
+            activeOpacity={0.65}
+          >
+            <Ionicons
+              name="repeat"
+              size={ICON_SIZE_SM}
+              color={looping ? textColor : mutedTextColor}
+            />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.flatBtn} onPress={handleSkipBackward} disabled={!status.isLoaded} activeOpacity={0.65}>
-            <MaterialCommunityIcons name="rewind-10" size={ICON_SIZE_MD} color={status.isLoaded ? textColor : mutedTextColor} />
+          <TouchableOpacity
+            style={styles.flatBtn}
+            onPress={handleSkipBackward}
+            disabled={!status.isLoaded}
+            activeOpacity={0.65}
+          >
+            <MaterialCommunityIcons
+              name="rewind-10"
+              size={ICON_SIZE_MD}
+              color={status.isLoaded ? textColor : mutedTextColor}
+            />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.flatBtn} onPress={handleSkipForward} disabled={!status.isLoaded} activeOpacity={0.65}>
-            <MaterialCommunityIcons name="fast-forward-10" size={ICON_SIZE_MD} color={status.isLoaded ? textColor : mutedTextColor} />
+          <TouchableOpacity
+            style={styles.flatBtn}
+            onPress={handleSkipForward}
+            disabled={!status.isLoaded}
+            activeOpacity={0.65}
+          >
+            <MaterialCommunityIcons
+              name="fast-forward-10"
+              size={ICON_SIZE_MD}
+              color={status.isLoaded ? textColor : mutedTextColor}
+            />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.flatBtn} onPress={toggleShuffle} activeOpacity={0.65}>
-            <Ionicons name="shuffle" size={ICON_SIZE_SM} color={shuffling ? textColor : mutedTextColor} />
+          <TouchableOpacity
+            style={styles.flatBtn}
+            onPress={toggleShuffle}
+            activeOpacity={0.65}
+          >
+            <Ionicons
+              name="shuffle"
+              size={ICON_SIZE_SM}
+              color={shuffling ? textColor : mutedTextColor}
+            />
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Skeleton overlay */}
-      {!status.isLoaded && !error && (
-        <View style={StyleSheet.absoluteFill}>
-          <AudioSkeletonLoader backgroundColor={bgColor} />
-        </View>
-      )}
     </View>
   );
 };
@@ -456,6 +515,14 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  loadingHint: {
+    fontSize: responsiveFontSize(12),
+    marginBottom: 10,
+    textAlign: "center",
+    opacity: 0.85,
+    fontFamily: "Merriweather",
   },
 
   errorText: {

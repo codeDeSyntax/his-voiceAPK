@@ -433,6 +433,7 @@ const ParagraphText = React.memo(
     onEndnoteClick,
   }) => {
     const { highlights } = useAppContext();
+    const endnoteTapRef = useRef({ key: "", ts: 0 });
 
     // Check if this paragraph is highlighted - optimized with direct highlights access
     const currentHighlight = useMemo(() => {
@@ -540,8 +541,6 @@ const ParagraphText = React.memo(
         });
       }
 
-      
-
       return baseStyle;
     }, [currentHighlight, theme.dark, theme.colors.hlight, isSelected]);
 
@@ -627,6 +626,19 @@ const ParagraphText = React.memo(
       (endnoteNumber = 0) => {
         if (!onEndnoteClick) return;
 
+        const tapKey = `${selectedSermon?.id || ""}-${index}-${endnoteNumber}`;
+        const now = Date.now();
+
+        // Nested clickable Text spans can fire duplicate onPress events in quick
+        // succession when selection is enabled; swallow near-duplicate taps.
+        if (
+          endnoteTapRef.current.key === tapKey &&
+          now - endnoteTapRef.current.ts < 420
+        ) {
+          return;
+        }
+        endnoteTapRef.current = { key: tapKey, ts: now };
+
         console.log("[ParagraphText] Raw paragraph:", paragraph);
         const allEndnotes = extractAllEndnotes(paragraph);
         const endnoteData = allEndnotes[endnoteNumber] || allEndnotes[0];
@@ -638,7 +650,11 @@ const ParagraphText = React.memo(
         );
 
         if (endnoteData) {
-          onEndnoteClick(endnoteData, index, selectedSermon);
+          // Let text selection/layout finish this frame before opening the
+          // endnote sheet to avoid a visible viewport nudge.
+          requestAnimationFrame(() => {
+            onEndnoteClick(endnoteData, index, selectedSermon);
+          });
         }
       },
       [paragraph, index, selectedSermon, onEndnoteClick],

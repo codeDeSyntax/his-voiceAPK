@@ -1286,6 +1286,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 6,
     paddingBottom: 8,
+    marginHorizontal: 10,
+    borderRadius: 20,
   
   },
   endnoteMeta: {
