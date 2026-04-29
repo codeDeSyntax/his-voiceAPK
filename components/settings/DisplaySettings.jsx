@@ -44,6 +44,19 @@ const DisplaySettings = ({
     return font ? font.name : "System Default";
   };
 
+  const accent = theme.dark ? theme.colors.hlight : "#5d3211";
+  const rowDivider = theme.dark
+    ? "rgba(242, 205, 180, 0.09)"
+    : "rgba(93, 50, 17, 0.08)";
+  const rowPressedBg = theme.dark
+    ? "rgba(255, 255, 255, 0.04)"
+    : "rgba(93, 50, 17, 0.04)";
+  const iconBg = theme.dark
+    ? "rgba(242, 205, 180, 0.10)"
+    : "rgba(93, 50, 17, 0.08)";
+  const softPanelBg = theme.dark
+    ? "rgba(255, 255, 255, 0.035)"
+    : "rgba(93, 50, 17, 0.035)";
   const SettingItem = ({ icon, title, subtitle, children, onPress, theme }) => {
     const [pressed, setPressed] = useState(false);
 
@@ -52,25 +65,30 @@ const DisplaySettings = ({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          paddingVertical: 16,
-          paddingHorizontal: 4,
+          paddingVertical: 14,
+          paddingHorizontal: 14,
           borderBottomWidth: 1,
-          borderBottomColor: theme.dark
-            ? "rgba(242, 205, 180, 0.08)"
-            : "rgba(93, 50, 17, 0.08)",
-          opacity: pressed ? 0.7 : 1,
+          borderBottomColor: rowDivider,
+          backgroundColor: pressed ? rowPressedBg : "transparent",
         }}
         onPress={onPress}
         onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}
-        activeOpacity={1}
+        activeOpacity={0.9}
       >
-        <Ionicons
-          name={icon}
-          size={24}
-          color={theme.colors.text}
-          style={{ marginRight: 16 }}
-        />
+        <View
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: iconBg,
+            marginRight: 14,
+          }}
+        >
+          <Ionicons name={icon} size={19} color={accent} />
+        </View>
 
         <View style={{ flex: 1 }}>
           <Text
@@ -88,8 +106,9 @@ const DisplaySettings = ({
             <Text
               style={{
                 fontSize: 13,
-                color: theme.colors.text + "60",
+                color: theme.colors.text + "68",
                 fontFamily: "ZillaSlab",
+                lineHeight: 18,
               }}
             >
               {subtitle}
@@ -116,9 +135,7 @@ const DisplaySettings = ({
       <SettingItem
         icon="moon"
         title="Dark Mode"
-        subtitle={`${
-          isDarkMode ? "Enabled" : "Disabled"
-        } • Easier on the eyes at night`}
+        subtitle={`${isDarkMode ? "Enabled" : "Disabled"} - Easier on the eyes at night`}
         theme={theme}
       >
         <Switch
@@ -163,9 +180,7 @@ const DisplaySettings = ({
               width: 32,
               height: 32,
               borderRadius: 16,
-              backgroundColor: theme.dark
-                ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.08)",
+              backgroundColor: softPanelBg,
               justifyContent: "center",
               alignItems: "center",
               opacity: fontSize <= 12 ? 0.5 : 1,
@@ -181,6 +196,7 @@ const DisplaySettings = ({
               color: theme.colors.text,
               minWidth: 30,
               textAlign: "center",
+              fontFamily: "ZillaSlab",
             }}
           >
             {fontSize}
@@ -193,9 +209,7 @@ const DisplaySettings = ({
               width: 32,
               height: 32,
               borderRadius: 16,
-              backgroundColor: theme.dark
-                ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.08)",
+              backgroundColor: softPanelBg,
               justifyContent: "center",
               alignItems: "center",
               opacity: fontSize >= 32 ? 0.5 : 1,
@@ -225,13 +239,13 @@ const DisplaySettings = ({
       {showFontOptions && (
         <View
           style={{
-            backgroundColor: theme.dark
-              ? "rgba(255, 255, 255, 0.02)"
-              : "rgba(0, 0, 0, 0.01)",
-            borderRadius: 12,
+            backgroundColor: softPanelBg,
+            borderRadius: 18,
             padding: 8,
-            gap: 4,
-            marginTop: -8,
+            gap: 6,
+            marginHorizontal: 12,
+            marginTop: 8,
+            marginBottom: 10,
           }}
         >
           {FONT_OPTIONS.map((font) => (
@@ -242,8 +256,9 @@ const DisplaySettings = ({
                 setShowFontOptions(false);
               }}
               style={{
-                padding: 12,
-                borderRadius: 8,
+                paddingVertical: 11,
+                paddingHorizontal: 12,
+                borderRadius: 14,
                 backgroundColor:
                   fontFamily === font.value
                     ? theme.dark
@@ -291,7 +306,7 @@ const DisplaySettings = ({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            gap: 8,
+            gap: 10,
           }}
         >
           <View
@@ -300,10 +315,10 @@ const DisplaySettings = ({
               height: 20,
               borderRadius: 10,
               backgroundColor: localAccentColor,
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: theme.dark
-                ? "rgba(255, 255, 255, 0.2)"
-                : "rgba(0, 0, 0, 0.1)",
+                ? "rgba(255, 255, 255, 0.24)"
+                : "rgba(93, 50, 17, 0.18)",
             }}
           />
           <Ionicons
@@ -318,15 +333,15 @@ const DisplaySettings = ({
       {showColorOptions && (
         <View
           style={{
-            backgroundColor: theme.dark
-              ? "rgba(255, 255, 255, 0.02)"
-              : "rgba(0, 0, 0, 0.01)",
-            borderRadius: 12,
+            backgroundColor: softPanelBg,
+            borderRadius: 18,
             padding: 12,
             flexDirection: "row",
             flexWrap: "wrap",
             gap: 12,
-            marginTop: -8,
+            marginHorizontal: 12,
+            marginTop: 8,
+            marginBottom: 10,
           }}
         >
           {COLOR_OPTIONS.map((color) => (
@@ -377,16 +392,12 @@ const DisplaySettings = ({
       {showPreview && (
         <View
           style={{
-            backgroundColor: theme.dark
-              ? "rgba(255, 255, 255, 0.02)"
-              : "rgba(0, 0, 0, 0.01)",
-            borderRadius: 12,
+            backgroundColor: softPanelBg,
+            borderRadius: 18,
             padding: 16,
-            marginTop: -8,
-            borderWidth: 1,
-            borderColor: theme.dark
-              ? "rgba(255, 255, 255, 0.05)"
-              : "rgba(0, 0, 0, 0.02)",
+            marginHorizontal: 12,
+            marginTop: 8,
+            marginBottom: 10,
           }}
         >
           <Text
@@ -408,11 +419,12 @@ const DisplaySettings = ({
             onPress={() => navigation?.navigate("currentsermon")}
             style={{
               marginTop: 12,
-              padding: 8,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
               backgroundColor: theme.dark
-                ? "rgba(255, 255, 255, 0.08)"
-                : "rgba(0, 0, 0, 0.05)",
-              borderRadius: 8,
+                ? "rgba(242, 205, 180, 0.08)"
+                : "rgba(93, 50, 17, 0.07)",
+              borderRadius: 14,
               alignItems: "center",
             }}
           >

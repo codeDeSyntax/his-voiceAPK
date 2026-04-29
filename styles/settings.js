@@ -20,11 +20,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 44,
   },
   sectionContainer: {
-    marginBottom: 24,
+    marginBottom: 22,
   },
   sectionHeader: {
     fontSize: 18,
@@ -104,13 +105,20 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
+  settingsPanel: {
+    borderRadius: 24,
+    overflow: "hidden",
+  },
   sectionHeader: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginHorizontal: 24,
-    marginBottom: 12,
-    marginTop: 8,
-    opacity: 0.8,
+    fontSize: 14,
+    // fontWeight: "700",
+    marginHorizontal: 4,
+    marginBottom: 10,
+    marginTop: 6,
+    opacity: 0.76,
+    fontFamily: "ZillaSlab-SemiBold",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   settingItem: {
     flexDirection: "row",
@@ -241,9 +249,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    padding: 24,
-    borderRadius: 24,
-    width: "80%",
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 22,
+    minWidth: 148,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
@@ -255,10 +264,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   modalText: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "700",
     textAlign: "center",
-    fontFamily: "ZillaSlab",
+    fontFamily: "ZillaSlab-SemiBold",
   },
   modalSpinner: {
     marginVertical: 16,
@@ -288,10 +297,12 @@ const styles = StyleSheet.create({
   },
   versionText: {
     textAlign: "center",
-    marginVertical: 20,
-    fontSize: 13,
-    opacity: 0.5,
+    marginTop: 12,
+    marginBottom: 20,
+    fontSize: 12,
+    opacity: 0.52,
     fontFamily: "ZillaSlab",
+    letterSpacing: 0.2,
   },
 });
 

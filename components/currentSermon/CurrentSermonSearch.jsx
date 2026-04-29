@@ -12,7 +12,6 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   Animated,
-  Easing,
 } from "react-native";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
@@ -112,35 +111,6 @@ const SearchLoader = ({ theme }) => {
 
 const SearchActionButton = ({ theme, onPress, label = "Enter" }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 1800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0,
-          duration: 1800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]),
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [glowAnim]);
-
-  const borderColor = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: theme.dark
-      ? ["rgba(230,195,184,0.22)", "rgba(230,195,184,0.45)"]
-      : ["rgba(93,50,17,0.20)", "rgba(93,50,17,0.42)"],
-  });
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -161,52 +131,42 @@ const SearchActionButton = ({ theme, onPress, label = "Enter" }) => {
   };
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }], width: "100%" }}>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
       >
-        <Animated.View style={[styles.searchButtonOuter, { borderColor }]}>
+        <View style={styles.searchButtonOuter}>
           <View
             style={[
               styles.searchButtonCore,
               {
                 backgroundColor: theme.dark
-                  ? "rgba(40,30,24,0.94)"
-                  : "rgba(93,50,17,0.88)",
-                shadowColor: theme.dark ? "#e6c3b8" : "#5d3211",
+                  ? "rgba(242,205,180,0.13)"
+                  : "rgba(93,50,17,0.82)",
               },
             ]}
           >
-            <View
-              style={[
-                styles.searchButtonSheen,
-                {
-                  backgroundColor: theme.dark
-                    ? "rgba(230,195,184,0.08)"
-                    : "rgba(255,255,255,0.15)",
-                },
-              ]}
-            />
             <View style={styles.searchButtonContentRow}>
               <MaterialIcons
                 name="search"
                 size={18}
                 color={theme.dark ? "#e6c3b8" : "#ffffff"}
-                style={styles.searchButtonIconWrap}
               />
-              <Text
-                style={[
-                  styles.searchButtonLabel,
-                  { color: theme.dark ? "#e6c3b8" : "#ffffff" },
-                ]}
-              >
-                {label}
-              </Text>
+              {label ? (
+                <Text
+                  style={[
+                    styles.searchButtonLabel,
+                    { color: theme.dark ? "#e6c3b8" : "#ffffff" },
+                  ]}
+                >
+                  {label}
+                </Text>
+              ) : null}
             </View>
           </View>
-        </Animated.View>
+        </View>
       </Pressable>
     </Animated.View>
   );
@@ -377,11 +337,7 @@ const CurrentSermonSearch = ({
             </Text>
           </View>
 
-          {searchPhrase.length > 0 && (
-            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-              <Feather name="x" size={18} color={subtleText} />
-            </TouchableOpacity>
-          )}
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Search Input Row */}
@@ -391,19 +347,16 @@ const CurrentSermonSearch = ({
               styles.inputWrapper,
               {
                 backgroundColor: theme.dark
-                  ? "rgba(255,255,255,0.07)"
-                  : "rgba(93, 50, 17, 0.05)",
-                borderColor: theme.dark
-                  ? "rgba(255,255,255,0.09)"
-                  : "rgba(93, 50, 17, 0.18)",
+                  ? "rgba(255,255,255,0.085)"
+                  : "rgba(93, 50, 17, 0.070)",
               },
             ]}
           >
             <Feather
               name="search"
-              size={18}
+              size={19}
               color={
-                theme.dark ? "rgba(255,255,255,0.4)" : "rgba(93,50,17,0.45)"
+                theme.dark ? "rgba(242,205,180,0.58)" : "rgba(93,50,17,0.52)"
               }
               style={styles.searchIcon}
             />
@@ -434,13 +387,32 @@ const CurrentSermonSearch = ({
               onSubmitEditing={handleSearch}
               keyboardAppearance={theme.dark ? "dark" : "light"}
             />
+            {searchPhrase.length > 0 && (
+              <TouchableOpacity
+                onPress={clearSearch}
+                style={[
+                  styles.inlineClearButton,
+                  {
+                    backgroundColor: theme.dark
+                      ? "rgba(242,205,180,0.12)"
+                      : "rgba(93,50,17,0.11)",
+                  },
+                ]}
+                activeOpacity={0.72}
+              >
+                <Feather
+                  name="x"
+                  size={14}
+                  color={
+                    theme.dark
+                      ? "rgba(242,205,180,0.70)"
+                      : "rgba(40,20,10,0.58)"
+                  }
+                />
+              </TouchableOpacity>
+            )}
+            <SearchActionButton theme={theme} onPress={handleSearch} label="" />
           </View>
-
-          <SearchActionButton
-            theme={theme}
-            onPress={handleSearch}
-            label="Enter"
-          />
         </View>
 
         {/* Results Count */}
@@ -470,7 +442,18 @@ const CurrentSermonSearch = ({
             {searchResults.map((result, index) => (
               <TouchableOpacity
                 key={`${result.index}-${index}`}
-                style={styles.resultItem}
+                style={[
+                  styles.resultItem,
+                  {
+                    backgroundColor: theme.dark
+                      ? index % 2 === 0
+                        ? "rgba(242,205,180,0.052)"
+                        : "rgba(242,205,180,0.033)"
+                      : index % 2 === 0
+                        ? "rgba(93,50,17,0.055)"
+                        : "rgba(93,50,17,0.032)",
+                  },
+                ]}
                 onPress={() => handleResultPress(result)}
                 activeOpacity={0.7}
               >
@@ -505,7 +488,7 @@ const CurrentSermonSearch = ({
                         },
                       ]}
                     >
-                      ¶ {result.index + 1}
+                      P{result.index + 1}
                     </Text>
                     <Text>{"  "}</Text>
                     {result.context.split("**").map((part, partIndex) => {
@@ -529,17 +512,6 @@ const CurrentSermonSearch = ({
                     })}
                   </Text>
                 </View>
-
-                <View
-                  style={[
-                    styles.resultSeparator,
-                    {
-                      backgroundColor: theme.dark
-                        ? "rgba(255,255,255,0.07)"
-                        : "rgba(93,50,17,0.08)",
-                    },
-                  ]}
-                />
               </TouchableOpacity>
             ))}
 
@@ -652,6 +624,9 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: 8,
   },
+  headerSpacer: {
+    width: 38,
+  },
   searchRow: {
     flexDirection: "column",
     alignItems: "stretch",
@@ -661,10 +636,10 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
     borderRadius: 100,
-    paddingHorizontal: 14,
-    height: 42,
+    paddingLeft: 15,
+    paddingRight: 6,
+    height: 46,
     width: "100%",
   },
   searchIcon: {
@@ -675,33 +650,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 0,
   },
+  inlineClearButton: {
+    height: 24,
+    width: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 4,
+  },
   searchButtonOuter: {
-    width: "100%",
-    marginTop: 8,
+    width: 34,
+    height: 34,
+    marginLeft: 6,
     borderRadius: 100,
-    borderWidth: 1.4,
-    padding: 2,
+    padding: 0,
   },
   searchButtonCore: {
-    width: "100%",
-    height: 40,
+    width: 34,
+    height: 34,
     borderRadius: 100,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  searchButtonSheen: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "52%",
-    borderTopLeftRadius: 100,
-    borderTopRightRadius: 100,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   searchButtonContentRow: {
     flexDirection: "row",
@@ -729,10 +701,13 @@ const styles = StyleSheet.create({
   },
   resultsContainer: {
     flex: 1,
+    paddingHorizontal: 12,
   },
   resultItem: {
-    paddingVertical: 6,
-    paddingHorizontal: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 7,
+    borderRadius: 12,
   },
   resultContent: {
     flex: 1,
@@ -750,16 +725,16 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   resultContext: {
-    fontSize: 17,
-    lineHeight: 21,
+    fontSize: 16,
+    lineHeight: 22,
   },
   paragraphInlineTag: {
-    fontSize: 17,
+    fontSize: 14,
     fontFamily: "ZillaSlabsm",
     letterSpacing: 0.4,
     textTransform: "uppercase",
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 9,
     paddingHorizontal: 7,
     paddingVertical: 1,
     overflow: "hidden",

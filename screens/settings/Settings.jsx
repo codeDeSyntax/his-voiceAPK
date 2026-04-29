@@ -364,31 +364,53 @@ const Settings = React.memo(() => {
             <Text style={[styles.sectionHeader, { color: theme.colors.text }]}>
               Display Settings
             </Text>
-            <DisplaySettings
-              theme={theme}
-              accentColor={accentColor}
-              isDarkMode={isDarkMode}
-              toggleTheme={toggleTheme}
-              fontSize={fontSize}
-              setFontSize={setFontSize}
-              fontFamily={fontFamily}
-              setFontFamily={setFontFamily}
-              navigation={router}
-              compact={true}
-            />
+            <View
+              style={[
+                styles.settingsPanel,
+                {
+                  backgroundColor: theme.dark
+                    ? "rgba(255, 255, 255, 0.025)"
+                    : "rgba(93, 50, 17, 0.035)",
+                },
+              ]}
+            >
+              <DisplaySettings
+                theme={theme}
+                accentColor={accentColor}
+                isDarkMode={isDarkMode}
+                toggleTheme={toggleTheme}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+                fontFamily={fontFamily}
+                setFontFamily={setFontFamily}
+                navigation={router}
+                compact={true}
+              />
+            </View>
           </View>
 
           <View style={styles.sectionContainer}>
             <Text style={[styles.sectionHeader, { color: theme.colors.text }]}>
               App Settings
             </Text>
-            <AppSettings theme={theme} router={router} compact={true} />
+            <View
+              style={[
+                styles.settingsPanel,
+                {
+                  backgroundColor: theme.dark
+                    ? "rgba(255, 255, 255, 0.025)"
+                    : "rgba(93, 50, 17, 0.035)",
+                },
+              ]}
+            >
+              <AppSettings theme={theme} router={router} compact={true} />
+            </View>
           </View>
 
           <Text
             style={[styles.versionText, { color: theme.colors.text + "60" }]}
           >
-            Version 1.0.0 • Build 2025.08.19
+            Version 1.0.0 - Build 2025.08.19
           </Text>
         </ScrollView>
       </SafeAreaView>

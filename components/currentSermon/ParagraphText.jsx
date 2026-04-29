@@ -826,14 +826,18 @@ const ParagraphText = React.memo(
                         suppressHighlighting={false}
                         style={{
                           color: linkColor,
-                          fontFamily:
-                            resolveReaderFontFamily(settings?.fontFamily) ||
-                            "ZillaSlab",
+                          fontFamily: "serif" || "ZillaSlab",
                           fontSize: responsiveFontSize(
                             settings?.fontSize || 22,
                           ),
-                          fontWeight: isEndnoteWord ? "700" : "400",
-                          textDecorationLine: "underline",
+                          fontWeight: isEndnoteWord ? "700" : "200",
+                          backgroundColor: theme.dark
+                            ? "#5d321160"
+                            : "#f8904120",
+                          // textDecorationLine: isEndnoteWord ? "none" : "underline",
+                          // marginRight:4
+                          // italics for the datecode/title text, but not the "Endnote" keyword
+                          fontStyle: "italic",
                         }}
                       >
                         {part}
@@ -847,15 +851,16 @@ const ParagraphText = React.memo(
                           onPress={clickHandler}
                           suppressHighlighting={false}
                           style={{
-                            color: linkColor,
-                            fontFamily:
-                              resolveReaderFontFamily(settings?.fontFamily) ||
-                              "ZillaSlab",
+                            color: theme.dark ? "white" : "#7a3b10",
+                            fontFamily: "cursive" || "cursive",
                             fontSize: responsiveFontSize(
                               settings?.fontSize || 22,
                             ),
                             fontWeight: "700",
-                            textDecorationLine: "underline",
+                            backgroundColor: theme.dark
+                              ? "#5d321160"
+                              : "#f8904120",
+                            // textDecorationLine: "underline",
                           }}
                         >
                           {part}

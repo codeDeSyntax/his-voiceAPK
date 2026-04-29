@@ -24,7 +24,7 @@ const SavingModal = ({ visible, theme, accentColor }) => {
               { color: theme.dark ? "#FFFFFF" : "#1A1A1A" },
             ]}
           >
-            ✓ Saved
+            Saved
           </Text>
         </View>
       </View>

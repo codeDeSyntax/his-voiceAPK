@@ -1,9 +1,12 @@
-import React, {
-  useState,
-  useMemo,
-  useCallback,
-} from "react";
-import { View, Platform, Text, Alert, ToastAndroid } from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import {
+  View,
+  Platform,
+  Text,
+  Alert,
+  ToastAndroid,
+  Pressable,
+} from "react-native";
 import { useAppContext } from "../../Logic/globalState";
 
 // Component imports
@@ -17,14 +20,20 @@ import DraggableFloatingButton from "../../components/FloatButton";
 
 const SermonList = React.memo(() => {
   const navigation = useNavigation();
-  const { setSelectedSermon, allSermons, theme, loading, settings, updateSettings } = useAppContext();
+  const {
+    setSelectedSermon,
+    allSermons,
+    theme,
+    loading,
+    settings,
+    updateSettings,
+  } = useAppContext();
 
   const [searchText, setSearchText] = useState("");
   const [searchResetKey, setSearchResetKey] = useState(0);
   const [sortOrder, setSortOrder] = useState("asc");
-  const [isOriginalOrder, setIsOriginalOrder] = useState(true);
+  const [isOriginalOrder, setIsOriginalOrder] = useState(false);
   const [typeFilter, setTypeFilter] = useState("all"); // "all", "text", "mp3"
-  const [viewMode, setViewMode] = useState("compact"); // "table", "compact"
 
   // Derive filtered sermons synchronously — no useState/useEffect double-render.
   const { filteredSermons, hasActiveFilters } = useMemo(() => {
@@ -58,6 +67,16 @@ const SermonList = React.memo(() => {
 
     return { filteredSermons: sorted, hasActiveFilters: !!hasFilters };
   }, [allSermons, searchText, typeFilter, sortOrder, isOriginalOrder]);
+
+  const sermonCounts = useMemo(
+    () => ({
+      total: allSermons.length,
+      text: allSermons.filter((sermon) => sermon.type === "text").length,
+      audio: allSermons.filter((sermon) => sermon.type === "mp3").length,
+    }),
+    [allSermons],
+  );
+  const hasViewChanges = hasActiveFilters || !isOriginalOrder;
 
   // Type filter buttons — set typeFilter state and let applyFilters do the work.
   const filterOnlyText = useCallback(() => {
@@ -105,42 +124,92 @@ const SermonList = React.memo(() => {
     setSearchResetKey((k) => k + 1);
   }, []);
 
-  const toggleViewMode = useCallback(() => {
-    setViewMode((prev) => {
-      if (prev === "table") return "compact";
-      return "table";
-    });
-  }, []);
-
   const handleToggleTheme = useCallback(() => {
     updateSettings({ darkMode: !settings.darkMode });
   }, [settings.darkMode, updateSettings]);
 
   const restoreOriginalOrder = useCallback(() => {
-    setIsOriginalOrder(true);
+    setIsOriginalOrder(false);
     setTypeFilter("all");
     setSearchText("");
     setSearchResetKey((k) => k + 1);
     setSortOrder("asc");
   }, []);
 
+  const removeTypeFilter = useCallback(() => {
+    setTypeFilter("all");
+  }, []);
+
+  const removeSearchFilter = useCallback(() => {
+    setSearchText("");
+    setSearchResetKey((k) => k + 1);
+  }, []);
+
   // Memoized components
-  const listHeaderComponent = useMemo(
-    () => (
-      <View style={styles.headerContainer}>
-        <Text style={[styles.headerText, { color: theme.colors.text }]}>
-          Sermon list contains both audio and transcribed versions. Audio
-          versions are indicated with a microphone and are not available within
-          the app now.
-        </Text>
-        <Text style={styles.warningText}>
-          Rather, links of the sermons are available. They take you to the
-          download page
-        </Text>
+  const listHeaderComponent = useMemo(() => {
+    const activeTypeLabel =
+      typeFilter === "text"
+        ? "Text only"
+        : typeFilter === "mp3"
+          ? "Audio only"
+          : null;
+    const sortLabel = isOriginalOrder
+      ? "Newest first"
+      : sortOrder === "asc"
+        ? "A-Z"
+        : "Z-A";
+
+    return (
+      <View
+        style={[
+          styles.headerContainer,
+          {
+            borderBottomColor: theme.dark
+              ? "rgba(242,205,180,0.10)"
+              : "rgba(93,50,17,0.12)",
+          },
+        ]}
+      >
+        <View style={styles.summaryRow}>
+          <View style={{ flex: 1 }}>
+            {/* <Text style={[styles.summaryLabel, { color: theme.colors.text }]}>
+              {filteredSermons.length} of {sermonCounts.total} sermons
+            </Text> */}
+            <Text
+              style={[
+                styles.summaryMeta,
+                {
+                  color: theme.dark
+                    ? "rgba(255,255,255,0.48)"
+                    : "rgba(93,50,17,0.9)",
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {sermonCounts.text} text - {sermonCounts.audio} audio -{" "}
+              {sortLabel}
+            </Text>
+          </View>
+
+         
+        </View>
+
+       
       </View>
-    ),
-    [theme.colors.text],
-  );
+    );
+  }, [
+    filteredSermons.length,
+    sermonCounts,
+    typeFilter,
+    searchText,
+    isOriginalOrder,
+    sortOrder,
+    hasViewChanges,
+    theme,
+    restoreOriginalOrder,
+    removeTypeFilter,
+    removeSearchFilter,
+  ]);
 
   // Gradient colors removed - using simple background instead
 
@@ -157,8 +226,9 @@ const SermonList = React.memo(() => {
         toggleSortOrder={toggleSortOrder}
         restoreOriginalOrder={restoreOriginalOrder}
         isOriginalOrder={isOriginalOrder}
-        hasActiveFilters={hasActiveFilters}
+        hasActiveFilters={hasViewChanges}
         onToggleTheme={handleToggleTheme}
+        totalCount={sermonCounts.total}
       />
 
       <SearchHeader
@@ -168,18 +238,15 @@ const SermonList = React.memo(() => {
       />
 
       {loading ? (
-        <SkeletonLoader theme={theme} count={10} />
+        <SkeletonLoader theme={theme} count={30} />
       ) : (
         <SermonListView
           theme={theme}
           filteredSermons={filteredSermons}
           handleSermonClick={handleSermonClick}
           listHeaderComponent={listHeaderComponent}
-          setSearchText={setSearchText}
-          viewMode={viewMode}
         />
       )}
-
     </View>
   );
 });
@@ -189,18 +256,52 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
-    paddingVertical: 10,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerText: {
-    fontStyle: "italic",
-    fontWeight: "100",
-    fontSize: 10,
+  summaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    gap: 12,
   },
-  warningText: {
-    color: "red",
-    fontStyle: "italic",
-    fontWeight: "100",
-    fontSize: 14,
+  summaryLabel: {
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: 15,
+  },
+  summaryMeta: {
+        fontFamily: "ZillaSlab-SemiBold",
+    fontSize: 13,
+    // fontWeight:"700",
+    marginTop: 3,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+  filterChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    maxWidth: "100%",
+  },
+  filterChipText: {
+    fontFamily: "ZillaSlab",
+    fontSize: 12.5,
+  },
+  resetChip: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  resetChipText: {
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: 12,
   },
   listContent: {
     paddingHorizontal: 12,

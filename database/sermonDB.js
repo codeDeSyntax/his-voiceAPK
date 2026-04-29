@@ -902,8 +902,7 @@ export const searchSermonsWithFTS = async (searchPhrase) => {
        FROM sermons s
        INNER JOIN sermons_fts ON sermons_fts.sermon_id = s.id
        WHERE sermons_fts MATCH ?
-       ORDER BY s.date DESC
-       LIMIT 20`,
+       ORDER BY s.date DESC`,
       [ftsQuery],
     );
 
@@ -915,8 +914,7 @@ export const searchSermonsWithFTS = async (searchPhrase) => {
         `SELECT paragraph_index, paragraph_text
          FROM sermon_paragraphs
          WHERE sermon_id = ? AND paragraph_text LIKE ?
-         ORDER BY paragraph_index
-         LIMIT 5`,
+         ORDER BY paragraph_index`,
         [sermon.id, pattern],
       );
 

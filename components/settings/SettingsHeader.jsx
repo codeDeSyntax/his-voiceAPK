@@ -1,6 +1,6 @@
 // File: components/SettingsHeader.js
 import React from "react";
-import { View, Text, TouchableOpacity, Platform } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +9,9 @@ const SettingsHeader = ({ theme, accentColor, compact = false }) => {
   const router = useNavigation();
   const insets = useSafeAreaInsets();
 
+  const mutedText = theme.colors.text + "72";
+  const accent = theme.dark ? theme.colors.hlight : accentColor;
+
   const getIconButtonStyle = () => ({
     width: 44,
     height: 44,
@@ -16,29 +19,60 @@ const SettingsHeader = ({ theme, accentColor, compact = false }) => {
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: theme.dark
-      ? "rgba(255, 255, 255, 0.08)"
-      : "rgba(0, 0, 0, 0.05)",
+      ? "rgba(255, 255, 255, 0.07)"
+      : "rgba(93, 50, 17, 0.07)",
   });
 
   return (
     <View
       style={{
         paddingHorizontal: 24,
-        paddingTop: insets.top + 8,
-        paddingBottom: 16,
+        paddingTop: insets.top + 10,
+        paddingBottom: 14,
         flexDirection: "row",
-        justifyContent: "space-between",
         alignItems: "center",
+        gap: 14,
       }}
     >
-      <View>
+      <TouchableOpacity
+        onPress={() => router?.navigate("AllSermons")}
+        style={getIconButtonStyle()}
+        activeOpacity={0.78}
+      >
+        <Ionicons name="chevron-back" size={22} color={theme.colors.text} />
+      </TouchableOpacity>
+
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: accent,
+            }}
+          />
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "700",
+              fontFamily: "ZillaSlab-SemiBold",
+              color: mutedText,
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+            }}
+          >
+            Preferences
+          </Text>
+        </View>
         <Text
           style={{
-            fontSize: 20,
+            fontSize: 26,
             fontWeight: "700",
-            fontFamily: "ZillaSlab",
+            fontFamily: "ZillaSlab-SemiBold",
             color: theme.colors.text,
-            letterSpacing: 0.5,
+            letterSpacing: 0,
+            marginTop: 4,
           }}
         >
           Settings
@@ -47,22 +81,14 @@ const SettingsHeader = ({ theme, accentColor, compact = false }) => {
           style={{
             fontSize: 14,
             fontFamily: "ZillaSlab",
-            color: theme.colors.text + "80",
-            marginTop: 4,
-            letterSpacing: 0.2,
+            color: mutedText,
+            marginTop: 2,
+            letterSpacing: 0,
           }}
         >
-          Customize your experience
+          Tune the reading experience
         </Text>
       </View>
-
-      <TouchableOpacity
-        onPress={() => router?.navigate("AllSermons")}
-        style={getIconButtonStyle()}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-      </TouchableOpacity>
     </View>
   );
 };

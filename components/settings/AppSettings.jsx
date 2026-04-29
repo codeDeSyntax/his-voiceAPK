@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
@@ -76,7 +82,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
 
   const handleDeleteDatabaseFile = async () => {
     Alert.alert(
-      "Delete Database",
+      "Delete Sermons",
       "This will delete all downloaded sermon data. You will need to download it again. Your settings will be preserved.",
       [
         {
@@ -126,7 +132,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
               console.error("Delete error:", error);
               Alert.alert(
                 "Error",
-                `Failed to delete database: ${error.message}`,
+                `Failed to delete sermons: ${error.message}`,
               );
             }
           },
@@ -193,7 +199,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
   const handleResetAppToFresh = async () => {
     Alert.alert(
       "Reset App to Fresh",
-      "This will reset EVERYTHING to first-time launch state:\n• Clear all preferences\n• Clear reading progress\n• Clear bookmarks & highlights\n• Reset database migration\n\nThe app will reload to the Welcome screen.",
+      "This will reset EVERYTHING to first-time launch state:\n- Clear all preferences\n- Clear reading progress\n- Clear bookmarks & highlights\n- Reset database migration\n\nThe app will reload to the Welcome screen.",
       [
         {
           text: "Cancel",
@@ -369,6 +375,20 @@ const AppSettings = ({ theme, router, compact = false }) => {
     }
   };
 
+  const accent = theme.dark ? theme.colors.hlight : "#5d3211";
+  const rowDivider = theme.dark
+    ? "rgba(242, 205, 180, 0.09)"
+    : "rgba(93, 50, 17, 0.08)";
+  const rowPressedBg = theme.dark
+    ? "rgba(255, 255, 255, 0.04)"
+    : "rgba(93, 50, 17, 0.04)";
+  const iconBg = theme.dark
+    ? "rgba(242, 205, 180, 0.10)"
+    : "rgba(93, 50, 17, 0.08)";
+  const disabledIconBg = theme.dark
+    ? "rgba(255, 255, 255, 0.035)"
+    : "rgba(0, 0, 0, 0.035)";
+
   const SettingItem = ({
     icon,
     title,
@@ -385,33 +405,43 @@ const AppSettings = ({ theme, router, compact = false }) => {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          paddingVertical: 16,
-          paddingHorizontal: 4,
+          paddingVertical: 14,
+          paddingHorizontal: 14,
           borderBottomWidth: 1,
-          borderBottomColor: theme.dark
-            ? "rgba(242, 205, 180, 0.08)"
-            : "rgba(93, 50, 17, 0.08)",
-          opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
+          borderBottomColor: rowDivider,
+          backgroundColor: pressed && !disabled ? rowPressedBg : "transparent",
+          opacity: disabled ? 0.58 : 1,
         }}
         onPress={onPress}
         onPressIn={() => !disabled && setPressed(true)}
         onPressOut={() => setPressed(false)}
-        activeOpacity={1}
+        activeOpacity={0.9}
         disabled={disabled}
       >
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-          <Ionicons
-            name={icon}
-            size={24}
-            color={
-              disabled
-                ? theme.dark
-                  ? "#666666"
-                  : "#999999"
-                : theme.colors.text
-            }
-            style={{ marginRight: 16 }}
-          />
+          <View
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: disabled ? disabledIconBg : iconBg,
+              marginRight: 14,
+            }}
+          >
+            <Ionicons
+              name={icon}
+              size={19}
+              color={
+                disabled
+                  ? theme.dark
+                    ? "#777777"
+                    : "#999999"
+                  : accent
+              }
+            />
+          </View>
 
           <View style={{ flex: 1 }}>
             <Text
@@ -420,7 +450,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
                 fontWeight: "500",
                 color: disabled
                   ? theme.dark
-                    ? "#666666"
+                    ? "#777777"
                     : "#999999"
                   : theme.colors.text,
                 fontFamily: "ZillaSlab",
@@ -437,8 +467,9 @@ const AppSettings = ({ theme, router, compact = false }) => {
                     ? theme.dark
                       ? "#555555"
                       : "#AAAAAA"
-                    : theme.colors.text + "60",
+                    : theme.colors.text + "68",
                   fontFamily: "ZillaSlab",
+                  lineHeight: 18,
                 }}
               >
                 {subtitle}
@@ -478,7 +509,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
       {/* Delete Database File */}
       <SettingItem
         icon="trash-outline"
-        title="Delete Database"
+        title="Delete Sermons"
         subtitle="Remove downloaded sermon data"
         onPress={handleDeleteDatabaseFile}
         rightIcon="chevron-forward"

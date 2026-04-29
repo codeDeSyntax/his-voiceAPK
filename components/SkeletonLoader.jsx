@@ -27,122 +27,95 @@ const SkeletonLoader = ({ theme, count = 10 }) => {
     outputRange: [-300, 300],
   });
 
-  const SkeletonItem = () => (
+  const shimmer = (
+    <Animated.View
+      style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}
+    >
+      <LinearGradient
+        colors={
+          theme.dark
+            ? ["transparent", "rgba(242, 205, 180, 0.14)", "transparent"]
+            : ["transparent", "rgba(93, 50, 17, 0.11)", "transparent"]
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </Animated.View>
+  );
+
+  const blockColor = theme.dark
+    ? "rgba(242, 205, 180, 0.09)"
+    : "rgba(93, 50, 17, 0.065)";
+  const faintBlockColor = theme.dark
+    ? "rgba(242, 205, 180, 0.065)"
+    : "rgba(93, 50, 17, 0.045)";
+  const separatorColor = theme.dark
+    ? "rgba(242, 205, 180, 0.10)"
+    : "rgba(93, 50, 17, 0.15)";
+
+  const SkeletonBlock = ({ style, faint = false }) => (
+    <View
+      style={[
+        styles.skeletonBlock,
+        { backgroundColor: faint ? faintBlockColor : blockColor },
+        style,
+      ]}
+    >
+      {shimmer}
+    </View>
+  );
+
+  const SkeletonItem = ({ index }) => (
     <View
       style={[
         styles.skeletonItem,
         {
-          backgroundColor: "transparent",
+          backgroundColor:
+            index % 2 === 0
+              ? theme.dark
+                ? "rgba(242, 205, 180, 0.02)"
+                : "rgba(93, 50, 17, 0.02)"
+              : "transparent",
         },
       ]}
     >
-      <View style={styles.skeletonContent}>
-        {/* Title skeleton */}
+      <View style={styles.skeletonRow}>
+        <SkeletonBlock style={styles.skeletonIcon} />
+
         <View style={styles.skeletonTextContainer}>
-          <View
+          <SkeletonBlock
             style={[
-              styles.skeletonText,
               styles.skeletonTitle,
-              {
-                backgroundColor: theme.dark
-                  ? "rgba(242, 205, 180, 0.1)"
-                  : "rgba(93, 50, 17, 0.08)",
-              },
+              { width: `${index % 3 === 0 ? 78 : index % 3 === 1 ? 88 : 68}%` },
             ]}
-          >
-            <Animated.View
-              style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}
-            >
-              <LinearGradient
-                colors={
-                  theme.dark
-                    ? [
-                        "transparent",
-                        "rgba(242, 205, 180, 0.15)",
-                        "transparent",
-                      ]
-                    : ["transparent", "rgba(93, 50, 17, 0.12)", "transparent"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-            </Animated.View>
-          </View>
-        </View>
-
-        {/* Metadata skeleton */}
-        <View style={styles.skeletonMetadata}>
-          <View
-            style={[
-              styles.skeletonText,
-              styles.skeletonDate,
-              {
-                backgroundColor: theme.dark
-                  ? "rgba(242, 205, 180, 0.08)"
-                  : "rgba(93, 50, 17, 0.06)",
-              },
-            ]}
-          >
-            <Animated.View
-              style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}
-            >
-              <LinearGradient
-                colors={
-                  theme.dark
-                    ? [
-                        "transparent",
-                        "rgba(242, 205, 180, 0.12)",
-                        "transparent",
-                      ]
-                    : ["transparent", "rgba(93, 50, 17, 0.1)", "transparent"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-            </Animated.View>
-          </View>
-
-          <View
-            style={[
-              styles.skeletonText,
-              styles.skeletonType,
-              {
-                backgroundColor: theme.dark
-                  ? "rgba(242, 205, 180, 0.08)"
-                  : "rgba(93, 50, 17, 0.06)",
-              },
-            ]}
-          >
-            <Animated.View
-              style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}
-            >
-              <LinearGradient
-                colors={
-                  theme.dark
-                    ? [
-                        "transparent",
-                        "rgba(242, 205, 180, 0.12)",
-                        "transparent",
-                      ]
-                    : ["transparent", "rgba(93, 50, 17, 0.1)", "transparent"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-            </Animated.View>
+          />
+          <View style={styles.skeletonMetadata}>
+            <SkeletonBlock style={styles.skeletonDate} faint />
+            <SkeletonBlock
+              style={[
+                styles.skeletonLocation,
+                { width: index % 2 === 0 ? 92 : 118 },
+              ]}
+              faint
+            />
+            <SkeletonBlock style={styles.skeletonType} faint />
           </View>
         </View>
       </View>
+      <View
+        style={[
+          styles.skeletonSeparator,
+          { backgroundColor: separatorColor },
+        ]}
+      />
     </View>
   );
 
   return (
     <View style={styles.container}>
       {Array.from({ length: count }).map((_, index) => (
-        <SkeletonItem key={index} />
+        <SkeletonItem key={index} index={index} />
       ))}
     </View>
   );
@@ -151,41 +124,59 @@ const SkeletonLoader = ({ theme, count = 10 }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingHorizontal: 0,
+    paddingTop: 6,
   },
   skeletonItem: {
-    borderRadius: 10,
-    marginBottom: 14,
-    padding: 14,
+    marginHorizontal: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 12,
     overflow: "hidden",
   },
-  skeletonContent: {
-    gap: 10,
+  skeletonRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   skeletonTextContainer: {
-    gap: 6,
+    flex: 1,
+    minWidth: 0,
   },
-  skeletonText: {
+  skeletonBlock: {
     borderRadius: 8,
     overflow: "hidden",
   },
+  skeletonIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    marginRight: 8,
+  },
   skeletonTitle: {
-    height: 18,
-    width: "85%",
+    height: 14,
+    marginBottom: 6,
   },
   skeletonMetadata: {
     flexDirection: "row",
-    gap: 12,
     alignItems: "center",
+    gap: 4,
   },
   skeletonDate: {
-    height: 12,
-    width: 100,
+    height: 10,
+    width: 82,
+  },
+  skeletonLocation: {
+    height: 10,
   },
   skeletonType: {
-    height: 12,
-    width: 60,
+    height: 16,
+    width: 42,
+    borderRadius: 999,
+  },
+  skeletonSeparator: {
+    height: 0.8,
+    marginHorizontal: 12,
+    marginLeft: 56,
+    marginTop: 3,
   },
 });
 

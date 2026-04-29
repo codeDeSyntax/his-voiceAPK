@@ -51,6 +51,7 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
   const [isDragging, setIsDragging] = useState(false);
   const hasMoved = useRef(false);
   const idleTimer = useRef(null);
+  const lastPressAt = useRef(0);
 
   useEffect(() => {
     AsyncStorage.getItem(POSITION_KEY).then((json) => {
@@ -94,8 +95,16 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
     };
   }, []);
 
+  const triggerPressFeedback = useCallback(() => {
+    Vibration.vibrate(Platform.OS === "android" ? 35 : 20);
+  }, []);
+
   const handlePressAction = useCallback(() => {
-    if (Platform.OS === "android") Vibration.vibrate([0, 20]);
+    const now = Date.now();
+    if (now - lastPressAt.current < 250) return;
+    lastPressAt.current = now;
+
+    triggerPressFeedback();
 
     Animated.sequence([
       Animated.timing(scaleAnim, {
@@ -120,7 +129,7 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
         router.navigate("AllSermons");
       }
     }
-  }, [onPress, router, scaleAnim]);
+  }, [onPress, router, scaleAnim, triggerPressFeedback]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -128,7 +137,6 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
         hasMoved.current = false;
-        if (Platform.OS === "android") Vibration.vibrate([0, 10]);
         pan.setOffset({ x: pan.x._value, y: pan.y._value });
         resetIdleTimer();
       },

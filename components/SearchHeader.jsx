@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { View, TextInput, TouchableOpacity, Animated } from "react-native";
-import { Feather, AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 
 const DEBOUNCE_MS = 350;
 
@@ -51,24 +51,25 @@ const SearchHeader = React.memo(({ theme, onSearchChange }) => {
   const animatedBg = focusAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [
-      theme.dark ? "rgba(255,255,255,0.07)" : "rgba(93,50,17,0.05)",
-      theme.dark ? "rgba(255,255,255,0.11)" : "rgba(93,50,17,0.08)",
+      theme.dark ? "rgba(255,255,255,0.085)" : "rgba(93,50,17,0.070)",
+      theme.dark ? "rgba(242,205,180,0.105)" : "rgba(93,50,17,0.090)",
     ],
   });
 
-  const animatedBorder = focusAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [
-      theme.dark ? "rgba(255,255,255,0.09)" : "rgba(93,50,17,0.18)",
-      theme.dark ? "rgba(242,205,180,0.30)" : "rgba(93,50,17,0.35)",
-    ],
-  });
+  const iconColor = theme.dark
+    ? value
+      ? "rgba(242,205,180,0.80)"
+      : "rgba(255,255,255,0.42)"
+    : value
+      ? "#5d3211"
+      : "rgba(93,50,17,0.48)";
 
   return (
     <View
       style={{
-        paddingHorizontal: 20,
-        paddingVertical: 8,
+        paddingHorizontal: 18,
+        paddingTop: 5,
+        paddingBottom: 7,
         backgroundColor: theme.colors.background,
       }}
     >
@@ -78,29 +79,25 @@ const SearchHeader = React.memo(({ theme, onSearchChange }) => {
           alignItems: "center",
           backgroundColor: animatedBg,
           borderRadius: 100,
-          borderWidth: 1,
-          borderColor: animatedBorder,
-          paddingHorizontal: 16,
-          height: 48,
+          paddingHorizontal: 15,
+          height: 46,
         }}
       >
         <MaterialCommunityIcons
-          name="book-search"
-          size={18}
-          color={
-            theme.dark ? "rgba(255,255,255,0.4)" : "rgba(93,50,17,0.45)"
-          }
-          style={{ marginRight: 6 }}
+          name="magnify"
+          size={21}
+          color={iconColor}
+          style={{ marginRight: 5 }}
         />
 
         <TextInput
           style={{
             flex: 1,
-            paddingHorizontal: 8,
-            fontSize: 15,
-            height: 48,
+            paddingHorizontal: 6,
+            fontSize: 14.5,
+            height: 44,
             color: theme.dark ? theme.colors.text : "#1a0e07",
-            fontFamily: "ZillaSlab",
+            fontFamily: "Merriweather",
           }}
           placeholder="Search sermons..."
           value={value}
@@ -112,7 +109,7 @@ const SearchHeader = React.memo(({ theme, onSearchChange }) => {
           }
           selectionColor={theme.dark ? theme.colors.text : "#5d3211"}
           spellCheck={false}
-          autoCorrect={false}
+          autoCorrect={true}
           keyboardAppearance={theme.dark ? "dark" : "light"}
         />
 
@@ -125,15 +122,17 @@ const SearchHeader = React.memo(({ theme, onSearchChange }) => {
               borderRadius: 12,
               justifyContent: "center",
               alignItems: "center",
-              backgroundColor: "rgba(150,150,150,0.1)",
+              backgroundColor: theme.dark
+                ? "rgba(242,205,180,0.12)"
+                : "rgba(93,50,17,0.11)",
             }}
             activeOpacity={0.7}
           >
             <AntDesign
               name="close"
-              size={14}
+              size={12}
               color={
-                theme.dark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.4)"
+                theme.dark ? "rgba(242,205,180,0.72)" : "rgba(40,20,10,0.58)"
               }
             />
           </TouchableOpacity>

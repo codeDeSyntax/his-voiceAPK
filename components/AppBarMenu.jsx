@@ -84,15 +84,19 @@ const MenuItem = ({
       style={({ pressed }) => ({
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 7,
-        marginHorizontal: 6,
-        marginVertical: 1,
-        borderRadius: 12,
-        backgroundColor: pressed
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        marginHorizontal: 8,
+        marginVertical: 2,
+        borderRadius: 14,
+        backgroundColor: highlight
           ? dark
-            ? "rgba(242, 205, 180, 0.07)"
-            : "rgba(93, 50, 17, 0.045)"
+            ? "rgba(242, 205, 180, 0.10)"
+            : "rgba(93, 50, 17, 0.075)"
+          : pressed
+          ? dark
+            ? "rgba(242, 205, 180, 0.08)"
+            : "rgba(93, 50, 17, 0.052)"
           : "transparent",
       })}
       onPress={onPress}
@@ -101,11 +105,28 @@ const MenuItem = ({
         borderless: false,
       }}
     >
-      {renderIcon()}
-      <View style={{ flex: 1, marginLeft: 12 }}>
+      <View
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: highlight
+            ? dark
+              ? "rgba(242, 205, 180, 0.12)"
+              : "rgba(93, 50, 17, 0.10)"
+            : dark
+              ? "rgba(242, 205, 180, 0.065)"
+              : "rgba(93, 50, 17, 0.055)",
+        }}
+      >
+        {renderIcon()}
+      </View>
+      <View style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
         <Text
           style={{
-            fontSize: 14.5,
+            fontSize: 14,
             color: textColor,
             fontFamily: "Merriweather",
             letterSpacing: 0.1,
@@ -131,8 +152,8 @@ const MenuItem = ({
       {showChevron && (
         <Ionicons
           name="chevron-forward"
-          size={14}
-          color={dark ? "rgba(242, 205, 180, 0.2)" : "rgba(93, 50, 17, 0.2)"}
+          size={15}
+          color={dark ? "rgba(242, 205, 180, 0.28)" : "rgba(93, 50, 17, 0.28)"}
         />
       )}
     </Pressable>
@@ -143,15 +164,15 @@ const MenuItem = ({
 const SectionDivider = ({ label, theme }) => {
   const dark = theme.dark;
   return (
-    <View style={{ marginTop: 4, marginBottom: 3 }}>
+    <View style={{ marginTop: 12, marginBottom: 5 }}>
       <View
         style={{
           height: StyleSheet.hairlineWidth,
           backgroundColor: dark
-            ? "rgba(242, 205, 180, 0.1)"
-            : "rgba(93, 50, 17, 0.08)",
-          marginHorizontal: 20,
-          marginBottom: label ? 8 : 0,
+            ? "rgba(242, 205, 180, 0.085)"
+            : "rgba(93, 50, 17, 0.075)",
+          marginHorizontal: 18,
+          marginBottom: label ? 9 : 0,
         }}
       />
       {label && (
@@ -159,18 +180,60 @@ const SectionDivider = ({ label, theme }) => {
           style={{
             fontSize: 10,
             fontWeight: "700",
-            letterSpacing: 0.8,
+            letterSpacing: 1.2,
             textTransform: "uppercase",
-            color: dark ? "rgba(242, 205, 180, 0.3)" : "rgba(93, 50, 17, 0.3)",
-            paddingHorizontal: 22,
-            paddingBottom: 2,
-            fontFamily: "cursive",
+            color: dark
+              ? "rgba(242, 205, 180, 0.38)"
+              : "rgba(93, 50, 17, 0.38)",
+            paddingHorizontal: 20,
+            paddingBottom: 1,
+            fontFamily: "ZillaSlab-SemiBold",
           }}
         >
           {label}
         </Text>
       )}
     </View>
+  );
+};
+
+const FilterIconButton = ({ icon, label, onPress, theme, active = false }) => {
+  const dark = theme.dark;
+  const color = active
+    ? dark
+      ? "#f2cdb4"
+      : "#5d3211"
+    : dark
+      ? "rgba(242,205,180,0.70)"
+      : "rgba(93,50,17,0.62)";
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => ({
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: active
+          ? dark
+            ? "rgba(242,205,180,0.13)"
+            : "rgba(93,50,17,0.11)"
+          : pressed
+            ? dark
+              ? "rgba(242,205,180,0.10)"
+              : "rgba(93,50,17,0.08)"
+            : dark
+              ? "rgba(242,205,180,0.065)"
+              : "rgba(93,50,17,0.055)",
+        transform: [{ scale: pressed ? 0.96 : 1 }],
+      })}
+    >
+      <Ionicons name={icon} size={22} color={color} />
+    </Pressable>
   );
 };
 
@@ -258,17 +321,17 @@ const AppBarMenu = ({
           top: 0,
           right: 0,
           bottom: 0,
-          width: "75%",
-          backgroundColor: theme.dark ? "#1a1310" : "#faeed1",
-          paddingTop: insets.top + 16,
-          paddingHorizontal: 8,
+          width: "80%",
+          backgroundColor: theme.dark ? "#1b1410" : "#fbefd5",
+          paddingTop: insets.top + 14,
+          paddingHorizontal: 10,
           paddingBottom: insets.bottom + 16,
           borderLeftWidth: 0.5,
           borderLeftColor: theme.dark
-            ? "rgba(242, 205, 180, 0.1)"
-            : "rgba(93, 50, 17, 0.08)",
-          borderTopLeftRadius: 24,
-          borderBottomLeftRadius: 24,
+            ? "rgba(242, 205, 180, 0.12)"
+            : "rgba(93, 50, 17, 0.10)",
+          borderTopLeftRadius: 28,
+          borderBottomLeftRadius: 28,
           overflow: "hidden",
           transform: [
             {
@@ -317,53 +380,69 @@ const AppBarMenu = ({
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
-              paddingHorizontal: 12,
-              marginBottom: 12,
+              paddingHorizontal: 10,
+              marginBottom: 10,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
               <View
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 42,
+                  height: 42,
+                  borderRadius: 21,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "#341c09",
+                  backgroundColor: theme.dark
+                    ? "rgba(242,205,180,0.10)"
+                    : "rgba(93,50,17,0.08)",
                   borderWidth: 1,
                   borderColor: theme.dark
-                    ? "rgba(242, 205, 180, 0.18)"
-                    : "rgba(93, 50, 17, 0.14)",
+                    ? "rgba(242, 205, 180, 0.16)"
+                    : "rgba(93, 50, 17, 0.12)",
                 }}
               >
                 <Image
                   source={require("../assets/adaptive-icon.png")}
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 9,
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
                   }}
                 />
               </View>
-              <Text
-                style={{
-                  marginLeft: 10,
-                  fontSize: 19,
-                  fontFamily: "cursive",
-                  color: theme.colors.text,
-                  fontWeight: "900",
-                }}
-              >
-                HisVoice
-              </Text>
+              <View style={{ marginLeft: 11, flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 19,
+                    fontFamily: "ZillaSlab-SemiBold",
+                    color: theme.colors.text,
+                  }}
+                  numberOfLines={1}
+                >
+                  HisVoice
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "Merriweather",
+                    color: theme.dark
+                      ? "rgba(242,205,180,0.44)"
+                      : "rgba(93,50,17,0.44)",
+                    marginTop: 1,
+                  }}
+                  numberOfLines={1}
+                >
+                  Sermon Library
+                </Text>
+              </View>
             </View>
 
             <Pressable
               onPress={onClose}
               style={({ pressed }) => ({
-                width: 32,
-                height: 32,
-                borderRadius: 8,
+                width: 36,
+                height: 36,
+                borderRadius: 18,
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: pressed
@@ -377,7 +456,7 @@ const AppBarMenu = ({
             >
               <Ionicons
                 name="chevron-back"
-                size={18}
+                size={19}
                 color={
                   theme.dark
                     ? "rgba(242, 205, 180, 0.85)"
@@ -392,6 +471,7 @@ const AppBarMenu = ({
           <MenuItem
             icon="maps-home-work"
             label="Home"
+            subtitle="Opening screen"
             onPress={() => closeMenuAndNavigate("welcome")}
             theme={theme}
             showChevron
@@ -400,6 +480,7 @@ const AppBarMenu = ({
           <MenuItem
             icon="search-circle-sharp"
             label="Search"
+            subtitle="Search all sermons"
             onPress={() => closeMenuAndNavigate("Search")}
             theme={theme}
             showChevron
@@ -407,6 +488,7 @@ const AppBarMenu = ({
           <MenuItem
             icon="bookmarks"
             label="Bookmarks"
+            subtitle="Saved paragraphs"
             onPress={() => closeMenuAndNavigate("bookmarks")}
             theme={theme}
             showChevron
@@ -415,6 +497,7 @@ const AppBarMenu = ({
           <MenuItem
             icon="history"
             label="Recents"
+            subtitle="Recently opened"
             onPress={() => closeMenuAndNavigate("Recents")}
             theme={theme}
             showChevron
@@ -426,6 +509,7 @@ const AppBarMenu = ({
           <MenuItem
             icon="information-circle"
             label="About"
+            subtitle="App information"
             onPress={() => closeMenuAndNavigate("About")}
             theme={theme}
             showChevron
@@ -433,6 +517,7 @@ const AppBarMenu = ({
           <MenuItem
             icon="settings"
             label="Settings"
+            subtitle="Display and app"
             onPress={() => closeMenuAndNavigate("Settings")}
             theme={theme}
             showChevron
@@ -440,33 +525,35 @@ const AppBarMenu = ({
 
           {/* Filters Section */}
           <SectionDivider label="Filters" theme={theme} />
-          <MenuItem
-            icon="document-text-outline"
-            label="Text Only"
-            onPress={() => closeMenuAndExecute(filterOnlyText)}
-            theme={theme}
-            highlight={hasActiveFilters}
-          />
-          <MenuItem
-            icon="musical-notes-outline"
-            label="Audio Only"
-            onPress={() => closeMenuAndExecute(filterOnlyAudio)}
-            theme={theme}
-            highlight={hasActiveFilters}
-          />
-          <MenuItem
-            icon={isOriginalOrder ? "swap-vertical" : "funnel-outline"}
-            label="Toggle Sort"
-            onPress={() => closeMenuAndExecute(toggleSortOrder)}
-            theme={theme}
-          />
-          <MenuItem
-            icon="refresh-outline"
-            label="Reset All"
-            onPress={() => closeMenuAndExecute(restoreOriginalOrder)}
-            theme={theme}
-            highlight={hasActiveFilters}
-          />
+          <View style={styles.filterButtonRow}>
+            <FilterIconButton
+              icon="document-text-outline"
+              label="Text only"
+              onPress={() => closeMenuAndExecute(filterOnlyText)}
+              theme={theme}
+              active={hasActiveFilters}
+            />
+            <FilterIconButton
+              icon="musical-notes-outline"
+              label="Audio only"
+              onPress={() => closeMenuAndExecute(filterOnlyAudio)}
+              theme={theme}
+              active={hasActiveFilters}
+            />
+            <FilterIconButton
+              icon={isOriginalOrder ? "swap-vertical" : "funnel-outline"}
+              label="Toggle sort"
+              onPress={() => closeMenuAndExecute(toggleSortOrder)}
+              theme={theme}
+            />
+            <FilterIconButton
+              icon="refresh-outline"
+              label="Reset all filters"
+              onPress={() => closeMenuAndExecute(restoreOriginalOrder)}
+              theme={theme}
+              active={hasActiveFilters}
+            />
+          </View>
         </ScrollView>
       </Animated.View>
     </Modal>
@@ -474,6 +561,14 @@ const AppBarMenu = ({
 };
 
 const styles = StyleSheet.create({
+  filterButtonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingTop: 2,
+    paddingBottom: 8,
+  },
   topImageWrap: {
     position: "absolute",
     top: 0,

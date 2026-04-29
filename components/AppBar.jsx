@@ -173,6 +173,7 @@ const ListAppBar = React.memo(
     isOriginalOrder,
     hasActiveFilters,
     onToggleTheme,
+    totalCount = 0,
   }) => {
     const router = useNavigation();
     const insets = useSafeAreaInsets();
@@ -241,7 +242,7 @@ const ListAppBar = React.memo(
             </TouchableOpacity>
 
             {/* Home Button */}
-            <GlassButton
+            {/* <GlassButton
               theme={theme}
               onPress={() => {
                 router?.dispatch(
@@ -257,7 +258,33 @@ const ListAppBar = React.memo(
                 size={22}
                 color={theme.colors.text}
               />
-            </GlassButton>
+            </GlassButton> */}
+
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text
+                style={{
+                  color: theme.colors.text,
+                  fontFamily: "ZillaSlab-SemiBold",
+                  fontSize: 18,
+                }}
+                numberOfLines={1}
+              >
+                Sermons
+              </Text>
+              <Text
+                style={{
+                  color: theme.dark
+                    ? "rgba(255,255,255,0.42)"
+                    : "rgba(93,50,17,0.50)",
+                  fontFamily: "Merriweather",
+                  fontSize: 11,
+                  marginTop: 1,
+                }}
+                numberOfLines={1}
+              >
+                {totalCount} available
+              </Text>
+            </View>
           </View>
 
           <View style={{ flexDirection: "row", gap: 8 }}>

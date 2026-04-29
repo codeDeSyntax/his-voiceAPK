@@ -183,8 +183,8 @@ export const styles = StyleSheet.create({
 
   // Compact view styles
   compactRow: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    paddingHorizontal: spacing.md,
     marginHorizontal: spacing.sm,
     marginVertical: 0,
   },
@@ -202,6 +202,7 @@ export const styles = StyleSheet.create({
   },
   compactTextContainer: {
     flex: 1,
+    minWidth: 0,
   },
   compactTitle: {
     fontSize: responsiveFontSize(15),
@@ -211,6 +212,26 @@ export const styles = StyleSheet.create({
   compactDate: {
     fontSize: responsiveFontSize(13),
     fontFamily: "serif",
+  },
+  compactMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  compactMetaText: {
+    maxWidth: "58%",
+    fontSize: responsiveFontSize(11.5),
+    fontFamily: "Merriweather",
+  },
+  compactTypePill: {
+    borderRadius: horizontalScale(999),
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  compactTypePillText: {
+    fontSize: responsiveFontSize(10.5),
+    fontFamily: "ZillaSlab-SemiBold",
   },
   compactListContent: {
     paddingHorizontal: 0,

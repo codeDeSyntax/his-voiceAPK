@@ -1,14 +1,13 @@
 import React, { useCallback } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { styles } from "../styles/Allsermons";
 import { responsiveFontSize, spacing } from "../Utils/responsiveUtils";
 import { GlassButton } from "../styles/glassButton";
 
 const SermonListView = React.memo(
-  ({ theme, filteredSermons, handleSermonClick }) => {
-    // Compact view - minimal list layout with separator
+  ({ theme, filteredSermons, handleSermonClick, listHeaderComponent }) => {
     const renderCompactItem = useCallback(
       ({ item, index }) => (
         <View key={item.id}>
@@ -28,7 +27,7 @@ const SermonListView = React.memo(
                 borderLeftWidth: 2,
                 borderLeftColor: pressed
                   ? theme.dark
-                    ? theme.colors.primary
+                    ? "rgba(242, 205, 180, 0.55)"
                     : "#5d3211"
                   : "transparent",
               },
@@ -41,53 +40,94 @@ const SermonListView = React.memo(
             onPress={() => handleSermonClick(item)}
           >
             <View style={styles.compactContent}>
-              <GlassButton theme={theme} size={36} style={{ marginRight: spacing.sm }}>
+              <GlassButton
+                theme={theme}
+                size={34}
+                style={{ marginRight: spacing.sm ,elevation:0}}
+              >
                 {item.type === "mp3" ? (
                   <MaterialIcons
                     name="multitrack-audio"
-                    size={responsiveFontSize(24)}
+                    size={responsiveFontSize(26)}
                     color={theme.dark ? "#faeed180" : "#5d3211"}
                   />
                 ) : (
                   <MaterialIcons
-                    name="format-textdirection-r-to-l"
-                    size={responsiveFontSize(24)}
+                    name="article"
+                    size={responsiveFontSize(26)}
                     color={theme.dark ? "#fdcfad" : "#5d3211"}
                   />
                 )}
               </GlassButton>
+
               <View style={styles.compactTextContainer}>
                 <Text
-                  style={[
-                    {
-                      fontSize: responsiveFontSize(15.5),
-                      color: theme.colors.text,
-                      fontFamily: "Merriweather",
-                      marginBottom: spacing.xs,
-                      // fontWeight: "700",
-                    },
-                  ]}
+                  style={{
+                    fontSize: responsiveFontSize(15.5),
+                    color: theme.dark ? "#fae7da" : theme.colors.text,
+                    fontFamily: "Merriweather",
+                    marginBottom: 1,
+                  }}
                   numberOfLines={1}
                 >
                   {item.title}
                 </Text>
-                <Text
-                  style={[
-                    {
-                      fontSize: responsiveFontSize(13),
-                      color: theme.dark
-                        ? theme.colors.text + "70"
-                        : "#5d321180",
-                      fontFamily: "Merriweather",
-                    },
-                  ]}
-                >
-                  {item.date} {item.location && `• ${item.location}`}
-                </Text>
+
+                <View style={styles.compactMetaRow}>
+                  <Text
+                    style={[
+                      styles.compactMetaText,
+                      {
+                        color: theme.dark
+                          ? theme.colors.text + "70"
+                          : "#5d321180",
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {item.date || "Unknown date"}
+                  </Text>
+
+                  {item.location ? (
+                    <Text
+                      style={[
+                        styles.compactMetaText,
+                        {
+                          color: theme.dark
+                            ? theme.colors.text + "62"
+                            : "#5d321168",
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.location}
+                    </Text>
+                  ) : null}
+
+                  <View
+                    style={[
+                      styles.compactTypePill,
+                      {
+                        backgroundColor: theme.dark
+                          ? "rgba(242,205,180,0.08)"
+                          : "rgba(93,50,17,0.08)",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.compactTypePillText,
+                        { color: theme.dark ? "#f2cdb4" : "#5d3211" },
+                      ]}
+                    >
+                      {item.type === "mp3" ? "Audio" : "Text"}
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
           </Pressable>
-          {/* Separator line */}
+
           <View
             style={{
               height: 0.8,
@@ -95,7 +135,7 @@ const SermonListView = React.memo(
                 ? "rgba(242, 205, 180, 0.10)"
                 : "rgba(93, 50, 17, 0.15)",
               marginHorizontal: spacing.md,
-              marginLeft: spacing.md + 28,
+              marginLeft: spacing.md + 44,
             }}
           />
         </View>
@@ -113,13 +153,9 @@ const SermonListView = React.memo(
         updateCellsBatchingPeriod={50}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="none"
-        getItemLayout={(data, index) => ({
-          length: 50,
-          offset: 50 * index,
-          index,
-        })}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.compactListContent}
+        ListHeaderComponent={listHeaderComponent}
         ListEmptyComponent={
           <View
             style={{
@@ -139,7 +175,7 @@ const SermonListView = React.memo(
               style={{
                 color: theme.dark ? theme.colors.text + "80" : "#5d3211",
                 fontSize: responsiveFontSize(16),
-                fontFamily: "ZillaSlab_smb",
+                fontFamily: "ZillaSlab-SemiBold",
                 fontWeight: "600",
                 marginBottom: spacing.xs,
               }}
