@@ -4,7 +4,7 @@ import StackNavigator from "./components/StackNavigator";
 import { NavigationContainer } from "@react-navigation/native";
 import { SermonProvider } from "./Logic/globalState";
 import { BackHandler, Platform } from "react-native";
-import AppStatusBar from "./components/StatusBar";
+import SystemBars from "./components/SystemBars";
 import { useFonts } from "expo-font";
 import UpdateScreen from "./components/Update";
 import LoaderScreen from "./screens/LoadingScreen";
@@ -54,7 +54,7 @@ export default function App() {
   return (
     <SermonProvider>
       <NavigationContainer>
-        <AppStatusBar />
+        <SystemBars />
         <UpdateScreen />
         <StackNavigator />
       </NavigationContainer>

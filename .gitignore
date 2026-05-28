@@ -10,6 +10,7 @@ node_modules/
 .expo/
 dist/
 web-build/
+/sermons/
 
 # Native
 *.orig.*
@@ -39,4 +40,10 @@ yarn-error.*
 .qodo
 
 # Release scripts (local dev only)
-scripts/
+scripts/*
+!scripts/check_new_transcribed_sermons.py
+!scripts/clean_sermon_pdf.py
+!scripts/download_missing_sermon_sample.py
+!scripts/download_all_missing_sermons.py
+!scripts/import_cleaned_sermons.py
+!scripts/build_sermons_db.py

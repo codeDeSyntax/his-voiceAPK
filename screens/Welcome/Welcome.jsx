@@ -23,7 +23,7 @@ import {
   spacing,
 } from "../../Utils/responsiveUtils";
 import {
-  downloadDatabaseFromGitHub,
+  downloadDatabaseWithSignal,
   databaseExists,
 } from "../../database/downloadDatabase";
 import { forceStopIndexing, closeDatabase } from "../../database/sermonDB";
@@ -46,6 +46,7 @@ const Welcome = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadError, setDownloadError] = useState(null);
+  const downloadControllerRef = useRef(null);
 
   // Check if database exists on mount
   useEffect(() => {
@@ -83,6 +84,9 @@ const Welcome = () => {
       setDownloadError(null);
       setDownloadProgress(0);
 
+      const controller = new AbortController();
+      downloadControllerRef.current = controller;
+
       if (allSermons.length > 0) {
         forceStopIndexing();
         try {
@@ -93,9 +97,12 @@ const Welcome = () => {
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
-      const result = await downloadDatabaseFromGitHub((percentage) => {
-        setDownloadProgress(percentage);
-      });
+      const result = await downloadDatabaseWithSignal(
+        (percentage) => {
+          setDownloadProgress(percentage);
+        },
+        controller.signal,
+      );
 
       if (result.success) {
         setDownloadProgress(100);
@@ -117,12 +124,30 @@ const Welcome = () => {
         throw new Error("Download failed");
       }
     } catch (error) {
+      if (downloadControllerRef.current?.signal?.aborted) {
+        setDownloadError("Download cancelled.");
+        setIsDownloading(false);
+        setDownloadProgress(0);
+        return;
+      }
       console.error("Download error:", error);
       setDownloadError(error.message || "Failed to download database");
       setIsDownloading(false);
       setDownloadProgress(0);
+    } finally {
+      downloadControllerRef.current = null;
     }
   };
+
+  const handleCancelDownload = () => {
+    downloadControllerRef.current?.abort();
+  };
+
+  useEffect(() => {
+    return () => {
+      downloadControllerRef.current?.abort();
+    };
+  }, []);
 
   // Animation values — staggered entrance for each element
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -679,6 +704,17 @@ const Welcome = () => {
                   ]}
                 />
               </View>
+              <Pressable
+                onPress={handleCancelDownload}
+                style={({ pressed }) => [
+                  styles.cancelDownloadButton,
+                  { opacity: pressed ? 0.65 : 1 },
+                ]}
+              >
+                <Text style={[styles.cancelDownloadText, { color: accent }]}>
+                  Cancel
+                </Text>
+              </Pressable>
             </View>
           ) : downloadError ? (
             <View style={styles.errorWrap}>
@@ -858,6 +894,16 @@ const styles = StyleSheet.create({
   progressFill: {
     height: "100%",
     borderRadius: 2,
+  },
+  cancelDownloadButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+  },
+  cancelDownloadText: {
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: responsiveFontSize(12),
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
   errorWrap: {
     alignItems: "center",

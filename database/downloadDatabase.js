@@ -1,147 +1,173 @@
-import * as FileSystem from "expo-file-system/legacy";
-import { closeDatabase, getSermonCount } from "./sermonDB";
+import { Directory, File, Paths } from "expo-file-system";
+import { getSermonCount } from "./sermonDB";
 
 // Configuration
-const GITHUB_OWNER = "codeDeSyntax"; // Update this
-const GITHUB_REPO = "hisvoice-data"; // Update this
-const GITHUB_RELEASE_TAG = "V1.0.0"; // Match the release tag in URL
-const DB_FILENAME = "sermons-db.db"; // Match the filename in GitHub release
-const DB_VERSION_KEY = "sermons_db_version1";
+const GITHUB_OWNER = "codeDeSyntax";
+const GITHUB_REPO = "hisvoice-data";
+const GITHUB_RELEASE_TAG = "V1.0.0";
+const DB_FILENAME = "sermons-db.db";
+const TEMP_DB_FILENAME = `${DB_FILENAME}.download`;
+
+const getSQLiteDirectory = () => new Directory(Paths.document, "SQLite");
+const getDatabaseFile = () => new File(getSQLiteDirectory(), DB_FILENAME);
+const getTempDatabaseFile = () =>
+  new File(getSQLiteDirectory(), TEMP_DB_FILENAME);
 
 /**
- * Get the path where the database should be stored
+ * Get the path where the database should be stored.
  */
-export const getDatabasePath = () => {
-  return `${FileSystem.documentDirectory}SQLite/${DB_FILENAME}`;
+export const getDatabasePath = () => getDatabaseFile().uri;
+
+/**
+ * Get the GitHub release URL for the database file.
+ */
+const getGitHubDownloadUrl = () =>
+  `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${GITHUB_RELEASE_TAG}/${DB_FILENAME}`;
+
+const ensureSQLiteDirectory = () => {
+  getSQLiteDirectory().create({ intermediates: true, idempotent: true });
 };
 
-/**
- * Get the GitHub release URL for the database file
- */
-const getGitHubDownloadUrl = () => {
-  return `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${GITHUB_RELEASE_TAG}/${DB_FILENAME}`;
+const deleteIfExists = (file) => {
+  if (file.exists) {
+    file.delete();
+  }
 };
 
+const moveDownloadedDatabaseIntoPlace = (tempFile, dbFile) => {
+  if (!tempFile.exists || tempFile.size <= 0) {
+    throw new Error("Download failed before a valid database file was saved");
+  }
+
+  tempFile.move(dbFile, { overwrite: true });
+
+  if (!dbFile.exists || dbFile.size <= 0) {
+    throw new Error("Downloaded database could not be moved into place");
+  }
+};
+
+const formatMB = (bytes) => (bytes / 1024 / 1024).toFixed(2);
+
+const createDatabaseDownloadTask = (downloadUrl, tempFile, onProgress, signal) =>
+  File.createDownloadTask(downloadUrl, tempFile, {
+    idempotent: true,
+    signal,
+    onProgress: ({ bytesWritten, totalBytes }) => {
+      if (!totalBytes || totalBytes <= 0) return;
+
+      const percentage = Math.floor((bytesWritten / totalBytes) * 100);
+      onProgress?.(percentage, `Downloading ${percentage}%...`);
+    },
+  });
+
 /**
- * Download database from GitHub releases
+ * Download database from GitHub releases.
+ *
+ * SDK 56 implementation notes:
+ * - Uses the modern expo-file-system File/Directory API.
+ * - Downloads into a temporary file first, then overwrites the active DB.
+ * - Keeps the existing DB intact if the network download fails midway.
  */
 export const downloadDatabaseFromGitHub = async (onProgress) => {
-  try {
-    const dbPath = getDatabasePath();
-    const downloadUrl = getGitHubDownloadUrl();
+  const downloadUrl = getGitHubDownloadUrl();
+  const dbFile = getDatabaseFile();
+  const tempFile = getTempDatabaseFile();
 
+  try {
     console.log(`Downloading database from: ${downloadUrl}`);
     onProgress?.(0, "Starting download...");
 
-    // Delete any existing database file first
-    try {
-      const existingFile = await FileSystem.getInfoAsync(dbPath);
-      if (existingFile.exists) {
-        console.log("🗑️ Deleting existing database file...");
-        await FileSystem.deleteAsync(dbPath);
-        console.log("✅ Existing database deleted");
-      }
-    } catch (deleteError) {
-      console.log("No existing database to delete");
-    }
+    ensureSQLiteDirectory();
+    deleteIfExists(tempFile);
 
-    // Small delay after deletion
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    // Create directory if it doesn't exist
-    const dbDir = `${FileSystem.documentDirectory}SQLite`;
-    try {
-      await FileSystem.makeDirectoryAsync(dbDir, { intermediates: true });
-    } catch (error) {
-      // Directory might already exist
-      console.log("SQLite directory already exists or created");
-    }
-
-    // Create download resumable with progress callback
-    const downloadResumable = FileSystem.createDownloadResumable(
+    const downloadTask = createDatabaseDownloadTask(
       downloadUrl,
-      dbPath,
-      {},
-      (downloadProgress) => {
-        const progress =
-          downloadProgress.totalBytesWritten /
-          downloadProgress.totalBytesExpectedToWrite;
-        const percentage = Math.floor(progress * 100);
-        onProgress?.(percentage, `Downloading ${percentage}%...`);
-      },
+      tempFile,
+      onProgress,
     );
+    await downloadTask.downloadAsync();
 
-    // Download the file with real progress tracking
-    const downloadResult = await downloadResumable.downloadAsync();
+    moveDownloadedDatabaseIntoPlace(tempFile, dbFile);
 
-    if (!downloadResult || downloadResult.status !== 200) {
-      // Clean up incomplete file if download failed
-      try {
-        await FileSystem.deleteAsync(dbPath);
-        console.log("Cleaned up incomplete database file");
-      } catch (cleanupError) {
-        console.error("Error cleaning up incomplete file:", cleanupError);
-      }
-      throw new Error(
-        `Download failed with status ${downloadResult?.status || "unknown"}`,
-      );
-    }
-
-    console.log(`✅ Database downloaded successfully to: ${dbPath}`);
-    onProgress?.(100, "Download complete!");
-
-    // Verify the downloaded file size
-    const fileInfo = await FileSystem.getInfoAsync(dbPath);
+    console.log(`Database downloaded successfully to: ${dbFile.uri}`);
     console.log(
-      `📊 Downloaded file size: ${fileInfo.size} bytes (${(fileInfo.size / 1024 / 1024).toFixed(2)} MB)`,
+      `Downloaded file size: ${dbFile.size} bytes (${formatMB(dbFile.size)} MB)`,
     );
+    onProgress?.(100, "Download complete!");
 
     return {
       success: true,
-      path: dbPath,
-      size: fileInfo.size,
+      path: dbFile.uri,
+      size: dbFile.size,
     };
   } catch (error) {
     console.error("Error downloading database:", error);
-    // Ensure we clean up any partial file
+
     try {
-      const dbPath = getDatabasePath();
-      const fileInfo = await FileSystem.getInfoAsync(dbPath);
-      if (fileInfo.exists && fileInfo.isDirectory === false) {
-        await FileSystem.deleteAsync(dbPath);
-        console.log("Cleaned up incomplete database file after error");
-      }
+      deleteIfExists(tempFile);
+      console.log("Cleaned up incomplete database download");
     } catch (cleanupError) {
       console.error("Error during cleanup:", cleanupError);
     }
+
     throw error;
   }
 };
 
 /**
- * Check if database exists locally and is valid (size check only)
+ * Same download flow as downloadDatabaseFromGitHub, with AbortController support.
+ * This lets us add a cancel button in the UI without changing the storage logic.
+ */
+export const downloadDatabaseWithSignal = async (onProgress, signal) => {
+  const downloadUrl = getGitHubDownloadUrl();
+  const dbFile = getDatabaseFile();
+  const tempFile = getTempDatabaseFile();
+
+  try {
+    onProgress?.(0, "Starting download...");
+    ensureSQLiteDirectory();
+    deleteIfExists(tempFile);
+
+    const downloadTask = createDatabaseDownloadTask(
+      downloadUrl,
+      tempFile,
+      onProgress,
+      signal,
+    );
+    await downloadTask.downloadAsync();
+
+    moveDownloadedDatabaseIntoPlace(tempFile, dbFile);
+
+    onProgress?.(100, "Download complete!");
+    return {
+      success: true,
+      path: dbFile.uri,
+      size: dbFile.size,
+    };
+  } catch (error) {
+    deleteIfExists(tempFile);
+    throw error;
+  }
+};
+
+/**
+ * Check if database exists locally and is valid.
  */
 export const databaseExists = async () => {
   try {
-    const dbPath = getDatabasePath();
-    const fileInfo = await FileSystem.getInfoAsync(dbPath);
+    const dbFile = getDatabaseFile();
 
-    // Check if file exists and is larger than an empty database (~4KB)
-    if (!fileInfo.exists || fileInfo.isDirectory) {
-      console.log("📂 Database file does not exist");
+    if (!dbFile.exists || dbFile.size <= 4096) {
+      console.log("Database file does not exist");
       return false;
     }
 
-    // File exists, but check if it has sermons
     try {
       const sermonCount = await getSermonCount();
-      console.log(`📊 Database has ${sermonCount} sermons`);
-
-      // Database is valid if it has at least some sermons
+      console.log(`Database has ${sermonCount} sermons`);
       return sermonCount > 0;
     } catch (dbError) {
-      // If we can't query the database, consider it invalid
-      console.error("❌ Cannot query database:", dbError.message);
+      console.error("Cannot query database:", dbError.message);
       return false;
     }
   } catch (error) {
@@ -151,16 +177,12 @@ export const databaseExists = async () => {
 };
 
 /**
- * Get database file size
+ * Get database file size.
  */
 export const getDatabaseSize = async () => {
   try {
-    const dbPath = getDatabasePath();
-    const fileInfo = await FileSystem.getInfoAsync(dbPath);
-    if (fileInfo.exists && fileInfo.isDirectory === false) {
-      return fileInfo.size;
-    }
-    return 0;
+    const dbFile = getDatabaseFile();
+    return dbFile.exists ? dbFile.size : 0;
   } catch (error) {
     console.error("Error getting database size:", error);
     return 0;
@@ -168,17 +190,15 @@ export const getDatabaseSize = async () => {
 };
 
 /**
- * Delete local database (for resetting) - deletes any database file regardless of size
- * NOTE: closeDatabase() should be called separately by the reset function
+ * Delete local database.
+ *
+ * NOTE: closeDatabase() should be called separately by the reset function.
  */
 export const deleteLocalDatabase = async () => {
   try {
-    const dbPath = getDatabasePath();
-    const fileInfo = await FileSystem.getInfoAsync(dbPath);
-    if (fileInfo.exists && fileInfo.isDirectory === false) {
-      await FileSystem.deleteAsync(dbPath);
-      console.log("Local database deleted");
-    }
+    const dbFile = getDatabaseFile();
+    deleteIfExists(dbFile);
+    console.log("Local database deleted");
   } catch (error) {
     console.error("Error deleting database:", error);
     throw error;

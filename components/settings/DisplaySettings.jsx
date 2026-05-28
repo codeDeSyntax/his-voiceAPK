@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Switch } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Host, Slider as ExpoSlider, Switch as ExpoSwitch } from "@expo/ui";
+import { Ionicons } from "@expo/vector-icons";
 
 const DisplaySettings = ({
   theme,
@@ -59,9 +60,10 @@ const DisplaySettings = ({
     : "rgba(93, 50, 17, 0.035)";
   const SettingItem = ({ icon, title, subtitle, children, onPress, theme }) => {
     const [pressed, setPressed] = useState(false);
+    const RowComponent = onPress ? TouchableOpacity : View;
 
     return (
-      <TouchableOpacity
+      <RowComponent
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -72,9 +74,9 @@ const DisplaySettings = ({
           backgroundColor: pressed ? rowPressedBg : "transparent",
         }}
         onPress={onPress}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        activeOpacity={0.9}
+        onPressIn={onPress ? () => setPressed(true) : undefined}
+        onPressOut={onPress ? () => setPressed(false) : undefined}
+        activeOpacity={onPress ? 0.9 : undefined}
       >
         <View
           style={{
@@ -117,15 +119,14 @@ const DisplaySettings = ({
         </View>
 
         {children}
-      </TouchableOpacity>
+      </RowComponent>
     );
   };
 
-  const handleFontSizeChange = (action) => {
-    if (action === "increase" && fontSize < 32) {
-      setFontSize(fontSize + 1);
-    } else if (action === "decrease" && fontSize > 12) {
-      setFontSize(fontSize - 1);
+  const handleFontSizeChange = (value) => {
+    const nextFontSize = Math.round(value);
+    if (nextFontSize !== fontSize) {
+      setFontSize(nextFontSize);
     }
   };
 
@@ -138,25 +139,17 @@ const DisplaySettings = ({
         subtitle={`${isDarkMode ? "Enabled" : "Disabled"} - Easier on the eyes at night`}
         theme={theme}
       >
-        <Switch
-          value={isDarkMode}
-          onValueChange={toggleTheme}
-          trackColor={{
-            false: theme.dark
-              ? "rgba(255, 255, 255, 0.1)"
-              : "rgba(0, 0, 0, 0.1)",
-            true: theme.dark ? theme.colors.hlight : "#5d3211",
-          }}
-          thumbColor={
-            isDarkMode
-              ? theme.dark
-                ? "#f2cdb4"
-                : "#522b11"
-              : theme.dark
-                ? "rgba(255, 255, 255, 0.8)"
-                : "#ffffff"
-          }
-        />
+        <Host
+          colorScheme={theme.dark ? "dark" : "light"}
+          matchContents
+          style={{ minWidth: 58, minHeight: 40, justifyContent: "center" }}
+        >
+          <ExpoSwitch
+            value={isDarkMode}
+            onValueChange={toggleTheme}
+            testID="display-dark-mode-switch"
+          />
+        </Host>
       </SettingItem>
 
       {/* Font Size */}
@@ -170,25 +163,10 @@ const DisplaySettings = ({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            gap: 12,
+            gap: 10,
+            width: 156,
           }}
         >
-          <TouchableOpacity
-            onPress={() => handleFontSizeChange("decrease")}
-            disabled={fontSize <= 12}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: softPanelBg,
-              justifyContent: "center",
-              alignItems: "center",
-              opacity: fontSize <= 12 ? 0.5 : 1,
-            }}
-          >
-            <Ionicons name="remove" size={16} color={theme.colors.text} />
-          </TouchableOpacity>
-
           <Text
             style={{
               fontSize: 16,
@@ -202,21 +180,19 @@ const DisplaySettings = ({
             {fontSize}
           </Text>
 
-          <TouchableOpacity
-            onPress={() => handleFontSizeChange("increase")}
-            disabled={fontSize >= 32}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: softPanelBg,
-              justifyContent: "center",
-              alignItems: "center",
-              opacity: fontSize >= 32 ? 0.5 : 1,
-            }}
+          <Host
+            colorScheme={theme.dark ? "dark" : "light"}
+            style={{ flex: 1, height: 40, justifyContent: "center" }}
           >
-            <Ionicons name="add" size={16} color={theme.colors.text} />
-          </TouchableOpacity>
+            <ExpoSlider
+              value={fontSize}
+              min={12}
+              max={32}
+              step={1}
+              onValueChange={handleFontSizeChange}
+              testID="display-font-size-slider"
+            />
+          </Host>
         </View>
       </SettingItem>
 

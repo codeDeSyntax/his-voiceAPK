@@ -45,7 +45,20 @@
           "imageWidth": 200
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "buildReactNativeFromSource": false,
+          "useHermesV1": true,
+          "android": {
+            "usePrecompiledHeaders": true
+          },
+          "ios": {
+            "usePrecompiledModules": true
+          }
+        }
+      ]
     ],
     "updates": {
       "checkAutomatically": "ON_LOAD",
