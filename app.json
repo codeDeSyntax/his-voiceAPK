@@ -2,7 +2,7 @@
   "expo": {
     "name": "His voice",
     "slug": "his-voice",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "scheme": "hisvoice",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,9 @@
       "bundleIdentifier": "com.boblambert.hisvoice",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -19,9 +21,9 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2c221a"
       },
-      "package": "com.boblambert.hisvoice"
+      "package": "com.boblambert.hisvoice",
+      "versionCode": 2
     },
-   
     "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
     "plugins": [
       "expo-font",
