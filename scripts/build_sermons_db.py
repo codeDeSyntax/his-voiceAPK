@@ -249,26 +249,6 @@ def initialize_schema(connection: sqlite3.Connection) -> None:
         CREATE INDEX idx_sermons_year ON sermons(year);
         CREATE INDEX idx_sermons_date ON sermons(date);
 
-        CREATE VIRTUAL TABLE sermons_fts USING fts5(
-          sermon_id UNINDEXED,
-          title,
-          sermon
-        );
-
-        CREATE TABLE sermon_paragraphs (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          sermon_id TEXT NOT NULL,
-          paragraph_index INTEGER NOT NULL,
-          paragraph_text TEXT NOT NULL,
-          word_count INTEGER,
-          start_char INTEGER,
-          end_char INTEGER,
-          FOREIGN KEY (sermon_id) REFERENCES sermons(id),
-          UNIQUE(sermon_id, paragraph_index)
-        );
-
-        CREATE INDEX idx_paragraphs_sermon ON sermon_paragraphs(sermon_id);
-
         CREATE TABLE migration_status (
           key TEXT PRIMARY KEY,
           value TEXT,
@@ -303,29 +283,9 @@ def insert_sermons(connection: sqlite3.Connection, sermons: list[Sermon]) -> Non
             ),
         )
 
-        if sermon.sermon:
-            connection.execute(
-                "INSERT INTO sermons_fts(sermon_id, title, sermon) VALUES (?, ?, ?)",
-                (sermon.id, sermon.title, sermon.sermon),
-            )
-            for index, paragraph in enumerate(paragraphs):
-                words = [word for word in re.split(r"\s+", paragraph) if word.strip()]
-                connection.execute(
-                    """
-                    INSERT INTO sermon_paragraphs
-                      (sermon_id, paragraph_index, paragraph_text, word_count, start_char, end_char)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                    (sermon.id, index, paragraph, len(words), 0, 0),
-                )
-
     connection.execute(
         "INSERT OR REPLACE INTO migration_status (key, value) VALUES (?, ?)",
         ("migration_completed", "true"),
-    )
-    connection.execute(
-        "INSERT OR REPLACE INTO migration_status (key, value) VALUES (?, ?)",
-        ("search_index_built", "true"),
     )
 
 
@@ -335,8 +295,7 @@ def verify_database(connection: sqlite3.Connection) -> dict[str, int]:
         "total": "SELECT COUNT(*) FROM sermons",
         "text": "SELECT COUNT(*) FROM sermons WHERE type = 'text'",
         "audio": "SELECT COUNT(*) FROM sermons WHERE type = 'mp3'",
-        "fts": "SELECT COUNT(*) FROM sermons_fts",
-        "paragraphs": "SELECT COUNT(*) FROM sermon_paragraphs",
+        "migration_status": "SELECT COUNT(*) FROM migration_status",
     }.items():
         values[key] = int(connection.execute(query).fetchone()[0])
     return values

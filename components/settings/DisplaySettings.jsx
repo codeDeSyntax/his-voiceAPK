@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { Host, Slider as ExpoSlider, Switch as ExpoSwitch } from "@expo/ui";
+import { tint } from "@expo/ui/swift-ui/modifiers";
 import { Ionicons } from "@expo/vector-icons";
 
 const DisplaySettings = ({
@@ -58,6 +59,12 @@ const DisplaySettings = ({
   const softPanelBg = theme.dark
     ? "rgba(255, 255, 255, 0.035)"
     : "rgba(93, 50, 17, 0.035)";
+  const controlPanelBg = theme.dark
+    ? "rgba(242, 205, 180, 0.075)"
+    : "rgba(93, 50, 17, 0.075)";
+  const expoUiHostTheme =
+    Platform.OS === "android" ? { seedColor: accent } : {};
+  const expoUiControlModifiers = Platform.OS === "ios" ? [tint(accent)] : undefined;
   const SettingItem = ({ icon, title, subtitle, children, onPress, theme }) => {
     const [pressed, setPressed] = useState(false);
     const RowComponent = onPress ? TouchableOpacity : View;
@@ -139,17 +146,32 @@ const DisplaySettings = ({
         subtitle={`${isDarkMode ? "Enabled" : "Disabled"} - Easier on the eyes at night`}
         theme={theme}
       >
-        <Host
-          colorScheme={theme.dark ? "dark" : "light"}
-          matchContents
-          style={{ minWidth: 58, minHeight: 40, justifyContent: "center" }}
+        <View
+          style={{
+            minWidth: 66,
+            minHeight: 42,
+            borderRadius: 21,
+            paddingHorizontal: 4,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: controlPanelBg,
+          }}
         >
-          <ExpoSwitch
-            value={isDarkMode}
-            onValueChange={toggleTheme}
-            testID="display-dark-mode-switch"
-          />
-        </Host>
+          <Host
+            colorScheme={theme.dark ? "dark" : "light"}
+            matchContents
+            modifiers={expoUiControlModifiers}
+            style={{ minWidth: 58, minHeight: 40, justifyContent: "center" }}
+            {...expoUiHostTheme}
+          >
+            <ExpoSwitch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              modifiers={expoUiControlModifiers}
+              testID="display-dark-mode-switch"
+            />
+          </Host>
+        </View>
       </SettingItem>
 
       {/* Font Size */}
@@ -182,7 +204,16 @@ const DisplaySettings = ({
 
           <Host
             colorScheme={theme.dark ? "dark" : "light"}
-            style={{ flex: 1, height: 40, justifyContent: "center" }}
+            modifiers={expoUiControlModifiers}
+            style={{
+              flex: 1,
+              height: 40,
+              borderRadius: 20,
+              paddingHorizontal: 8,
+              justifyContent: "center",
+              backgroundColor: controlPanelBg,
+            }}
+            {...expoUiHostTheme}
           >
             <ExpoSlider
               value={fontSize}
@@ -190,6 +221,7 @@ const DisplaySettings = ({
               max={32}
               step={1}
               onValueChange={handleFontSizeChange}
+              modifiers={expoUiControlModifiers}
               testID="display-font-size-slider"
             />
           </Host>

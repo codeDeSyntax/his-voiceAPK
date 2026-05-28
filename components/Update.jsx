@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StatusBar,
   Dimensions,
   Linking,
+  AppState,
 } from "react-native";
 import * as Updates from "expo-updates";
 import Constants from "expo-constants";
@@ -23,6 +24,8 @@ const RELEASE_CONFIG =
 const GITHUB_OWNER = RELEASE_CONFIG.owner;
 const GITHUB_REPO = RELEASE_CONFIG.repo;
 const APK_ASSET_PATTERN = RELEASE_CONFIG.apkAssetPattern || ".apk";
+const UPDATE_CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
+const FOREGROUND_RECHECK_MIN_MS = 10 * 60 * 1000;
 
 const normalizeVersion = (version) => String(version || "").replace(/^v/i, "");
 
@@ -61,11 +64,11 @@ export default function UpdateScreen() {
   const [isApplyingOta, setIsApplyingOta] = useState(false);
   const [isOpeningApk, setIsOpeningApk] = useState(false);
 
-  useEffect(() => {
-    checkForAnyUpdate();
-  }, []);
+  const isCheckingRef = useRef(false);
+  const lastCheckAtRef = useRef(0);
+  const dismissedUpdateKeyRef = useRef(null);
 
-  const checkForOTAUpdate = async () => {
+  const checkForOTAUpdate = useCallback(async () => {
     try {
       if (__DEV__ || !Updates.isEnabled) {
         return { available: false };
@@ -77,9 +80,9 @@ export default function UpdateScreen() {
       console.error("OTA update check failed:", error);
       return { available: false };
     }
-  };
+  }, []);
 
-  const checkForGithubReleaseUpdate = async () => {
+  const checkForGithubReleaseUpdate = useCallback(async () => {
     try {
       if (!GITHUB_OWNER || !GITHUB_REPO) {
         return { available: false };
@@ -133,26 +136,108 @@ export default function UpdateScreen() {
       console.error("GitHub release check failed:", error);
       return { available: false };
     }
-  };
+  }, []);
 
-  const checkForAnyUpdate = async () => {
-    const [otaResult, releaseResult] = await Promise.all([
-      checkForOTAUpdate(),
-      checkForGithubReleaseUpdate(),
-    ]);
+  const presentUpdate = useCallback((type, data = null) => {
+    const updateKey =
+      type === "apk"
+        ? `apk:${data?.latestVersion || data?.apkUrl || "latest"}`
+        : "ota:available";
 
-    // Native build update takes priority if both exist.
-    if (releaseResult.available) {
-      setReleaseData(releaseResult.data);
-      setUpdateType("apk");
-      setModalVisible(true);
+    if (dismissedUpdateKeyRef.current === updateKey && !data?.mandatory) {
       return;
     }
 
-    if (otaResult.available) {
-      setUpdateType("ota");
-      setModalVisible(true);
+    setReleaseData(data);
+    setUpdateType(type);
+    setModalVisible(true);
+  }, []);
+
+  const checkForAnyUpdate = useCallback(
+    async ({ force = false } = {}) => {
+      const now = Date.now();
+
+      if (isCheckingRef.current) {
+        return;
+      }
+
+      if (
+        !force &&
+        lastCheckAtRef.current &&
+        now - lastCheckAtRef.current < FOREGROUND_RECHECK_MIN_MS
+      ) {
+        return;
+      }
+
+      isCheckingRef.current = true;
+
+      try {
+        const [otaResult, releaseResult] = await Promise.all([
+          checkForOTAUpdate(),
+          checkForGithubReleaseUpdate(),
+        ]);
+
+        lastCheckAtRef.current = Date.now();
+
+        // Native build update takes priority if both exist.
+        if (releaseResult.available) {
+          presentUpdate("apk", releaseResult.data);
+          return;
+        }
+
+        if (otaResult.available) {
+          presentUpdate("ota");
+        }
+      } finally {
+        isCheckingRef.current = false;
+      }
+    },
+    [checkForGithubReleaseUpdate, checkForOTAUpdate, presentUpdate],
+  );
+
+  useEffect(() => {
+    checkForAnyUpdate({ force: true });
+
+    let previousAppState = AppState.currentState;
+
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      const cameToForeground =
+        String(previousAppState).match(/inactive|background/) &&
+        nextAppState === "active";
+
+      if (cameToForeground) {
+        checkForAnyUpdate();
+      }
+
+      previousAppState = nextAppState;
+    });
+
+    const intervalId = setInterval(() => {
+      if (AppState.currentState === "active") {
+        checkForAnyUpdate();
+      }
+    }, UPDATE_CHECK_INTERVAL_MS);
+
+    return () => {
+      subscription.remove();
+      clearInterval(intervalId);
+    };
+  }, [checkForAnyUpdate]);
+
+  const dismissModal = () => {
+    if (updateType === "apk" && releaseData?.mandatory) {
+      return;
     }
+
+    if (updateType === "apk") {
+      dismissedUpdateKeyRef.current = `apk:${
+        releaseData?.latestVersion || releaseData?.apkUrl || "latest"
+      }`;
+    } else if (updateType === "ota") {
+      dismissedUpdateKeyRef.current = "ota:available";
+    }
+
+    setModalVisible(false);
   };
 
   const handleUpdate = async () => {
@@ -165,18 +250,18 @@ export default function UpdateScreen() {
         setIsOpeningApk(true);
         await Linking.openURL(releaseData.apkUrl);
         setIsOpeningApk(false);
-        setModalVisible(false);
+        dismissModal();
         return;
       }
 
       if (__DEV__ || !Updates.isEnabled) {
-        setModalVisible(false);
+        dismissModal();
         return;
       }
 
       setIsApplyingOta(true);
       await Updates.fetchUpdateAsync();
-      setModalVisible(false);
+      dismissModal();
       setIsApplyingOta(false);
 
       setTimeout(async () => {
@@ -186,7 +271,7 @@ export default function UpdateScreen() {
       console.error("Error applying update:", error);
       setIsApplyingOta(false);
       setIsOpeningApk(false);
-      setModalVisible(false);
+      dismissModal();
     }
   };
 
@@ -210,7 +295,7 @@ export default function UpdateScreen() {
       visible={modalVisible}
       transparent={false}
       animationType="fade"
-      onRequestClose={() => setModalVisible(false)}
+      onRequestClose={dismissModal}
       statusBarTranslucent={true}
     >
       <StatusBar
@@ -258,7 +343,7 @@ export default function UpdateScreen() {
 
           <TouchableOpacity
             style={[styles.secondaryButton, isBusy && { opacity: 0.4 }]}
-            onPress={() => !isBusy && setModalVisible(false)}
+            onPress={() => !isBusy && dismissModal()}
             disabled={isBusy || (isApkUpdate && releaseData?.mandatory)}
           >
             <Text style={styles.secondaryButtonText}>

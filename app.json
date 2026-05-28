@@ -21,9 +21,7 @@
       },
       "package": "com.boblambert.hisvoice"
     },
-    "web": {
-      "favicon": "./assets/adaptive-icon.png"
-    },
+   
     "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
     "plugins": [
       "expo-font",

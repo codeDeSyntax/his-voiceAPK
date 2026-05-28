@@ -47,3 +47,5 @@ scripts/*
 !scripts/download_all_missing_sermons.py
 !scripts/import_cleaned_sermons.py
 !scripts/build_sermons_db.py
+!scripts/release.mjs
+!scripts/update.mjs

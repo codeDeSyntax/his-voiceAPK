@@ -24,7 +24,7 @@ import {
 } from "../../Utils/responsiveUtils";
 import {
   downloadDatabaseWithSignal,
-  databaseExists,
+  getDatabaseStatus,
 } from "../../database/downloadDatabase";
 import { forceStopIndexing, closeDatabase } from "../../database/sermonDB";
 import * as Updates from "expo-updates";
@@ -43,6 +43,7 @@ const Welcome = () => {
 
   // Download state
   const [dbExists, setDbExists] = useState(false);
+  const [dbNeedsUpdate, setDbNeedsUpdate] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadError, setDownloadError] = useState(null);
@@ -52,8 +53,9 @@ const Welcome = () => {
   useEffect(() => {
     const checkDatabase = async () => {
       try {
-        const exists = await databaseExists();
-        setDbExists(exists);
+        const status = await getDatabaseStatus();
+        setDbExists(status.exists && !status.needsUpdate);
+        setDbNeedsUpdate(status.needsUpdate);
       } catch (error) {
         console.error("Error checking database:", error);
       }
@@ -64,11 +66,33 @@ const Welcome = () => {
   // Re-check when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      const hasLoadedSermons = allSermons && allSermons.length > 0;
-      setDbExists(hasLoadedSermons);
-      setIsDownloading(false);
-      setDownloadProgress(0);
-      setDownloadError(null);
+      let isActive = true;
+
+      const refreshDatabaseState = async () => {
+        try {
+          const status = await getDatabaseStatus();
+          if (!isActive) return;
+          const hasLoadedSermons = allSermons && allSermons.length > 0;
+          setDbExists((status.exists || hasLoadedSermons) && !status.needsUpdate);
+          setDbNeedsUpdate(status.needsUpdate);
+        } catch (error) {
+          if (!isActive) return;
+          const hasLoadedSermons = allSermons && allSermons.length > 0;
+          setDbExists(hasLoadedSermons);
+          setDbNeedsUpdate(false);
+        } finally {
+          if (!isActive) return;
+          setIsDownloading(false);
+          setDownloadProgress(0);
+          setDownloadError(null);
+        }
+      };
+
+      refreshDatabaseState();
+
+      return () => {
+        isActive = false;
+      };
     }, [allSermons]),
   );
 
@@ -87,15 +111,13 @@ const Welcome = () => {
       const controller = new AbortController();
       downloadControllerRef.current = controller;
 
-      if (allSermons.length > 0) {
-        forceStopIndexing();
-        try {
-          await closeDatabase();
-        } catch (closeError) {
-          console.warn("Error closing database:", closeError.message);
-        }
-        await new Promise((resolve) => setTimeout(resolve, 200));
+      forceStopIndexing();
+      try {
+        await closeDatabase();
+      } catch (closeError) {
+        console.warn("Error closing database:", closeError.message);
       }
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       const result = await downloadDatabaseWithSignal(
         (percentage) => {
@@ -105,6 +127,7 @@ const Welcome = () => {
       );
 
       if (result.success) {
+        setDbNeedsUpdate(false);
         setDownloadProgress(100);
         await new Promise((resolve) => setTimeout(resolve, 1500));
         try {
@@ -732,7 +755,7 @@ const Welcome = () => {
             <PremiumButton label="Begin Reading" onPress={handleBeginReading} />
           ) : (
             <PremiumButton
-              label="Download Sermons"
+              label={dbNeedsUpdate ? "Update Sermons" : "Download Sermons"}
               onPress={handleDownloadDatabase}
             />
           )}
