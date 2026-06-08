@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   ImageBackground,
 } from "react-native";
-import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useAppContext } from "../../Logic/globalState";
@@ -26,21 +25,18 @@ import {
   downloadDatabaseWithSignal,
   getDatabaseStatus,
 } from "../../database/downloadDatabase";
-import { forceStopIndexing, closeDatabase } from "../../database/sermonDB";
+import {
+  forceStopIndexing,
+  closeDatabase,
+  resetDatabaseState,
+} from "../../database/sermonDB";
 import * as Updates from "expo-updates";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const Welcome = () => {
   const navigation = useNavigation();
-  const { theme, allSermons } = useAppContext();
-  const [fontsLoaded] = useFonts({
-    "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-    "ZillaSlab-SemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
-    Merriweather: require("../../assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.ttf"),
-    Philosopher: require("../../assets/fonts/Philosopher-Regular.ttf"),
-  });
-
+  const { theme, allSermons, refreshSermons } = useAppContext();
   // Download state
   const [dbExists, setDbExists] = useState(false);
   const [dbNeedsUpdate, setDbNeedsUpdate] = useState(false);
@@ -127,9 +123,18 @@ const Welcome = () => {
       );
 
       if (result.success) {
+        resetDatabaseState();
         setDbNeedsUpdate(false);
+        setDbExists(true);
         setDownloadProgress(100);
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        const refreshed = await refreshSermons?.();
+        if (refreshed) {
+          setIsDownloading(false);
+          navigateToMainScreen();
+          return;
+        }
+
         try {
           await Updates.reloadAsync();
         } catch (restartError) {
@@ -349,6 +354,19 @@ const Welcome = () => {
   const divider = theme.dark
     ? "rgba(230, 195, 184, 0.15)"
     : "rgba(93, 50, 17, 0.12)";
+  const downloadPanelBg = theme.dark
+    ? "rgba(34, 27, 23, 0.88)"
+    : "rgba(250, 243, 234, 0.88)";
+  const downloadPanelBorder = theme.dark
+    ? "rgba(230, 195, 184, 0.18)"
+    : "rgba(93, 50, 17, 0.16)";
+  const downloadTrack = theme.dark
+    ? "rgba(230, 195, 184, 0.14)"
+    : "rgba(93, 50, 17, 0.12)";
+  const downloadFillEnd = theme.dark ? "#d4a574" : "#8b4513";
+  const downloadCancelBg = theme.dark
+    ? "rgba(230, 195, 184, 0.08)"
+    : "rgba(93, 50, 17, 0.08)";
 
   // Background pattern colors
   const patternColor = theme.dark
@@ -644,7 +662,7 @@ const Welcome = () => {
             style={[
               styles.yearPill,
               {
-                borderColor: divider,
+                
                 backgroundColor: theme.dark
                   ? "rgba(230, 195, 184, 0.04)"
                   : "rgba(93, 50, 17, 0.03)",
@@ -668,6 +686,8 @@ const Welcome = () => {
             { opacity: quoteFade, transform: [{ translateY: quoteSlide }] },
           ]}
         >
+          
+          <Text style={[styles.quoteText, { color: accentMuted }]}>
           <Text
             style={[
               styles.quoteOpen,
@@ -680,7 +700,6 @@ const Welcome = () => {
           >
             {"\u201C"}
           </Text>
-          <Text style={[styles.quoteText, { color: accentMuted }]}>
             And I saw another mighty angel come{"\n"}down from heaven, clothed
             with a cloud:{"\n"}and a rainbow was upon his head.
           </Text>
@@ -690,7 +709,7 @@ const Welcome = () => {
               {
                 color: theme.dark
                   ? "rgba(230, 195, 184, 0.40)"
-                  : "rgba(93, 50, 17, 0.35)",
+                  : "rgba(93, 50, 17, 0.55)",
               },
             ]}
           >
@@ -707,17 +726,54 @@ const Welcome = () => {
           }}
         >
           {isDownloading ? (
-            <View style={styles.downloadWrap}>
-              <ActivityIndicator size="small" color={accent} />
-              <Text style={[styles.downloadLabel, { color: accent }]}>
-                {downloadProgress >= 100
-                  ? "Complete — restarting…"
-                  : `Downloading… ${Math.round(downloadProgress)}%`}
-              </Text>
-              <View
-                style={[styles.progressTrack, { backgroundColor: divider }]}
-              >
+            <View
+              style={[
+                styles.downloadWrap,
+                {
+                  backgroundColor: downloadPanelBg,
+                  borderColor: downloadPanelBorder,
+                  shadowColor: theme.dark ? "#000" : "#5d3211",
+                },
+              ]}
+            >
+              <View style={styles.downloadHeaderRow}>
                 <View
+                  style={[
+                    styles.downloadSpinnerShell,
+                    { borderColor: downloadPanelBorder },
+                  ]}
+                >
+                  <ActivityIndicator size="large" color={accent} />
+                </View>
+                <View style={styles.downloadTextBlock}>
+                  <Text style={[styles.downloadTitle, { color: accent }]}>
+                    {downloadProgress >= 100
+                      ? "Preparing sermons"
+                      : "Downloading sermons"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.downloadSubtitle,
+                      { color: accentMuted },
+                    ]}
+                  >
+                    Sermon library
+                  </Text>
+                </View>
+                <Text style={[styles.downloadPercent, { color: accent }]}>
+                  {Math.round(downloadProgress)}%
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.progressTrack,
+                  { backgroundColor: downloadTrack },
+                ]}
+              >
+                <LinearGradient
+                  colors={[accent, downloadFillEnd]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
                   style={[
                     styles.progressFill,
                     {
@@ -731,10 +787,19 @@ const Welcome = () => {
                 onPress={handleCancelDownload}
                 style={({ pressed }) => [
                   styles.cancelDownloadButton,
-                  { opacity: pressed ? 0.65 : 1 },
+                  {
+                    backgroundColor: downloadCancelBg,
+                    borderColor: downloadPanelBorder,
+                    opacity: pressed ? 0.65 : 1,
+                  },
                 ]}
               >
-                <Text style={[styles.cancelDownloadText, { color: accent }]}>
+                <Text
+                  style={[
+                    styles.cancelDownloadText,
+                    { color: accent },
+                  ]}
+                >
                   Cancel
                 </Text>
               </Pressable>
@@ -866,7 +931,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: 7,
     borderRadius: 100,
-    borderWidth: 1,
+    
   },
   yearText: {
     fontFamily: "ZillaSlab-SemiBold",
@@ -876,20 +941,20 @@ const styles = StyleSheet.create({
   quoteWrap: {
     alignItems: "center",
     marginTop: 6,
-    paddingHorizontal: spacing.lg,
+    // paddingHorizontal: spacing.lg,
   },
   quoteOpen: {
     fontFamily: "Philosopher",
     fontSize: responsiveFontSize(48),
-    lineHeight: responsiveFontSize(48),
-    marginBottom: -8,
+  
+  
   },
   quoteText: {
     fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(13.5),
+    fontSize: responsiveFontSize(16),
     // fontStyle: "italic",
     textAlign: "center",
-    lineHeight: responsiveFontSize(24),
+    // lineHeight: responsiveFontSize(28),
   },
   quoteRef: {
     fontFamily: "ZillaSlab-SemiBold",
@@ -900,32 +965,75 @@ const styles = StyleSheet.create({
 
   /* Download & error */
   downloadWrap: {
-    alignItems: "center",
-    paddingHorizontal: horizontalScale(40),
-    gap: 12,
+    width: Math.min(screenWidth * 0.86, 420),
+    alignItems: "stretch",
+    paddingHorizontal: horizontalScale(18),
+    paddingVertical: verticalScale(16),
+    gap: 16,
+    borderWidth: 1,
+    borderRadius: 28,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 10,
   },
-  downloadLabel: {
-    fontFamily: "ZillaSlab-Regular",
-    fontSize: responsiveFontSize(13),
+  downloadHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+  },
+  downloadSpinnerShell: {
+    width: horizontalScale(46),
+    height: horizontalScale(46),
+    borderRadius: horizontalScale(23),
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  downloadTextBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  downloadTitle: {
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: responsiveFontSize(18),
+    lineHeight: responsiveFontSize(22),
+  },
+  downloadSubtitle: {
+    fontFamily: "Merriweather",
+    fontSize: responsiveFontSize(12),
+    lineHeight: responsiveFontSize(18),
+    marginTop: 2,
+  },
+  downloadPercent: {
+    minWidth: horizontalScale(58),
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: responsiveFontSize(24),
+    lineHeight: responsiveFontSize(28),
+    textAlign: "right",
   },
   progressTrack: {
-    width: screenWidth * 0.6,
-    height: 4,
-    borderRadius: 2,
+    width: "100%",
+    height: 12,
+    borderRadius: 999,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    borderRadius: 2,
+    minWidth: 8,
+    borderRadius: 999,
   },
   cancelDownloadButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
+    alignSelf: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1,
   },
   cancelDownloadText: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(12),
-    letterSpacing: 1,
+    fontSize: responsiveFontSize(13),
+    letterSpacing: 1.2,
     textTransform: "uppercase",
   },
   errorWrap: {

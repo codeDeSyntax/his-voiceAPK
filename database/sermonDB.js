@@ -114,68 +114,63 @@ export const openDatabase = async () => {
 };
 
 /**
- * Check if search index exists and build if needed
+ * Verify the pre-built search index shipped with the database.
+ * Falls back to a background rebuild only for legacy databases.
  */
 const checkAndBuildSearchIndex = async (database) => {
   try {
-    // Prevent multiple indexing processes - set lock immediately
-    if (isIndexing) {
-      console.log("Search index already building, skipping...");
-      return;
-    }
-    // Set lock BEFORE any async operations to prevent race conditions
-    isIndexing = true;
-
-    // Check if search index has been built
     const result = await database.getFirstAsync(
       "SELECT value FROM migration_status WHERE key = ?",
       ["search_index_built"],
     );
 
     if (result?.value === "true") {
-      console.log("Search index already exists");
-      isIndexing = false;
-      return;
+      console.log("✅ Pre-built search index detected");
+      return true;
     }
 
-    console.log("Search index not found. Building index in background...");
+    if (isIndexing) {
+      console.log("Search index already building in background...");
+      return true;
+    }
 
-    // Check if we have sermons to index
     const sermonCount = await database.getFirstAsync(
       "SELECT COUNT(*) as count FROM sermons WHERE sermon IS NOT NULL",
     );
 
-    if (sermonCount?.count > 0) {
-      // Delay indexing by 2 seconds to avoid immediate connection issues
-      // This lets the main connection stabilize first
-      setTimeout(() => {
-        rebuildSearchIndex()
-          .then(() => {
-            console.log("✅ Background search index built successfully!");
-            // Mark as built
-            return database.runAsync(
-              "INSERT OR REPLACE INTO migration_status (key, value) VALUES (?, ?)",
-              ["search_index_built", "true"],
-            );
-          })
-          .catch((error) => {
-            console.error("Error building search index in background:", error);
-          })
-          .finally(() => {
-            // Release lock
-            isIndexing = false;
-          });
-      }, 2000);
-
-      console.log("Search index building scheduled for background...");
-    } else {
-      // No sermons to index, release lock
-      isIndexing = false;
+    if (!sermonCount?.count) {
+      return true;
     }
+
+    console.log(
+      "Legacy database without search index. Building index in background...",
+    );
+    isIndexing = true;
+
+    setTimeout(() => {
+      rebuildSearchIndex()
+        .then(async (built) => {
+          if (!built) {
+            return;
+          }
+          await database.runAsync(
+            "INSERT OR REPLACE INTO migration_status (key, value) VALUES (?, ?)",
+            ["search_index_built", "true"],
+          );
+          console.log("✅ Legacy search index built successfully!");
+        })
+        .catch((error) => {
+          console.error("Error building legacy search index:", error);
+        })
+        .finally(() => {
+          isIndexing = false;
+        });
+    }, 500);
+
+    return true;
   } catch (error) {
     console.error("Error checking search index:", error);
-    isIndexing = false;
-    // Don't throw - allow app to continue even if indexing fails
+    return true;
   }
 };
 
@@ -245,7 +240,14 @@ export const initializeDatabase = async () => {
 
           console.log("✅ Search tables created/verified");
 
-          // Just check and build search index if needed
+          await database.runAsync(`
+          CREATE TABLE IF NOT EXISTS migration_status (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+          )
+        `);
+
           await checkAndBuildSearchIndex(database);
           isInitialized = true;
           return true;
@@ -323,7 +325,6 @@ export const initializeDatabase = async () => {
 
       console.log("Database tables initialized successfully");
 
-      // Check if we need to build the search index
       await checkAndBuildSearchIndex(database);
 
       isInitialized = true;

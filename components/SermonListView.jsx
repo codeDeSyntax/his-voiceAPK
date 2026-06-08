@@ -1,7 +1,6 @@
 import React, { useCallback } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { styles } from "../styles/Allsermons";
 import { responsiveFontSize, spacing } from "../Utils/responsiveUtils";
 import { GlassButton } from "../styles/glassButton";

@@ -129,9 +129,10 @@ const main = async () => {
     ["commit", "-m", `Release ${tagName}`],
     `Commit release versions: ${tagName}`,
   );
-  run("git", ["tag", tagName], `Create release tag: ${tagName}`);
+  run("git", ["tag", "-a", tagName, "-m", `Release ${tagName}`], `Create release tag: ${tagName}`);
 
-  run("git", ["push", "--follow-tags"], "Push commit(s) and tag(s)");
+  run("git", ["push", "origin", branch || "HEAD"], "Push release branch");
+  run("git", ["push", "origin", tagName], `Push release tag: ${tagName}`);
 
   console.log(`\nRelease v${newVersion} triggered successfully.`);
   console.log("Actions:  https://github.com/codeDeSyntax/his-voiceAPK/actions");

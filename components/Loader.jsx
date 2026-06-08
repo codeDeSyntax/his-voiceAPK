@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -62,8 +62,16 @@ const LoadingScreen = ({ message = "Loading..." }) => {
 const SPINNER_SIZE = 48;
 const DASH_COUNT = 12;
 
+const SERMON_LOADER_MESSAGES = [
+  "Getting the message ready for you…",
+  "Opening God's word…",
+  "Preparing your reading…",
+  "Just a moment — good things take a little time…",
+  "Almost there…",
+];
+
 // Shared spinner — matches the LoadingScreen design exactly
-const Spinner = ({ backgroundColor }) => {
+const Spinner = ({ backgroundColor, compact = false }) => {
   const { theme } = useAppContext();
   const spin = useRef(new Animated.Value(0)).current;
 
@@ -88,7 +96,13 @@ const Spinner = ({ backgroundColor }) => {
   const bg = backgroundColor ?? theme.colors.background;
 
   return (
-    <View style={[spinnerStyles.container, { backgroundColor: bg }]}>
+    <View
+      style={[
+        spinnerStyles.container,
+        !compact && spinnerStyles.containerFull,
+        { backgroundColor: bg },
+      ]}
+    >
       <Animated.View
         style={[spinnerStyles.spinner, { transform: [{ rotate }] }]}
       >
@@ -118,9 +132,11 @@ const Spinner = ({ backgroundColor }) => {
 
 const spinnerStyles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  containerFull: {
+    flex: 1,
   },
   spinner: {
     width: SPINNER_SIZE,
@@ -137,7 +153,50 @@ const spinnerStyles = StyleSheet.create({
   },
 });
 
-const SermonSkeletonLoader = () => <Spinner />;
+const SermonSkeletonLoader = () => {
+  const { theme } = useAppContext();
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageIndex((i) => (i + 1) % SERMON_LOADER_MESSAGES.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <View style={sermonLoaderStyles.screen}>
+      <View style={sermonLoaderStyles.content}>
+        <Spinner compact backgroundColor="transparent" />
+        <Text
+          style={[
+            styles.loadingText,
+            sermonLoaderStyles.message,
+            { color: theme.colors.text },
+          ]}
+        >
+          {SERMON_LOADER_MESSAGES[messageIndex]}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+const sermonLoaderStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  content: {
+    alignItems: "center",
+  },
+  message: {
+    marginTop: spacing.lg,
+    maxWidth: 300,
+  },
+});
 
 const AudioSkeletonLoader = ({ backgroundColor }) => (
   <Spinner backgroundColor={backgroundColor} />
@@ -161,7 +220,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     opacity: 0.8,
   },
-
 });
 
 export default LoadingScreen;

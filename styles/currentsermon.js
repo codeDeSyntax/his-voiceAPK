@@ -30,6 +30,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
   },
 
+  sermonLoaderScreen: {
+    flex: 1,
+  },
+
   // ─── FlatList content container ───────────────────────────────────────────
   scrollViewContainer: {
     paddingHorizontal: PAGE_MARGIN_H + 6,

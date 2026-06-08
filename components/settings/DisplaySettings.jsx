@@ -1,7 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Platform } from "react-native";
-import { Host, Slider as ExpoSlider, Switch as ExpoSwitch } from "@expo/ui";
-import { tint } from "@expo/ui/swift-ui/modifiers";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Switch,
+} from "react-native";
+import Slider from "@react-native-community/slider";
 import { Ionicons } from "@expo/vector-icons";
 
 const DisplaySettings = ({
@@ -46,7 +50,7 @@ const DisplaySettings = ({
     return font ? font.name : "System Default";
   };
 
-  const accent = theme.dark ? theme.colors.hlight : "#5d3211";
+  const accent = theme.dark ? "#fcceab" : "#5d3211";
   const rowDivider = theme.dark
     ? "rgba(242, 205, 180, 0.09)"
     : "rgba(93, 50, 17, 0.08)";
@@ -62,9 +66,7 @@ const DisplaySettings = ({
   const controlPanelBg = theme.dark
     ? "rgba(242, 205, 180, 0.075)"
     : "rgba(93, 50, 17, 0.075)";
-  const expoUiHostTheme =
-    Platform.OS === "android" ? { seedColor: accent } : {};
-  const expoUiControlModifiers = Platform.OS === "ios" ? [tint(accent)] : undefined;
+
   const SettingItem = ({ icon, title, subtitle, children, onPress, theme }) => {
     const [pressed, setPressed] = useState(false);
     const RowComponent = onPress ? TouchableOpacity : View;
@@ -139,7 +141,6 @@ const DisplaySettings = ({
 
   return (
     <View style={{ paddingHorizontal: 0 }}>
-      {/* Dark Mode */}
       <SettingItem
         icon="moon"
         title="Dark Mode"
@@ -157,24 +158,19 @@ const DisplaySettings = ({
             backgroundColor: controlPanelBg,
           }}
         >
-          <Host
-            colorScheme={theme.dark ? "dark" : "light"}
-            matchContents
-            modifiers={expoUiControlModifiers}
-            style={{ minWidth: 58, minHeight: 40, justifyContent: "center" }}
-            {...expoUiHostTheme}
-          >
-            <ExpoSwitch
-              value={isDarkMode}
-              onValueChange={toggleTheme}
-              modifiers={expoUiControlModifiers}
-              testID="display-dark-mode-switch"
-            />
-          </Host>
+          <Switch
+            value={isDarkMode}
+            onValueChange={toggleTheme}
+            trackColor={{
+              false: theme.dark ? "#4a4038" : "#d8c9b3",
+              true: accent,
+            }}
+            thumbColor="#ffffff"
+            testID="display-dark-mode-switch"
+          />
         </View>
       </SettingItem>
 
-      {/* Font Size */}
       <SettingItem
         icon="text-outline"
         title="Font Size"
@@ -202,33 +198,33 @@ const DisplaySettings = ({
             {fontSize}
           </Text>
 
-          <Host
-            colorScheme={theme.dark ? "dark" : "light"}
-            modifiers={expoUiControlModifiers}
+          <View
             style={{
               flex: 1,
               height: 40,
               borderRadius: 20,
-              paddingHorizontal: 8,
+              paddingHorizontal: 4,
               justifyContent: "center",
               backgroundColor: controlPanelBg,
             }}
-            {...expoUiHostTheme}
           >
-            <ExpoSlider
+            <Slider
               value={fontSize}
-              min={12}
-              max={32}
+              minimumValue={12}
+              maximumValue={32}
               step={1}
               onValueChange={handleFontSizeChange}
-              modifiers={expoUiControlModifiers}
+              minimumTrackTintColor={accent}
+              maximumTrackTintColor={
+                theme.dark ? "rgba(255,255,255,0.18)" : "rgba(93,50,17,0.18)"
+              }
+              thumbTintColor={accent}
               testID="display-font-size-slider"
             />
-          </Host>
+          </View>
         </View>
       </SettingItem>
 
-      {/* Font Family */}
       <SettingItem
         icon="text"
         title="Font Family"
@@ -243,7 +239,6 @@ const DisplaySettings = ({
         />
       </SettingItem>
 
-      {/* Font Options (when expanded) */}
       {showFontOptions && (
         <View
           style={{
@@ -285,7 +280,6 @@ const DisplaySettings = ({
               <Text
                 style={{
                   fontSize: 14,
-                  // fontWeight: fontFamily === font.value ? "600" : "400",
                   color:
                     fontFamily === font.value
                       ? theme.dark
@@ -302,42 +296,8 @@ const DisplaySettings = ({
         </View>
       )}
 
-      {/* Accent Color */}
-      <SettingItem
-        icon="color-palette"
-        title="Accent Color"
-        subtitle="Choose your app's accent color"
-        theme={theme}
-        onPress={() => setShowColorOptions(!showColorOptions)}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <View
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 10,
-              backgroundColor: localAccentColor,
-              borderWidth: 2,
-              borderColor: theme.dark
-                ? "rgba(255, 255, 255, 0.24)"
-                : "rgba(93, 50, 17, 0.18)",
-            }}
-          />
-          <Ionicons
-            name={showColorOptions ? "chevron-up" : "chevron-down"}
-            size={18}
-            color={theme.colors.text + "60"}
-          />
-        </View>
-      </SettingItem>
+     
 
-      {/* Color Options (when expanded) */}
       {showColorOptions && (
         <View
           style={{
@@ -358,7 +318,6 @@ const DisplaySettings = ({
               disabled={true}
               onPress={() => {
                 setLocalAccentColor(color.value);
-                // Note: setAccentColor would need to be passed as prop if needed
                 setShowColorOptions(false);
               }}
               style={{
@@ -381,7 +340,6 @@ const DisplaySettings = ({
         </View>
       )}
 
-      {/* Preview Section */}
       <SettingItem
         icon="eye"
         title="Text Preview"
@@ -396,7 +354,6 @@ const DisplaySettings = ({
         />
       </SettingItem>
 
-      {/* Preview Box (when expanded) */}
       {showPreview && (
         <View
           style={{

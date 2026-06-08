@@ -11,12 +11,11 @@ import {
   Text,
   ScrollView,
   Animated,
-  StyleSheet,
+
   SafeAreaView,
-  Platform,
+
 } from "react-native";
-import { useFonts } from "expo-font";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { useAppContext } from "../../Logic/globalState";
 import { styles } from "../../styles/settings";
 
@@ -25,7 +24,6 @@ import SettingsHeader from "../../components/settings/SettingsHeader";
 import DisplaySettings from "../../components/settings/DisplaySettings";
 import AppSettings from "../../components/settings/AppSettings";
 import SavingModal from "../../components/settings/SavingModal";
-
 import DraggableFloatingButton from "../../components/FloatButton";
 import { useNavigation } from "@react-navigation/native";
 
@@ -48,16 +46,6 @@ export const COLOR_OPTIONS = [
   { name: "Pink", value: "#EC4899", textColor: "#FFFFFF" },
 ];
 
-// Memoized fonts configuration to prevent recreation
-const FONTS_CONFIG = {
-  "Merienda-VariableFont_wght": require("../../assets/fonts/Merienda-VariableFont_wght.ttf"),
-  "Philosopher-Regular": require("../../assets/fonts/Philosopher-Regular.ttf"),
-  "ZillaSlab-Regular": require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-  "ZillaSlab-SemiBold": require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
-  Merriweather: require("../../assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.ttf"),
-  Lora: require("../../assets/fonts/Lora-VariableFont_wght.ttf"),
-};
-
 // Default settings constant
 const DEFAULT_SETTINGS = {
   darkMode: true,
@@ -72,8 +60,6 @@ const DEFAULT_SETTINGS = {
 const FIXED_ACCENT_COLOR = "#643819";
 
 const Settings = React.memo(() => {
-  const [fontsLoaded] = useFonts(FONTS_CONFIG);
-
   const {
     settings,
     updateSettings,

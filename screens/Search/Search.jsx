@@ -30,7 +30,6 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import styles from "../../styles/Search";
 import DraggableFloatingButton from "../../components/FloatButton";
-import { useFonts } from "expo-font";
 import { searchSermonsWithFTS } from "../../database/sermonDB";
 
 const CONTEXT_LENGTH = 30;
@@ -265,10 +264,6 @@ const SermonSearch = () => {
   // Stable animated value — must NOT be recreated on every render
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const [fontsLoaded] = useFonts({
-    ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-    ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
-  });
   // Refs
   const scrollViewRef = useRef(null);
   const searchInputRef = useRef(null);

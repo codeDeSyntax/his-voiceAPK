@@ -77,9 +77,7 @@ const renderTextWithStyledNumbers = (
               textShadowColor: theme.dark ? "#00000050" : "#FFFFFF80", // Subtle shadow for visibility
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 2,
-              lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.55,
-              ),
+              lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
             }}
           >
             {part}
@@ -155,9 +153,6 @@ const renderTextWithStyledNumbersOnly = (
           fontSize: responsiveFontSize(80),
           fontFamily: "Serif",
           color: theme.dark ? theme.colors.hlight : "#5d3211", // Theme-appropriate color
-          // fontStyle: "italic", // Italics for paragraph numbers
-          // fontWeight: "bold", // Slightly bold
-          // lineHeight: Math.round(responsiveFontSize(settings.fontSize) * 1.55),
         }}
       >
         {paragraphNumber}.{" "}
@@ -179,7 +174,7 @@ const renderTextWithStyledNumbersOnly = (
                     ? "#b37407"
                     : "#36240f", // Use highlight color or default amber/orange for numbers
                 lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.55,
+                  responsiveFontSize(settings.fontSize) * 1.4,
                 ),
               }}
             >
@@ -194,9 +189,7 @@ const renderTextWithStyledNumbersOnly = (
                 fontSize: responsiveFontSize(settings.fontSize),
                 fontFamily: resolvedFontFamily,
                 color: baseTextColor, // Use highlight color or default text color
-                lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.55,
-                ),
+                lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
               }}
             >
               {part}
@@ -226,9 +219,7 @@ const renderTextWithStyledNumbersOnly = (
                 ? "#b37407"
                 : "#36240f", // Use highlight color or default amber/orange for numbers
             // fontWeight: "700", // Bold numbers
-            lineHeight: Math.round(
-              responsiveFontSize(settings.fontSize) * 1.55,
-            ),
+            lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
           }}
         >
           {part}
@@ -242,9 +233,7 @@ const renderTextWithStyledNumbersOnly = (
             fontSize: responsiveFontSize(settings.fontSize),
             fontFamily: resolvedFontFamily,
             color: baseTextColor, // Use highlight color or default text color
-            lineHeight: Math.round(
-              responsiveFontSize(settings.fontSize) * 1.55,
-            ),
+            lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
           }}
         >
           {part}
@@ -268,9 +257,7 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
               fontFamily: "ZillaSlab",
               color: theme.dark ? theme.colors.hlight : "#5d3211",
               textDecorationLine: "underline",
-              lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.55,
-              ),
+              lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
             }}
           >
             {part}
@@ -285,9 +272,7 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
               fontFamily: "ZillaSlab",
               color: theme.dark ? theme.colors.hlight : "#5d3211",
               textDecorationLine: "underline",
-              lineHeight: Math.round(
-                responsiveFontSize(settings.fontSize) * 1.55,
-              ),
+              lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
             }}
           >
             {part}
@@ -327,9 +312,7 @@ const EndnoteWithTitleText = React.memo(
                   fontFamily: "ZillaSlab",
                   color: theme.dark ? theme.colors.hlight : "#5d3211",
                   textDecorationLine: "underline",
-                  lineHeight: Math.round(
-                    responsiveFontSize(settings.fontSize) * 1.55,
-                  ),
+                  lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
                 }}
               >
                 {part}
@@ -344,9 +327,7 @@ const EndnoteWithTitleText = React.memo(
                   fontFamily: "ZillaSlab",
                   color: theme.dark ? "#FFFFFF" : "#000000",
                   textDecorationLine: "underline",
-                  lineHeight: Math.round(
-                    responsiveFontSize(settings.fontSize) * 1.55,
-                  ),
+                  lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
                 }}
               >
                 {part}
@@ -432,7 +413,7 @@ const ParagraphText = React.memo(
     onParagraphClick,
     onEndnoteClick,
   }) => {
-    const { highlights } = useAppContext();
+    const { highlights, readingFontsRevision } = useAppContext();
     const endnoteTapRef = useRef({ key: "", ts: 0 });
 
     // Check if this paragraph is highlighted - optimized with direct highlights access
@@ -448,7 +429,7 @@ const ParagraphText = React.memo(
       const baseSize = responsiveFontSize(settings?.fontSize || 22);
       const fontFamily =
         resolveReaderFontFamily(settings?.fontFamily) || "ZillaSlab";
-      const lineHeight = Math.round(baseSize * 1.55); // Medium-style generous line spacing
+      const lineHeight = Math.round(baseSize * 1.2); // Medium-style generous line spacing
 
       // Pre-calculated highlight colors for better performance
       const highlightTextColors = {
@@ -483,6 +464,7 @@ const ParagraphText = React.memo(
       currentHighlight,
       settings?.fontFamily,
       settings?.fontSize,
+      readingFontsRevision,
     ]);
 
     const paragraphNumberStyle = useMemo(

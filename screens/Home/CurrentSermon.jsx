@@ -19,6 +19,7 @@ import {
   Alert,
   StyleSheet,
   TouchableOpacity,
+  Modal,
 } from "react-native";
 
 import { useAppContext } from "../../Logic/globalState";
@@ -796,14 +797,6 @@ const CurrentSermon = React.memo(({ route }) => {
                 />
               </View>
 
-              {/* Skeleton overlay — visible while loading paragraphs OR while
-                  the FlatList is being silently scrolled to the target. */}
-              {(isLoadingParagraphs || !isPositioningComplete) && (
-                <View style={StyleSheet.absoluteFillObject}>
-                  <SermonSkeletonLoader message="getting the message..." />
-                </View>
-              )}
-
               <CustomTopCardController
                 theme={theme}
                 onScrollToPrev={scrollToPrevParagraph}
@@ -823,6 +816,28 @@ const CurrentSermon = React.memo(({ route }) => {
           )}
         </View>
       </KeyboardAvoidingView>
+
+      {/* Full-screen loader — Modal guarantees viewport-sized flex layout so
+          Spinner's flex:1 centering works (absolute overlays inside the
+          FlatList tree were sizing to content height). */}
+      <Modal
+        visible={
+          selectedSermon?.type !== "mp3" &&
+          (isLoadingParagraphs || !isPositioningComplete)
+        }
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View
+          style={[
+            styles.sermonLoaderScreen,
+            { backgroundColor: theme.colors.background },
+          ]}
+        >
+          <SermonSkeletonLoader />
+        </View>
+      </Modal>
 
       {/* Fullscreen Search Modal */}
       <CurrentSermonSearch

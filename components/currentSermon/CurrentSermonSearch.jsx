@@ -16,8 +16,6 @@ import {
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../Logic/globalState";
 import { searchSermon } from "../../Utils/paragraphSplitter";
-import { useFonts } from "expo-font";
-
 // ── Animated dot loader (mirrors the main Search page) ─────────────────────
 const SearchDot = ({ anim, color }) => {
   const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
@@ -186,11 +184,6 @@ const CurrentSermonSearch = ({
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const searchInputRef = useRef(null);
-
-  const [fontsLoaded] = useFonts({
-    ZillaSlab: require("../../assets/fonts/ZillaSlab-Regular.ttf"),
-    ZillaSlabsm: require("../../assets/fonts/ZillaSlab-SemiBold.ttf"),
-  });
 
   const highlightText = (extractedContext, searchTerm) => {
     if (!searchTerm || !extractedContext) return extractedContext;

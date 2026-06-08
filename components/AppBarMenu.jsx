@@ -212,6 +212,7 @@ const FilterIconButton = ({ icon, label, onPress, theme, active = false }) => {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
+      testID={`sidebar-filter-${label.toLowerCase().replace(/\s+/g, "-")}`}
       style={({ pressed }) => ({
         width: 46,
         height: 46,
@@ -226,9 +227,15 @@ const FilterIconButton = ({ icon, label, onPress, theme, active = false }) => {
             ? dark
               ? "rgba(242,205,180,0.10)"
               : "rgba(93,50,17,0.08)"
-            : dark
-              ? "rgba(242,205,180,0.065)"
-              : "rgba(93,50,17,0.055)",
+          : dark
+            ? "rgba(242,205,180,0.065)"
+            : "rgba(93,50,17,0.055)",
+        borderWidth: active ? 1 : 0,
+        borderColor: active
+          ? dark
+            ? "rgba(242,205,180,0.26)"
+            : "rgba(93,50,17,0.18)"
+          : "transparent",
         transform: [{ scale: pressed ? 0.96 : 1 }],
       })}
     >
@@ -373,7 +380,7 @@ const AppBarMenu = ({
           </ImageBackground>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
           {/* Header */}
           <View
             style={{
@@ -424,7 +431,7 @@ const AppBarMenu = ({
                 <Text
                   style={{
                     fontSize: 11,
-                    fontFamily: "Merriweather",
+                    fontFamily: "ZillaSlab",
                     color: theme.dark
                       ? "rgba(242,205,180,0.44)"
                       : "rgba(93,50,17,0.44)",
@@ -439,6 +446,9 @@ const AppBarMenu = ({
 
             <Pressable
               onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close menu"
+              testID="sidebar-close-button"
               style={({ pressed }) => ({
                 width: 36,
                 height: 36,

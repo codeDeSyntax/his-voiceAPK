@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ToastAndroid,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
@@ -119,6 +121,12 @@ const AppSettings = ({ theme, router, compact = false }) => {
               await deleteLocalDatabase();
 
               console.log("✅ Database file deleted");
+
+              // Show toast feedback
+              if (Platform.OS === "android") {
+                ToastAndroid.show("Sermons deleted", ToastAndroid.SHORT);
+              }
+
               Alert.alert("Success", "Database deleted successfully.", [
                 {
                   text: "OK",
@@ -168,6 +176,11 @@ const AppSettings = ({ theme, router, compact = false }) => {
               ]);
 
               console.log("✅ All settings reset");
+
+              // Show toast feedback
+              if (Platform.OS === "android") {
+                ToastAndroid.show("Settings reset", ToastAndroid.SHORT);
+              }
 
               // Navigate home — DB is still intact, no need to go to Welcome
               Alert.alert(
@@ -352,6 +365,10 @@ const AppSettings = ({ theme, router, compact = false }) => {
             dialogTitle: "Export Sermons Database",
           });
           console.log("Share dialog opened");
+
+          if (Platform.OS === "android") {
+            ToastAndroid.show("Database exported", ToastAndroid.SHORT);
+          }
         } else {
           Alert.alert(
             "Sharing not available",
@@ -375,7 +392,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
     }
   };
 
-  const accent = theme.dark ? theme.colors.hlight : "#5d3211";
+  const accent = theme.dark ? "#fcceab" : "#5d3211";
   const rowDivider = theme.dark
     ? "rgba(242, 205, 180, 0.09)"
     : "rgba(93, 50, 17, 0.08)";
@@ -433,13 +450,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
             <Ionicons
               name={icon}
               size={19}
-              color={
-                disabled
-                  ? theme.dark
-                    ? "#777777"
-                    : "#999999"
-                  : accent
-              }
+              color={disabled ? (theme.dark ? "#777777" : "#999999") : accent}
             />
           </View>
 

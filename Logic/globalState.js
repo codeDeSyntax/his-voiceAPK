@@ -19,6 +19,7 @@ import {
   migrateSermons,
   checkMigrationStatus,
 } from "../database/migrationScript";
+import { ensureReadingFontLoaded } from "../Utils/fontLoader";
 
 // Storage keys in constants to avoid typos
 const STORAGE_KEYS = {
@@ -71,6 +72,7 @@ export const SermonProvider = ({ children }) => {
   const [bookmarks, setBookmarks] = useState([]);
   const [highlights, setHighlights] = useState({}); // Store paragraph highlights
   const [recentSermons, setRecentSermons] = useState([]);
+  const [readingFontsRevision, setReadingFontsRevision] = useState(0);
 
   // Theme derived from settings.darkMode — updates whenever dark mode changes
   const theme = useMemo(
@@ -385,6 +387,13 @@ export const SermonProvider = ({ children }) => {
   // the cascade that caused infinite re-renders in auto-save effects.
   const updateSettings = useCallback(async (newSettings) => {
     try {
+      if (newSettings.fontFamily) {
+        const loaded = await ensureReadingFontLoaded(newSettings.fontFamily);
+        if (loaded) {
+          setReadingFontsRevision((revision) => revision + 1);
+        }
+      }
+
       let merged;
       setSettings((prev) => {
         merged = { ...prev, ...newSettings };
@@ -411,6 +420,14 @@ export const SermonProvider = ({ children }) => {
       const storedSettings = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (storedSettings) {
         const parsedSettings = JSON.parse(storedSettings);
+        if (parsedSettings.fontFamily) {
+          const loaded = await ensureReadingFontLoaded(
+            parsedSettings.fontFamily,
+          );
+          if (loaded) {
+            setReadingFontsRevision((revision) => revision + 1);
+          }
+        }
         setSettings(parsedSettings);
       }
 
@@ -466,10 +483,28 @@ export const SermonProvider = ({ children }) => {
     }
   }, [cleanExpiredPositions]);
 
+  useEffect(() => {
+    let isActive = true;
+
+    const syncReadingFont = async () => {
+      const loaded = await ensureReadingFontLoaded(settings.fontFamily);
+      if (isActive && loaded) {
+        setReadingFontsRevision((revision) => revision + 1);
+      }
+    };
+
+    syncReadingFont();
+
+    return () => {
+      isActive = false;
+    };
+  }, [settings.fontFamily]);
+
   // Initialize app data
   useEffect(() => {
     const initializeApp = async () => {
-      await Promise.all([loadSermons(), loadStoredData()]);
+      await loadStoredData();
+      await loadSermons();
     };
 
     initializeApp();
@@ -774,6 +809,9 @@ export const SermonProvider = ({ children }) => {
 
       // Recents
       recentSermons,
+
+      // Bumps when optional reading fonts finish loading
+      readingFontsRevision,
     }),
     [
       selectedSermon,
@@ -815,6 +853,7 @@ export const SermonProvider = ({ children }) => {
       filterSermonsByTag,
       findSermonInState,
       recentSermons,
+      readingFontsRevision,
     ],
   );
 

@@ -55,10 +55,10 @@ const SettingsHeader = ({ theme, accentColor, compact = false }) => {
           <Text
             style={{
               fontSize: 12,
-              fontWeight: "700",
+              // fontWeight: "700",
               fontFamily: "ZillaSlab-SemiBold",
               color: mutedText,
-              letterSpacing: 0.5,
+              // letterSpacing: 0.5,
               textTransform: "uppercase",
             }}
           >
@@ -68,8 +68,8 @@ const SettingsHeader = ({ theme, accentColor, compact = false }) => {
         <Text
           style={{
             fontSize: 26,
-            fontWeight: "700",
-            fontFamily: "ZillaSlab-SemiBold",
+            // fontWeight: "700",
+            fontFamily: "Serif",
             color: theme.colors.text,
             letterSpacing: 0,
             marginTop: 4,

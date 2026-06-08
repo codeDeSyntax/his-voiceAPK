@@ -249,6 +249,26 @@ def initialize_schema(connection: sqlite3.Connection) -> None:
         CREATE INDEX idx_sermons_year ON sermons(year);
         CREATE INDEX idx_sermons_date ON sermons(date);
 
+        CREATE VIRTUAL TABLE sermons_fts USING fts5(
+          sermon_id UNINDEXED,
+          title,
+          sermon
+        );
+
+        CREATE TABLE sermon_paragraphs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          sermon_id TEXT NOT NULL,
+          paragraph_index INTEGER NOT NULL,
+          paragraph_text TEXT NOT NULL,
+          word_count INTEGER,
+          start_char INTEGER,
+          end_char INTEGER,
+          FOREIGN KEY (sermon_id) REFERENCES sermons(id),
+          UNIQUE(sermon_id, paragraph_index)
+        );
+
+        CREATE INDEX idx_paragraphs_sermon ON sermon_paragraphs(sermon_id);
+
         CREATE TABLE migration_status (
           key TEXT PRIMARY KEY,
           value TEXT,
@@ -289,6 +309,41 @@ def insert_sermons(connection: sqlite3.Connection, sermons: list[Sermon]) -> Non
     )
 
 
+def build_search_index(connection: sqlite3.Connection, sermons: list[Sermon]) -> None:
+    indexed = 0
+    paragraph_rows = 0
+
+    for sermon in sermons:
+        if not sermon.sermon:
+            continue
+
+        paragraphs = format_sermon_into_paragraphs(sermon.sermon)
+        connection.execute(
+            "INSERT INTO sermons_fts(sermon_id, title, sermon) VALUES (?, ?, ?)",
+            (sermon.id, sermon.title, sermon.sermon),
+        )
+
+        for index, paragraph in enumerate(paragraphs):
+            word_count = len([word for word in paragraph.split() if word.strip()])
+            connection.execute(
+                """
+                INSERT INTO sermon_paragraphs
+                  (sermon_id, paragraph_index, paragraph_text, word_count, start_char, end_char)
+                VALUES (?, ?, ?, ?, 0, 0)
+                """,
+                (sermon.id, index, paragraph, word_count),
+            )
+            paragraph_rows += 1
+
+        indexed += 1
+
+    connection.execute(
+        "INSERT OR REPLACE INTO migration_status (key, value) VALUES (?, ?)",
+        ("search_index_built", "true"),
+    )
+    print(f"Search index: {indexed} text sermons, {paragraph_rows} paragraphs")
+
+
 def verify_database(connection: sqlite3.Connection) -> dict[str, int]:
     values = {}
     for key, query in {
@@ -296,6 +351,12 @@ def verify_database(connection: sqlite3.Connection) -> dict[str, int]:
         "text": "SELECT COUNT(*) FROM sermons WHERE type = 'text'",
         "audio": "SELECT COUNT(*) FROM sermons WHERE type = 'mp3'",
         "migration_status": "SELECT COUNT(*) FROM migration_status",
+        "fts_rows": "SELECT COUNT(*) FROM sermons_fts",
+        "paragraph_rows": "SELECT COUNT(*) FROM sermon_paragraphs",
+        "search_index_ready": (
+            "SELECT COUNT(*) FROM migration_status "
+            "WHERE key = 'search_index_built' AND value = 'true'"
+        ),
     }.items():
         values[key] = int(connection.execute(query).fetchone()[0])
     return values
@@ -324,6 +385,7 @@ def main() -> int:
     try:
         initialize_schema(connection)
         insert_sermons(connection, sermons)
+        build_search_index(connection, sermons)
         connection.commit()
         verification = verify_database(connection)
     finally:
