@@ -24,6 +24,12 @@ const resolveReaderFontFamily = (fontFamily) => {
   return fontFamily;
 };
 
+const readingFontSize = (fontSize) =>
+  responsiveFontSize(fontSize ?? 22);
+
+const readingLineHeight = (fontSize) =>
+  Math.round(readingFontSize(fontSize) * 1.5);
+
 // Helper function to render text with styled numbers
 const renderTextWithStyledNumbers = (
   text,
@@ -71,13 +77,13 @@ const renderTextWithStyledNumbers = (
           <Text
             key={`${key}-search-${partIndex}-${part.slice(0, 5)}`}
             style={{
-              fontSize: responsiveFontSize(settings.fontSize),
+              fontSize: readingFontSize(settings.fontSize),
               fontFamily: resolvedFontFamily,
               color: theme.dark ? "#FBBF24" : "#D97706", // Bright amber/orange text
               textShadowColor: theme.dark ? "#00000050" : "#FFFFFF80", // Subtle shadow for visibility
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 2,
-              lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
+              lineHeight: readingLineHeight(settings.fontSize),
             }}
           >
             {part}
@@ -166,16 +172,14 @@ const renderTextWithStyledNumbersOnly = (
             <Text
               key={`${key}-number-${index}-${part.slice(0, 5)}`}
               style={{
-                fontSize: responsiveFontSize(settings.fontSize),
+                fontSize: readingFontSize(settings.fontSize),
                 fontFamily: resolvedFontFamily,
                 color: highlightColor
                   ? baseTextColor
                   : theme.dark
                     ? "#b37407"
                     : "#36240f", // Use highlight color or default amber/orange for numbers
-                lineHeight: Math.round(
-                  responsiveFontSize(settings.fontSize) * 1.4,
-                ),
+                lineHeight: readingLineHeight(settings.fontSize),
               }}
             >
               {part}
@@ -186,10 +190,10 @@ const renderTextWithStyledNumbersOnly = (
             <Text
               key={`${key}-text-${index}-${part.slice(0, 10)}`}
               style={{
-                fontSize: responsiveFontSize(settings.fontSize),
+                fontSize: readingFontSize(settings.fontSize),
                 fontFamily: resolvedFontFamily,
                 color: baseTextColor, // Use highlight color or default text color
-                lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
+                lineHeight: readingLineHeight(settings.fontSize),
               }}
             >
               {part}
@@ -211,7 +215,7 @@ const renderTextWithStyledNumbersOnly = (
         <Text
           key={`${key}-number-${index}-${part.slice(0, 5)}`}
           style={{
-            fontSize: responsiveFontSize(settings.fontSize),
+            fontSize: readingFontSize(settings.fontSize),
             fontFamily: resolvedFontFamily,
             color: highlightColor
               ? baseTextColor
@@ -219,7 +223,7 @@ const renderTextWithStyledNumbersOnly = (
                 ? "#b37407"
                 : "#36240f", // Use highlight color or default amber/orange for numbers
             // fontWeight: "700", // Bold numbers
-            lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
+            lineHeight: readingLineHeight(settings.fontSize),
           }}
         >
           {part}
@@ -230,10 +234,10 @@ const renderTextWithStyledNumbersOnly = (
         <Text
           key={`${key}-text-${index}-${part.slice(0, 10)}`}
           style={{
-            fontSize: responsiveFontSize(settings.fontSize),
+            fontSize: readingFontSize(settings.fontSize),
             fontFamily: resolvedFontFamily,
             color: baseTextColor, // Use highlight color or default text color
-            lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
+            lineHeight: readingLineHeight(settings.fontSize),
           }}
         >
           {part}
@@ -253,11 +257,11 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
           <Text
             key={`endnote-${partIndex}-${part.slice(0, 10)}`}
             style={{
-              fontSize: responsiveFontSize(settings.fontSize),
+              fontSize: readingFontSize(settings.fontSize),
               fontFamily: "ZillaSlab",
               color: theme.dark ? theme.colors.hlight : "#5d3211",
               textDecorationLine: "underline",
-              lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
+              lineHeight: readingLineHeight(settings.fontSize),
             }}
           >
             {part}
@@ -268,11 +272,11 @@ const EndnoteText = React.memo(({ parts, theme, settings, searchPhrase }) => (
           <Text
             key={`reference-${partIndex}-${part.slice(0, 10)}`}
             style={{
-              fontSize: responsiveFontSize(settings.fontSize),
+              fontSize: readingFontSize(settings.fontSize),
               fontFamily: "ZillaSlab",
               color: theme.dark ? theme.colors.hlight : "#5d3211",
               textDecorationLine: "underline",
-              lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
+              lineHeight: readingLineHeight(settings.fontSize),
             }}
           >
             {part}
@@ -308,11 +312,11 @@ const EndnoteWithTitleText = React.memo(
               <Text
                 key={`endnote-${partIndex}-${part.slice(0, 10)}`}
                 style={{
-                  fontSize: responsiveFontSize(settings.fontSize),
+                  fontSize: readingFontSize(settings.fontSize),
                   fontFamily: "ZillaSlab",
                   color: theme.dark ? theme.colors.hlight : "#5d3211",
                   textDecorationLine: "underline",
-                  lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
+                  lineHeight: readingLineHeight(settings.fontSize),
                 }}
               >
                 {part}
@@ -323,11 +327,11 @@ const EndnoteWithTitleText = React.memo(
               <Text
                 key={`title-${partIndex}-${part.slice(0, 10)}`}
                 style={{
-                  fontSize: responsiveFontSize(settings.fontSize),
+                  fontSize: readingFontSize(settings.fontSize),
                   fontFamily: "ZillaSlab",
                   color: theme.dark ? "#FFFFFF" : "#000000",
                   textDecorationLine: "underline",
-                  lineHeight: Math.round(responsiveFontSize(settings.fontSize)),
+                  lineHeight: readingLineHeight(settings.fontSize),
                 }}
               >
                 {part}
@@ -426,10 +430,10 @@ const ParagraphText = React.memo(
 
     // Optimized text style with highlight color support - memoized for performance
     const textStyle = useMemo(() => {
-      const baseSize = responsiveFontSize(settings?.fontSize || 22);
+      const baseSize = readingFontSize(settings?.fontSize || 22);
       const fontFamily =
         resolveReaderFontFamily(settings?.fontFamily) || "ZillaSlab";
-      const lineHeight = Math.round(baseSize * 1.2); // Medium-style generous line spacing
+      const lineHeight = readingLineHeight(settings?.fontSize || 22);
 
       // Pre-calculated highlight colors for better performance
       const highlightTextColors = {
@@ -723,7 +727,7 @@ const ParagraphText = React.memo(
       color: accentColor,
       fontFamily: "System",
       // lineHeight: Math.round(
-      //   responsiveFontSize(settings?.fontSize || 22) * 1.4,
+      //   responsiveFontSize(settings?.fontSize || 22) * 1.5,
       // ),
     };
 
@@ -809,9 +813,8 @@ const ParagraphText = React.memo(
                         style={{
                           color: linkColor,
                           fontFamily: "serif" || "ZillaSlab",
-                          fontSize: responsiveFontSize(
-                            settings?.fontSize || 22,
-                          ),
+                          fontSize: readingFontSize(settings?.fontSize || 22),
+                          lineHeight: readingLineHeight(settings?.fontSize || 22),
                           fontWeight: isEndnoteWord ? "700" : "200",
                           backgroundColor: theme.dark
                             ? "#5d321160"
@@ -835,7 +838,8 @@ const ParagraphText = React.memo(
                           style={{
                             color: theme.dark ? "white" : "#7a3b10",
                             fontFamily: "cursive" || "cursive",
-                            fontSize: responsiveFontSize(
+                            fontSize: readingFontSize(settings?.fontSize || 22),
+                            lineHeight: readingLineHeight(
                               settings?.fontSize || 22,
                             ),
                             fontWeight: "700",
@@ -880,7 +884,8 @@ const ParagraphText = React.memo(
                           fontFamily:
                             resolveReaderFontFamily(settings?.fontFamily) ||
                             "ZillaSlab",
-                          fontSize: responsiveFontSize(
+                          fontSize: readingFontSize(settings?.fontSize || 22),
+                          lineHeight: readingLineHeight(
                             settings?.fontSize || 22,
                           ),
                         }}
@@ -914,7 +919,8 @@ const ParagraphText = React.memo(
                               fontFamily:
                                 resolveReaderFontFamily(settings?.fontFamily) ||
                                 "ZillaSlab",
-                              fontSize: responsiveFontSize(
+                              fontSize: readingFontSize(settings?.fontSize || 22),
+                              lineHeight: readingLineHeight(
                                 settings?.fontSize || 22,
                               ),
                               fontWeight: "700",

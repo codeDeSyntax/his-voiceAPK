@@ -1,12 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   Switch,
+  Modal,
+  Pressable,
+  StyleSheet,
 } from "react-native";
-import Slider from "@react-native-community/slider";
 import { Ionicons } from "@expo/vector-icons";
+import { GlassTile } from "../../styles/glassButton";
+
+const FONT_SIZE_OPTIONS = [
+  { value: 12, label: "Compact" },
+  { value: 14, label: "Small" },
+  { value: 16, label: "Comfortable" },
+  { value: 18, label: "Relaxed" },
+  { value: 20, label: "Large" },
+  { value: 22, label: "Roomy" },
+  { value: 24, label: "Spacious" },
+  { value: 28, label: "Extra large" },
+  { value: 32, label: "Maximum" },
+];
 
 const DisplaySettings = ({
   theme,
@@ -19,6 +34,7 @@ const DisplaySettings = ({
   accentColor,
   navigation,
 }) => {
+  const [showFontSizeOptions, setShowFontSizeOptions] = useState(false);
   const [showFontOptions, setShowFontOptions] = useState(false);
   const [showColorOptions, setShowColorOptions] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -132,12 +148,40 @@ const DisplaySettings = ({
     );
   };
 
-  const handleFontSizeChange = (value) => {
-    const nextFontSize = Math.round(value);
-    if (nextFontSize !== fontSize) {
-      setFontSize(nextFontSize);
-    }
-  };
+  const getFontSizeLabel = useCallback((size) => {
+    const match = FONT_SIZE_OPTIONS.find((opt) => opt.value === Number(size));
+    if (match) return match.label;
+    if (size < 16) return "Small";
+    if (size < 20) return "Comfortable";
+    if (size < 24) return "Large";
+    return "Extra large";
+  }, []);
+
+  const toggleFontSizeMenu = useCallback(() => {
+    setShowFontSizeOptions((open) => {
+      const next = !open;
+      if (next) setShowFontOptions(false);
+      return next;
+    });
+  }, []);
+
+  const toggleFontFamilyMenu = useCallback(() => {
+    setShowFontOptions((open) => {
+      const next = !open;
+      if (next) setShowFontSizeOptions(false);
+      return next;
+    });
+  }, []);
+
+  const selectFontSize = useCallback(
+    (value) => {
+      if (Number(fontSize) !== value) {
+        setFontSize(value);
+      }
+      setShowFontSizeOptions(false);
+    },
+    [fontSize, setFontSize],
+  );
 
   return (
     <View style={{ paddingHorizontal: 0 }}>
@@ -174,55 +218,15 @@ const DisplaySettings = ({
       <SettingItem
         icon="text-outline"
         title="Font Size"
-        subtitle={`${fontSize}px`}
+        subtitle={`${fontSize}px · ${getFontSizeLabel(Number(fontSize))}`}
         theme={theme}
+        onPress={toggleFontSizeMenu}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            width: 156,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: theme.colors.text,
-              minWidth: 30,
-              textAlign: "center",
-              fontFamily: "ZillaSlab",
-            }}
-          >
-            {fontSize}
-          </Text>
-
-          <View
-            style={{
-              flex: 1,
-              height: 40,
-              borderRadius: 20,
-              paddingHorizontal: 4,
-              justifyContent: "center",
-              backgroundColor: controlPanelBg,
-            }}
-          >
-            <Slider
-              value={fontSize}
-              minimumValue={12}
-              maximumValue={32}
-              step={1}
-              onValueChange={handleFontSizeChange}
-              minimumTrackTintColor={accent}
-              maximumTrackTintColor={
-                theme.dark ? "rgba(255,255,255,0.18)" : "rgba(93,50,17,0.18)"
-              }
-              thumbTintColor={accent}
-              testID="display-font-size-slider"
-            />
-          </View>
-        </View>
+        <Ionicons
+          name={showFontSizeOptions ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={theme.colors.text + "60"}
+        />
       </SettingItem>
 
       <SettingItem
@@ -230,7 +234,7 @@ const DisplaySettings = ({
         title="Font Family"
         subtitle={`Current: ${getCurrentFontName()}`}
         theme={theme}
-        onPress={() => setShowFontOptions(!showFontOptions)}
+        onPress={toggleFontFamilyMenu}
       >
         <Ionicons
           name={showFontOptions ? "chevron-up" : "chevron-down"}
@@ -257,6 +261,7 @@ const DisplaySettings = ({
               onPress={() => {
                 setFontFamily(font.value);
                 setShowFontOptions(false);
+                setShowFontSizeOptions(false);
               }}
               style={{
                 paddingVertical: 11,
@@ -370,7 +375,7 @@ const DisplaySettings = ({
               fontFamily: fontFamily !== "System" ? fontFamily : undefined,
               fontSize: fontSize,
               color: theme.colors.text,
-              lineHeight: fontSize * 1.4,
+              lineHeight: fontSize * 1.5,
               textAlign: "justify",
             }}
           >
@@ -405,8 +410,185 @@ const DisplaySettings = ({
           </TouchableOpacity>
         </View>
       )}
+
+      <Modal
+        visible={showFontSizeOptions}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFontSizeOptions(false)}
+      >
+        <View style={styles.menuRoot}>
+          <Pressable
+            style={[
+              styles.menuBackdrop,
+              {
+                backgroundColor: theme.dark
+                  ? "rgba(0, 0, 0, 0.58)"
+                  : "rgba(30, 20, 10, 0.34)",
+              },
+            ]}
+            onPress={() => setShowFontSizeOptions(false)}
+          />
+
+          <View
+            style={[
+              styles.menuPanel,
+              {
+                backgroundColor: theme.dark
+                  ? "rgba(26, 19, 16, 0.94)"
+                  : "rgba(254, 252, 249, 0.97)",
+                borderColor: theme.dark
+                  ? "rgba(242, 205, 180, 0.16)"
+                  : "rgba(93, 50, 17, 0.12)",
+                shadowColor: theme.dark ? "#000" : "#5d3211",
+              },
+            ]}
+          >
+            <View
+              pointerEvents="none"
+              style={[
+                styles.menuPanelGlow,
+                {
+                  backgroundColor: theme.dark
+                    ? "rgba(255, 255, 255, 0.04)"
+                    : "rgba(255, 255, 255, 0.55)",
+                },
+              ]}
+            />
+
+            <View style={styles.menuHeader}>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={[styles.menuTitle, { color: theme.colors.text }]}
+                >
+                  Font size
+                </Text>
+                <Text
+                  style={[
+                    styles.menuSubtitle,
+                    { color: theme.colors.text + "68" },
+                  ]}
+                >
+                  {fontSize}px · {getFontSizeLabel(Number(fontSize))}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowFontSizeOptions(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons
+                  name="close"
+                  size={16}
+                  color={theme.colors.text + "70"}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.menuGrid}>
+              {FONT_SIZE_OPTIONS.map((option) => {
+                const isSelected = Number(fontSize) === option.value;
+                const labelColor = isSelected
+                  ? theme.dark
+                    ? theme.colors.hlight
+                    : "#5d3211"
+                  : theme.colors.text;
+
+                return (
+                  <GlassTile
+                    key={option.value}
+                    theme={theme}
+                    selected={isSelected}
+                    compact
+                    onPress={() => selectFontSize(option.value)}
+                    style={styles.menuGridItem}
+                    testID={`display-font-size-${option.value}`}
+                  >
+                    <Text
+                      style={[
+                        styles.menuGridValue,
+                        {
+                          color: labelColor,
+                          fontWeight: isSelected ? "700" : "500",
+                        },
+                      ]}
+                    >
+                      {option.value}
+                    </Text>
+                  </GlassTile>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  menuRoot: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  menuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  menuPanel: {
+    alignSelf: "center",
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
+    overflow: "hidden",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  menuPanelGlow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 36,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+  },
+  menuHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    gap: 8,
+  },
+  menuTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "ZillaSlab",
+  },
+  menuSubtitle: {
+    marginTop: 1,
+    fontSize: 11,
+    fontFamily: "ZillaSlab",
+  },
+  menuGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    justifyContent: "center",
+    maxWidth: 228,
+  },
+  menuGridItem: {
+    minWidth: 38,
+  },
+  menuGridValue: {
+    fontSize: 12,
+    fontFamily: "ZillaSlab",
+    textAlign: "center",
+  },
+});
 
 export default DisplaySettings;
