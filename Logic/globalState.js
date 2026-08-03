@@ -15,10 +15,7 @@ import {
   getSermonsByType,
   initializeDatabase,
 } from "../database/sermonDB";
-import {
-  migrateSermons,
-  checkMigrationStatus,
-} from "../database/migrationScript";
+import { databaseExists } from "../database/downloadDatabase";
 import { ensureReadingFontLoaded } from "../Utils/fontLoader";
 
 // Storage keys in constants to avoid typos
@@ -320,44 +317,30 @@ export const SermonProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      console.log("Initializing database...");
-      await initializeDatabase();
-      console.log("✅ Database initialized");
-
-      // Check if migration is needed
-      const migrationStatus = await checkMigrationStatus();
-      console.log("Migration status:", migrationStatus);
-
-      if (migrationStatus.needsMigration) {
-        console.log("Starting migration...");
-        const result = await migrateSermons((progress) => {
-          console.log(`Migration progress: ${progress}%`);
-        });
-
-        // Handle needsDownload case - not an error, just waiting for user action
-        if (!result.success && result.needsDownload) {
-          console.log("📥 Database needs to be downloaded by user");
-          setAllSermons([]);
-          setTextSermons([]);
-          setSermonsLoaded(false);
-          setLoading(false);
-          return false; // No error, just empty state
+      // Check if local database file exists before executing SQLite operations
+      const hasDatabase = await databaseExists();
+      if (!hasDatabase) {
+        if (__DEV__) {
+          console.log(
+            "📥 Database not downloaded yet. Waiting for user download.",
+          );
         }
-
-        if (!result.success) {
-          throw new Error(`Migration failed: ${result.error}`);
-        }
-        console.log(
-          `✅ Migration completed. ${result.count} sermons migrated.`,
-        );
-      } else {
-        console.log("Migration already completed, skipping...");
+        setAllSermons([]);
+        setTextSermons([]);
+        setSermonsLoaded(false);
+        setLoading(false);
+        return false;
       }
 
+      if (__DEV__) console.log("Initializing database...");
+      await initializeDatabase();
+
       // Load sermons metadata from database (fast - no full text)
-      console.log("Loading sermons from database...");
+      if (__DEV__) console.log("Loading sermons from database...");
       const fetchedSermons = await getAllSermonsMetadata();
-      console.log(`✅ Loaded ${fetchedSermons.length} sermons from database`);
+      if (__DEV__) {
+        console.log(`✅ Loaded ${fetchedSermons.length} sermons from database`);
+      }
 
       // Set all sermons
       setAllSermons(fetchedSermons);

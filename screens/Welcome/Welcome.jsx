@@ -24,6 +24,7 @@ import {
 import {
   downloadDatabaseWithSignal,
   getDatabaseStatus,
+  databaseExists,
 } from "../../database/downloadDatabase";
 import {
   forceStopIndexing,
@@ -54,6 +55,14 @@ const Welcome = () => {
         setDbNeedsUpdate(status.needsUpdate);
       } catch (error) {
         console.error("Error checking database:", error);
+        // getDatabaseStatus() failed — fall back to a direct local file check
+        // so a transient error never incorrectly shows the Download button.
+        try {
+          const locallyExists = await databaseExists();
+          setDbExists(locallyExists);
+        } catch (_) {
+          // If even the file check fails, leave state as-is (default false).
+        }
       }
     };
     checkDatabase();
@@ -73,8 +82,16 @@ const Welcome = () => {
           setDbNeedsUpdate(status.needsUpdate);
         } catch (error) {
           if (!isActive) return;
-          const hasLoadedSermons = allSermons && allSermons.length > 0;
-          setDbExists(hasLoadedSermons);
+          // getDatabaseStatus() failed — fall back to a direct local file check
+          // rather than relying on allSermons (which may not be loaded yet).
+          try {
+            const locallyExists = await databaseExists();
+            const hasLoadedSermons = allSermons && allSermons.length > 0;
+            setDbExists(locallyExists || hasLoadedSermons);
+          } catch (_) {
+            const hasLoadedSermons = allSermons && allSermons.length > 0;
+            setDbExists(hasLoadedSermons);
+          }
           setDbNeedsUpdate(false);
         } finally {
           if (!isActive) return;
@@ -214,7 +231,6 @@ const Welcome = () => {
 
       // Staggered cascade entrance
       Animated.parallel([
-        // Top divider scales in
         stagger(200, [
           Animated.spring(dividerScale, {
             toValue: 1,
@@ -223,7 +239,6 @@ const Welcome = () => {
             useNativeDriver: true,
           }),
         ]),
-        // Label
         stagger(400, [
           Animated.timing(labelFade, {
             toValue: 1,
@@ -238,7 +253,6 @@ const Welcome = () => {
             useNativeDriver: true,
           }),
         ]),
-        // Title
         stagger(600, [
           Animated.timing(titleFade, {
             toValue: 1,
@@ -253,7 +267,6 @@ const Welcome = () => {
             useNativeDriver: true,
           }),
         ]),
-        // Subtitle
         stagger(900, [
           Animated.timing(subtitleFade, {
             toValue: 1,
@@ -262,7 +275,6 @@ const Welcome = () => {
             useNativeDriver: true,
           }),
         ]),
-        // Year pill
         stagger(1100, [
           Animated.timing(yearFade, {
             toValue: 1,
@@ -277,7 +289,6 @@ const Welcome = () => {
             useNativeDriver: true,
           }),
         ]),
-        // Quote
         stagger(1400, [
           Animated.timing(quoteFade, {
             toValue: 1,
@@ -292,7 +303,6 @@ const Welcome = () => {
             useNativeDriver: true,
           }),
         ]),
-        // Button
         stagger(1800, [
           Animated.timing(btnFade, {
             toValue: 1,
@@ -376,7 +386,7 @@ const Welcome = () => {
     ? "rgba(212, 165, 116, 0.06)"
     : "rgba(139, 69, 19, 0.045)";
 
-  // Pre-computed pattern data — more rings for richer depth
+  // Pre-computed pattern data
   const concentricCircles = [0.12, 0.24, 0.38, 0.52, 0.68, 0.85, 1.05, 1.3];
   const radiatingLines = Array.from({ length: 36 }, (_, i) => i * 10);
 
@@ -449,7 +459,6 @@ const Welcome = () => {
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
           >
-            {/* Outer glow border */}
             <Animated.View
               style={{
                 borderRadius: 100,
@@ -458,7 +467,6 @@ const Welcome = () => {
                 padding: 2,
               }}
             >
-              {/* Main button body */}
               <View
                 style={{
                   backgroundColor: innerBg,
@@ -473,7 +481,6 @@ const Welcome = () => {
                   elevation: 8,
                 }}
               >
-                {/* Top highlight sheen */}
                 <View
                   style={{
                     position: "absolute",
@@ -518,7 +525,7 @@ const Welcome = () => {
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
     >
-      {/* Top-only image overlay that fades into solid background */}
+      {/* Top image bleeds into gradient */}
       <View pointerEvents="none" style={styles.topImageWrap}>
         <ImageBackground
           source={require("../../assets/browntrees.jpg")}
@@ -528,31 +535,19 @@ const Welcome = () => {
           <LinearGradient
             colors={
               theme.dark
-                ? [
-                    "rgba(26, 19, 14, 0.06)",
-                    "rgba(31, 24, 19, 0.78)",
-                    "#221b17",
-                  ]
-                : [
-                    "rgba(250, 243, 234, 0.04)",
-                    "rgba(245, 230, 211, 0.72)",
-                    "#f5e6d3",
-                  ]
+                ? ["rgba(26,19,14,0.05)", "rgba(31,24,19,0.80)", "#221b17"]
+                : ["rgba(250,243,234,0.04)", "rgba(245,230,211,0.78)", "#f5e6d3"]
             }
-            locations={[0, 0.58, 0.9]}
+            locations={[0, 0.55, 0.92]}
             style={StyleSheet.absoluteFill}
           />
         </ImageBackground>
       </View>
 
-      {/* Background Art Pattern — spinning */}
+      {/* Spinning mandala art — preserved exactly */}
       <Animated.View
-        style={[
-          styles.patternContainer,
-          { transform: [{ rotate: spinRotation }] },
-        ]}
+        style={[styles.patternContainer, { transform: [{ rotate: spinRotation }] }]}
       >
-        {/* Concentric circles — eternity / harmony */}
         {concentricCircles.map((scale, i) => (
           <View
             key={`c-${i}`}
@@ -568,8 +563,6 @@ const Welcome = () => {
             ]}
           />
         ))}
-
-        {/* Radiating lines — truth / light */}
         {radiatingLines.map((angle, i) => (
           <View
             key={`r-${i}`}
@@ -583,39 +576,19 @@ const Welcome = () => {
             ]}
           />
         ))}
-
-        {/* Gentle arcs — dove-wing motif */}
-        <View
-          style={[
-            styles.wingArc,
-            styles.wingLeft,
-            { borderColor: patternAccent },
-          ]}
-        />
-        <View
-          style={[
-            styles.wingArc,
-            styles.wingRight,
-            { borderColor: patternAccent },
-          ]}
-        />
+        <View style={[styles.wingArc, styles.wingLeft, { borderColor: patternAccent }]} />
+        <View style={[styles.wingArc, styles.wingRight, { borderColor: patternAccent }]} />
       </Animated.View>
 
-      {/* ── Cover page layout: top label → big name → bottom quote + button ── */}
+      {/* ── Single centered content column ── */}
+      <View style={styles.contentColumn}>
 
-      {/* Top section — label + divider */}
-      <View style={styles.topSection}>
-        <Animated.View
-          style={[
-            styles.dividerLine,
-            { backgroundColor: divider, transform: [{ scaleX: dividerScale }] },
-          ]}
-        />
+        {/* Eyebrow */}
         <Animated.Text
           style={[
-            styles.label,
+            styles.eyebrow,
             {
-              color: "#ffffff",
+              color: accentMuted,
               opacity: labelFade,
               transform: [{ translateY: labelSlide }],
             },
@@ -623,16 +596,16 @@ const Welcome = () => {
         >
           SERMONS OF
         </Animated.Text>
+
+        {/* Thin accent bar */}
         <Animated.View
           style={[
-            styles.dividerLine,
-            { backgroundColor: divider, transform: [{ scaleX: dividerScale }] },
+            styles.accentBar,
+            { backgroundColor: accent, transform: [{ scaleX: dividerScale }] },
           ]}
         />
-      </View>
 
-      {/* Center — the name, big and commanding */}
-      <View style={styles.centerSection}>
+        {/* Prophet name */}
         <Animated.Text
           style={[
             styles.mainTitle,
@@ -643,92 +616,83 @@ const Welcome = () => {
             },
           ]}
         >
-          Robert Lambert Lee
+          Robert{"\n"}Lambert Lee
         </Animated.Text>
 
-        <Animated.View
-          style={{
-            opacity: subtitleFade,
-            alignItems: "center",
-            gap: 14,
-            marginTop: 16,
-          }}
-        >
-          <View style={[styles.dividerLine, { backgroundColor: divider }]} />
-          <Text style={[styles.subtitle, { color: accentMuted }]}>
-            Transcribed & Audio Sermons
+        {/* Subtitle — flanked by hairlines */}
+        <Animated.View style={[styles.subtitleRow, { opacity: subtitleFade }]}>
+          <View style={[styles.hairline, { backgroundColor: divider }]} />
+          <Text style={[styles.subtitleText, { color: accentMuted }]}>
+            Transcribed · Audio
           </Text>
-          <Animated.View
-            style={[
-              styles.yearPill,
-              {
-                
-                backgroundColor: theme.dark
-                  ? "rgba(230, 195, 184, 0.04)"
-                  : "rgba(93, 50, 17, 0.03)",
-                opacity: yearFade,
-                transform: [{ scale: yearScale }],
-              },
-            ]}
-          >
-            <Text style={[styles.yearText, { color: accentMuted }]}>
-              1964 – 1973
-            </Text>
-          </Animated.View>
+          <View style={[styles.hairline, { backgroundColor: divider }]} />
         </Animated.View>
-      </View>
 
-      {/* Bottom section — quote + button */}
-      <View style={styles.bottomSection}>
-        <Animated.View
+        {/* Year range */}
+        <Animated.Text
           style={[
-            styles.quoteWrap,
-            { opacity: quoteFade, transform: [{ translateY: quoteSlide }] },
+            styles.yearText,
+            {
+              color: accentMuted,
+              opacity: yearFade,
+              transform: [{ scale: yearScale }],
+            },
           ]}
         >
-          
-          <Text style={[styles.quoteText, { color: accentMuted }]}>
+          1964 – 1973
+        </Animated.Text>
+
+        {/* Section divider before quote */}
+        <View style={[styles.sectionDivider, { backgroundColor: divider }]} />
+
+        {/* Scripture quote */}
+        <Animated.View
+          style={{ opacity: quoteFade, transform: [{ translateY: quoteSlide }] }}
+        >
           <Text
             style={[
               styles.quoteOpen,
               {
                 color: theme.dark
-                  ? "rgba(230, 195, 184, 0.18)"
-                  : "rgba(93, 50, 17, 0.12)",
+                  ? "rgba(230,195,184,0.15)"
+                  : "rgba(93,50,17,0.10)",
               },
             ]}
           >
             {"\u201C"}
           </Text>
-            And I saw another mighty angel come{"\n"}down from heaven, clothed
-            with a cloud:{"\n"}and a rainbow was upon his head.
+          <Text style={[styles.quoteText, { color: accentMuted }]}>
+            And I saw another mighty angel{"\n"}come down from heaven, clothed{"\n"}
+            with a cloud: and a rainbow{"\n"}was upon his head.
           </Text>
           <Text
             style={[
               styles.quoteRef,
               {
                 color: theme.dark
-                  ? "rgba(230, 195, 184, 0.40)"
-                  : "rgba(93, 50, 17, 0.55)",
+                  ? "rgba(230,195,184,0.38)"
+                  : "rgba(93,50,17,0.45)",
               },
             ]}
           >
-            — Revelation 10 : 1
+            Revelation 10 : 1
           </Text>
         </Animated.View>
 
-        {/* Button */}
+        {/* CTA */}
         <Animated.View
           style={{
             opacity: btnFade,
             transform: [{ translateY: btnSlide }],
-            marginTop: 24,
+            marginTop: verticalScale(28),
+            width: "100%",
+            alignItems: "center",
           }}
         >
           {isDownloading ? (
             <View
               style={[
-                styles.downloadWrap,
+                styles.downloadPanel,
                 {
                   backgroundColor: downloadPanelBg,
                   borderColor: downloadPanelBorder,
@@ -736,82 +700,47 @@ const Welcome = () => {
                 },
               ]}
             >
-              <View style={styles.downloadHeaderRow}>
-                <View
-                  style={[
-                    styles.downloadSpinnerShell,
-                    { borderColor: downloadPanelBorder },
-                  ]}
-                >
-                  <ActivityIndicator size="large" color={accent} />
+              <View style={styles.dlRow}>
+                <View style={[styles.dlSpinner, { borderColor: downloadPanelBorder }]}>
+                  <ActivityIndicator size="small" color={accent} />
                 </View>
-                <View style={styles.downloadTextBlock}>
-                  <Text style={[styles.downloadTitle, { color: accent }]}>
-                    {downloadProgress >= 100
-                      ? "Preparing sermons"
-                      : "Downloading sermons"}
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[styles.dlTitle, { color: accent }]}>
+                    {downloadProgress >= 100 ? "Preparing…" : "Downloading sermons"}
                   </Text>
-                  <Text
-                    style={[
-                      styles.downloadSubtitle,
-                      { color: accentMuted },
-                    ]}
-                  >
+                  <Text style={[styles.dlSub, { color: accentMuted }]}>
                     Sermon library
                   </Text>
                 </View>
-                <Text style={[styles.downloadPercent, { color: accent }]}>
+                <Text style={[styles.dlPercent, { color: accent }]}>
                   {Math.round(downloadProgress)}%
                 </Text>
               </View>
-              <View
-                style={[
-                  styles.progressTrack,
-                  { backgroundColor: downloadTrack },
-                ]}
-              >
+              <View style={[styles.dlTrack, { backgroundColor: downloadTrack }]}>
                 <LinearGradient
                   colors={[accent, downloadFillEnd]}
                   start={{ x: 0, y: 0.5 }}
                   end={{ x: 1, y: 0.5 }}
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${downloadProgress}%`,
-                      backgroundColor: accent,
-                    },
-                  ]}
+                  style={[styles.dlFill, { width: `${downloadProgress}%` }]}
                 />
               </View>
               <Pressable
                 onPress={handleCancelDownload}
                 style={({ pressed }) => [
-                  styles.cancelDownloadButton,
+                  styles.dlCancel,
                   {
                     backgroundColor: downloadCancelBg,
                     borderColor: downloadPanelBorder,
-                    opacity: pressed ? 0.65 : 1,
+                    opacity: pressed ? 0.6 : 1,
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.cancelDownloadText,
-                    { color: accent },
-                  ]}
-                >
-                  Cancel
-                </Text>
+                <Text style={[styles.dlCancelText, { color: accentMuted }]}>Cancel</Text>
               </Pressable>
             </View>
           ) : downloadError ? (
             <View style={styles.errorWrap}>
-              <Text
-                style={[
-                  styles.errorLabel,
-                  { color: theme.dark ? "#ff6b6b" : "#cc0000" },
-                ]}
-              >
+              <Text style={[styles.errorText, { color: theme.dark ? "#ff8a80" : "#b71c1c" }]}>
                 {downloadError}
               </Text>
               <PremiumButton label="Retry" onPress={handleDownloadDatabase} />
@@ -825,6 +754,7 @@ const Welcome = () => {
             />
           )}
         </Animated.View>
+
       </View>
     </LinearGradient>
   );
@@ -836,18 +766,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
+  /* Background layers */
   topImageWrap: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: "40%",
+    height: "42%",
     overflow: "hidden",
   },
-  topImage: {
-    width: "100%",
-    height: "100%",
-  },
+  topImage: { width: "100%", height: "100%" },
   patternContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
@@ -884,166 +813,170 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "25deg" }],
     borderLeftWidth: 0,
   },
-  topSection: {
-    position: "absolute",
-    top: verticalScale(70),
+
+  /* Single centered content column */
+  contentColumn: {
     alignItems: "center",
-    gap: 12,
+    paddingHorizontal: horizontalScale(28),
     width: "100%",
   },
-  centerSection: {
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    marginTop: -verticalScale(20),
-  },
-  bottomSection: {
-    position: "absolute",
-    bottom: verticalScale(36),
-    alignItems: "center",
-    width: "100%",
-    paddingHorizontal: spacing.lg,
-  },
-  dividerLine: {
-    width: 50,
-    height: 1.5,
-    borderRadius: 1,
-  },
-  label: {
+
+  /* Eyebrow label */
+  eyebrow: {
     fontFamily: "ZillaSlab-SemiBold",
-    // fontSize: responsiveFontSize(15.5),
-    letterSpacing: 6,
+    fontSize: responsiveFontSize(10),
+    letterSpacing: 5,
     textTransform: "uppercase",
-    marginTop: 2,
+    marginBottom: verticalScale(8),
   },
+
+  /* Thin accent bar beneath eyebrow */
+  accentBar: {
+    width: 32,
+    height: 2,
+    borderRadius: 2,
+    marginBottom: verticalScale(12),
+    opacity: 0.6,
+  },
+
+  /* Prophet name */
   mainTitle: {
     fontFamily: "Philosopher",
-    fontSize: responsiveFontSize(58),
+    fontSize: responsiveFontSize(50),
     textAlign: "center",
-    lineHeight: responsiveFontSize(66),
+    lineHeight: responsiveFontSize(56),
+    marginBottom: verticalScale(14),
   },
-  subtitle: {
+
+  /* Subtitle row — text flanked by hairlines */
+  subtitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: verticalScale(6),
+    width: "80%",
+  },
+  hairline: {
+    flex: 1,
+    height: 1,
+    borderRadius: 1,
+    opacity: 0.7,
+  },
+  subtitleText: {
     fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(13),
-    letterSpacing: 0.8,
-    textAlign: "center",
+    fontSize: responsiveFontSize(10.5),
+    letterSpacing: 1.5,
   },
-  yearPill: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 7,
-    borderRadius: 100,
-    
-  },
+
+  /* Year */
   yearText: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(12),
+    fontSize: responsiveFontSize(11),
     letterSpacing: 4,
+    marginBottom: verticalScale(18),
   },
-  quoteWrap: {
-    alignItems: "center",
-    marginTop: 6,
-    // paddingHorizontal: spacing.lg,
+
+  /* Thin full-width section divider */
+  sectionDivider: {
+    width: "55%",
+    height: 1,
+    borderRadius: 1,
+    marginBottom: verticalScale(14),
+    opacity: 0.45,
   },
+
+  /* Scripture quote */
   quoteOpen: {
     fontFamily: "Philosopher",
-    fontSize: responsiveFontSize(48),
-  
-  
+    fontSize: responsiveFontSize(34),
+    textAlign: "center",
+    lineHeight: responsiveFontSize(20),
+    marginBottom: -verticalScale(2),
   },
   quoteText: {
     fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(16),
-    // fontStyle: "italic",
+    fontSize: responsiveFontSize(13),
     textAlign: "center",
-    // lineHeight: responsiveFontSize(28),
+    lineHeight: responsiveFontSize(23),
   },
   quoteRef: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(14),
-    marginTop: 14,
-    letterSpacing: 2,
+    fontSize: responsiveFontSize(10.5),
+    textAlign: "center",
+    letterSpacing: 2.5,
+    marginTop: verticalScale(9),
+    textTransform: "uppercase",
   },
 
-  /* Download & error */
-  downloadWrap: {
-    width: Math.min(screenWidth * 0.86, 420),
-    alignItems: "stretch",
+  /* Download progress panel */
+  downloadPanel: {
+    width: Math.min(screenWidth * 0.84, 400),
     paddingHorizontal: horizontalScale(18),
-    paddingVertical: verticalScale(16),
-    gap: 16,
+    paddingVertical: verticalScale(14),
+    gap: 14,
     borderWidth: 1,
-    borderRadius: 28,
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 10,
+    borderRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 7,
   },
-  downloadHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 13,
-  },
-  downloadSpinnerShell: {
-    width: horizontalScale(46),
-    height: horizontalScale(46),
-    borderRadius: horizontalScale(23),
+  dlRow: { flexDirection: "row", alignItems: "center" },
+  dlSpinner: {
+    width: horizontalScale(34),
+    height: horizontalScale(34),
+    borderRadius: horizontalScale(17),
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  downloadTextBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-  downloadTitle: {
+  dlTitle: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(18),
-    lineHeight: responsiveFontSize(22),
+    fontSize: responsiveFontSize(14.5),
   },
-  downloadSubtitle: {
+  dlSub: {
     fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(12),
-    lineHeight: responsiveFontSize(18),
+    fontSize: responsiveFontSize(10.5),
     marginTop: 2,
   },
-  downloadPercent: {
-    minWidth: horizontalScale(58),
+  dlPercent: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(24),
-    lineHeight: responsiveFontSize(28),
+    fontSize: responsiveFontSize(19),
+    minWidth: horizontalScale(46),
     textAlign: "right",
   },
-  progressTrack: {
+  dlTrack: {
     width: "100%",
-    height: 12,
+    height: 7,
     borderRadius: 999,
     overflow: "hidden",
   },
-  progressFill: {
+  dlFill: {
     height: "100%",
-    minWidth: 8,
+    minWidth: 6,
     borderRadius: 999,
   },
-  cancelDownloadButton: {
+  dlCancel: {
     alignSelf: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 9,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
   },
-  cancelDownloadText: {
+  dlCancelText: {
     fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(13),
-    letterSpacing: 1.2,
+    fontSize: responsiveFontSize(11),
+    letterSpacing: 1.5,
     textTransform: "uppercase",
   },
-  errorWrap: {
-    alignItems: "center",
-    gap: 14,
-  },
-  errorLabel: {
+
+  /* Error state */
+  errorWrap: { alignItems: "center", gap: 14 },
+  errorText: {
     fontFamily: "ZillaSlab-Regular",
     fontSize: responsiveFontSize(13),
     textAlign: "center",
+    lineHeight: responsiveFontSize(20),
   },
 });
 

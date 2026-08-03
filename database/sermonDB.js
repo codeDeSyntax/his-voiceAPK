@@ -53,33 +53,8 @@ export const openDatabase = async () => {
     openPromise = (async () => {
       try {
         connectionAttempts = 0;
-
-        // Verify the database file exists
-        const dbPath = getDatabasePath();
-        const fileInfo = await FileSystem.getInfoAsync(dbPath);
-        console.log(`📂 Opening database at: ${dbPath}`);
-        console.log(
-          `📊 File exists: ${fileInfo.exists}, Size: ${fileInfo.exists ? (fileInfo.size / 1024 / 1024).toFixed(2) + " MB" : "N/A"}`,
-        );
-
         db = await SQLite.openDatabaseAsync(DB_NAME);
-        console.log("Database opened successfully");
-
-        // Immediately verify sermon count after opening (optional, for debugging)
-        try {
-          const countCheck = await db.getFirstAsync(
-            "SELECT COUNT(*) as count FROM sermons",
-          );
-          console.log(
-            `📊 Sermon count immediately after opening: ${countCheck?.count || 0}`,
-          );
-        } catch (countError) {
-          // Table might not exist yet, ignore this error
-          console.log(
-            "📂 Sermon count check skipped (table may not exist yet)",
-          );
-        }
-
+        if (__DEV__) console.log("Database opened successfully");
         return db;
       } finally {
         isOpening = false;
@@ -180,13 +155,11 @@ const checkAndBuildSearchIndex = async (database) => {
 export const initializeDatabase = async () => {
   // If already initialized, return immediately
   if (isInitialized) {
-    console.log("✅ Database already initialized, skipping...");
     return true;
   }
 
   // If another call is already initializing, wait for it
   if (initPromise) {
-    console.log("⏳ Waiting for existing initialization...");
     return await initPromise;
   }
 
@@ -202,15 +175,8 @@ export const initializeDatabase = async () => {
         );
 
         if (tableCheck) {
-          console.log(
-            "✅ Tables already exist (downloaded database) - skipping creation",
-          );
-
           // Even if main tables exist, ensure FTS5 and paragraphs tables are created
           // These might not exist in the downloaded database
-          console.log("Creating search-related tables if needed...");
-
-          // Create FTS5 virtual table for full-text search
           await database.runAsync(`
           CREATE VIRTUAL TABLE IF NOT EXISTS sermons_fts USING fts5(
             sermon_id UNINDEXED,
@@ -237,8 +203,6 @@ export const initializeDatabase = async () => {
           await database.runAsync(`
           CREATE INDEX IF NOT EXISTS idx_paragraphs_sermon ON sermon_paragraphs(sermon_id)
         `);
-
-          console.log("✅ Search tables created/verified");
 
           await database.runAsync(`
           CREATE TABLE IF NOT EXISTS migration_status (

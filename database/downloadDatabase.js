@@ -332,24 +332,43 @@ export const downloadDatabaseWithSignal = async (onProgress, signal) => {
 };
 
 /**
- * Check if database exists locally and is valid.
+ * Check if the database exists locally and is valid.
+ *
+ * Strategy: use the on-disk file as the primary truth, SQL count as secondary.
+ *
+ * Why: on app startup, the SQLite connection may not be open yet when this
+ * function is called (race condition). If getSermonCount() throws, the old
+ * code returned false — making the Welcome screen show "Download Sermons"
+ * even though a perfectly valid database file was already on device.
+ *
+ * Fix: if the file exists and is >1 MB (a real sermon DB is always several MB),
+ * we trust the file even if the SQL check fails or returns 0.
  */
 export const databaseExists = async () => {
   try {
     const dbFile = getDatabaseFile();
 
     if (!dbFile.exists || dbFile.size <= 4096) {
-      console.log("Database file does not exist");
+      console.log("Database file does not exist or is too small");
       return false;
     }
 
+    // File exists and is not trivially empty — validate further with SQL.
+    // If the connection isn't ready yet we fall back to the file-size heuristic.
     try {
       const sermonCount = await getSermonCount();
       console.log(`Database has ${sermonCount} sermons`);
-      return sermonCount > 0;
+      // If SQL returned 0 but the file is large, trust the file — the count
+      // can momentarily read as 0 during FTS/migration operations.
+      if (sermonCount > 0) return true;
+      return dbFile.size > 1024 * 1024; // > 1 MB → almost certainly a real DB
     } catch (dbError) {
-      console.error("Cannot query database:", dbError.message);
-      return false;
+      console.warn(
+        "SQL count failed (likely a startup race condition), falling back to file-size check:",
+        dbError.message,
+      );
+      // Never return false just because the DB connection wasn't ready yet.
+      return dbFile.size > 1024 * 1024;
     }
   } catch (error) {
     console.error("Error checking database existence:", error);
