@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,15 @@ import {
   Modal,
   Pressable,
   StyleSheet,
+  Animated,
+  ScrollView,
+  Easing,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassTile } from "../../styles/glassButton";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const FONT_SIZE_OPTIONS = [
   { value: 12, label: "Compact" },
@@ -23,6 +29,452 @@ const FONT_SIZE_OPTIONS = [
   { value: 32, label: "Maximum" },
 ];
 
+// ─── Font Family Bottom Sheet ─────────────────────────────────────────────────
+const FontFamilySheet = ({ visible, onClose, fontFamily, setFontFamily, FONT_OPTIONS, theme }) => {
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      Animated.spring(slideAnim, {
+        toValue: 1,
+        damping: 26,
+        stiffness: 320,
+        useNativeDriver: true,
+      }).start();
+    } else if (modalVisible) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => setModalVisible(false));
+    }
+  }, [visible, modalVisible, slideAnim]);
+
+  if (!modalVisible) return null;
+
+  const dark = theme.dark;
+  const sheetBg = dark ? "#1a1310" : "#fefcf9";
+  const handle = dark ? "rgba(242,205,180,0.20)" : "rgba(93,50,17,0.18)";
+  const divider = dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
+  const accent = dark ? "#f2cdb4" : "#5d3211";
+  const SHEET_HEIGHT = Math.min(SCREEN_HEIGHT * 0.52, 420);
+
+  return (
+    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      {/* Backdrop */}
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: dark ? "rgba(8,5,3,0.62)" : "rgba(0,0,0,0.32)",
+            opacity: slideAnim,
+          },
+        ]}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
+
+      {/* Sheet */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: SHEET_HEIGHT,
+          backgroundColor: sheetBg,
+          borderTopLeftRadius: 22,
+          borderTopRightRadius: 22,
+          overflow: "hidden",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -8 },
+          shadowOpacity: 0.18,
+          shadowRadius: 20,
+          elevation: 20,
+          transform: [
+            {
+              translateY: slideAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [SHEET_HEIGHT, 0],
+              }),
+            },
+          ],
+        }}
+      >
+        {/* Handle */}
+        <View style={{ alignItems: "center", paddingTop: 12, paddingBottom: 6 }}>
+          <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: handle }} />
+        </View>
+
+        {/* Title row */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 20,
+            paddingBottom: 12,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: divider,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14,
+              fontFamily: "ZillaSlab-SemiBold",
+              color: theme.colors.text,
+              letterSpacing: 0.3,
+            }}
+          >
+            Font Family
+          </Text>
+          <Pressable
+            onPress={onClose}
+            hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.5 : 1,
+              width: 28, height: 28, borderRadius: 14,
+              alignItems: "center", justifyContent: "center",
+              backgroundColor: dark ? "rgba(242,205,180,0.09)" : "rgba(93,50,17,0.07)",
+            })}
+          >
+            <Ionicons name="close" size={15} color={dark ? "rgba(242,205,180,0.70)" : "rgba(93,50,17,0.65)"} />
+          </Pressable>
+        </View>
+
+        {/* Font list */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 8 }}
+        >
+          {FONT_OPTIONS.map((font, index) => {
+            const isSelected = fontFamily === font.value;
+            return (
+              <Pressable
+                key={font.value}
+                onPress={() => {
+                  setFontFamily(font.value);
+                  onClose();
+                }}
+                android_ripple={{ color: dark ? "rgba(242,205,180,0.08)" : "rgba(93,50,17,0.06)" }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 20,
+                  paddingVertical: 13,
+                  marginHorizontal: 8,
+                  borderRadius: 10,
+                  backgroundColor: isSelected
+                    ? dark ? "rgba(242,205,180,0.08)" : "rgba(93,50,17,0.06)"
+                    : pressed ? (dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)") : "transparent",
+                })}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontFamily: font.value !== "System" ? font.value : undefined,
+                      color: isSelected ? accent : theme.colors.text,
+                      letterSpacing: 0.1,
+                    }}
+                  >
+                    {font.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontFamily: font.value !== "System" ? font.value : undefined,
+                      color: dark ? "rgba(242,205,180,0.38)" : "rgba(93,50,17,0.42)",
+                      marginTop: 2,
+                    }}
+                    numberOfLines={1}
+                  >
+                    Worthy is the Lamb that was slain
+                  </Text>
+                </View>
+                {isSelected && (
+                  <Ionicons name="checkmark" size={17} color={accent} style={{ marginLeft: 12 }} />
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </Animated.View>
+    </Modal>
+  );
+};
+
+// ─── Text Preview Modal (Compact Centered Card) ────────────────────────────────
+const TextPreviewModal = ({ visible, onClose, fontFamily, fontSize, getCurrentFontName, navigation, theme }) => {
+  const panelAnim = useRef(new Animated.Value(0)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      panelAnim.setValue(0);
+      backdropAnim.setValue(0);
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 1, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
+        }),
+        Animated.spring(panelAnim, {
+          toValue: 1, damping: 24, stiffness: 300, useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (modalVisible) {
+      Animated.parallel([
+        Animated.timing(backdropAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+        Animated.timing(panelAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+      ]).start(() => setModalVisible(false));
+    }
+  }, [visible, modalVisible, panelAnim, backdropAnim]);
+
+  if (!modalVisible) return null;
+
+  const dark = theme.dark;
+  const cardBg = dark ? "rgba(30,21,15,0.97)" : "rgba(252,246,237,0.98)";
+  const titleColor = dark ? "rgba(255,255,255,0.95)" : "rgba(15,10,5,0.92)";
+  const subtitleColor = dark ? "rgba(242,205,180,0.42)" : "rgba(93,50,17,0.40)";
+  const divider = dark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)";
+  const CARD_WIDTH = Math.min(SCREEN_WIDTH * 0.84, 320);
+
+  return (
+    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      {/* Backdrop */}
+      <Animated.View
+        style={[StyleSheet.absoluteFill, {
+          backgroundColor: dark ? "rgba(10,6,4,0.60)" : "rgba(0,0,0,0.35)",
+          opacity: backdropAnim,
+        }]}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
+
+      {/* Centered card */}
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }} pointerEvents="box-none">
+        <Animated.View
+          style={[
+            {
+              backgroundColor: cardBg,
+              width: CARD_WIDTH,
+              borderRadius: 18,
+              overflow: "hidden",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 16 },
+              shadowOpacity: 0.30,
+              shadowRadius: 28,
+              elevation: 18,
+              paddingVertical: 14,
+              paddingHorizontal: 18,
+              opacity: panelAnim,
+              transform: [
+                { scale: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0.90, 1] }) },
+                { translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+              ],
+            },
+          ]}
+        >
+          {/* Header */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: divider }}>
+            <View>
+              <Text style={{ fontFamily: "ZillaSlab-SemiBold", fontSize: 15, letterSpacing: 0.3, color: titleColor }}>
+                Text Preview
+              </Text>
+              <Text style={{ fontFamily: "ZillaSlab-SemiBold", fontSize: 10, letterSpacing: 0.4, color: subtitleColor, marginTop: 2 }}>
+                {fontSize}px · {getCurrentFontName()}
+              </Text>
+            </View>
+            <Pressable
+              onPress={onClose}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.5 : 1,
+                width: 28, height: 28, borderRadius: 14,
+                alignItems: "center", justifyContent: "center",
+                backgroundColor: dark ? "rgba(242,205,180,0.09)" : "rgba(93,50,17,0.07)",
+              })}
+            >
+              <Ionicons name="close" size={15} color={dark ? "rgba(242,205,180,0.70)" : "rgba(93,50,17,0.65)"} />
+            </Pressable>
+          </View>
+
+          {/* Preview Body */}
+          <View style={{ paddingVertical: 14 }}>
+            <Text
+              style={{
+                fontFamily: fontFamily !== "System" ? fontFamily : undefined,
+                fontSize: fontSize,
+                color: theme.colors.text,
+                lineHeight: fontSize * 1.5,
+                textAlign: "justify",
+              }}
+            >
+              Worthy is the Lamb that was slain to receive power, and riches, and wisdom, and strength, and honour, and glory, and blessing.
+            </Text>
+          </View>
+
+          {/* Action button */}
+          <TouchableOpacity
+            onPress={() => {
+              onClose();
+              navigation?.navigate("currentsermon");
+            }}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              backgroundColor: dark
+                ? "rgba(242, 205, 180, 0.10)"
+                : "rgba(93, 50, 17, 0.08)",
+              borderRadius: 12,
+              alignItems: "center",
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: dark ? "rgba(242,205,180,0.18)" : "rgba(93,50,17,0.14)",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                color: dark ? "#f2cdb4" : "#5d3211",
+                fontFamily: "ZillaSlab-SemiBold",
+                letterSpacing: 0.2,
+              }}
+            >
+              Open Full Reading View
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
+// ─── Font Size Modal (Compact Centered Card) ──────────────────────────────────
+const FontSizeSheet = ({ visible, onClose, fontSize, selectFontSize, getFontSizeLabel, FONT_SIZE_OPTIONS, theme }) => {
+  const panelAnim = useRef(new Animated.Value(0)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      panelAnim.setValue(0);
+      backdropAnim.setValue(0);
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 1, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
+        }),
+        Animated.spring(panelAnim, {
+          toValue: 1, damping: 24, stiffness: 300, useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (modalVisible) {
+      Animated.parallel([
+        Animated.timing(backdropAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+        Animated.timing(panelAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+      ]).start(() => setModalVisible(false));
+    }
+  }, [visible, modalVisible, panelAnim, backdropAnim]);
+
+  if (!modalVisible) return null;
+
+  const dark = theme.dark;
+  const cardBg = dark ? "rgba(30,21,15,0.97)" : "rgba(252,246,237,0.98)";
+  const titleColor = dark ? "rgba(255,255,255,0.95)" : "rgba(15,10,5,0.92)";
+  const subtitleColor = dark ? "rgba(242,205,180,0.42)" : "rgba(93,50,17,0.40)";
+  const divider = dark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)";
+  const accent = dark ? "#f2cdb4" : "#5d3211";
+  const CARD_WIDTH = Math.min(SCREEN_WIDTH * 0.78, 300);
+
+  return (
+    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      {/* Backdrop */}
+      <Animated.View
+        style={[StyleSheet.absoluteFill, {
+          backgroundColor: dark ? "rgba(10,6,4,0.60)" : "rgba(0,0,0,0.35)",
+          opacity: backdropAnim,
+        }]}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
+
+      {/* Centered card */}
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }} pointerEvents="box-none">
+        <Animated.View
+          style={[
+            {
+              backgroundColor: cardBg,
+              width: CARD_WIDTH,
+              maxHeight: Math.min(SCREEN_HEIGHT * 0.70, 460),
+              borderRadius: 18,
+              overflow: "hidden",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 16 },
+              shadowOpacity: 0.30,
+              shadowRadius: 28,
+              elevation: 18,
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+              opacity: panelAnim,
+              transform: [
+                { scale: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0.90, 1] }) },
+                { translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+              ],
+            },
+          ]}
+        >
+          {/* Header */}
+          <View style={{ alignItems: "center", paddingHorizontal: 12, paddingTop: 14, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: divider }}>
+            <Text style={{ fontFamily: "ZillaSlab-SemiBold", fontSize: 15, letterSpacing: 0.3, color: titleColor, marginBottom: 2 }}>
+              Font Size
+            </Text>
+            <Text style={{ fontFamily: "ZillaSlab-SemiBold", fontSize: 10, letterSpacing: 0.4, color: subtitleColor }}>
+              {fontSize}px · {getFontSizeLabel(Number(fontSize))}
+            </Text>
+          </View>
+
+          {/* Size list */}
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 4 }}>
+            {FONT_SIZE_OPTIONS.map((option, index) => {
+              const isSelected = Number(fontSize) === option.value;
+              const isLast = index === FONT_SIZE_OPTIONS.length - 1;
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => selectFontSize(option.value)}
+                  android_ripple={{ color: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)" }}
+                  style={({ pressed }) => [
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                    },
+                    !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: divider },
+                    pressed && { opacity: 0.55 },
+                  ]}
+                >
+                  <Text style={{ fontFamily: "Merriweather", fontSize: 12.5, color: isSelected ? accent : (dark ? "rgba(242,205,180,0.95)" : "rgba(30,15,5,0.88)") }}>
+                    {option.value}px · {option.label}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={15} color={accent} />
+                  )}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
 const DisplaySettings = ({
   theme,
   isDarkMode,
@@ -34,8 +486,8 @@ const DisplaySettings = ({
   accentColor,
   navigation,
 }) => {
-  const [showFontSizeOptions, setShowFontSizeOptions] = useState(false);
-  const [showFontOptions, setShowFontOptions] = useState(false);
+  const [showFontSizeSheet, setShowFontSizeSheet] = useState(false);
+  const [showFontSheet, setShowFontSheet] = useState(false);
   const [showColorOptions, setShowColorOptions] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [localAccentColor, setLocalAccentColor] = useState(
@@ -157,20 +609,15 @@ const DisplaySettings = ({
     return "Extra large";
   }, []);
 
-  const toggleFontSizeMenu = useCallback(() => {
-    setShowFontSizeOptions((open) => {
-      const next = !open;
-      if (next) setShowFontOptions(false);
-      return next;
-    });
+  const openFontSizeSheet = useCallback(() => setShowFontSizeSheet(true), []);
+  const closeFontSizeSheet = useCallback(() => setShowFontSizeSheet(false), []);
+
+  const openFontSheet = useCallback(() => {
+    setShowFontSheet(true);
   }, []);
 
-  const toggleFontFamilyMenu = useCallback(() => {
-    setShowFontOptions((open) => {
-      const next = !open;
-      if (next) setShowFontSizeOptions(false);
-      return next;
-    });
+  const closeFontSheet = useCallback(() => {
+    setShowFontSheet(false);
   }, []);
 
   const selectFontSize = useCallback(
@@ -178,7 +625,7 @@ const DisplaySettings = ({
       if (Number(fontSize) !== value) {
         setFontSize(value);
       }
-      setShowFontSizeOptions(false);
+      setShowFontSizeSheet(false);
     },
     [fontSize, setFontSize],
   );
@@ -220,13 +667,29 @@ const DisplaySettings = ({
         title="Font Size"
         subtitle={`${fontSize}px · ${getFontSizeLabel(Number(fontSize))}`}
         theme={theme}
-        onPress={toggleFontSizeMenu}
+        onPress={openFontSizeSheet}
       >
-        <Ionicons
-          name={showFontSizeOptions ? "chevron-up" : "chevron-down"}
-          size={18}
-          color={theme.colors.text + "60"}
-        />
+        <View
+          style={{
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            borderRadius: 20,
+            backgroundColor: theme.dark
+              ? "rgba(242,205,180,0.12)"
+              : "rgba(93,50,17,0.09)",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: "ZillaSlab-SemiBold",
+              color: theme.dark ? "#f2cdb4" : "#5d3211",
+              letterSpacing: 0.3,
+            }}
+          >
+            {fontSize}px
+          </Text>
+        </View>
       </SettingItem>
 
       <SettingItem
@@ -234,72 +697,40 @@ const DisplaySettings = ({
         title="Font Family"
         subtitle={`Current: ${getCurrentFontName()}`}
         theme={theme}
-        onPress={toggleFontFamilyMenu}
+        onPress={openFontSheet}
       >
-        <Ionicons
-          name={showFontOptions ? "chevron-up" : "chevron-down"}
-          size={18}
-          color={theme.colors.text + "60"}
-        />
-      </SettingItem>
-
-      {showFontOptions && (
         <View
           style={{
-            backgroundColor: softPanelBg,
-            borderRadius: 18,
-            padding: 8,
-            gap: 6,
-            marginHorizontal: 12,
-            marginTop: 8,
-            marginBottom: 10,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            borderRadius: 20,
+            backgroundColor: theme.dark
+              ? "rgba(242,205,180,0.12)"
+              : "rgba(93,50,17,0.09)",
           }}
         >
-          {FONT_OPTIONS.map((font) => (
-            <TouchableOpacity
-              key={font.value}
-              onPress={() => {
-                setFontFamily(font.value);
-                setShowFontOptions(false);
-                setShowFontSizeOptions(false);
-              }}
-              style={{
-                paddingVertical: 11,
-                paddingHorizontal: 12,
-                borderRadius: 14,
-                backgroundColor:
-                  fontFamily === font.value
-                    ? theme.dark
-                      ? theme.colors.hlight + "20"
-                      : "#5d321120"
-                    : "transparent",
-                borderWidth: fontFamily === font.value ? 1 : 0,
-                borderColor:
-                  fontFamily === font.value
-                    ? theme.dark
-                      ? theme.colors.hlight + "40"
-                      : "#5d321140"
-                    : "transparent",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  color:
-                    fontFamily === font.value
-                      ? theme.dark
-                        ? theme.colors.hlight
-                        : "#5d3211"
-                      : theme.colors.text,
-                  fontFamily: font.value !== "System" ? font.value : undefined,
-                }}
-              >
-                {font.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: "ZillaSlab-SemiBold",
+              color: theme.dark ? "#f2cdb4" : "#5d3211",
+              letterSpacing: 0.3,
+            }}
+          >
+            {getCurrentFontName()}
+          </Text>
         </View>
-      )}
+      </SettingItem>
+
+      {/* Font Family Bottom Sheet */}
+      <FontFamilySheet
+        visible={showFontSheet}
+        onClose={closeFontSheet}
+        fontFamily={fontFamily}
+        setFontFamily={setFontFamily}
+        FONT_OPTIONS={FONT_OPTIONS}
+        theme={theme}
+      />
 
      
 
@@ -350,177 +781,35 @@ const DisplaySettings = ({
         title="Text Preview"
         subtitle="See how your text will look"
         theme={theme}
-        onPress={() => setShowPreview(!showPreview)}
+        onPress={() => setShowPreview(true)}
       >
         <Ionicons
-          name={showPreview ? "chevron-up" : "chevron-down"}
+          name="open-outline"
           size={18}
           color={theme.colors.text + "60"}
         />
       </SettingItem>
 
-      {showPreview && (
-        <View
-          style={{
-            backgroundColor: softPanelBg,
-            borderRadius: 18,
-            padding: 16,
-            marginHorizontal: 12,
-            marginTop: 8,
-            marginBottom: 10,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: fontFamily !== "System" ? fontFamily : undefined,
-              fontSize: fontSize,
-              color: theme.colors.text,
-              lineHeight: fontSize * 1.5,
-              textAlign: "justify",
-            }}
-          >
-            This is a preview of how your text will appear throughout the app.
-            The current font size is {fontSize}px and the font family is set to{" "}
-            {getCurrentFontName()}. This preview helps you see how readable your
-            chosen settings will be when reading sermons.
-          </Text>
+      <TextPreviewModal
+        visible={showPreview}
+        onClose={() => setShowPreview(false)}
+        fontFamily={fontFamily}
+        fontSize={fontSize}
+        getCurrentFontName={getCurrentFontName}
+        navigation={navigation}
+        theme={theme}
+      />
 
-          <TouchableOpacity
-            onPress={() => navigation?.navigate("currentsermon")}
-            style={{
-              marginTop: 12,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              backgroundColor: theme.dark
-                ? "rgba(242, 205, 180, 0.08)"
-                : "rgba(93, 50, 17, 0.07)",
-              borderRadius: 14,
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                color: theme.colors.text + "90",
-                fontFamily: "ZillaSlab",
-              }}
-            >
-              Open Full Reading View
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <Modal
-        visible={showFontSizeOptions}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowFontSizeOptions(false)}
-      >
-        <View style={styles.menuRoot}>
-          <Pressable
-            style={[
-              styles.menuBackdrop,
-              {
-                backgroundColor: theme.dark
-                  ? "rgba(0, 0, 0, 0.58)"
-                  : "rgba(30, 20, 10, 0.34)",
-              },
-            ]}
-            onPress={() => setShowFontSizeOptions(false)}
-          />
-
-          <View
-            style={[
-              styles.menuPanel,
-              {
-                backgroundColor: theme.dark
-                  ? "rgba(26, 19, 16, 0.94)"
-                  : "rgba(254, 252, 249, 0.97)",
-                borderColor: theme.dark
-                  ? "rgba(242, 205, 180, 0.16)"
-                  : "rgba(93, 50, 17, 0.12)",
-                shadowColor: theme.dark ? "#000" : "#5d3211",
-              },
-            ]}
-          >
-            <View
-              pointerEvents="none"
-              style={[
-                styles.menuPanelGlow,
-                {
-                  backgroundColor: theme.dark
-                    ? "rgba(255, 255, 255, 0.04)"
-                    : "rgba(255, 255, 255, 0.55)",
-                },
-              ]}
-            />
-
-            <View style={styles.menuHeader}>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[styles.menuTitle, { color: theme.colors.text }]}
-                >
-                  Font size
-                </Text>
-                <Text
-                  style={[
-                    styles.menuSubtitle,
-                    { color: theme.colors.text + "68" },
-                  ]}
-                >
-                  {fontSize}px · {getFontSizeLabel(Number(fontSize))}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setShowFontSizeOptions(false)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons
-                  name="close"
-                  size={16}
-                  color={theme.colors.text + "70"}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.menuGrid}>
-              {FONT_SIZE_OPTIONS.map((option) => {
-                const isSelected = Number(fontSize) === option.value;
-                const labelColor = isSelected
-                  ? theme.dark
-                    ? theme.colors.hlight
-                    : "#5d3211"
-                  : theme.colors.text;
-
-                return (
-                  <GlassTile
-                    key={option.value}
-                    theme={theme}
-                    selected={isSelected}
-                    compact
-                    onPress={() => selectFontSize(option.value)}
-                    style={styles.menuGridItem}
-                    testID={`display-font-size-${option.value}`}
-                  >
-                    <Text
-                      style={[
-                        styles.menuGridValue,
-                        {
-                          color: labelColor,
-                          fontWeight: isSelected ? "700" : "500",
-                        },
-                      ]}
-                    >
-                      {option.value}
-                    </Text>
-                  </GlassTile>
-                );
-              })}
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* Font Size Bottom Sheet */}
+      <FontSizeSheet
+        visible={showFontSizeSheet}
+        onClose={closeFontSizeSheet}
+        fontSize={fontSize}
+        selectFontSize={selectFontSize}
+        getFontSizeLabel={getFontSizeLabel}
+        FONT_SIZE_OPTIONS={FONT_SIZE_OPTIONS}
+        theme={theme}
+      />
     </View>
   );
 };

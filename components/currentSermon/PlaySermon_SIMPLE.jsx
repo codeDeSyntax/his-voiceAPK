@@ -37,15 +37,7 @@ const PlaySermon = () => {
     setSelectedSermon(sermon);
   }, [setSelectedSermon]);
 
-  // Override native-stack hidden + force colors over the global AppStatusBar
-  useEffect(() => {
-    navigation.setOptions({ statusBarHidden: false });
-    StatusBar.setBarStyle("light-content");
-    if (Platform.OS === "android") {
-      StatusBar.setTranslucent(false);
-      StatusBar.setBackgroundColor(bgColor);
-    }
-  }, [bgColor, navigation]);
+
 
   if (!selectedSermon) {
     return (

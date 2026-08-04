@@ -9,10 +9,14 @@ import {
   Dimensions,
   Linking,
   AppState,
+  Platform,
 } from "react-native";
 import * as Updates from "expo-updates";
 import Constants from "expo-constants";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as IntentLauncher from "expo-intent-launcher";
+import * as LegacyFileSystem from "expo-file-system/legacy";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
 
@@ -63,10 +67,13 @@ export default function UpdateScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isApplyingOta, setIsApplyingOta] = useState(false);
   const [isOpeningApk, setIsOpeningApk] = useState(false);
+  const [isDownloadingApk, setIsDownloadingApk] = useState(false);
+  const [apkDownloadProgress, setApkDownloadProgress] = useState(0);
 
   const isCheckingRef = useRef(false);
   const lastCheckAtRef = useRef(0);
   const dismissedUpdateKeyRef = useRef(null);
+  const downloadTaskRef = useRef(null);
 
   const checkForOTAUpdate = useCallback(async () => {
     try {
@@ -247,6 +254,48 @@ export default function UpdateScreen() {
           return;
         }
 
+        if (Platform.OS === "android") {
+          setIsDownloadingApk(true);
+          setApkDownloadProgress(0);
+
+          const fileUri = `${LegacyFileSystem.documentDirectory}hisvoice-update.apk`;
+
+          const downloadTask = LegacyFileSystem.createDownloadResumable(
+            releaseData.apkUrl,
+            fileUri,
+            {},
+            ({ totalBytesWritten, totalBytesExpectedToWrite }) => {
+              if (totalBytesExpectedToWrite > 0) {
+                const percent = Math.floor(
+                  (totalBytesWritten / totalBytesExpectedToWrite) * 100,
+                );
+                setApkDownloadProgress(percent);
+              }
+            },
+          );
+          downloadTaskRef.current = downloadTask;
+
+          const result = await downloadTask.downloadAsync();
+          setIsDownloadingApk(false);
+
+          if (result?.uri) {
+            const contentUri = await LegacyFileSystem.getContentUriAsync(
+              result.uri,
+            );
+            await IntentLauncher.startActivityAsync(
+              "android.intent.action.VIEW",
+              {
+                data: contentUri,
+                flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+                type: "application/vnd.android.package-archive",
+              },
+            );
+            dismissModal();
+            return;
+          }
+        }
+
+        // Fallback for non-Android
         setIsOpeningApk(true);
         await Linking.openURL(releaseData.apkUrl);
         setIsOpeningApk(false);
@@ -271,21 +320,24 @@ export default function UpdateScreen() {
       console.error("Error applying update:", error);
       setIsApplyingOta(false);
       setIsOpeningApk(false);
+      setIsDownloadingApk(false);
       dismissModal();
     }
   };
 
-  const isBusy = isApplyingOta || isOpeningApk;
+  const isBusy = isApplyingOta || isOpeningApk || isDownloadingApk;
 
   const isApkUpdate = updateType === "apk";
   const titleText = isApkUpdate ? "New Build Available" : "Update Available";
   const bodyText = isApkUpdate
-    ? `A newer APK (${releaseData?.latestVersion}) is available. Download and install to continue on the latest build.`
+    ? `A newer build (v${releaseData?.latestVersion}) is available. Download and install to continue.`
     : "An over-the-air update is available. Apply now to restart with the latest fixes.";
   const primaryText = isApkUpdate
-    ? isOpeningApk
-      ? "[ OPENING DOWNLOAD... ]"
-      : "[ DOWNLOAD APK ]"
+    ? isDownloadingApk
+      ? `DOWNLOADING... ${apkDownloadProgress}%`
+      : isOpeningApk
+        ? "[ OPENING DOWNLOAD... ]"
+        : "[ INSTALL UPDATE ]"
     : isApplyingOta
       ? "[ APPLYING UPDATE... ]"
       : "[ UPDATE NOW ]";
@@ -304,15 +356,15 @@ export default function UpdateScreen() {
         translucent={true}
       />
       <View style={styles.fullScreenContainer}>
-        <View>
+        <View style={{ marginTop: 40 }}>
           <Text style={styles.title}>{titleText}</Text>
           <Text style={styles.message}>{bodyText}</Text>
         </View>
 
-        <View style={{ alignItems: "center", marginBottom: 20 }}>
+        <View style={{ alignItems: "center", marginVertical: 20 }}>
           <MaterialIcons
             name={isApkUpdate ? "system-update-alt" : "cloud-download"}
-            size={160}
+            size={140}
             color="#7e5619"
           />
         </View>
@@ -325,6 +377,22 @@ export default function UpdateScreen() {
           <Text style={styles.mandatoryText}>
             This build is marked mandatory.
           </Text>
+        ) : null}
+
+        {isDownloadingApk ? (
+          <View style={styles.progressContainer}>
+            <View style={styles.progressTrack}>
+              <LinearGradient
+                colors={["#D4AF37", "#8b4513"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={[
+                  styles.progressFill,
+                  { width: `${apkDownloadProgress}%` },
+                ]}
+              />
+            </View>
+          </View>
         ) : null}
 
         <View style={styles.actionSection}>
@@ -368,41 +436,26 @@ const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
     backgroundColor: "#000000",
-    paddingTop: 0,
-    justifyContent: "center",
-  },
-  centerSection: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 30,
+    paddingHorizontal: 20,
+    justifyContent: "space-between",
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#FFFFFF",
     letterSpacing: 2,
-    // marginBottom: 16,
     textAlign: "center",
     fontFamily: "ZillaSlab-SemiBold",
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#D4AF37",
-    letterSpacing: 1,
-    textAlign: "center",
-    // marginBottom: 40,
-    fontFamily: "ZillaSlab-Regular",
-  },
   message: {
-    fontSize: 18,
-    color: "#FFFFFF",
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.8)",
     textAlign: "center",
     lineHeight: 24,
     fontFamily: "ZillaSlab-Regular",
     letterSpacing: 1,
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
   },
   releaseText: {
     color: "#D4AF37",
@@ -420,26 +473,37 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     marginBottom: 16,
   },
+  progressContainer: {
+    paddingHorizontal: 30,
+    marginVertical: 12,
+  },
+  progressTrack: {
+    width: "100%",
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 999,
+    minWidth: 8,
+  },
   actionSection: {
     paddingHorizontal: 30,
-    paddingBottom: 60,
     gap: 16,
   },
   primaryButton: {
-    backgroundColor: "#271c0f",
-    paddingVertical: 18,
+    backgroundColor: "#D4AF37",
+    paddingVertical: 16,
     borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#D4AF37",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     elevation: 8,
   },
   primaryButtonText: {
-    color: "#f9f8f8",
+    color: "#000000",
     fontSize: 16,
     fontWeight: "bold",
     marginLeft: 8,
@@ -448,9 +512,9 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     backgroundColor: "transparent",
-    paddingVertical: 18,
+    paddingVertical: 16,
     borderRadius: 12,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.3)",
     justifyContent: "center",
     alignItems: "center",
@@ -464,7 +528,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: "center",
-    paddingBottom: 30,
+    paddingBottom: 24,
   },
   footerText: {
     color: "rgba(255, 255, 255, 0.5)",

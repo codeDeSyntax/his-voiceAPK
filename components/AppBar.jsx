@@ -163,6 +163,118 @@ const AnimatedDropdown = ({
     </Modal>
   );
 };
+// ─── Compact filter dropdown ──────────────────────────────────────────────────
+const FilterDropdown = ({
+  visible,
+  onClose,
+  theme,
+  insets,
+  filterOnlyText,
+  filterOnlyAudio,
+  toggleSortOrder,
+  restoreOriginalOrder,
+  isOriginalOrder,
+  hasActiveFilters,
+}) => {
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      slideAnim.setValue(0);
+      backdropAnim.setValue(0);
+      Animated.parallel([
+        Animated.spring(slideAnim, { toValue: 1, damping: 22, stiffness: 300, useNativeDriver: true }),
+        Animated.timing(backdropAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
+      ]).start();
+    } else if (modalVisible) {
+      Animated.parallel([
+        Animated.timing(slideAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(backdropAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+      ]).start(() => setModalVisible(false));
+    }
+  }, [visible, modalVisible, slideAnim, backdropAnim]);
+
+  if (!modalVisible) return null;
+
+  const dark = theme.dark;
+  const cardBg = dark ? "rgba(28,19,13,0.97)" : "rgba(252,246,237,0.98)";
+  const divider = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
+  const labelActive = dark ? "#f2cdb4" : "#5d3211";
+  const labelInactive = dark ? "rgba(242,205,180,0.65)" : "rgba(93,50,17,0.60)";
+
+  const FilterRow = ({ icon, label, onPress, active = false }) => (
+    <Pressable
+      onPress={onPress}
+      android_ripple={{ color: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }}
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        opacity: pressed ? 0.6 : 1,
+      })}
+    >
+      <Ionicons
+        name={icon}
+        size={14}
+        color={active ? labelActive : labelInactive}
+        style={{ marginRight: 10 }}
+      />
+      <Text style={{
+        fontFamily: "Merriweather",
+        fontSize: 12,
+        color: active ? labelActive : labelInactive,
+        flex: 1,
+      }}>{label}</Text>
+      {active && (
+        <Ionicons name="checkmark" size={13} color={labelActive} />
+      )}
+    </Pressable>
+  );
+
+  return (
+    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: backdropAnim }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
+      <Animated.View style={{
+        position: "absolute",
+        top: insets.top + 58,
+        right: 16,
+        width: 190,
+        backgroundColor: cardBg,
+        borderRadius: 14,
+        overflow: "hidden",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.22,
+        shadowRadius: 20,
+        elevation: 16,
+        opacity: slideAnim,
+        transform: [
+          { translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) },
+          { scale: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0.93, 1] }) },
+        ],
+      }}>
+        <FilterRow icon="document-text-outline" label="Text only"    onPress={() => { onClose(); filterOnlyText(); }}   active={hasActiveFilters} />
+        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: divider, marginHorizontal: 14 }} />
+        <FilterRow icon="musical-notes-outline" label="Audio only"   onPress={() => { onClose(); filterOnlyAudio(); }}  active={hasActiveFilters} />
+        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: divider, marginHorizontal: 14 }} />
+        <FilterRow
+          icon={isOriginalOrder ? "swap-vertical" : "funnel-outline"}
+          label={isOriginalOrder ? "Sort A–Z" : "Restore sort"}
+          onPress={() => { onClose(); toggleSortOrder(); }}
+        />
+        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: divider, marginHorizontal: 14 }} />
+        <FilterRow icon="refresh-outline" label="Reset filters" onPress={() => { onClose(); restoreOriginalOrder(); }} active={hasActiveFilters} />
+      </Animated.View>
+    </Modal>
+  );
+};
+
 const ListAppBar = React.memo(
   ({
     theme,
@@ -173,6 +285,7 @@ const ListAppBar = React.memo(
     isOriginalOrder,
     hasActiveFilters,
     onToggleTheme,
+    sermonCounts = { total: 0, text: 0, audio: 0 },
     totalCount = 0,
   }) => {
     const router = useNavigation();
@@ -260,31 +373,6 @@ const ListAppBar = React.memo(
               />
             </GlassButton> */}
 
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text
-                style={{
-                  color: theme.colors.text,
-                  fontFamily: "ZillaSlab-SemiBold",
-                  fontSize: 18,
-                }}
-                numberOfLines={1}
-              >
-                Sermons
-              </Text>
-              <Text
-                style={{
-                  color: theme.dark
-                    ? "rgba(255,255,255,0.42)"
-                    : "rgba(93,50,17,0.50)",
-                  fontFamily: "Merriweather",
-                  fontSize: 11,
-                  marginTop: 1,
-                }}
-                numberOfLines={1}
-              >
-                {totalCount} available
-              </Text>
-            </View>
           </View>
 
           <View style={{ flexDirection: "row", gap: 8 }}>
@@ -293,7 +381,6 @@ const ListAppBar = React.memo(
                 name={"theme-light-dark"}
                 size={22}
                 color={theme.colors.text}
-                // icons thickness
               />
             </GlassButton>
 
@@ -304,26 +391,87 @@ const ListAppBar = React.memo(
               <AntDesign name="search" size={22} color={theme.colors.text} />
             </GlassButton>
 
+            {/* Filter button — active dot indicator */}
+            <View>
+              <GlassButton
+                theme={theme}
+                onPress={() => setFiltersVisible((v) => !v)}
+              >
+                <Ionicons
+                  name="options-outline"
+                  size={22}
+                  color={hasActiveFilters ? (theme.dark ? "#f2cdb4" : "#5d3211") : theme.colors.text}
+                />
+              </GlassButton>
+              {hasActiveFilters && (
+                <View style={{
+                  position: "absolute",
+                  top: 5,
+                  right: 5,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: theme.dark ? "#f2cdb4" : "#5d3211",
+                }} />
+              )}
+            </View>
+
             <GlassButton
               theme={theme}
-              onPress={() => {
-                setMenuVisible(!menuVisible);
-              }}
+              onPress={() => setMenuVisible((v) => !v)}
             >
-              <AntDesign
-                name={"align-left"}
-                size={24}
-                color={theme.colors.text}
-              />
+              <AntDesign name="align-left" size={24} color={theme.colors.text} />
             </GlassButton>
           </View>
         </View>
 
-        {/* AppBar Menu Sidebar */}
-        <AppBarMenu
-          visible={menuVisible}
-          onClose={closeMenu}
+        {/* Sleek Sub-Header Row */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 10,
+            paddingTop: 8,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: theme.dark
+              ? "rgba(242, 205, 180, 0.08)"
+              : "rgba(93, 50, 17, 0.08)",
+          }}
+        >
+          <Text
+            style={{
+              color: theme.colors.text,
+              fontFamily: "ZillaSlab-SemiBold",
+              fontSize: 14,
+              letterSpacing: 0.4,
+            }}
+          >
+            Sermons
+          </Text>
+          <Text
+            style={{
+              color: theme.dark
+                ? "rgba(242, 205, 180, 0.50)"
+                : "rgba(93, 50, 17, 0.52)",
+              fontFamily: "Merriweather",
+              fontSize: 11,
+              letterSpacing: 0.2,
+            }}
+          >
+            {sermonCounts?.total || totalCount} available ({sermonCounts?.text || 0} text · {sermonCounts?.audio || 0} audio)
+          </Text>
+        </View>
+
+        {/* Nav menu */}
+        <AppBarMenu visible={menuVisible} onClose={closeMenu} theme={theme} />
+
+        {/* Filter dropdown */}
+        <FilterDropdown
+          visible={filtersVisible}
+          onClose={() => setFiltersVisible(false)}
           theme={theme}
+          insets={insets}
           filterOnlyText={filterOnlyText}
           filterOnlyAudio={filterOnlyAudio}
           toggleSortOrder={toggleSortOrder}

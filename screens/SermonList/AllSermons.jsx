@@ -170,29 +170,7 @@ const SermonList = React.memo(() => {
           },
         ]}
       >
-        <View style={styles.summaryRow}>
-          <View style={{ flex: 1 }}>
-            {/* <Text style={[styles.summaryLabel, { color: theme.colors.text }]}>
-              {filteredSermons.length} of {sermonCounts.total} sermons
-            </Text> */}
-            <Text
-              style={[
-                styles.summaryMeta,
-                {
-                  color: theme.dark
-                    ? "rgba(255,255,255,0.48)"
-                    : "rgba(93,50,17,0.9)",
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {sermonCounts.text} text - {sermonCounts.audio} audio -{" "}
-              {sortLabel}
-            </Text>
-          </View>
-
-         
-        </View>
+        <View style={styles.summaryRow} />
 
        
       </View>
@@ -228,7 +206,7 @@ const SermonList = React.memo(() => {
         isOriginalOrder={isOriginalOrder}
         hasActiveFilters={hasViewChanges}
         onToggleTheme={handleToggleTheme}
-        totalCount={sermonCounts.total}
+        sermonCounts={sermonCounts}
       />
 
       <SearchHeader
