@@ -218,6 +218,11 @@ const downloadDatabaseToTempFile = async (
   onProgress,
   signal,
 ) => {
+  // Track last reported percentage so we only call onProgress when the
+  // displayed integer value actually changes — avoids flooding the JS thread
+  // with dozens of setState calls per second on every raw network chunk.
+  let lastReportedPct = -1;
+
   const downloadTask = LegacyFileSystem.createDownloadResumable(
     downloadUrl,
     tempFile.uri,
@@ -228,6 +233,10 @@ const downloadDatabaseToTempFile = async (
       const percentage = Math.floor(
         (totalBytesWritten / totalBytesExpectedToWrite) * 100,
       );
+
+      // Only propagate when the percentage has moved by at least 1 full point
+      if (percentage === lastReportedPct) return;
+      lastReportedPct = percentage;
       onProgress?.(percentage, `Downloading ${percentage}%...`);
     },
   );

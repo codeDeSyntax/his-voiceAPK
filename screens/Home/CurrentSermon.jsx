@@ -20,6 +20,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
+  Animated,
+  Easing,
 } from "react-native";
 
 import { useAppContext } from "../../Logic/globalState";
@@ -139,6 +141,10 @@ const CurrentSermon = React.memo(({ route }) => {
   const paragraphsLengthRef = useRef(0);
 
   const [scrollPriority, setScrollPriority] = useState(null);
+  // Overlay shown on top of the visible sermon text while FlatList silently
+  // scrolls to a high paragraph (>= 35). Fades out once scroll has settled.
+  const [showScrollOverlay, setShowScrollOverlay] = useState(false);
+  const scrollOverlayAnim = useRef(new Animated.Value(0)).current;
 
   const flatListRef = useRef(null);
   const scrollTimeout = useRef(null);
@@ -273,9 +279,46 @@ const CurrentSermon = React.memo(({ route }) => {
     currentVisibleParagraphRef.current = currentVisibleParagraph;
   }, [currentVisibleParagraph]);
 
+  const targetScrollParagraphRef = useRef(null);
+  const isAwaitingTargetViewRef = useRef(false);
+  const overlayTimeoutRef = useRef(null);
+
+  const dismissScrollOverlay = useCallback(() => {
+    if (!isAwaitingTargetViewRef.current) return;
+    isAwaitingTargetViewRef.current = false;
+    if (overlayTimeoutRef.current) {
+      clearTimeout(overlayTimeoutRef.current);
+      overlayTimeoutRef.current = null;
+    }
+    // Brief delay so the layout/paint of the target paragraph settles cleanly before fade
+    setTimeout(() => {
+      Animated.timing(scrollOverlayAnim, {
+        toValue: 0,
+        duration: 350,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => setShowScrollOverlay(false));
+    }, 150);
+  }, [scrollOverlayAnim]);
+
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems && viewableItems.length > 0) {
       const firstVisibleIndex = viewableItems[0].index;
+
+      // Check if we are waiting for the target paragraph AFTER precise scrollToIndex
+      if (
+        isAwaitingTargetViewRef.current &&
+        targetScrollParagraphRef.current !== null
+      ) {
+        const target = targetScrollParagraphRef.current;
+        const isTargetViewable = viewableItems.some(
+          (v) => Math.abs(v.index - target) <= 1
+        );
+        if (isTargetViewable) {
+          dismissScrollOverlay();
+        }
+      }
+
       if (
         firstVisibleIndex !== null &&
         firstVisibleIndex !== currentVisibleParagraphRef.current
@@ -381,21 +424,65 @@ const CurrentSermon = React.memo(({ route }) => {
       });
       reveal();
     } else {
-      // Beyond the initial render window. Step 1: jump via offset to bring
-      // items near the target into the render window (uses ~120px estimate).
-      flatListRef.current.scrollToOffset({
-        offset: 120 * targetIndex,
-        animated: false,
-      });
-      // Step 2: precise scroll once items are rendered (~200 ms is enough).
-      setTimeout(() => {
-        flatListRef.current?.scrollToIndex({
-          index: targetIndex,
-          animated: false,
-          viewPosition: 0.1,
-        });
+      const isHighParagraph = targetIndex >= 35;
+
+      if (isHighParagraph) {
+        targetScrollParagraphRef.current = targetIndex;
+        isAwaitingTargetViewRef.current = false; // Do NOT arm during Step 1!
+
         reveal();
-      }, 200);
+        scrollOverlayAnim.setValue(1);
+        setShowScrollOverlay(true);
+
+        // Safety timeout (4s max) in case viewability callback doesn't fire
+        if (overlayTimeoutRef.current) clearTimeout(overlayTimeoutRef.current);
+        overlayTimeoutRef.current = setTimeout(() => {
+          dismissScrollOverlay();
+        }, 4000);
+
+        // Step 1: coarse offset jump to force FlatList to render nearby cells
+        flatListRef.current.scrollToOffset({
+          offset: 120 * targetIndex,
+          animated: false,
+        });
+
+        // Step 2: precise scroll after cells near target have rendered
+        setTimeout(() => {
+          // NOW arm detector for final position check
+          isAwaitingTargetViewRef.current = true;
+
+          flatListRef.current?.scrollToIndex({
+            index: targetIndex,
+            animated: false,
+            viewPosition: 0.1,
+          });
+
+          // Check if target is already viewable right after scrollToIndex
+          setTimeout(() => {
+            if (
+              isAwaitingTargetViewRef.current &&
+              Math.abs(currentVisibleParagraphRef.current - targetIndex) <= 1
+            ) {
+              dismissScrollOverlay();
+            }
+          }, 150);
+        }, 250);
+      } else {
+        // 20–34: beyond initial render window but not far enough to warrant
+        // the overlay. Jump via offset then precise scroll, then reveal.
+        flatListRef.current.scrollToOffset({
+          offset: 120 * targetIndex,
+          animated: false,
+        });
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({
+            index: targetIndex,
+            animated: false,
+            viewPosition: 0.1,
+          });
+          reveal();
+        }, 200);
+      }
     }
   }, [
     paragraphs.length,
@@ -817,9 +904,7 @@ const CurrentSermon = React.memo(({ route }) => {
         </View>
       </KeyboardAvoidingView>
 
-      {/* Full-screen loader — Modal guarantees viewport-sized flex layout so
-          Spinner's flex:1 centering works (absolute overlays inside the
-          FlatList tree were sizing to content height). */}
+      {/* Full-screen skeleton — only shown while paragraphs are loading. */}
       <Modal
         visible={
           selectedSermon?.type !== "mp3" &&
@@ -837,6 +922,57 @@ const CurrentSermon = React.memo(({ route }) => {
         >
           <SermonSkeletonLoader />
         </View>
+      </Modal>
+
+      {/* Positioning overlay Modal — covers the ENTIRE screen (incl. status bar)
+          while the FlatList silently scrolls to the last-read paragraph. */}
+      <Modal
+        visible={showScrollOverlay}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        hardwareAccelerated
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: theme.dark
+                ? "rgba(0,0,0,0.80)"
+                : "rgba(12,5,2,0.65)",
+              opacity: scrollOverlayAnim,
+              justifyContent: "center",
+              alignItems: "center",
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontFamily: "ZillaSlab-SemiBold",
+              fontSize: responsiveFontSize(19),
+              color: theme.dark ? "#f2cdb4" : "#fae7da",
+              letterSpacing: 0.3,
+              textAlign: "center",
+              marginBottom: 10,
+            }}
+          >
+            Returning to your place
+          </Text>
+          <Text
+            style={{
+              fontFamily: "Merriweather",
+              fontSize: responsiveFontSize(12.5),
+              color: theme.dark
+                ? "rgba(242,205,180,0.55)"
+                : "rgba(250,231,218,0.65)",
+              letterSpacing: 0.5,
+              textAlign: "center",
+            }}
+          >
+            Paragraph {(selectedSermon?.lastReadParagraph ?? 0) + 1}
+          </Text>
+        </Animated.View>
       </Modal>
 
       {/* Fullscreen Search Modal */}

@@ -20,6 +20,7 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GlassButton } from "../styles/glassButton";
 import AppBarMenu from "./AppBarMenu";
+import { useAppContext } from "../Logic/globalState";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -290,6 +291,7 @@ const ListAppBar = React.memo(
   }) => {
     const router = useNavigation();
     const insets = useSafeAreaInsets();
+    const { bookmarks, recentSermons } = useAppContext();
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
     const [imageModalVisible, setImageModalVisible] = useState(false);
@@ -464,7 +466,13 @@ const ListAppBar = React.memo(
         </View>
 
         {/* Nav menu */}
-        <AppBarMenu visible={menuVisible} onClose={closeMenu} theme={theme} />
+        <AppBarMenu
+          visible={menuVisible}
+          onClose={closeMenu}
+          theme={theme}
+          bookmarkCount={bookmarks?.length ?? 0}
+          recentCount={recentSermons?.length ?? 0}
+        />
 
         {/* Filter dropdown */}
         <FilterDropdown

@@ -171,15 +171,14 @@ const styles = StyleSheet.create({
   },
   topSubLabel: {
     fontSize: responsiveFontSize(9),
-    fontFamily: "Merriweather",
+    fontFamily: "Philosopher",
     letterSpacing: 2,
     marginBottom: 2,
   },
   topTitle: {
-    fontSize: responsiveFontSize(12),
-    fontFamily: "Merriweathersm",
+    fontSize: responsiveFontSize(13),
+    fontFamily: "Philosopher",
     letterSpacing: 0.2,
-    fontWeight: "700",
   },
   errorContainer: {
     flex: 1,
@@ -189,7 +188,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: responsiveFontSize(14),
-    fontFamily: "Merriweather",
+    fontFamily: "Philosopher",
     textAlign: "center",
     lineHeight: 22,
   },

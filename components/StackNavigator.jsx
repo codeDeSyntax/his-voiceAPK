@@ -18,6 +18,8 @@ import RecentsScreen from "../screens/Recents/RecentsScreen";
 // Note: @react-navigation/native-stack uses react-native-screens natively by
 // default — no manual enableScreens() call is needed with native-stack.
 
+import { Spinner } from "./Loader";
+
 const Stack = createNativeStackNavigator();
 
 // Custom loading component with transparent background
@@ -32,7 +34,7 @@ const LoadingFallback = () => {
         backgroundColor: theme.colors.background,
       }}
     >
-      <ActivityIndicator size="large" color={theme.colors.text} />
+      <Spinner compact size={88} />
     </View>
   );
 };

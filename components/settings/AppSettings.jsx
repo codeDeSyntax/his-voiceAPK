@@ -190,7 +190,7 @@ const AppSettings = ({ theme, router, compact = false }) => {
                   {
                     text: "OK",
                     onPress: () => {
-                      router.replace("Home");
+                      router.replace("AllSermons");
                     },
                   },
                 ],

@@ -200,14 +200,18 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
     if (!isDragging) handlePressAction();
   }, [isDragging, handlePressAction]);
 
-  // Colors for the concentric ring design
-  // Theme-matched concentric ring colors
-  const outerBg = dark ? "rgba(45, 32, 24, 0.95)" : "rgba(200, 175, 155, 0.95)";
-  const innerBg = dark ? "rgba(65, 48, 38, 0.95)" : "rgba(235, 215, 195, 0.95)";
+  // Theme-derived colors for sleek floating back button
+  const outerBg = dark
+    ? "rgba(38, 28, 22, 0.94)"
+    : "rgba(252, 246, 237, 0.96)";
+  const innerBg = dark
+    ? "rgba(55, 41, 32, 0.90)"
+    : "rgba(245, 233, 218, 0.92)";
   const innerBorder = dark
-    ? "rgba(242, 205, 180, 0.25)"
-    : "rgba(255, 255, 255, 0.7)";
-  const iconColor = dark ? "rgba(242, 205, 180, 0.8)" : "rgba(93, 50, 17, 0.6)";
+    ? "rgba(242, 205, 180, 0.24)"
+    : "rgba(93, 50, 17, 0.16)";
+  const iconColor = dark ? "#f2cdb4" : "#5d3211";
+  const shadowColor = dark ? "#000000" : "#5d3211";
 
   return (
     <Animated.View
@@ -216,6 +220,11 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
         zIndex: 9999,
         transform: [{ translateX: pan.x }, { translateY: pan.y }],
         opacity: opacityAnim,
+        shadowColor,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: dark ? 0.35 : 0.16,
+        shadowRadius: 12,
+        elevation: 7,
       }}
       {...panResponder.panHandlers}
     >
@@ -235,9 +244,11 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: outerBg,
+            borderWidth: 1.2,
+            borderColor: innerBorder,
           }}
         >
-          {/* Inner circle — lighter, creates the concentric ring effect */}
+          {/* Inner circle — soft concentric ring with glass sheen */}
           <View
             style={{
               width: INNER,
@@ -250,10 +261,12 @@ const DraggableFloatingButton = React.memo(({ onPress }) => {
               justifyContent: "center",
             }}
           >
-            <MaterialCommunityIcons
-              name="backburger"
+            {/* Undo Arrow Back Icon */}
+            <Ionicons
+              name="arrow-undo-outline"
               size={20}
               color={iconColor}
+              style={{ marginRight: 1 }}
             />
           </View>
         </Animated.View>

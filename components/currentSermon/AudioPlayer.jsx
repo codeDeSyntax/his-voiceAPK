@@ -6,6 +6,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   Dimensions,
+  Animated,
+  Easing,
+  Image,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import * as Audio from "expo-audio";
@@ -71,6 +74,49 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
     downloadFirst: true,
   });
   const status = Audio.useAudioPlayerStatus(player);
+
+  // Ambient pulse and vinyl rotation animations for sleek audio player experience
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+  const rotateAnim = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (status.playing) {
+      const pulseLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.06,
+            duration: 1400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      pulseLoop.start();
+
+      const rotateLoop = Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 30000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      );
+      rotateLoop.start();
+
+      return () => {
+        pulseLoop.stop();
+        rotateLoop.stop();
+      };
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [status.playing, pulseAnim, rotateAnim]);
 
   useEffect(() => {
     if (status.error) setError("Failed to load message");
@@ -222,11 +268,60 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
 
       {/* ── Main content ─────────────────────────────────────────────── */}
       <View style={styles.mainContent}>
-        {/* Sermon title — large, centered over the background */}
+        {/* Animated Vinyl Artwork Disc */}
+        <Animated.View
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 20,
+            transform: [{ scale: pulseAnim }],
+          }}
+        >
+          <View
+            style={{
+              width: 140,
+              height: 140,
+              borderRadius: 70,
+              backgroundColor: isDark
+                ? "rgba(242, 205, 180, 0.08)"
+                : "rgba(93, 50, 17, 0.06)",
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1.5,
+              borderColor: isDark
+                ? "rgba(242, 205, 180, 0.22)"
+                : "rgba(93, 50, 17, 0.16)",
+              shadowColor: isDark ? "#000000" : "#5d3211",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.25,
+              shadowRadius: 16,
+              elevation: 8,
+            }}
+          >
+            <Animated.Image
+              source={require("../../assets/roundedLam.png")}
+              style={{
+                width: 124,
+                height: 124,
+                borderRadius: 62,
+                transform: [
+                  {
+                    rotate: rotateAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0deg", "360deg"],
+                    }),
+                  },
+                ],
+              }}
+            />
+          </View>
+        </Animated.View>
+
+        {/* Sermon title & artist label */}
         <View style={styles.titleArea}>
           <Text
             style={[styles.sermonTitle, { color: textColor }]}
-            numberOfLines={3}
+            numberOfLines={2}
           >
             {sermonTitle}
           </Text>
@@ -241,7 +336,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }) => {
         </Text>
         {!status.isLoaded && !error && (
           <Text style={[styles.loadingHint, { color: mutedTextColor }]}>
-            \ Loading audio…
+            Loading audio…
           </Text>
         )}
         {error && (
@@ -414,23 +509,22 @@ const styles = StyleSheet.create({
     maxWidth: "80%",
   },
   sermonTitle: {
-    fontSize: responsiveFontSize(30),
-    fontFamily: "ZillaSlabsm",
+    fontSize: responsiveFontSize(22),
+    fontFamily: "Philosopher",
     textAlign: "center",
-    lineHeight: responsiveFontSize(38),
-    marginBottom: 8,
+    lineHeight: responsiveFontSize(28),
+    marginBottom: 6,
   },
   artistLabel: {
-    fontSize: responsiveFontSize(12),
-    fontFamily: "Merriweather",
+    fontSize: responsiveFontSize(13),
+    fontFamily: "Philosopher",
     letterSpacing: 0.3,
   },
 
   // Timer
   timerText: {
     fontSize: responsiveFontSize(18),
-    fontFamily: "Merriweather",
-    fontWeight: "600",
+    fontFamily: "Philosopher",
     letterSpacing: 1,
     marginBottom: 18,
   },
@@ -474,8 +568,8 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   timeText: {
-    fontSize: responsiveFontSize(10),
-    fontFamily: "Merriweather",
+    fontSize: responsiveFontSize(11),
+    fontFamily: "Philosopher",
     letterSpacing: 0.2,
   },
 
@@ -522,13 +616,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
     opacity: 0.85,
-    fontFamily: "Merriweather",
+    fontFamily: "Philosopher",
   },
 
   errorText: {
     fontSize: responsiveFontSize(13),
     marginBottom: 8,
-    fontWeight: "600",
+    fontFamily: "Philosopher",
     textAlign: "center",
   },
 });

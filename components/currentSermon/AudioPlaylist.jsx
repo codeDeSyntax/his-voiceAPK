@@ -303,8 +303,7 @@ const AudioPlaylist = ({ visible, onClose, currentSermon, onSermonSelect }) => {
         style={{
           color: isDark ? textColor + "80" : "#5d3211",
           fontSize: responsiveFontSize(16),
-          fontFamily: "ZillaSlab_smb",
-          fontWeight: "600",
+          fontFamily: "Philosopher",
           marginBottom: spacing.xs,
         }}
       >
@@ -314,7 +313,7 @@ const AudioPlaylist = ({ visible, onClose, currentSermon, onSermonSelect }) => {
         style={{
           color: isDark ? textColor + "60" : "#5d321190",
           fontSize: responsiveFontSize(13),
-          fontFamily: "serif",
+          fontFamily: "Philosopher",
           textAlign: "center",
         }}
       >
@@ -412,12 +411,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: responsiveFontSize(18),
-    fontFamily: "ZillaSlab_smb",
+    fontFamily: "Philosopher",
     letterSpacing: 0.3,
   },
   headerSubtitle: {
-    fontSize: responsiveFontSize(10),
-    fontFamily: "Merriweather",
+    fontSize: responsiveFontSize(11),
+    fontFamily: "Philosopher",
     letterSpacing: 0.5,
     marginTop: 2,
   },
@@ -447,7 +446,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     height: 48,
-    fontFamily: "ZillaSlab",
+    fontFamily: "Philosopher",
     paddingHorizontal: 8,
   },
   clearButton: {
@@ -460,7 +459,7 @@ const styles = StyleSheet.create({
   },
   countLabel: {
     fontSize: responsiveFontSize(11),
-    fontFamily: "Merriweather",
+    fontFamily: "Philosopher",
     letterSpacing: 0.5,
     opacity: 0.7,
     paddingHorizontal: spacing.md,
@@ -482,12 +481,12 @@ const styles = StyleSheet.create({
   },
   compactTitle: {
     fontSize: responsiveFontSize(15.5),
-    fontFamily: "Merriweather",
+    fontFamily: "Philosopher",
     marginBottom: spacing.xs,
   },
   compactDate: {
     fontSize: responsiveFontSize(13),
-    fontFamily: "Merriweather",
+    fontFamily: "Philosopher",
   },
   avatarImage: {
     width: 36,
@@ -503,7 +502,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: responsiveFontSize(13),
-    fontFamily: "Merriweather",
+    fontFamily: "Philosopher",
     marginTop: 12,
   },
 });

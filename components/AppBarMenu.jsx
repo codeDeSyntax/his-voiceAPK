@@ -15,8 +15,37 @@ import { useNavigation } from "@react-navigation/native";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PANEL_WIDTH = Math.min(SCREEN_WIDTH * 0.76, 300);
 
+// ─── Count badge pill ─────────────────────────────────────────────────────────
+const CountBadge = ({ count, dark }) => {
+  if (!count || count <= 0) return null;
+  return (
+    <View
+      style={{
+        backgroundColor: dark ? "rgba(242,205,180,0.13)" : "rgba(93,50,17,0.09)",
+        borderRadius: 999,
+        minWidth: 22,
+        height: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 7,
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: "ZillaSlab-SemiBold",
+          fontSize: 11,
+          color: dark ? "#f2cdb4" : "#5d3211",
+          letterSpacing: 0.2,
+        }}
+      >
+        {count > 99 ? "99+" : count}
+      </Text>
+    </View>
+  );
+};
+
 // ─── Single action row ────────────────────────────────────────────────────────
-const ActionRow = ({ label, icon, onPress, theme, isLast = false }) => {
+const ActionRow = ({ label, icon, onPress, theme, isLast = false, badge }) => {
   const dark = theme.dark;
   const divider = dark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.09)";
   const labelColor = dark ? "rgba(242,205,180,0.95)" : "rgba(30,15,5,0.88)";
@@ -38,12 +67,17 @@ const ActionRow = ({ label, icon, onPress, theme, isLast = false }) => {
         style={{ marginRight: 10 }}
       />
       <Text style={[styles.rowLabel, { color: labelColor }]}>{label}</Text>
+      {badge != null && (
+        <View style={{ marginLeft: "auto" }}>
+          <CountBadge count={badge} dark={dark} />
+        </View>
+      )}
     </Pressable>
   );
 };
 
 // ─── Main nav menu (no filters) ───────────────────────────────────────────────
-const AppBarMenu = ({ visible, onClose, theme }) => {
+const AppBarMenu = ({ visible, onClose, theme, bookmarkCount = 0, recentCount = 0 }) => {
   const router = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
   const panelAnim = useRef(new Animated.Value(0)).current;
@@ -118,8 +152,8 @@ const AppBarMenu = ({ visible, onClose, theme }) => {
           {/* Navigation rows */}
           <ActionRow icon="home-outline"       label="Home"      onPress={() => go("welcome")}   theme={theme} />
           <ActionRow icon="search-outline"     label="Search"    onPress={() => go("Search")}    theme={theme} />
-          <ActionRow icon="bookmarks-outline"  label="Bookmarks" onPress={() => go("bookmarks")} theme={theme} />
-          <ActionRow icon="time-outline"       label="Recents"   onPress={() => go("Recents")}   theme={theme} />
+          <ActionRow icon="bookmarks-outline"  label="Bookmarks" onPress={() => go("bookmarks")} theme={theme} badge={bookmarkCount} />
+          <ActionRow icon="time-outline"       label="Recents"   onPress={() => go("Recents")}   theme={theme} badge={recentCount} />
           <ActionRow icon="information-circle-outline" label="About"   onPress={() => go("About")}    theme={theme} />
           <ActionRow icon="settings-outline"   label="Settings"  onPress={() => go("Settings")}  theme={theme} isLast />
         </Animated.View>

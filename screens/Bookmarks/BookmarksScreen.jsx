@@ -8,14 +8,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { useAppContext } from "../../Logic/globalState";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { responsiveFontSize, spacing } from "../../Utils/responsiveUtils";
+import { responsiveFontSize, spacing, horizontalScale, verticalScale } from "../../Utils/responsiveUtils";
 import { GlassButton } from "../../styles/glassButton";
 import DraggableFloatingButton from "../../components/FloatButton";
 
-const CARD_GAP = 10;
+const CARD_GAP = 12;
 
 // ── Chunk array into pairs for 2-col grid ─────────────────────────────────
 const pairUp = (arr) => {
@@ -34,9 +34,9 @@ const BookmarksScreen = () => {
   const isDark = theme.dark;
 
   // ── Pair bookmarks into rows of 2 ──────────────────────────────────────
-  const rows = useMemo(() => pairUp(bookmarks), [bookmarks]);
+  const rows = useMemo(() => pairUp(bookmarks || []), [bookmarks]);
 
-  // ── Handlers (unchanged logic) ──────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────
   const handleBookmarkPress = useCallback(
     (bookmark) => {
       setSelectedSermon(bookmark.sermon);
@@ -51,12 +51,12 @@ const BookmarksScreen = () => {
   const handleDeleteBookmark = useCallback(
     (bookmark) => {
       Alert.alert(
-        "Delete Bookmark",
-        "Are you sure you want to delete this bookmark?",
+        "Remove Bookmark",
+        "Do you want to remove this bookmark from your collection?",
         [
           { text: "Cancel", style: "cancel" },
           {
-            text: "Delete",
+            text: "Remove",
             style: "destructive",
             onPress: () =>
               removeBookmark(bookmark.sermon, bookmark.paragraphIndex),
@@ -68,65 +68,109 @@ const BookmarksScreen = () => {
   );
 
   // ── Colors ──────────────────────────────────────────────────────────────
-  const cardBg = isDark ? "rgba(33,22,14,0.92)" : "#fae7bcff";
+  const cardBg = isDark
+    ? "rgba(38, 29, 23, 0.94)"
+    : "rgba(252, 246, 237, 0.98)";
   const cardBorder = isDark
-    ? "rgba(242,205,180,0.18)"
-    : "rgba(93,50,17,0.12)";
-  const subtleText = isDark ? `${theme.colors.text}a0` : "#5d3211a0";
-  const faintText = isDark ? `${theme.colors.text}70` : "#5d321180";
+    ? "rgba(242, 205, 180, 0.18)"
+    : "rgba(93, 50, 17, 0.12)";
+  const accentTagBg = isDark
+    ? "rgba(242, 205, 180, 0.14)"
+    : "rgba(93, 50, 17, 0.08)";
+  const accentTagText = isDark ? "#f2cdb4" : "#5d3211";
+  const titleColor = theme.colors.text;
+  const snippetColor = isDark
+    ? "rgba(242, 205, 180, 0.78)"
+    : "rgba(93, 50, 17, 0.75)";
+  const faintText = isDark
+    ? "rgba(242, 205, 180, 0.45)"
+    : "rgba(93, 50, 17, 0.45)";
 
   // ── Card component ──────────────────────────────────────────────────────
   const renderCard = useCallback(
-    (item) => (
-      <Pressable
-        key={`${item.sermon?.id}-${item.paragraphIndex}`}
-        onPress={() => handleBookmarkPress(item)}
-        onLongPress={() => handleDeleteBookmark(item)}
-        delayLongPress={500}
-        android_ripple={{
-          color: isDark
-            ? "rgba(242,205,180,0.12)"
-            : "rgba(93,50,17,0.08)",
-        }}
-        style={({ pressed }) => [
-          styles.card,
-          {
-            backgroundColor: cardBg,
-            borderColor: cardBorder,
-            shadowColor: isDark ? "#000" : "#5d3211",
-            shadowOpacity: pressed ? 0.18 : 0.1,
-            shadowRadius: pressed ? 3 : 8,
-            shadowOffset: { width: 0, height: pressed ? 1 : 4 },
-            elevation: pressed ? 2 : 5,
-            transform: [{ scale: pressed ? 0.97 : 1 }],
-          },
-        ]}
-      >
-        {/* Red bookmark ribbon */}
-        <View style={styles.ribbon} />
+    (item) => {
+      const paragraphNum = (item.paragraphIndex ?? 0) + 1;
+      const snippet = item.paragraphText
+        ? item.paragraphText.replace(/^[\d\s\u00B6\u00A7.-]+/, "").trim()
+        : null;
 
-        <Text
-          style={[styles.title, { color: theme.colors.text }]}
-          numberOfLines={2}
+      return (
+        <Pressable
+          key={`${item.sermon?.id}-${item.paragraphIndex}`}
+          onPress={() => handleBookmarkPress(item)}
+          onLongPress={() => handleDeleteBookmark(item)}
+          delayLongPress={450}
+          android_ripple={{
+            color: isDark ? "rgba(242,205,180,0.12)" : "rgba(93,50,17,0.08)",
+          }}
+          style={({ pressed }) => [
+            styles.card,
+            {
+              backgroundColor: cardBg,
+              borderColor: cardBorder,
+              shadowColor: isDark ? "#000000" : "#5d3211",
+              shadowOpacity: pressed ? 0.22 : 0.1,
+              shadowRadius: pressed ? 4 : 12,
+              shadowOffset: { width: 0, height: pressed ? 2 : 5 },
+              elevation: pressed ? 3 : 6,
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            },
+          ]}
         >
-          {item.sermon?.title}
-        </Text>
+          {/* Header Row: Paragraph Pill & Bookmark Ribbon Tag */}
+          <View style={styles.cardHeaderRow}>
+            <View style={[styles.paraPill, { backgroundColor: accentTagBg }]}>
+              <Text style={[styles.paraPillText, { color: accentTagText }]}>
+                ¶ {paragraphNum}
+              </Text>
+            </View>
 
-        <Text style={[styles.preview, { color: subtleText }]} numberOfLines={3}>
-          ¶ {item.paragraphIndex + 1} · {item.sermon?.date || "sermon"}
-        </Text>
+            {/* Bookmark Tag Badge */}
+            <View style={styles.ribbonBadge}>
+              <Ionicons name="bookmark" size={13} color="#d32f2f" />
+            </View>
+          </View>
 
-        <Text style={[styles.dateText, { color: faintText }]} numberOfLines={1}>
-          {new Date(item.date).toLocaleDateString()}
-        </Text>
-      </Pressable>
-    ),
+          {/* Sermon Title */}
+          <Text
+            style={[styles.cardTitle, { color: titleColor }]}
+            numberOfLines={2}
+          >
+            {item.sermon?.title || "Untitled Sermon"}
+          </Text>
+
+          {/* Paragraph Excerpt Preview (if available) */}
+          {snippet ? (
+            <Text style={[styles.snippetText, { color: snippetColor }]} numberOfLines={3}>
+              "{snippet}"
+            </Text>
+          ) : (
+            <Text style={[styles.dateSub, { color: faintText }]} numberOfLines={1}>
+              {item.sermon?.date || "Sermon Bookmark"}
+            </Text>
+          )}
+
+          {/* Footer Date */}
+          <View style={styles.cardFooter}>
+            <Feather name="clock" size={10} color={faintText} style={{ marginRight: 4 }} />
+            <Text style={[styles.cardDateText, { color: faintText }]} numberOfLines={1}>
+              {new Date(item.date).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
+            </Text>
+          </View>
+        </Pressable>
+      );
+    },
     [
-      theme,
       isDark,
       cardBg,
       cardBorder,
-      subtleText,
+      accentTagBg,
+      accentTagText,
+      titleColor,
+      snippetColor,
       faintText,
       handleBookmarkPress,
       handleDeleteBookmark,
@@ -154,15 +198,15 @@ const BookmarksScreen = () => {
         },
       ]}
     >
-      {/* Background glows */}
+      {/* Background glow accents */}
       <View
         pointerEvents="none"
         style={[
           styles.bgGlowLarge,
           {
             backgroundColor: isDark
-              ? "rgba(242,205,180,0.09)"
-              : "rgba(93,50,17,0.06)",
+              ? "rgba(242,205,180,0.08)"
+              : "rgba(93,50,17,0.05)",
           },
         ]}
       />
@@ -172,19 +216,8 @@ const BookmarksScreen = () => {
           styles.bgGlowSmall,
           {
             backgroundColor: isDark
-              ? "rgba(213,122,62,0.08)"
-              : "rgba(93,50,17,0.04)",
-          },
-        ]}
-      />
-      <View
-        pointerEvents="none"
-        style={[
-          styles.bgPatternPill,
-          {
-            backgroundColor: isDark
-              ? "rgba(242,205,180,0.05)"
-              : "rgba(93,50,17,0.035)",
+              ? "rgba(213,122,62,0.07)"
+              : "rgba(93,50,17,0.03)",
           },
         ]}
       />
@@ -196,56 +229,53 @@ const BookmarksScreen = () => {
         <GlassButton theme={theme} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color={theme.colors.text} />
         </GlassButton>
-        <Text
-          style={{
-            fontSize: responsiveFontSize(22),
-            fontFamily: "ZillaSlabsm",
-            color: theme.colors.text,
-            flex: 1,
-          }}
-        >
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
           Bookmarks
         </Text>
-        {bookmarks.length > 0 && (
-          <Text
-            style={{
-              fontSize: responsiveFontSize(12),
-              fontFamily: "Merriweather",
-              color: faintText,
-            }}
-          >
-            {bookmarks.length}
-          </Text>
+        {bookmarks && bookmarks.length > 0 && (
+          <View style={[styles.countBadge, { backgroundColor: accentTagBg }]}>
+            <Text style={[styles.countText, { color: accentTagText }]}>
+              {bookmarks.length}
+            </Text>
+          </View>
         )}
       </View>
 
-      {bookmarks.length === 0 ? (
+      {/* Empty State vs Bookmark Grid */}
+      {!bookmarks || bookmarks.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons
-            name="bookmark-outline"
-            size={responsiveFontSize(50)}
-            color={isDark ? "rgba(242,205,180,0.3)" : "rgba(93,50,17,0.3)"}
-          />
-          <Text
-            style={{
-              color: isDark ? theme.colors.text + "80" : "#5d3211",
-              fontSize: responsiveFontSize(16),
-              fontFamily: "ZillaSlab_smb",
-              marginTop: spacing.md,
-            }}
+          <View
+            style={[
+              styles.emptyIconCircle,
+              {
+                backgroundColor: isDark
+                  ? "rgba(242,205,180,0.08)"
+                  : "rgba(93,50,17,0.06)",
+                borderColor: cardBorder,
+              },
+            ]}
           >
-            No bookmarks yet
+            <Ionicons
+              name="bookmark-outline"
+              size={36}
+              color={isDark ? "#f2cdb4" : "#5d3211"}
+            />
+          </View>
+          <Text
+            style={[
+              styles.emptyTitle,
+              { color: isDark ? theme.colors.text : "#5d3211" },
+            ]}
+          >
+            No Bookmarks Saved
           </Text>
           <Text
-            style={{
-              color: isDark ? theme.colors.text + "60" : "#5d321190",
-              fontSize: responsiveFontSize(13),
-              fontFamily: "serif",
-              textAlign: "center",
-              marginTop: spacing.xs,
-            }}
+            style={[
+              styles.emptySubtitle,
+              { color: isDark ? "rgba(242,205,180,0.6)" : "rgba(93,50,17,0.6)" },
+            ]}
           >
-            Save a paragraph and it will appear here
+            Tap or long-press any sermon paragraph while reading to save your favorite passages here.
           </Text>
         </View>
       ) : (
@@ -258,10 +288,11 @@ const BookmarksScreen = () => {
           }
           contentContainerStyle={{
             paddingHorizontal: spacing.md,
-            paddingBottom: spacing.lg + insets.bottom,
+            paddingBottom: spacing.lg + insets.bottom + 20,
           }}
           initialNumToRender={10}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
@@ -275,14 +306,24 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingBottom: 16,
     gap: 12,
   },
-  emptyContainer: {
+  headerTitle: {
+    fontSize: responsiveFontSize(26),
+    fontFamily: "Philosopher",
+    letterSpacing: 0.3,
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  },
+  countBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  countText: {
+    fontFamily: "Philosopher",
+    fontSize: responsiveFontSize(13),
   },
 
   // ── Background glows ──────────────────────────────────────────────────
@@ -290,74 +331,117 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 90,
     right: -55,
-    width: 190,
-    height: 190,
-    borderRadius: 95,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
   },
   bgGlowSmall: {
     position: "absolute",
-    top: 330,
+    top: 340,
     left: -45,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-  },
-  bgPatternPill: {
-    position: "absolute",
-    bottom: 120,
-    right: -36,
-    width: 190,
-    height: 88,
-    borderRadius: 44,
-    transform: [{ rotate: "-14deg" }],
+    width: 160,
+    height: 160,
+    borderRadius: 80,
   },
 
   // ── Card grid ─────────────────────────────────────────────────────────
   cardRow: {
     flexDirection: "row",
     gap: CARD_GAP,
-    paddingVertical: 5,
+    paddingVertical: 6,
   },
   card: {
     flex: 1,
-    minHeight: 130,
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 12,
-    paddingTop: 28,
-    paddingBottom: 10,
+    minHeight: 145,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 14,
+    justifyContent: "space-between",
     overflow: "hidden",
   },
   cardPlaceholder: {
     flex: 1,
   },
-  ribbon: {
-    position: "absolute",
-    top: -1,
-    right: 14,
-    width: 14,
-    height: 22,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-    backgroundColor: "#e95a5a",
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
-  title: {
-    fontSize: responsiveFontSize(14),
+  paraPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  paraPillText: {
+    fontFamily: "Philosopher",
+    fontSize: responsiveFontSize(11.5),
+  },
+  ribbonBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(229, 57, 53, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardTitle: {
+    fontSize: responsiveFontSize(14.5),
     lineHeight: responsiveFontSize(19),
-    fontFamily: "Merriweather",
-    marginBottom: 4,
-    // fontWeight:"900"
+    fontFamily: "Philosopher",
+    marginBottom: 6,
   },
-  preview: {
+  snippetText: {
     fontSize: responsiveFontSize(11.5),
     lineHeight: responsiveFontSize(16),
     fontFamily: "Merriweather",
+    fontStyle: "italic",
+    marginBottom: 8,
+  },
+  dateSub: {
+    fontSize: responsiveFontSize(11),
+    fontFamily: "Philosopher",
     marginBottom: 6,
   },
-  dateText: {
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: "auto",
-    fontSize: responsiveFontSize(10.5),
+    paddingTop: 4,
+  },
+  cardDateText: {
+    fontSize: responsiveFontSize(10),
+    fontFamily: "Philosopher",
+  },
+
+  // ── Empty state ───────────────────────────────────────────────────────
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+    marginTop: -40,
+  },
+  emptyIconCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: responsiveFontSize(20),
+    fontFamily: "Philosopher",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: responsiveFontSize(13),
     fontFamily: "Merriweather",
+    textAlign: "center",
+    lineHeight: responsiveFontSize(19),
   },
 });
 

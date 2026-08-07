@@ -32,7 +32,7 @@ const INITIAL_SETTINGS = {
   darkMode: false,
   backgroundColor: "#faeed1",
   fontSize: 22,
-  fontFamily: "ZillaSlab",
+  fontFamily: "Merriweather",
   textColor: "#5d3211", // Deep brown for light mode on beige background
 };
 
@@ -42,10 +42,7 @@ const SermonContext = createContext(null);
 // Create custom hook for context usage
 export const useAppContext = () => {
   const context = useContext(SermonContext);
-  if (!context) {
-    throw new Error("useSermonContext must be used within a SermonProvider");
-  }
-  return context;
+  return context || {};
 };
 
 export const SermonProvider = ({ children }) => {
@@ -230,31 +227,31 @@ export const SermonProvider = ({ children }) => {
 
   // Track recently opened sermons (max 20, deduped, newest first)
   const MAX_RECENTS = 20;
-  const addToRecents = useCallback(async (sermon) => {
-    try {
-      const entry = {
-        id: sermon.id,
-        title: sermon.title,
-        date: sermon.date,
-        type: sermon.type,
-        location: sermon.location,
-        openedAt: Date.now(),
-      };
-      let updated;
-      setRecentSermons((prev) => {
-        const filtered = prev.filter((r) => r.id !== sermon.id);
-        updated = [entry, ...filtered].slice(0, MAX_RECENTS);
-        return updated;
-      });
-      if (updated) {
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.RECENTS,
-          JSON.stringify(updated),
-        );
-      }
-    } catch (error) {
-      console.error("Failed to update recent sermons:", error);
-    }
+  const addToRecents = useCallback((sermon) => {
+    const entry = {
+      id: sermon.id,
+      title: sermon.title,
+      date: sermon.date,
+      type: sermon.type,
+      location: sermon.location,
+      openedAt: Date.now(),
+    };
+
+    // Compute the updated list and persist inside the state updater so that
+    // AsyncStorage.setItem always receives the real list value — not `undefined`.
+    // Previously `updated` was captured outside and read after setRecentSermons(),
+    // but React schedules updater callbacks asynchronously so `updated` was always
+    // undefined by the time the await ran, meaning recents were NEVER saved to disk.
+    setRecentSermons((prev) => {
+      const filtered = prev.filter((r) => r.id !== sermon.id);
+      const updated = [entry, ...filtered].slice(0, MAX_RECENTS);
+
+      AsyncStorage.setItem(STORAGE_KEYS.RECENTS, JSON.stringify(updated)).catch(
+        (err) => console.error("Failed to save recents to storage:", err),
+      );
+
+      return updated;
+    });
   }, []);
 
   // Enhanced setSelectedSermon to include last read position and lazy load full content

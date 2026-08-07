@@ -27,6 +27,7 @@ const SermonList = React.memo(() => {
     loading,
     settings,
     updateSettings,
+    recentSermons,
   } = useAppContext();
 
   const [searchText, setSearchText] = useState("");
@@ -67,6 +68,20 @@ const SermonList = React.memo(() => {
 
     return { filteredSermons: sorted, hasActiveFilters: !!hasFilters };
   }, [allSermons, searchText, typeFilter, sortOrder, isOriginalOrder]);
+
+  // The most recently opened sermon — always pinned first in the list.
+  const lastReadId = recentSermons?.[0]?.id ?? null;
+
+  // Lift last-read sermon to index 0 without mutating the sorted list.
+  const pinnedSermons = useMemo(() => {
+    if (!lastReadId) return filteredSermons;
+    const idx = filteredSermons.findIndex((s) => s.id === lastReadId);
+    if (idx <= 0) return filteredSermons; // already first or not in list
+    const reordered = [...filteredSermons];
+    const [pinned] = reordered.splice(idx, 1);
+    reordered.unshift(pinned);
+    return reordered;
+  }, [filteredSermons, lastReadId]);
 
   const sermonCounts = useMemo(
     () => ({
@@ -218,11 +233,12 @@ const SermonList = React.memo(() => {
       {loading ? (
         <SkeletonLoader theme={theme} count={30} />
       ) : (
-        <SermonListView
+      <SermonListView
           theme={theme}
-          filteredSermons={filteredSermons}
+          filteredSermons={pinnedSermons}
           handleSermonClick={handleSermonClick}
           listHeaderComponent={listHeaderComponent}
+          lastReadId={lastReadId}
         />
       )}
     </View>

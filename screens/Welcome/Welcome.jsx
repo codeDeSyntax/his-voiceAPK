@@ -13,6 +13,7 @@ import {
   ImageBackground,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useAppContext } from "../../Logic/globalState";
 import {
@@ -31,7 +32,7 @@ import {
   closeDatabase,
   resetDatabaseState,
 } from "../../database/sermonDB";
-import * as Updates from "expo-updates";
+
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -44,6 +45,7 @@ const Welcome = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadError, setDownloadError] = useState(null);
+  const [isDone, setIsDone] = useState(false);
   const downloadControllerRef = useRef(null);
 
   // Check if database exists on mount
@@ -114,7 +116,6 @@ const Welcome = () => {
     navigation?.navigate("AllSermons");
   };
 
-  // Handle database download
   const handleDownloadDatabase = async () => {
     try {
       setIsDownloading(true);
@@ -140,30 +141,33 @@ const Welcome = () => {
       );
 
       if (result.success) {
-        resetDatabaseState();
-        setDbNeedsUpdate(false);
-        setDbExists(true);
         setDownloadProgress(100);
+        setIsDone(true);
+        await new Promise((resolve) => setTimeout(resolve, 1200));
 
-        const refreshed = await refreshSermons?.();
-        if (refreshed) {
-          setIsDownloading(false);
-          navigateToMainScreen();
-          return;
-        }
-
+        // Try to reload sermons in-place — avoids a full JS bundle restart.
+        // If refreshSermons returns data, navigate immediately (fast path).
         try {
-          await Updates.reloadAsync();
-        } catch (restartError) {
-          try {
-            const { DevSettings } = require("react-native");
-            DevSettings.reload();
-          } catch (devError) {
-            setDownloadError(
-              "Download complete! Please close and reopen the app.",
-            );
-            setIsDownloading(false);
+          const refreshed = await refreshSermons?.();
+          resetDatabaseState();
+          setDbNeedsUpdate(false);
+          setDbExists(true);
+          setIsDownloading(false);
+          setIsDone(false);
+          if (refreshed) {
+            navigateToMainScreen();
+            return;
           }
+          // Sermons loaded but refreshed was falsy; still navigate forward.
+          navigateToMainScreen();
+        } catch (refreshError) {
+          console.warn("Sermon refresh failed, navigating anyway:", refreshError?.message);
+          resetDatabaseState();
+          setDbNeedsUpdate(false);
+          setDbExists(true);
+          setIsDownloading(false);
+          setIsDone(false);
+          navigateToMainScreen();
         }
       } else {
         throw new Error("Download failed");
@@ -395,36 +399,38 @@ const Welcome = () => {
     outputRange: ["0deg", "360deg"],
   });
 
-  // Premium button component
-  const PremiumButton = useCallback(
-    ({ label, onPress }) => {
+  // Transforming Download Button — morphs seamlessly through 3 states (Initial -> Downloading % -> Done ✓)
+  const TransformingDownloadButton = useCallback(
+    ({
+      label,
+      onPress,
+      iconName,
+      isDownloading,
+      downloadProgress,
+      isDone,
+      onCancel,
+    }) => {
       const scaleAnim = useRef(new Animated.Value(1)).current;
-      const glowAnim = useRef(new Animated.Value(0)).current;
+      const progressAnim = useRef(new Animated.Value(0)).current;
 
       useEffect(() => {
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(glowAnim, {
-              toValue: 1,
-              duration: 2200,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: false,
-            }),
-            Animated.timing(glowAnim, {
-              toValue: 0,
-              duration: 2200,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: false,
-            }),
-          ]),
-        ).start();
-      }, [glowAnim]);
+        if (isDownloading) {
+          Animated.timing(progressAnim, {
+            toValue: downloadProgress,
+            duration: 180,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: false,
+          }).start();
+        } else {
+          progressAnim.setValue(0);
+        }
+      }, [isDownloading, downloadProgress, progressAnim]);
 
       const handlePressIn = () => {
         Animated.spring(scaleAnim, {
-          toValue: 0.95,
+          toValue: 0.96,
           damping: 15,
-          stiffness: 300,
+          stiffness: 320,
           useNativeDriver: true,
         }).start();
       };
@@ -432,81 +438,232 @@ const Welcome = () => {
       const handlePressOut = () => {
         Animated.spring(scaleAnim, {
           toValue: 1,
-          damping: 12,
-          stiffness: 200,
+          damping: 14,
+          stiffness: 220,
           useNativeDriver: true,
         }).start();
       };
 
-      const borderOpacity = glowAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: theme.dark
-          ? ["rgba(230, 195, 184, 0.20)", "rgba(230, 195, 184, 0.45)"]
-          : ["rgba(93, 50, 17, 0.15)", "rgba(93, 50, 17, 0.35)"],
-      });
+      const isDark = theme.dark;
 
-      const innerBg = theme.dark
-        ? "rgba(40, 30, 24, 0.92)"
-        : "rgba(93, 50, 17, 0.82)";
-      const highlightBg = theme.dark
-        ? "rgba(230, 195, 184, 0.06)"
-        : "rgba(255, 255, 255, 0.12)";
+      // Theme-derived colors matching app theme (less bright, matching spinner tones):
+      const capsuleBg = isDark ? "rgba(42, 32, 26, 0.95)" : "rgba(252,246,237,0.98)";
+      const capsuleBorder = isDark
+        ? "rgba(242, 205, 180, 0.22)"
+        : "rgba(93, 50, 17, 0.16)";
+      const circleBg = isDark ? "#f2cdb4" : "#5d3211";
+      const circleIconColor = isDark ? "#281e18" : "#ffffff";
+      const labelColor = isDark ? "#f2cdb4" : "#3d220b";
+      const progressFillBg = isDark ? "#8b573c" : "#5d3211";
+
+      // ── STATE C: DONE ✓ (Reference Image 1) ──
+      if (isDone) {
+        return (
+          <Animated.View style={{ transform: [{ scale: scaleAnim }], width: "100%", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: capsuleBg,
+                borderRadius: 999,
+                paddingLeft: horizontalScale(36),
+                paddingRight: 6,
+                paddingVertical: 6,
+                borderWidth: 1.5,
+                borderColor: capsuleBorder,
+                shadowColor: isDark ? "#000000" : "#5d3211",
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: isDark ? 0.35 : 0.16,
+                shadowRadius: 14,
+                elevation: 7,
+                width: 280,
+                alignSelf: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "Philosopher",
+                  color: labelColor,
+                  fontSize: responsiveFontSize(19),
+                  letterSpacing: 0.5,
+                }}
+              >
+                Done
+              </Text>
+              {/* Circular Green Checkmark Badge (Image 1) */}
+              <View
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 21,
+                  backgroundColor: "#00c853",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  shadowColor: "#00c853",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+              >
+                <Feather name="check" size={22} color="#ffffff" />
+              </View>
+            </View>
+          </Animated.View>
+        );
+      }
+
+      // ── STATE B: DOWNLOADING PERCENTAGE IN-PROGRESS (Reference Image 2) ──
+      if (isDownloading) {
+        const progressWidth = progressAnim.interpolate({
+          inputRange: [0, 100],
+          outputRange: ["0%", "100%"],
+          extrapolate: "clamp",
+        });
+
+        return (
+          <Animated.View style={{ transform: [{ scale: scaleAnim }], width: "100%", alignItems: "center" }}>
+            <Pressable
+              onPress={onCancel}
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              style={{
+                width: 280,
+                height: 54,
+                borderRadius: 999,
+                backgroundColor: capsuleBg,
+                borderWidth: 1.5,
+                borderColor: capsuleBorder,
+                overflow: "hidden",
+                justifyContent: "center",
+                alignSelf: "center",
+                shadowColor: isDark ? "#000000" : "#5d3211",
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: isDark ? 0.35 : 0.16,
+                shadowRadius: 14,
+                elevation: 7,
+              }}
+            >
+              {/* Animated Inner Progress Fill Bar */}
+              <Animated.View
+                style={{
+                  position: "absolute",
+                  top: 3,
+                  bottom: 3,
+                  left: 3,
+                  width: progressWidth,
+                  backgroundColor: progressFillBg,
+                  borderRadius: 999,
+                }}
+              />
+
+              {/* Overlaid Percentage Text and Right Arrow */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 20,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "Philosopher",
+                    color: "#ffffff",
+                    fontSize: responsiveFontSize(19),
+                    letterSpacing: 0.5,
+                    flex: 1,
+                    textAlign: "center",
+                  }}
+                >
+                  {Math.round(downloadProgress)}%
+                </Text>
+                <Feather name="arrow-right" size={20} color="#ffffff" style={{ position: "absolute", right: 20 }} />
+              </View>
+            </Pressable>
+          </Animated.View>
+        );
+      }
+
+      // ── STATE A: INITIAL / IDLE BUTTON (Reference Image 3) ──
+      let icon = iconName;
+      if (!icon) {
+        const lower = label.toLowerCase();
+        if (lower.includes("begin") || lower.includes("read")) {
+          icon = "library";
+        } else if (lower.includes("download")) {
+          icon = "download-cloud";
+        } else if (lower.includes("update")) {
+          icon = "refresh-cw";
+        } else if (lower.includes("retry")) {
+          icon = "rotate-ccw";
+        } else {
+          icon = "arrow-right";
+        }
+      }
 
       return (
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }], width: "100%", alignItems: "center" }}>
           <Pressable
             onPress={onPress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: capsuleBg,
+              borderRadius: 999,
+              paddingLeft: 6,
+              paddingRight: horizontalScale(28),
+              paddingVertical: 6,
+              borderWidth: 1.5,
+              borderColor: capsuleBorder,
+              shadowColor: isDark ? "#000000" : "#5d3211",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: isDark ? 0.35 : 0.16,
+              shadowRadius: 14,
+              elevation: 7,
+              maxWidth: 320,
+              alignSelf: "center",
+            }}
           >
-            <Animated.View
+            {/* Circular Left Icon Badge (Reference Image 3) */}
+            <View
               style={{
-                borderRadius: 100,
-                borderWidth: 1.5,
-                borderColor: borderOpacity,
-                padding: 2,
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                backgroundColor: circleBg,
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: horizontalScale(14),
+                shadowColor: circleBg,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 3,
               }}
             >
-              <View
-                style={{
-                  backgroundColor: innerBg,
-                  borderRadius: 100,
-                  paddingHorizontal: horizontalScale(44),
-                  paddingVertical: verticalScale(15),
-                  overflow: "hidden",
-                  shadowColor: theme.dark ? "#e6c3b8" : "#5d3211",
-                  shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: theme.dark ? 0.15 : 0.25,
-                  shadowRadius: 16,
-                  elevation: 8,
-                }}
-              >
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: "50%",
-                    backgroundColor: highlightBg,
-                    borderTopLeftRadius: 100,
-                    borderTopRightRadius: 100,
-                  }}
-                />
-                <Text
-                  style={{
-                    fontFamily: "Arial",
-                    color: theme.dark ? "#e6c3b8" : "#fff",
-                    fontSize: responsiveFontSize(15),
-                    fontWeight: "900",
-                    letterSpacing: 1.2,
-                    textAlign: "center",
-                  }}
-                >
-                  {label}
-                </Text>
-              </View>
-            </Animated.View>
+              {icon === "library" ? (
+                <Ionicons name="library-outline" size={20} color={circleIconColor} />
+              ) : (
+                <Feather name={icon} size={20} color={circleIconColor} />
+              )}
+            </View>
+
+            {/* Button Text Label */}
+            <Text
+              style={{
+                fontFamily: "Philosopher",
+                color: labelColor,
+                fontSize: responsiveFontSize(18),
+                letterSpacing: 0.5,
+                textAlign: "left",
+              }}
+            >
+              {label}
+            </Text>
           </Pressable>
         </Animated.View>
       );
@@ -662,24 +819,49 @@ const Welcome = () => {
             {"\u201C"}
           </Text>
           <Text style={[styles.quoteText, { color: accentMuted }]}>
-            And I saw another mighty angel{"\n"}come down from heaven, clothed{"\n"}
-            with a cloud: and a rainbow{"\n"}was upon his head.
+            And I saw another mighty angel come down from
+            heaven, clothed with a cloud: and a rainbow was upon his head.
           </Text>
-          <Text
-            style={[
-              styles.quoteRef,
-              {
-                color: theme.dark
-                  ? "rgba(230,195,184,0.38)"
-                  : "rgba(93,50,17,0.45)",
-              },
-            ]}
-          >
-            Revelation 10 : 1
-          </Text>
+          <View style={styles.quoteRefRow}>
+            <View
+              style={[
+                styles.quoteRefLine,
+                {
+                  backgroundColor: theme.dark
+                    ? "rgba(242,205,180,0.4)"
+                    : "rgba(93,50,17,0.3)",
+                },
+              ]}
+            />
+            <Text
+              style={[
+                styles.quoteRef,
+                {
+                  color: theme.dark ? "#f2cdb4" : "#5d3211",
+                  textShadowColor: theme.dark
+                    ? "rgba(242, 205, 180, 0.55)"
+                    : "rgba(93, 50, 17, 0.28)",
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 6,
+                },
+              ]}
+            >
+              REVELATION 10 : 1
+            </Text>
+            <View
+              style={[
+                styles.quoteRefLine,
+                {
+                  backgroundColor: theme.dark
+                    ? "rgba(242,205,180,0.4)"
+                    : "rgba(93,50,17,0.3)",
+                },
+              ]}
+            />
+          </View>
         </Animated.View>
 
-        {/* CTA */}
+        {/* CTA — Morphing Button Flow matching reference images */}
         <Animated.View
           style={{
             opacity: btnFade,
@@ -689,68 +871,30 @@ const Welcome = () => {
             alignItems: "center",
           }}
         >
-          {isDownloading ? (
-            <View
-              style={[
-                styles.downloadPanel,
-                {
-                  backgroundColor: downloadPanelBg,
-                  borderColor: downloadPanelBorder,
-                  shadowColor: theme.dark ? "#000" : "#5d3211",
-                },
-              ]}
-            >
-              <View style={styles.dlRow}>
-                <View style={[styles.dlSpinner, { borderColor: downloadPanelBorder }]}>
-                  <ActivityIndicator size="small" color={accent} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.dlTitle, { color: accent }]}>
-                    {downloadProgress >= 100 ? "Preparing…" : "Downloading sermons"}
-                  </Text>
-                  <Text style={[styles.dlSub, { color: accentMuted }]}>
-                    Sermon library
-                  </Text>
-                </View>
-                <Text style={[styles.dlPercent, { color: accent }]}>
-                  {Math.round(downloadProgress)}%
-                </Text>
-              </View>
-              <View style={[styles.dlTrack, { backgroundColor: downloadTrack }]}>
-                <LinearGradient
-                  colors={[accent, downloadFillEnd]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={[styles.dlFill, { width: `${downloadProgress}%` }]}
-                />
-              </View>
-              <Pressable
-                onPress={handleCancelDownload}
-                style={({ pressed }) => [
-                  styles.dlCancel,
-                  {
-                    backgroundColor: downloadCancelBg,
-                    borderColor: downloadPanelBorder,
-                    opacity: pressed ? 0.6 : 1,
-                  },
-                ]}
-              >
-                <Text style={[styles.dlCancelText, { color: accentMuted }]}>Cancel</Text>
-              </Pressable>
-            </View>
-          ) : downloadError ? (
-            <View style={styles.errorWrap}>
-              <Text style={[styles.errorText, { color: theme.dark ? "#ff8a80" : "#b71c1c" }]}>
+          {downloadError ? (
+            <View style={{ alignItems: "center", width: "100%" }}>
+              <Text style={[styles.errorText, { color: theme.dark ? "#ff8a80" : "#b71c1c", marginBottom: 12 }]}>
                 {downloadError}
               </Text>
-              <PremiumButton label="Retry" onPress={handleDownloadDatabase} />
+              <TransformingDownloadButton
+                label="Retry"
+                onPress={handleDownloadDatabase}
+              />
             </View>
-          ) : dbExists ? (
-            <PremiumButton label="Begin Reading" onPress={handleBeginReading} />
           ) : (
-            <PremiumButton
-              label={dbNeedsUpdate ? "Update Sermons" : "Download Sermons"}
-              onPress={handleDownloadDatabase}
+            <TransformingDownloadButton
+              label={
+                dbExists
+                  ? "Read"
+                  : dbNeedsUpdate
+                  ? "Update Sermons"
+                  : "Download Sermons"
+              }
+              onPress={dbExists ? handleBeginReading : handleDownloadDatabase}
+              isDownloading={isDownloading}
+              downloadProgress={downloadProgress}
+              isDone={isDone}
+              onCancel={handleCancelDownload}
             />
           )}
         </Animated.View>
@@ -863,15 +1007,15 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   subtitleText: {
-    fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(10.5),
+    fontFamily: "Philosopher",
+    fontSize: responsiveFontSize(11.5),
     letterSpacing: 1.5,
   },
 
   /* Year */
   yearText: {
-    fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(11),
+    fontFamily: "Philosopher",
+    fontSize: responsiveFontSize(12),
     letterSpacing: 4,
     marginBottom: verticalScale(18),
   },
@@ -894,17 +1038,28 @@ const styles = StyleSheet.create({
     marginBottom: -verticalScale(2),
   },
   quoteText: {
-    fontFamily: "Merriweather",
-    fontSize: responsiveFontSize(13),
+    fontFamily: "Philosopher",
+    fontSize: responsiveFontSize(17),
     textAlign: "center",
     lineHeight: responsiveFontSize(23),
   },
+  quoteRefRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    marginTop: verticalScale(10),
+  },
+  quoteRefLine: {
+    width: 28,
+    height: 1,
+    borderRadius: 1,
+  },
   quoteRef: {
-    fontFamily: "ZillaSlab-SemiBold",
-    fontSize: responsiveFontSize(10.5),
+    fontFamily: "Philosopher",
+    fontSize: responsiveFontSize(13),
     textAlign: "center",
-    letterSpacing: 2.5,
-    marginTop: verticalScale(9),
+    letterSpacing: 4,
     textTransform: "uppercase",
   },
 
@@ -931,16 +1086,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dlTitle: {
-    fontFamily: "ZillaSlab-SemiBold",
+    fontFamily: "Philosopher",
     fontSize: responsiveFontSize(14.5),
   },
   dlSub: {
-    fontFamily: "Merriweather",
+    fontFamily: "Philosopher",
     fontSize: responsiveFontSize(10.5),
     marginTop: 2,
   },
   dlPercent: {
-    fontFamily: "ZillaSlab-SemiBold",
+    fontFamily: "Philosopher",
     fontSize: responsiveFontSize(19),
     minWidth: horizontalScale(46),
     textAlign: "right",
@@ -964,7 +1119,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dlCancelText: {
-    fontFamily: "ZillaSlab-SemiBold",
+    fontFamily: "Philosopher",
     fontSize: responsiveFontSize(11),
     letterSpacing: 1.5,
     textTransform: "uppercase",
@@ -973,7 +1128,7 @@ const styles = StyleSheet.create({
   /* Error state */
   errorWrap: { alignItems: "center", gap: 14 },
   errorText: {
-    fontFamily: "ZillaSlab-Regular",
+    fontFamily: "Philosopher",
     fontSize: responsiveFontSize(13),
     textAlign: "center",
     lineHeight: responsiveFontSize(20),

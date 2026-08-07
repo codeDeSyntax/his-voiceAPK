@@ -40,7 +40,7 @@ const renderTextWithStyledNumbers = (
   highlightColor = null,
 ) => {
   const resolvedFontFamily =
-    resolveReaderFontFamily(settings?.fontFamily) || "ZillaSlab";
+    resolveReaderFontFamily(settings?.fontFamily) || "Merriweather";
 
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
@@ -121,7 +121,7 @@ const renderTextWithStyledNumbersOnly = (
   highlightColor = null,
 ) => {
   const resolvedFontFamily =
-    resolveReaderFontFamily(settings?.fontFamily) || "ZillaSlab";
+    resolveReaderFontFamily(settings?.fontFamily) || "Merriweather";
 
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
@@ -432,7 +432,7 @@ const ParagraphText = React.memo(
     const textStyle = useMemo(() => {
       const baseSize = readingFontSize(settings?.fontSize || 22);
       const fontFamily =
-        resolveReaderFontFamily(settings?.fontFamily) || "ZillaSlab";
+        resolveReaderFontFamily(settings?.fontFamily) || "Merriweather";
       const lineHeight = readingLineHeight(settings?.fontSize || 22);
 
       // Pre-calculated highlight colors for better performance
@@ -883,7 +883,7 @@ const ParagraphText = React.memo(
                           color: theme.dark ? theme.colors.text : "#000000",
                           fontFamily:
                             resolveReaderFontFamily(settings?.fontFamily) ||
-                            "ZillaSlab",
+                            "Merriweather",
                           fontSize: readingFontSize(settings?.fontSize || 22),
                           lineHeight: readingLineHeight(
                             settings?.fontSize || 22,
@@ -918,7 +918,7 @@ const ParagraphText = React.memo(
                                 : "#7a3b10",
                               fontFamily:
                                 resolveReaderFontFamily(settings?.fontFamily) ||
-                                "ZillaSlab",
+                                "Merriweather",
                               fontSize: readingFontSize(settings?.fontSize || 22),
                               lineHeight: readingLineHeight(
                                 settings?.fontSize || 22,
