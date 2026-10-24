@@ -2,7 +2,7 @@
   "expo": {
     "name": "His voice",
     "slug": "his-voice",
-    "version": "3.0.5",
+    "version": "3.0.6",
     "orientation": "portrait",
     "scheme": "hisvoice",
     "userInterfaceStyle": "automatic",
@@ -22,7 +22,7 @@
         "backgroundColor": "#2c221a"
       },
       "package": "com.boblambert.hisvoice",
-      "versionCode": 10
+      "versionCode": 11
     },
     "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
     "plugins": [
