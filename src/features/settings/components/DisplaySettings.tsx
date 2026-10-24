@@ -80,22 +80,30 @@ const FontFamilySheet = ({ visible, onClose, fontFamily, setFontFamily, FONT_OPT
     if (visible && !modalVisible) {
       const openTimer = setTimeout(() => {
         setModalVisible(true);
-        Animated.spring(slideAnim, {
+      }, 0);
+      return () => clearTimeout(openTimer);
+    }
+
+    if (!modalVisible) return;
+
+    const animation = visible
+      ? Animated.spring(slideAnim, {
           toValue: 1,
           damping: 26,
           stiffness: 320,
           useNativeDriver: true,
-        }).start();
-      }, 0);
-      return () => clearTimeout(openTimer);
-    } else if (modalVisible) {
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 220,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: true,
-      }).start(() => setModalVisible(false));
-    }
+        })
+      : Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 220,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        });
+
+    animation.start(({ finished }) => {
+      if (finished && !visible) setModalVisible(false);
+    });
+    return () => animation.stop();
   }, [visible, modalVisible, slideAnim]);
 
   if (!modalVisible) return null;
@@ -108,7 +116,7 @@ const FontFamilySheet = ({ visible, onClose, fontFamily, setFontFamily, FONT_OPT
   const SHEET_HEIGHT = Math.min(SCREEN_HEIGHT * 0.52, 420);
 
   return (
-    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       {/* Backdrop */}
       <Animated.View
         style={[
@@ -262,24 +270,30 @@ const TextPreviewModal = ({ visible, onClose, fontFamily, fontSize, getCurrentFo
     if (visible && !modalVisible) {
       const openTimer = setTimeout(() => {
         setModalVisible(true);
-        panelAnim.setValue(0);
-        backdropAnim.setValue(0);
-        Animated.parallel([
+      }, 0);
+      return () => clearTimeout(openTimer);
+    }
+
+    if (!modalVisible) return;
+
+    const animation = visible
+      ? Animated.parallel([
           Animated.timing(backdropAnim, {
             toValue: 1, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
           }),
           Animated.spring(panelAnim, {
             toValue: 1, damping: 24, stiffness: 300, useNativeDriver: true,
           }),
-        ]).start();
-      }, 0);
-      return () => clearTimeout(openTimer);
-    } else if (modalVisible) {
-      Animated.parallel([
-        Animated.timing(backdropAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
-        Animated.timing(panelAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
-      ]).start(() => setModalVisible(false));
-    }
+        ])
+      : Animated.parallel([
+          Animated.timing(backdropAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+          Animated.timing(panelAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+        ]);
+
+    animation.start(({ finished }) => {
+      if (finished && !visible) setModalVisible(false);
+    });
+    return () => animation.stop();
   }, [visible, modalVisible, panelAnim, backdropAnim]);
 
   if (!modalVisible) return null;
@@ -292,7 +306,7 @@ const TextPreviewModal = ({ visible, onClose, fontFamily, fontSize, getCurrentFo
   const CARD_WIDTH = Math.min(SCREEN_WIDTH * 0.84, 320);
 
   return (
-    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       {/* Backdrop */}
       <Animated.View
         style={[StyleSheet.absoluteFill, {
@@ -411,24 +425,30 @@ const FontSizeSheet = ({ visible, onClose, fontSize, selectFontSize, getFontSize
     if (visible && !modalVisible) {
       const openTimer = setTimeout(() => {
         setModalVisible(true);
-        panelAnim.setValue(0);
-        backdropAnim.setValue(0);
-        Animated.parallel([
+      }, 0);
+      return () => clearTimeout(openTimer);
+    }
+
+    if (!modalVisible) return;
+
+    const animation = visible
+      ? Animated.parallel([
           Animated.timing(backdropAnim, {
             toValue: 1, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
           }),
           Animated.spring(panelAnim, {
             toValue: 1, damping: 24, stiffness: 300, useNativeDriver: true,
           }),
-        ]).start();
-      }, 0);
-      return () => clearTimeout(openTimer);
-    } else if (modalVisible) {
-      Animated.parallel([
-        Animated.timing(backdropAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
-        Animated.timing(panelAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
-      ]).start(() => setModalVisible(false));
-    }
+        ])
+      : Animated.parallel([
+          Animated.timing(backdropAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+          Animated.timing(panelAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
+        ]);
+
+    animation.start(({ finished }) => {
+      if (finished && !visible) setModalVisible(false);
+    });
+    return () => animation.stop();
   }, [visible, modalVisible, panelAnim, backdropAnim]);
 
   if (!modalVisible) return null;
@@ -442,7 +462,7 @@ const FontSizeSheet = ({ visible, onClose, fontSize, selectFontSize, getFontSize
   const CARD_WIDTH = Math.min(SCREEN_WIDTH * 0.78, 300);
 
   return (
-    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       {/* Backdrop */}
       <Animated.View
         style={[StyleSheet.absoluteFill, {

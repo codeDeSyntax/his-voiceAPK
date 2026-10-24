@@ -13,18 +13,15 @@ import {
   StyleSheet,
   Animated,
   ActivityIndicator,
-  Platform
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { useAppContext } from "../../../providers/SermonProvider";
+import { Feather } from "@expo/vector-icons";
 import {
   getSermonContent,
   resolveSermonNumericId,
 } from "../../endnotes/api/branham";
 import type { AppTheme } from "../../../shared/theme/types";
 import type {
-  Endnote,
   EndnotePalette,
   EndnoteResultGroup,
   EndnoteSearchResult,
@@ -34,6 +31,8 @@ import type {
   EndnoteResultItemProps,
   EndnoteResultsProps,
 } from "../../endnotes/types";
+
+const EMPTY_RESULTS: EndnoteSearchResult[] = [];
 
 const getFallbackPalette = (theme: AppTheme): EndnotePalette => {
   const dark = theme?.dark || false;
@@ -75,15 +74,9 @@ const SkeletonBar = ({ width, height = 10, style, shimmerAnim, theme }: { width:
   );
 };
 
-const SkeletonResultItem = ({ shimmerAnim, theme, delay = 0 }: { shimmerAnim: Animated.Value; theme: AppTheme; delay?: number }) => {
+const SkeletonResultItem = ({ shimmerAnim, theme }: { shimmerAnim: Animated.Value; theme: AppTheme }) => {
   const isDark = theme.dark;
   const sep = isDark ? "rgba(255,255,255,0.04)" : "rgba(93,50,17,0.04)";
-  // Offset the shimmer for each item for a cascading effect
-  const offset = shimmerAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange:
-      delay === 0 ? [0.3, 1, 0.3] : delay === 1 ? [0.6, 0.3, 1] : [1, 0.3, 0.6],
-  });
   return (
     <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
       {/* Date pill + badge row */}
@@ -156,7 +149,7 @@ const SearchLoader = ({ theme }: { theme: AppTheme }) => {
     );
     loop.start();
     return () => loop.stop();
-  }, []);
+  }, [shimmer]);
 
   return (
     <View style={{ flex: 1, paddingTop: 4 }}>
@@ -173,9 +166,9 @@ const SearchLoader = ({ theme }: { theme: AppTheme }) => {
           Re-searching endnote...
         </Text>
       </View>
-      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={0} />
-      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={1} />
-      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} delay={2} />
+      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} />
+      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} />
+      <SkeletonResultItem shimmerAnim={shimmer} theme={theme} />
     </View>
   );
 };
@@ -386,12 +379,6 @@ const stripHtml = (html: string): string =>
 // Returns array of { paraNum: "74", text: "text..." }
 const splitIntoParagraphs = (content: string): EndnoteParagraph[] => {
   if (!content) return [];
-  // Match paragraph numbers that appear at the start or after whitespace.
-  // A paragraph number is 1-4 digits, followed by a space and then a letter or quote.
-  const parts = content.split(
-    /(?:^|\s)(?=(\d{1,4})\s+(?=[A-Z"'\u201C\u201D\u2018\u2019]))/,
-  );
-
   // Simple approach: scan for paragraph number boundaries
   const re = /(?:^|(?<=\s))(\d{1,4})\s+/g;
   const boundaries: { index: number; num: string; contentStart: number }[] = [];
@@ -451,7 +438,7 @@ const parseParagraphRange = (paragraphStr: string | undefined): { start: number;
 };
 
 // ── Result Item with expandable paragraphs (grouped by sermon) ───────────────
-const ResultItem = ({
+const ResultItem = React.memo(function ResultItem({
   items,
   isPrimary,
   isBestMatch,
@@ -464,7 +451,7 @@ const ResultItem = ({
   isLoadingContent,
   searchType,
   targetParagraph,
-}: EndnoteResultItemProps) => {
+}: EndnoteResultItemProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const isDark = palette?.isDark ?? theme.dark;
   const accentColor = palette?.accent || (isDark ? "#d57a3e" : "#5d3211");
@@ -493,19 +480,14 @@ const ResultItem = ({
   const item = items[0];
 
   // Get all paragraph ranges from all matches in this sermon
-  const paragraphRanges = items.map((i) =>
-    parseParagraphRange(i.Properties?.Paragraph),
+  const paragraphRanges = useMemo(
+    () => items.map((i) => parseParagraphRange(i.Properties?.Paragraph)),
+    [items],
   );
-
-  // Get fragment text from search result (fallback if sermon content not available)
-  const fragmentText =
-    item.Properties?.Fragment?.replace(/<span[^>]*>/g, "").replace(
-      /<\/span>/g,
-      "",
-    ) || "";
 
   // Get paragraphs to display based on best match or secondary
   const paragraphsToShow = useMemo(() => {
+    if (!expanded) return [];
     // API returns Result.Sections — each section has { Paragraph: "20", Content: "...", IsHit: bool }
     // Filter out the "header" section (Paragraph === "header")
       const sections = sermonContent?.Sections
@@ -605,7 +587,7 @@ const ResultItem = ({
         (p) =>
           p.Content && p.rangeEnd >= windowStart && p.displayIndex <= windowEnd,
       );
-  }, [sermonContent, paragraphRanges, isBestMatch, items, targetParagraph]);
+  }, [expanded, sermonContent, paragraphRanges, isBestMatch, items, targetParagraph]);
 
   // Fetch content when expanded (only if not already fetched or failed)
   useEffect(() => {
@@ -621,13 +603,24 @@ const ResultItem = ({
         item.Properties?.DateCode,
       );
     }
-  }, [expanded, item.DocumentRecordId, sermonContent, isLoadingContent]);
+  }, [
+    expanded,
+    item.DocumentRecordId,
+    item.RecordId,
+    item.Properties?.DateCode,
+    sermonContent,
+    isLoadingContent,
+    onFetchContent,
+  ]);
 
   return (
     <View style={styles.resultItem}>
       <TouchableOpacity
         style={styles.resultHeader}
         onPress={() => setExpanded(!expanded)}
+        accessibilityRole="button"
+        accessibilityLabel={`${expanded ? "Collapse" : "Expand"} ${item.Properties?.Title || "sermon quote"}`}
+        accessibilityState={{ expanded }}
         activeOpacity={0.7}
       >
         <View style={styles.resultMetaRow}>
@@ -665,40 +658,18 @@ const ResultItem = ({
               style={[
                 styles.primaryBadge,
                 {
-                  backgroundColor: accentColor,
-                  borderTopColor: isDark
-                    ? "rgba(255,255,255,0.25)"
-                    : "rgba(255,255,255,0.4)",
-                  borderBottomColor: isDark
-                    ? "rgba(0,0,0,0.3)"
-                    : "rgba(93,50,17,0.2)",
-                  shadowColor: isDark ? "#000" : "#5d3211",
+                  backgroundColor: palette.accentSoft,
                 },
               ]}
             >
-              {/* Top highlight sheen */}
-              <View
-                pointerEvents="none"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "50%",
-                  borderTopLeftRadius: 20,
-                  borderTopRightRadius: 20,
-                  backgroundColor: "rgba(255,255,255,0.18)",
-                }}
-              />
-              <Text style={styles.primaryBadgeText}>BEST</Text>
+              <Text style={[styles.primaryBadgeText, { color: accentColor }]}>BEST</Text>
             </View>
-          ) : (
-            <Feather
-              name={expanded ? "chevron-up" : "chevron-down"}
-              size={16}
-              color={subtleText}
-            />
-          )}
+          ) : null}
+          <Feather
+            name={expanded ? "chevron-up" : "chevron-down"}
+            size={16}
+            color={subtleText}
+          />
         </View>
       </TouchableOpacity>
 
@@ -790,7 +761,7 @@ const ResultItem = ({
       />
     </View>
   );
-};
+});
 
 /**
  * EndnoteResults — Modal component to display endnote search results
@@ -801,7 +772,7 @@ const EndnoteResults = ({
   onClose,
   endnoteData,
   searchResults,
-  activeSearchType = "ExactPhrase",
+  activeSearchType,
   theme,
   endnotePalette,
   isLoading,
@@ -810,36 +781,29 @@ const EndnoteResults = ({
   networkError,
   embedded = false,
 }: EndnoteResultsProps) => {
-  const { settings } = useAppContext();
   const insets = useSafeAreaInsets();
   const [sermonContents, setSermonContents] = useState<Record<string, BranhamSermonContent | { failed: boolean }>>({});
   const [loadingContents, setLoadingContents] = useState<Record<string, boolean>>({});
   const loadingRef = useRef<Record<string, boolean>>({});
-  const [searchType, setSearchType] = useState(activeSearchType); // ExactPhrase or AllWords
+  const [localSearchType, setLocalSearchType] = useState<EndnoteSearchType>("ExactPhrase");
+  const searchType = activeSearchType ?? localSearchType;
 
-  const palette = endnotePalette || getFallbackPalette(theme);
+  const palette = useMemo(() => endnotePalette || getFallbackPalette(theme), [endnotePalette, theme]);
   const isDark = palette.isDark;
   const accentColor = palette.accent;
   const subtleText = palette.mutedText;
 
-  // Keep local tab state aligned with the search type source of truth in parent.
-  useEffect(() => {
-    setSearchType(activeSearchType || "ExactPhrase");
-  }, [activeSearchType]);
-
   // Toggle search type and retry search
   const handleToggleSearchType = useCallback(() => {
     const newType = searchType === "ExactPhrase" ? "AllWords" : "ExactPhrase";
-    setSearchType(newType);
+    if (activeSearchType === undefined) setLocalSearchType(newType);
     if (onRetrySearch) {
       onRetrySearch(newType);
     }
-  }, [searchType, onRetrySearch]);
+  }, [activeSearchType, searchType, onRetrySearch]);
 
   const rawResults =
-    searchResults?.Results || searchResults?.Result?.Results || [];
-  const totalHits =
-    searchResults?.TotalHits || searchResults?.Result?.TotalHits || 0;
+    searchResults?.Results || searchResults?.Result?.Results || EMPTY_RESULTS;
   const searchQuery =
     searchType === "ExactPhrase"
       ? endnoteData?.longQuote || endnoteData?.quote || ""
@@ -889,7 +853,7 @@ const EndnoteResults = ({
   }, [rawResults, endnoteData]);
 
   // Fetch sermon content for a specific result
-  const handleFetchContent = async (documentRecordId: string, recordId: string, datecode?: string) => {
+  const handleFetchContent = useCallback(async (documentRecordId: string, _recordId: string, datecode?: string) => {
     const cacheKey = String(documentRecordId);
 
     // Check cache and loading state (use ref for synchronous check)
@@ -911,8 +875,13 @@ const EndnoteResults = ({
 
     try {
       // Resolve the numeric SermonProductIdentityId via the sermon index
-      const numericId = datecode
-        ? await resolveSermonNumericId(datecode)
+      const lookupDatecode = datecode || (
+        documentRecordId === groupedResults[0]?.documentRecordId
+          ? endnoteData?.datecode
+          : null
+      );
+      const numericId = lookupDatecode
+        ? await resolveSermonNumericId(lookupDatecode)
         : null;
       const idToFetch = numericId ?? documentRecordId;
       if (__DEV__)
@@ -920,7 +889,7 @@ const EndnoteResults = ({
           "[EndnoteResults] Resolved ID:",
           idToFetch,
           "(datecode:",
-          datecode,
+          lookupDatecode,
           ")",
         );
       const content = await getSermonContent(idToFetch);
@@ -946,30 +915,7 @@ const EndnoteResults = ({
       loadingRef.current[cacheKey] = false; // Clear synchronously
       setLoadingContents((prev) => ({ ...prev, [cacheKey]: false }));
     }
-  };
-
-  // Pre-fetch best match (first result) content
-  useEffect(() => {
-    if (!visible || groupedResults.length === 0) return;
-
-    const bestMatch = groupedResults[0];
-    if (!bestMatch?.documentRecordId) return;
-
-    const cacheKey = String(bestMatch.documentRecordId);
-    // Only fetch if not already cached or loading
-    if (!sermonContents[cacheKey] && !loadingContents[cacheKey]) {
-      handleFetchContent(
-        bestMatch.documentRecordId,
-        bestMatch.items[0]?.RecordId,
-        bestMatch.datecode || endnoteData?.datecode || undefined,
-      );
-    }
-  }, [
-    visible,
-    groupedResults.length,
-    endnoteData?.datecode,
-    endnoteData?.title,
-  ]);
+  }, [sermonContents, groupedResults, endnoteData]);
 
   // Early return AFTER all hooks
   if (!visible) return null;
@@ -1001,7 +947,7 @@ const EndnoteResults = ({
               },
             ]}
           >
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityLabel="Close quote results" accessibilityRole="button">
               <Feather name="arrow-left" size={22} color={palette.text} />
             </TouchableOpacity>
           </View>
@@ -1014,26 +960,18 @@ const EndnoteResults = ({
               styles.endnoteBar,
               {
                 backgroundColor: palette.accentSoft,
-                // borderRadius: 20,
-                // borderBottomColor: palette.divider,
-                // marginHorizontal: 10,
               },
             ]}
           >
-            <View style={[styles.endnoteMeta, {}]}>
-              {/* Datecode glass pill */}
+            <View style={styles.endnoteMeta}>
               {endnoteData.datecode && (
                 <View
                   style={[
                     {
-                      borderRadius: 14,
-                      borderWidth: StyleSheet.hairlineWidth,
+                      borderRadius: 6,
                       paddingHorizontal: 8,
                       paddingVertical: 3,
                       backgroundColor: palette.accentSoft,
-                      borderColor: isDark
-                        ? "rgba(255,255,255,0.16)"
-                        : palette.divider,
                     },
                   ]}
                 >
@@ -1063,47 +1001,16 @@ const EndnoteResults = ({
 
               <View style={{ flex: 1 }} />
 
-              {/* Glass segmented toggle */}
+              {/* Search mode */}
               <View
                 style={[
                   styles.segmentedToggle,
                   {
-                    backgroundColor: isDark
-                      ? "rgba(64, 65, 66, 0.85)"
-                      : "rgba(255,255,255,0.85)",
-                    borderColor: isDark
-                      ? "rgba(255,255,255,0.12)"
-                      : palette.divider,
-                    borderTopColor: isDark
-                      ? "rgba(255,255,255,0.22)"
-                      : "rgba(255,255,255,0.55)",
-                    borderBottomColor: isDark
-                      ? "rgba(0,0,0,0.3)"
-                      : palette.divider,
-                    shadowColor: isDark ? "#000" : palette.accent,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: isDark ? 0.4 : 0.15,
-                    shadowRadius: 4,
-                    elevation: 4,
+                    backgroundColor: palette.surface,
+                    borderColor: palette.divider,
                   },
                 ]}
               >
-                {/* Top highlight sheen */}
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: "50%",
-                    borderTopLeftRadius: 5,
-                    borderTopRightRadius: 5,
-                    backgroundColor: isDark
-                      ? "rgba(255,255,255,0.06)"
-                      : "rgba(255,255,255,0.4)",
-                  }}
-                />
                 {[
                   { label: "Exact", value: "ExactPhrase" },
                   { label: "Words", value: "AllWords" },
@@ -1112,21 +1019,16 @@ const EndnoteResults = ({
                   return (
                     <TouchableOpacity
                       key={opt.value}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${opt.label} search`}
+                      accessibilityState={{ selected: isActive, disabled: isLoading }}
                       onPress={() => {
                         if (!isActive && !isLoading) handleToggleSearchType();
                       }}
                       style={[
                         styles.segmentBtn,
                         isActive && {
-                          backgroundColor: isDark
-                            ? palette.accent
-                            : palette.accent,
-                          borderRadius: 4,
-                          shadowColor: isDark ? palette.accent : palette.accent,
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.3,
-                          shadowRadius: 3,
-                          // elevation: 3,
+                          backgroundColor: palette.accent,
                         },
                       ]}
                       disabled={isLoading}
@@ -1136,10 +1038,8 @@ const EndnoteResults = ({
                           color: isActive
                             ? palette.buttonTextOnAccent
                             : subtleText,
-                          fontSize: 9.5,
-                          fontWeight: isActive ? "700" : "500",
-                          textTransform: "uppercase",
-                          letterSpacing: 0.5,
+                          fontSize: 11,
+                          fontFamily: "ZillaSlab-SemiBold",
                         }}
                       >
                         {opt.label}
@@ -1155,11 +1055,6 @@ const EndnoteResults = ({
               <Text
                 style={[
                   styles.inlineQuote,
-                  {
-                    color: isDark
-                      ? "rgba(248,227,213,0.50)"
-                      : "rgba(90,46,15,0.80)",
-                  },
                   { color: subtleText },
                 ]}
                 numberOfLines={1}
@@ -1200,16 +1095,18 @@ const EndnoteResults = ({
             </Text>
             <TouchableOpacity
               onPress={() => onRetrySearch && onRetrySearch(searchType)}
+              accessibilityLabel="Retry quote search"
+              accessibilityRole="button"
               style={[
                 styles.retryButton,
                 {
-                  borderColor: palette.divider,
-                  backgroundColor: palette.accentSoft,
+                  backgroundColor: palette.accent,
                 },
               ]}
               activeOpacity={0.7}
             >
-              <Text style={[styles.retryButtonText, { color: accentColor }]}>
+              <Feather name="refresh-cw" size={14} color={palette.buttonTextOnAccent} />
+              <Text style={[styles.retryButtonText, { color: palette.buttonTextOnAccent }]}>
                 Try Again
               </Text>
             </TouchableOpacity>
@@ -1217,7 +1114,7 @@ const EndnoteResults = ({
         ) : (
           <ScrollView
             style={styles.resultsContainer}
-            contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
+            contentContainerStyle={styles.resultsContent}
             showsVerticalScrollIndicator={false}
           >
             {groupedResults.map((group, index) => {
@@ -1316,51 +1213,58 @@ const styles = StyleSheet.create({
     fontFamily: "Merriweather",
   },
   endnoteBar: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingTop: 6,
     paddingBottom: 8,
     marginHorizontal: 10,
-    borderRadius: 20,
-  
+    borderRadius: 12,
   },
   endnoteMeta: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     gap: 6,
   },
   metaText: {
     fontSize: 10.5,
-    fontFamily: "Merriweather",
+    fontFamily: "ZillaSlab",
     letterSpacing: 0.3,
   },
   segmentedToggle: {
     flexDirection: "row",
-    borderRadius: 5,
-    borderWidth: 1,
-    overflow: "hidden",
+    borderRadius: 9,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 2,
   },
   segmentBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 9,
+    minHeight: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 7,
   },
   inlineQuote: {
     fontSize: 13.5,
     fontFamily: "ZillaSlabsm",
-    textDecorationLine: "underline",
-    lineHeight: 16,
+    lineHeight: 18,
     marginTop: 5,
   },
   resultsContainer: {
     flex: 1,
   },
+  resultsContent: {
+    paddingBottom: 72,
+    paddingTop: 8,
+  },
   resultItem: {
     paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   resultHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    minHeight: 32,
   },
   resultMetaRow: {
     flexDirection: "row",
@@ -1376,25 +1280,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(180,120,70,0.25)",
   },
   expandIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingLeft: 8,
   },
   primaryBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: 20,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 5,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    overflow: "hidden",
+    borderRadius: 6,
   },
   primaryBadgeText: {
     fontSize: 9,
-    fontWeight: "700",
+    fontFamily: "ZillaSlab-SemiBold",
     letterSpacing: 0.8,
-    color: "white",
   },
   resultTitle: {
     fontSize: 14,
@@ -1408,7 +1307,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   expandedContent: {
-    marginTop: 12,
+    marginTop: 6,
   },
   paragraphRow: {
     flexDirection: "row",
@@ -1466,20 +1365,18 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   retryButton: {
-    marginTop: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 2,
+    marginTop: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 42,
+    paddingHorizontal: 18,
+    borderRadius: 12,
   },
   retryButtonText: {
     fontSize: 13,
-    fontFamily: "Merriweather",
+    fontFamily: "ZillaSlab-SemiBold",
     letterSpacing: 0.3,
   },
 });

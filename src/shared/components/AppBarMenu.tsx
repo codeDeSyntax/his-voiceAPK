@@ -119,7 +119,7 @@ const AppBarMenu = ({ visible, onClose, theme, bookmarkCount = 0, recentCount = 
 
   return (
     <Modal visible={visible || modalVisible} onShow={() => setModalVisible(true)}
-      transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <Pressable accessibilityRole="button" accessibilityLabel="Close navigation menu"
         style={StyleSheet.absoluteFill} onPress={onClose} />
 

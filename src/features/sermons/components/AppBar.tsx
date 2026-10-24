@@ -59,7 +59,7 @@ const ListAppBar = React.memo(({ theme, onToggleTheme, totalCount, visibleCount,
         </View>
       </View>
       <AppBarMenu visible={menuVisible} onClose={() => setMenuVisible(false)} theme={theme} bookmarkCount={bookmarks.length} recentCount={recentSermons.length} anchor={menuAnchor} />
-      <Modal visible={portraitVisible} transparent animationType="fade" onRequestClose={() => setPortraitVisible(false)}>
+      <Modal visible={portraitVisible} transparent animationType="fade" onRequestClose={() => setPortraitVisible(false)} statusBarTranslucent navigationBarTranslucent>
         <Pressable accessibilityRole="button" accessibilityLabel="Close portrait" style={styles.backdrop} onPress={() => setPortraitVisible(false)}>
           <Image source={portrait} style={styles.expandedPortrait} />
           <View style={[styles.close, { top: insets.top + 12 }]}><Ionicons name="close" size={26} color="#fff" /></View>

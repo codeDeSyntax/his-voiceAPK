@@ -358,6 +358,7 @@ export default function UpdateScreen() {
       animationType="fade"
       onRequestClose={dismissModal}
       statusBarTranslucent={true}
+      navigationBarTranslucent
     >
       <StatusBar barStyle="light-content" />
       <View style={styles.fullScreenContainer}>

@@ -327,7 +327,8 @@ const AudioPlaylist = ({ visible, onClose, currentSermon, onSermonSelect }: Audi
       animationType="slide"
       transparent={false}
       onRequestClose={onClose}
-      statusBarTranslucent={false}
+      statusBarTranslucent
+      navigationBarTranslucent
     >
       <View style={[styles.container, { backgroundColor: bgColor }]}>
         <StatusBar barStyle="light-content" />

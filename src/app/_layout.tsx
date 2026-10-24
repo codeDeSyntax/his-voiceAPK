@@ -18,7 +18,7 @@ function Navigation() {
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <SystemBars />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }}>
+      <Stack screenOptions={{ headerShown: false, statusBarHidden: true, contentStyle: { backgroundColor: theme.colors.background } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="sermons" />
         <Stack.Screen name="reader" />

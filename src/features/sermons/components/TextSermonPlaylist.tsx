@@ -120,7 +120,7 @@ const TextSermonPlaylist = ({
   );
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose} statusBarTranslucent={false}>
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.header}>
           <Pressable onPress={onClose} style={styles.closeButton} hitSlop={12}>

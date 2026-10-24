@@ -19,13 +19,12 @@ import {
   StyleSheet,
   Modal,
   Pressable,
-  Animated,
-  Easing,
-  Dimensions,
+  useWindowDimensions,
   Platform,
   ToastAndroid,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { searchEndnoteQuote } from "../../endnotes/api/branham";
 import EndnoteResults from "./EndnoteResults";
@@ -39,9 +38,7 @@ import type {
 } from "../../endnotes/types";
 import { errorMessage } from "../../../shared/utils/errors";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const PREVIEW_HEIGHT = 124;
-const EXPANDED_HEIGHT = Math.round(SCREEN_HEIGHT * 0.95);
 const ENDNOTE_THEME_KEY = "endnoteThemePalette";
 
 const ENDNOTE_PALETTES = {
@@ -248,19 +245,29 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
   const [searchType, setSearchType] = useState<EndnoteSearchType>("ExactPhrase");
   const [paletteKey, setPaletteKey] = useState<EndnotePaletteKey>("blue");
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
   const searchCacheRef = useRef<Map<string, CachedEndnoteResults>>(new Map());
-
-  const heightAnim = useState(() => new Animated.Value(PREVIEW_HEIGHT))[0];
-  const sheetAnim = useState(() => new Animated.Value(0))[0];
+  const requestGenerationRef = useRef(0);
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const bottomInset = Math.max(insets.bottom, 12);
+  const expandedHeight = Math.min(
+    Math.round(windowHeight * 0.94),
+    windowHeight - insets.top - bottomInset - 12,
+  );
 
   const isDark = theme?.dark || false;
-  const palette = getEndnotePalette(paletteKey, isDark);
+  const palette = useMemo(() => getEndnotePalette(paletteKey, isDark), [paletteKey, isDark]);
   const accent = palette.accent;
   const endnoteCacheKey = useMemo(
     () => getEndnoteCacheKey(endnoteData),
     [endnoteData],
   );
+
+  // A completed request may still fill its cache after switching references,
+  // but it must not replace the currently open quote's state.
+  useEffect(() => () => {
+    requestGenerationRef.current += 1;
+  }, [endnoteCacheKey]);
 
   const getCachedByType = useCallback((cachedEntry: CachedEndnoteResults | null | undefined): Partial<Record<EndnoteSearchType, BranhamSearchResponse>> => {
     if (!cachedEntry) return {};
@@ -330,71 +337,38 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
     });
   }, [paletteKey]);
 
-  useEffect(() => {
-    if (visible) {
-      setModalVisible(true);
-      sheetAnim.setValue(0);
-      Animated.timing(sheetAnim, {
-        toValue: 1,
-        duration: 320,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }).start();
-    } else if (modalVisible) {
-      Animated.timing(sheetAnim, {
-        toValue: 0,
-        duration: 240,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: false,
-      }).start(() => {
-        setModalVisible(false);
-      });
-    }
-  }, [visible, modalVisible, sheetAnim]);
+  // Reset at the native modal lifecycle boundary, while retaining the cache
+  // and selected palette in this component between openings.
+  const handleShow = useCallback(() => {
+    requestGenerationRef.current += 1;
+    const cached = endnoteCacheKey
+      ? searchCacheRef.current.get(endnoteCacheKey)
+      : null;
+    const byType = getCachedByType(cached);
+    const initialType: EndnoteSearchType = cached?.lastSearchType || "ExactPhrase";
 
-  // Reset whenever the sheet is re-opened for a new endnote
-  useEffect(() => {
-    if (visible) {
-      const cached = endnoteCacheKey
-        ? searchCacheRef.current.get(endnoteCacheKey)
-        : null;
-      const byType = getCachedByType(cached);
-      const initialType: EndnoteSearchType = cached?.lastSearchType || "ExactPhrase";
-
-      setExpanded(false);
-      setSearchResults(byType[initialType] || null);
-      setIsLoading(false);
-      setLoadingSource(null);
-      setNetworkError(false);
-      setSearchType(initialType);
-      setPaletteOpen(false);
-      heightAnim.setValue(PREVIEW_HEIGHT);
-    }
-  }, [visible, endnoteCacheKey, heightAnim, getCachedByType]);
-
-  useEffect(() => {
-    if (!expanded) {
-      setPaletteOpen(false);
-    }
-  }, [expanded]);
+    setExpanded(false);
+    setSearchResults(byType[initialType] || null);
+    setIsLoading(false);
+    setLoadingSource(null);
+    setNetworkError(false);
+    setSearchType(initialType);
+    setPaletteOpen(false);
+  }, [endnoteCacheKey, getCachedByType]);
 
   const handleClose = useCallback(() => {
+    requestGenerationRef.current += 1;
+    setExpanded(false);
     setPaletteOpen(false);
     onClose?.();
   }, [onClose]);
 
   const handleReadMore = useCallback(async () => {
     if (!endnoteData) return;
+    const requestGeneration = ++requestGenerationRef.current;
 
     setExpanded(true);
     setNetworkError(false);
-
-    Animated.spring(heightAnim, {
-      toValue: EXPANDED_HEIGHT,
-      useNativeDriver: false,
-      bounciness: 2,
-      speed: 16,
-    }).start();
 
     // Re-use previous results for the same endnote to avoid repeated fetches.
     const requestedType = searchType || "ExactPhrase";
@@ -404,14 +378,10 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
       : null;
     const byType = getCachedByType(cached);
     if (byType[requestedType]) {
-      setLoadingSource("cache");
-      setIsLoading(true);
-      setTimeout(() => {
-        setSearchType(requestedType);
-        setSearchResults(byType[requestedType] || null);
-        setIsLoading(false);
-        setLoadingSource(null);
-      }, 320);
+      setSearchType(requestedType);
+      setSearchResults(byType[requestedType] || null);
+      setIsLoading(false);
+      setLoadingSource(null);
       return;
     }
 
@@ -424,6 +394,8 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
         searchType: requestedType,
       });
       const effectiveType = getEffectiveSearchType(requestedType, results);
+      persistCachedResults(requestedType, effectiveType, results);
+      if (requestGeneration !== requestGenerationRef.current) return;
 
       if (
         results.searchMethod === "paragraph_reference" &&
@@ -434,8 +406,8 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
 
       setSearchType(effectiveType);
       setSearchResults(results);
-      persistCachedResults(requestedType, effectiveType, results);
     } catch (err) {
+      if (requestGeneration !== requestGenerationRef.current) return;
       const message = errorMessage(err).toLowerCase();
       const isNetwork =
         err instanceof TypeError ||
@@ -448,12 +420,13 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
         ToastAndroid.show("Error searching endnote", ToastAndroid.SHORT);
       }
     } finally {
-      setIsLoading(false);
-      setLoadingSource(null);
+      if (requestGeneration === requestGenerationRef.current) {
+        setIsLoading(false);
+        setLoadingSource(null);
+      }
     }
   }, [
     endnoteData,
-    heightAnim,
     endnoteCacheKey,
     searchType,
     getCachedByType,
@@ -464,6 +437,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
   const handleRetry = useCallback(
     async (type: EndnoteSearchType) => {
       if (!endnoteData) return;
+      const requestGeneration = ++requestGenerationRef.current;
       const requestedType: EndnoteSearchType = type || "ExactPhrase";
 
       const cached = endnoteCacheKey
@@ -474,6 +448,8 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
         setSearchType(requestedType);
         setSearchResults(byType[requestedType]);
         setNetworkError(false);
+        setIsLoading(false);
+        setLoadingSource(null);
         return;
       }
 
@@ -486,10 +462,12 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
           searchType: requestedType,
         });
         const effectiveType = getEffectiveSearchType(requestedType, results);
+        persistCachedResults(requestedType, effectiveType, results);
+        if (requestGeneration !== requestGenerationRef.current) return;
         setSearchType(effectiveType);
         setSearchResults(results);
-        persistCachedResults(requestedType, effectiveType, results);
       } catch (err) {
+        if (requestGeneration !== requestGenerationRef.current) return;
         const message = errorMessage(err).toLowerCase();
         const isNetwork =
           err instanceof TypeError ||
@@ -497,8 +475,10 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
           message.includes("failed to fetch");
         if (isNetwork) setNetworkError(true);
       } finally {
-        setIsLoading(false);
-        setLoadingSource(null);
+        if (requestGeneration === requestGenerationRef.current) {
+          setIsLoading(false);
+          setLoadingSource(null);
+        }
       }
     },
     [
@@ -516,59 +496,32 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
 
   return (
     <Modal
-      visible={modalVisible}
+      key={endnoteCacheKey}
+      visible={visible}
       transparent
-      animationType="none"
+      animationType="slide"
       statusBarTranslucent
+      navigationBarTranslucent
+      onShow={handleShow}
       onRequestClose={handleClose}
     >
-      <View style={[s.overlay, !expanded && s.overlayDetached]}>
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: expanded
-                ? palette.overlay
-                : isDark
-                  ? "rgba(0,0,0,0.44)"
-                  : "rgba(0,0,0,0.26)",
-              opacity: sheetAnim,
-            },
-          ]}
-        />
+      <View style={[s.overlay, {
+        paddingBottom: bottomInset,
+        paddingLeft: Math.max(insets.left, 12),
+        paddingRight: Math.max(insets.right, 12),
+      }]}>
         {/* Backdrop */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} accessibilityLabel="Close quote" accessibilityRole="button" />
 
         {/* Sheet */}
-        <Animated.View
+        <View
           style={[
             s.sheet,
             {
-              height: heightAnim,
+              height: expanded ? expandedHeight : undefined,
+              minHeight: PREVIEW_HEIGHT,
               backgroundColor: palette.surface,
-              shadowColor: isDark ? "#000" : palette.accent,
-              borderRadius: expanded ? 0 : 22,
-              borderTopLeftRadius: 22,
-              borderTopRightRadius: 22,
-              transform: [
-                {
-                  translateY: sheetAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [56, 0],
-                  }),
-                },
-                {
-                  scale: sheetAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.985, 1],
-                  }),
-                },
-              ],
-              opacity: sheetAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.92, 1],
-              }),
+              borderColor: palette.divider,
             },
           ]}
         >
@@ -600,6 +553,9 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
                 {/* Close */}
                 <TouchableOpacity
                   onPress={handleClose}
+                  accessibilityLabel="Close quote"
+                  accessibilityRole="button"
+                  hitSlop={6}
                   activeOpacity={0.7}
                   style={[
                     s.closeBtn,
@@ -608,7 +564,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
                     },
                   ]}
                 >
-                  <Feather name="x" size={14} color={palette.mutedText} />
+                  <Feather name="x" size={17} color={palette.text} />
                 </TouchableOpacity>
               </View>
 
@@ -624,51 +580,26 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
                   <Text style={[s.previewHint, { color: palette.mutedText }]}>
                     Tap to read the full quote 
                   </Text>
-                  <View
-                    style={[
-                      s.readMoreBtnOuter,
-                      {
-                        borderColor: isDark
-                          ? "rgba(255,255,255,0.16)"
-                          : "rgba(20,34,60,0.14)",
-                      },
-                    ]}
-                  >
                     <TouchableOpacity
                       onPress={handleReadMore}
+                      accessibilityLabel="Open full quote"
+                      accessibilityRole="button"
+                      hitSlop={5}
                       activeOpacity={0.8}
                       style={[
                         s.readMoreBtnCore,
                         {
-                          backgroundColor: palette.accentSoft,
-                          borderTopColor: isDark
-                            ? "rgba(255,255,255,0.18)"
-                            : "rgba(255,255,255,0.44)",
-                          borderBottomColor: isDark
-                            ? "rgba(0,0,0,0.26)"
-                            : "rgba(0,0,0,0.08)",
-                          shadowColor: accent,
+                          backgroundColor: accent,
                         },
                       ]}
                     >
-                      <View
-                        style={[
-                          s.readMoreBtnSheen,
-                          {
-                            backgroundColor: isDark
-                              ? "rgba(255,255,255,0.08)"
-                              : "rgba(255,255,255,0.32)",
-                          },
-                        ]}
-                      />
                       <View style={s.readMoreBtnRow}>
-                        <Text style={[s.readMoreText, { color: accent }]}>
+                        <Text style={[s.readMoreText, { color: palette.buttonTextOnAccent }]}>
                           Open Quote
                         </Text>
-                        <Feather name="chevron-up" size={11} color={accent} />
+                        <Feather name="chevron-up" size={13} color={palette.buttonTextOnAccent} />
                       </View>
                     </TouchableOpacity>
-                  </View>
                 </View>
               )}
             </View>
@@ -697,7 +628,7 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
           {expanded && (
             <View style={s.paletteWrap} pointerEvents="box-none">
               {paletteOpen && (
-                <View style={s.paletteGrid}>
+                <View style={[s.paletteGrid, { backgroundColor: palette.surface, borderColor: palette.divider }]}>
                   {Object.values(ENDNOTE_PALETTES).map((item) => {
                     const itemPalette = getEndnotePalette(item.key as EndnotePaletteKey, isDark);
                     const active = item.key === paletteKey;
@@ -705,6 +636,10 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
                       <TouchableOpacity
                         key={item.key}
                         activeOpacity={0.75}
+                        accessibilityLabel={`${item.label} quote theme`}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
+                        hitSlop={5}
                         onPress={() => {
                           setPaletteKey(item.key as EndnotePaletteKey);
                           setPaletteOpen(false);
@@ -715,11 +650,12 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
                             backgroundColor: itemPalette.accent,
                             borderColor: active
                               ? palette.text
-                              : "rgba(255,255,255,0.15)",
-                            shadowColor: itemPalette.accent,
+                              : palette.divider,
                           },
                         ]}
-                      />
+                      >
+                        {active && <Feather name="check" size={13} color={itemPalette.buttonTextOnAccent} />}
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
@@ -730,37 +666,22 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
                 style={[
                   s.paletteFab,
                   {
-                    backgroundColor: palette.accentSoft,
+                    backgroundColor: palette.surface,
                     borderColor: palette.divider,
-                    borderTopColor: isDark
-                      ? "rgba(255,255,255,0.12)"
-                      : "rgba(255,255,255,0.5)",
-                    borderBottomColor: isDark
-                      ? "rgba(0,0,0,0.2)"
-                      : "rgba(0,0,0,0.06)",
-                    shadowColor: isDark ? "#000" : palette.accent,
                   },
                 ]}
                 activeOpacity={0.8}
+                accessibilityLabel="Choose quote theme"
+                accessibilityRole="button"
+                accessibilityState={{ expanded: paletteOpen }}
+                hitSlop={4}
                 onPress={() => setPaletteOpen((v) => !v)}
               >
-                {/* Top sheen */}
-                <View
-                  pointerEvents="none"
-                  style={[
-                    s.fabSheen,
-                    {
-                      backgroundColor: isDark
-                        ? "rgba(255,255,255,0.06)"
-                        : "rgba(255,255,255,0.35)",
-                    },
-                  ]}
-                />
-                <View style={[s.fabDot, { backgroundColor: palette.accent }]} />
+                <Feather name="sliders" size={17} color={palette.accent} />
               </TouchableOpacity>
             </View>
           )}
-        </Animated.View>
+        </View>
       </View>
     </Modal>
   );
@@ -769,45 +690,38 @@ const EndnoteSheet = ({ visible, endnoteData, theme, onClose }: { visible: boole
 const s = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.52)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
   },
-  overlayDetached: {
-    paddingHorizontal: 10,
-    paddingBottom: 18,
-  },
   sheet: {
-    borderRadius: 22,
-    overflow: "hidden",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 18,
-    elevation: 16,
-  },
-  dragHandle: {
-    width: 28,
-    height: 3,
-    borderRadius: 1.5,
+    width: "100%",
+    maxWidth: 600,
     alignSelf: "center",
-    marginTop: 8,
-    marginBottom: 0,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 8,
   },
   previewRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 8,
-    gap: 12,
+    gap: 10,
   },
   avatar: {
-    width: 52,
-    height: 70,
-    borderRadius: 8,
+    width: 48,
+    height: 66,
+    borderRadius: 10,
     backgroundColor: "#3a2010",
   },
   previewText: {
     flex: 1,
-    gap: 6,
+    gap: 4,
   },
   previewHeaderRow: {
     flexDirection: "row",
@@ -815,9 +729,9 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
   },
   label: {
-    fontFamily: "ZillaSlabsm",
-    fontSize: 9,
-    letterSpacing: 2.5,
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: 10,
+    letterSpacing: 1.4,
   },
   title: {
     fontFamily: "ZillaSlab",
@@ -839,34 +753,13 @@ const s = StyleSheet.create({
     lineHeight: 14,
     opacity: 0.86,
   },
-  readMoreBtnOuter: {
-    borderRadius: 100,
-    borderWidth: 1.2,
-    padding: 1.8,
-  },
   readMoreBtnCore: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    borderRadius: 100,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    borderRadius: 10,
     paddingHorizontal: 10,
-    paddingVertical: 1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  readMoreBtnSheen: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "52%",
-    borderTopLeftRadius: 100,
-    borderTopRightRadius: 100,
+    minHeight: 32,
   },
   readMoreBtnRow: {
     flexDirection: "row",
@@ -874,20 +767,15 @@ const s = StyleSheet.create({
     gap: 4,
   },
   readMoreText: {
-    fontFamily: "Merriweather",
+    fontFamily: "ZillaSlab-SemiBold",
     fontSize: 12,
-    fontWeight: "600",
   },
   closeBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginHorizontal: 14,
   },
   paletteWrap: {
     position: "absolute",
@@ -896,49 +784,31 @@ const s = StyleSheet.create({
     alignItems: "flex-end",
   },
   paletteFab: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 6,
-    overflow: "hidden",
-  },
-  fabSheen: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "48%",
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-  },
-  fabDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   paletteGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    width: 62,
-    gap: 8,
-    justifyContent: "flex-end",
-    marginBottom: 10,
+    width: 92,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+    justifyContent: "center",
+    marginBottom: 8,
   },
   paletteCircle: {
     width: 26,
     height: 26,
     borderRadius: 13,
     borderWidth: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

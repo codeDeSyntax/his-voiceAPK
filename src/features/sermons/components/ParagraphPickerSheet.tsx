@@ -315,6 +315,7 @@ const ParagraphPickerSheet = ({
       transparent
       animationType="slide"
       statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <View style={s.overlay}>

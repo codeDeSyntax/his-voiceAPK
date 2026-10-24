@@ -944,6 +944,7 @@ const CurrentSermon = React.memo(() => {
         transparent
         animationType="fade"
         statusBarTranslucent
+        navigationBarTranslucent
       >
         <View
           style={[
@@ -969,6 +970,7 @@ const CurrentSermon = React.memo(() => {
         transparent
         animationType="none"
         statusBarTranslucent
+        navigationBarTranslucent
         hardwareAccelerated
       >
         <Animated.View
