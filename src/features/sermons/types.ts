@@ -75,12 +75,15 @@ export interface BottomSheetControllerProps {
   onScrollToNext: () => void;
   onBookmarkPress: () => void;
   onHighlightPress: () => void;
+  onToggleTextSermons: () => void;
+  showTextSermons?: boolean;
   isVisible?: boolean;
 }
 export interface ReaderToolbarButtonProps {
   label: string;
   onPress: () => void;
   theme: AppTheme;
+  active?: boolean;
   children: ReactNode;
 }
 export interface SearchHeaderProps {

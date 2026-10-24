@@ -588,7 +588,7 @@ const CurrentSermon = React.memo(() => {
   }, []);
 
   const handleOpenTextSermons = useCallback(() => {
-    setShowTextSermons(true);
+    setShowTextSermons((prev) => !prev);
   }, []);
 
   const handleTextSermonSelect = useCallback(
@@ -790,7 +790,7 @@ const CurrentSermon = React.memo(() => {
           style={{
             color: titleColor,
             fontFamily: "serif",
-            fontWeight: "600",
+            fontWeight: "200",
             // fontStyle:"italic",
             fontSize: titleSize,
             lineHeight: titleSize * 1.2,
@@ -922,6 +922,8 @@ const CurrentSermon = React.memo(() => {
                 onOpenSearch={handleOpenSearch}
                 onBookmarkPress={handleOpenBookmarkSheet}
                 onHighlightPress={handleOpenHighlightSheet}
+                onToggleTextSermons={handleOpenTextSermons}
+                showTextSermons={showTextSermons}
                 isVisible={isPositioningComplete}
               />
 

@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import { Pressable, StyleSheet, Vibration, View } from "react-native";
-import { useRouter } from "expo-router";
 import {
   FontAwesome,
   FontAwesome5,
@@ -14,6 +13,7 @@ const ToolbarButton = ({
   label,
   onPress,
   theme,
+  active = false,
   children,
 }: ReaderToolbarButtonProps) => {
   const handlePress = useCallback(() => {
@@ -30,7 +30,9 @@ const ToolbarButton = ({
         localStyles.button,
         {
           backgroundColor: pressed
-            ? `${theme.colors.text}14`
+            ? `${theme.colors.text}22`
+            : active
+            ? `${theme.colors.tint ?? theme.colors.text}28`
             : theme.colors.secondary,
         },
       ]}
@@ -48,14 +50,10 @@ const BottomSheetController = React.memo(
     onScrollToNext,
     onBookmarkPress,
     onHighlightPress,
+    onToggleTextSermons,
+    showTextSermons = false,
     isVisible = true,
   }: BottomSheetControllerProps) => {
-    const router = useRouter();
-
-    const handleBack = useCallback(() => {
-      if (router.canGoBack()) router.back();
-      else router.navigate("/sermons");
-    }, [router]);
 
     if (!isVisible) return null;
 
@@ -76,8 +74,17 @@ const BottomSheetController = React.memo(
           },
         ]}
       >
-        <ToolbarButton label="Back to sermons" onPress={handleBack} theme={theme}>
-          <MaterialCommunityIcons name="backburger" size={23} color={ink} />
+        <ToolbarButton
+          label={showTextSermons ? "Close sermon list" : "Browse text sermons"}
+          onPress={onToggleTextSermons}
+          theme={theme}
+          active={showTextSermons}
+        >
+          <MaterialCommunityIcons
+            name="book-open-page-variant"
+            size={22}
+            color={showTextSermons ? theme.colors.tint ?? ink : ink}
+          />
         </ToolbarButton>
         <View style={separatorStyle} />
         <ToolbarButton

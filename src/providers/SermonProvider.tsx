@@ -38,7 +38,7 @@ const INITIAL_SETTINGS: ReaderSettings = {
   darkMode: false,
   backgroundColor: "#faeed1",
   fontSize: 22,
-  fontFamily: "Merriweather",
+  fontFamily: "Lora",
   textColor: "#5d3211", // Deep brown for light mode on beige background
 };
 

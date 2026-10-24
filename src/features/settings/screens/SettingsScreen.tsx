@@ -49,11 +49,11 @@ export const COLOR_OPTIONS = [
 
 // Default settings constant
 const DEFAULT_SETTINGS = {
-  darkMode: true,
-  backgroundColor: "#121212",
-  fontSize: 16,
-  fontFamily: "System",
-  textColor: "#FFFFFF",
+  darkMode: false,
+  backgroundColor: "#faeed1",
+  fontSize: 22,
+  fontFamily: "Lora",
+  textColor: "#5d3211",
   accentColor: "#512914",
 };
 
@@ -129,6 +129,21 @@ const Settings = React.memo(() => {
       useNativeDriver: false,
     }).start();
   }, [isDarkMode, animation]);
+
+  // Sync local display-settings state when persisted settings arrive from
+  // AsyncStorage (loadStoredData runs async after mount, so useState
+  // initial values are stale until this effect fires).
+  useEffect(() => {
+    setFontFamily(settings.fontFamily || "Lora");
+  }, [settings.fontFamily]);
+
+  useEffect(() => {
+    setFontSize(settings.fontSize || 22);
+  }, [settings.fontSize]);
+
+  useEffect(() => {
+    setAccentColor(settings.accentColor || COLOR_OPTIONS[0].value);
+  }, [settings.accentColor]);
 
   // Ensure pending save timers do not outlive the screen
   useEffect(() => {

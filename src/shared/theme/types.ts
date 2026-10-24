@@ -6,6 +6,7 @@ export interface AppTheme {
     background: string;
     secondary: string;
     text: string;
+    tint?: string;
     hlight: string;
     blueText: string;
   };

@@ -16,10 +16,10 @@ export const CORE_FONTS = {
   Merriweathersm: merriweather,
   Philosopher: philosopher,
   "Philosopher-Regular": philosopher,
+  Lora: require("../../../assets/fonts/Lora-VariableFont_wght.ttf"),
 };
 
 const OPTIONAL_READING_FONTS: Record<string, number> = {
-  Lora: require("../../../assets/fonts/Lora-VariableFont_wght.ttf"),
   "Merienda-VariableFont_wght": require("../../../assets/fonts/Merienda-VariableFont_wght.ttf"),
 };
 
@@ -34,6 +34,7 @@ const CORE_FONT_FAMILIES = new Set([
   "Merriweathersm",
   "Philosopher",
   "Philosopher-Regular",
+  "Lora",
 ]);
 
 const loadedOptionalFonts = new Set<string>();

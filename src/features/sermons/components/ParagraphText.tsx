@@ -40,7 +40,7 @@ const renderTextWithStyledNumbers = (
   highlightColor: HighlightColor | null = null,
 ) => {
   const resolvedFontFamily =
-    resolveReaderFontFamily(settings?.fontFamily) || "Merriweather";
+    resolveReaderFontFamily(settings?.fontFamily) || "Lora";
 
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
@@ -121,7 +121,7 @@ const renderTextWithStyledNumbersOnly = (
   highlightColor: HighlightColor | null = null,
 ) => {
   const resolvedFontFamily =
-    resolveReaderFontFamily(settings?.fontFamily) || "Merriweather";
+    resolveReaderFontFamily(settings?.fontFamily) || "Lora";
 
   // Pre-calculated highlight colors for better performance
   const highlightTextColors = {
@@ -399,7 +399,7 @@ const BlinkingFinger = ({ onPress, color, fontSize }: { onPress: () => void; col
   return (
     <Animated.Text
       onPress={onPress}
-      style={{ color, fontSize, fontWeight: "700" as const, opacity }}
+      style={{ color, fontSize, opacity }}
     >
       {" \u261E"}
     </Animated.Text>
@@ -436,7 +436,7 @@ const ParagraphText = React.memo(
     const textStyle = useMemo(() => {
       const baseSize = readingFontSize(settings?.fontSize || 22);
       const fontFamily =
-        resolveReaderFontFamily(settings?.fontFamily) || "Merriweather";
+        resolveReaderFontFamily(settings?.fontFamily) || "Lora";
       const lineHeight = readingLineHeight(settings?.fontSize || 22);
 
       // Pre-calculated highlight colors for better performance
@@ -693,7 +693,6 @@ const ParagraphText = React.memo(
     // ZillaSlab does not ship a bold variant, so bold has no effect on it.
     const inlineNumberStyle: import("react-native").TextStyle = {
       fontSize: responsiveFontSize(30),
-      fontWeight: "100" as const,
       opacity: 0.8,
       color: accentColor,
       fontFamily: "System",
@@ -786,13 +785,6 @@ const ParagraphText = React.memo(
                           fontFamily: "serif",
                           fontSize: readingFontSize(settings?.fontSize || 22),
                           lineHeight: readingLineHeight(settings?.fontSize || 22),
-                          fontWeight: isEndnoteWord ? "700" : "200",
-                          backgroundColor: theme.dark
-                            ? "#5d321160"
-                            : "#f8904120",
-                          // textDecorationLine: isEndnoteWord ? "none" : "underline",
-                          // marginRight:4
-                          // italics for the datecode/title text, but not the "Endnote" keyword
                           fontStyle: "italic",
                         }}
                       >
@@ -813,7 +805,6 @@ const ParagraphText = React.memo(
                             lineHeight: readingLineHeight(
                               settings?.fontSize || 22,
                             ),
-                            fontWeight: "700" as const,
                             backgroundColor: theme.dark
                               ? "#5d321160"
                               : "#f8904120",
@@ -894,7 +885,6 @@ const ParagraphText = React.memo(
                               lineHeight: readingLineHeight(
                                 settings?.fontSize || 22,
                               ),
-                              fontWeight: "700" as const,
                               textDecorationLine: "underline",
                             }}
                           >
