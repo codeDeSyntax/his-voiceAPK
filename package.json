@@ -62,21 +62,5 @@
     "eslint": "^9.39.5",
     "eslint-config-expo": "~58.0.4",
     "typescript": "~6.0.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "@expo/cli": "58.1.14",
-      "@expo/config": "58.0.7",
-      "@expo/local-build-cache-provider": "58.0.7",
-      "@expo/metro-config": "58.0.16",
-      "@expo/prebuild-config": "58.0.15",
-      "@expo/router-server": "58.0.16",
-      "babel-preset-expo": "58.0.19",
-      "expo-modules-autolinking": "58.0.14",
-      "expo-modules-cli": "0.3.1",
-      "expo-modules-core": "58.0.24",
-      "expo-modules-jsi": "58.0.17",
-      "expo-server": "58.0.5"
-    }
   }
 }
