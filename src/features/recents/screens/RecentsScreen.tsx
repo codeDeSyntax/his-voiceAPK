@@ -1,8 +1,7 @@
 import React, { useCallback } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
 import { useAppContext } from "../../../providers/SermonProvider";
-import { Ionicons } from "@expo/vector-icons";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons , FontAwesome5 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { responsiveFontSize, spacing } from "../../../shared/utils/responsiveUtils";

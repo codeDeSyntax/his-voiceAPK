@@ -6,6 +6,11 @@
   "engines": {
     "node": ">=22.13.0"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "unrs-resolver"
+    ]
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",

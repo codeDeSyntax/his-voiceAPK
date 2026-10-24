@@ -563,18 +563,18 @@ export const searchSermonsWithContext = async (
     );
 
     // Process results to extract context and paragraph indices
-    const results: Array<{ id: string | number; title: string; year?: string | null; location?: string | null; sermon: string | null; matches: Array<{ paragraphIndex: number; context: string; fullParagraph: string }>; totalMatches: number }> = [];
+    const results: { id: string | number; title: string; year?: string | null; location?: string | null; sermon: string | null; matches: { paragraphIndex: number; context: string; fullParagraph: string }[]; totalMatches: number }[] = [];
     const regex = new RegExp(`(${searchText})`, "gi");
 
     for (const sermon of sermons) {
       // Use the unified paragraph formatting algorithm for consistent indexing
       const formattedParagraphs = formatSermonIntoParagraphs(sermon.sermon ?? "");
 
-      const matches: Array<{
+      const matches: {
         paragraphIndex: number;
         context: string;
         fullParagraph: string;
-      }> = [];
+      }[] = [];
 
       formattedParagraphs.forEach((paragraph, paragraphIndex) => {
         if (paragraph.trim() && regex.test(paragraph)) {

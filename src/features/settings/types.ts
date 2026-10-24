@@ -1,3 +1,7 @@
+import type { ComponentProps, Dispatch, ReactNode, SetStateAction } from 'react';
+import type { Ionicons } from '@expo/vector-icons';
+import type { useRouter } from 'expo-router';
+import type { AppTheme } from '@/shared/theme/types';
 export interface ReaderSettings {
   darkMode: boolean;
   backgroundColor: string;
@@ -81,6 +85,7 @@ export interface AppSettingsProps {
 }
 
 export interface SettingItemProps {
+  theme: AppTheme;
   icon: SettingsIconName;
   title: string;
   subtitle: string;
@@ -89,7 +94,3 @@ export interface SettingItemProps {
   rightIcon?: SettingsIconName;
   rightElement?: ReactNode;
 }
-import type { ComponentProps, Dispatch, ReactNode, SetStateAction } from 'react';
-import type { Ionicons } from '@expo/vector-icons';
-import type { useRouter } from 'expo-router';
-import type { AppTheme } from '@/shared/theme/types';

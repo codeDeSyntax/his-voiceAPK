@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams , useRouter } from "expo-router";
 import React, {
   useState,
   useRef,
@@ -42,7 +42,6 @@ import SearchFeedback from "../components/SearchFeedback";
 import CurrentSermonSearch from "../components/CurrentSermonSearch";
 import EndnoteSheet from "../components/EndnoteSheet";
 import { styles } from "../styles/reader";
-import { useRouter } from "expo-router";
 import PlaySermon from "../components/PlaySermon_SIMPLE";
 import TextSermonPlaylist from "../components/TextSermonPlaylist";
 import CustomTopCardController from "../components/BottomSheetController";

@@ -394,7 +394,7 @@ const splitIntoParagraphs = (content: string): EndnoteParagraph[] => {
 
   // Simple approach: scan for paragraph number boundaries
   const re = /(?:^|(?<=\s))(\d{1,4})\s+/g;
-  const boundaries: Array<{ index: number; num: string; contentStart: number }> = [];
+  const boundaries: { index: number; num: string; contentStart: number }[] = [];
   let m;
   while ((m = re.exec(content)) !== null) {
     // Only treat as paragraph number if followed by uppercase letter or quote
@@ -535,13 +535,13 @@ const ResultItem = ({
       const windowEnd = anchor + postContext;
 
       // Split each section's content into individual paragraphs
-      const allParagraphs: Array<{
+      const allParagraphs: {
         Content: string;
         displayIndex: number;
         paraNum: number | null;
         isMatch: boolean;
         Paragraph: string;
-      }> = [];
+      }[] = [];
       sections.forEach((s) => {
         const r = parseParagraphRange(s.Paragraph);
         if (!r) return;

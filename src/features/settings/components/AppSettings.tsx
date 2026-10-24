@@ -20,6 +20,57 @@ import Constants from "expo-constants";
 import { errorMessage, isRecord } from "../../../shared/utils/errors";
 import type { AppSettingsProps, SettingItemProps } from "../types";
 
+const SettingItem = ({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  disabled = false,
+  rightIcon = "chevron-forward",
+  rightElement = null,
+  theme,
+}: SettingItemProps) => {
+  const [pressed, setPressed] = useState(false);
+  const rowDivider = theme.dark ? "rgba(242, 205, 180, 0.09)" : "rgba(93, 50, 17, 0.08)";
+  const rowPressedBg = theme.dark ? "rgba(255, 255, 255, 0.04)" : "rgba(93, 50, 17, 0.04)";
+  const iconBg = theme.dark ? "rgba(242, 205, 180, 0.10)" : "rgba(93, 50, 17, 0.08)";
+  const disabledIconBg = theme.dark ? "rgba(255, 255, 255, 0.035)" : "rgba(0, 0, 0, 0.035)";
+  const accent = theme.dark ? "#fcceab" : "#5d3211";
+
+  return (
+    <TouchableOpacity
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: rowDivider,
+        backgroundColor: pressed && !disabled ? rowPressedBg : "transparent",
+        opacity: disabled ? 0.58 : 1,
+      }}
+      onPress={onPress}
+      onPressIn={() => !disabled && setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      activeOpacity={0.9}
+      disabled={disabled}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+        <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: disabled ? disabledIconBg : iconBg, marginRight: 14 }}>
+          <Ionicons name={icon} size={19} color={disabled ? (theme.dark ? "#777777" : "#999999") : accent} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16, fontWeight: "500", color: disabled ? (theme.dark ? "#777777" : "#999999") : theme.colors.text, fontFamily: "ZillaSlab", marginBottom: subtitle ? 2 : 0 }}>
+            {title}
+          </Text>
+          {subtitle ? <Text style={{ fontSize: 13, color: disabled ? (theme.dark ? "#555555" : "#AAAAAA") : `${theme.colors.text}68`, fontFamily: "ZillaSlab", lineHeight: 18 }}>{subtitle}</Text> : null}
+        </View>
+      </View>
+      {rightElement ?? <Ionicons name={rightIcon} size={20} color={disabled ? (theme.dark ? "#666666" : "#999999") : `${theme.colors.text}40`} />}
+    </TouchableOpacity>
+  );
+};
+
 const AppSettings = ({ theme, router, compact = false }: AppSettingsProps) => {
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
 
@@ -396,113 +447,6 @@ const AppSettings = ({ theme, router, compact = false }: AppSettingsProps) => {
   };
 
   const accent = theme.dark ? "#fcceab" : "#5d3211";
-  const rowDivider = theme.dark
-    ? "rgba(242, 205, 180, 0.09)"
-    : "rgba(93, 50, 17, 0.08)";
-  const rowPressedBg = theme.dark
-    ? "rgba(255, 255, 255, 0.04)"
-    : "rgba(93, 50, 17, 0.04)";
-  const iconBg = theme.dark
-    ? "rgba(242, 205, 180, 0.10)"
-    : "rgba(93, 50, 17, 0.08)";
-  const disabledIconBg = theme.dark
-    ? "rgba(255, 255, 255, 0.035)"
-    : "rgba(0, 0, 0, 0.035)";
-
-  
-
-  const SettingItem = ({ icon, title, subtitle, onPress, disabled = false, rightIcon = "chevron-forward", rightElement = null }: SettingItemProps) => {
-    const [pressed, setPressed] = useState(false);
-
-    return (
-      <TouchableOpacity
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingVertical: 14,
-          paddingHorizontal: 14,
-          borderBottomWidth: 1,
-          borderBottomColor: rowDivider,
-          backgroundColor: pressed && !disabled ? rowPressedBg : "transparent",
-          opacity: disabled ? 0.58 : 1,
-        }}
-        onPress={onPress}
-        onPressIn={() => !disabled && setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        activeOpacity={0.9}
-        disabled={disabled}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-          <View
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 19,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: disabled ? disabledIconBg : iconBg,
-              marginRight: 14,
-            }}
-          >
-            <Ionicons
-              name={icon}
-              size={19}
-              color={disabled ? (theme.dark ? "#777777" : "#999999") : accent}
-            />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "500",
-                color: disabled
-                  ? theme.dark
-                    ? "#777777"
-                    : "#999999"
-                  : theme.colors.text,
-                fontFamily: "ZillaSlab",
-                marginBottom: subtitle ? 2 : 0,
-              }}
-            >
-              {title}
-            </Text>
-            {subtitle && (
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: disabled
-                    ? theme.dark
-                      ? "#555555"
-                      : "#AAAAAA"
-                    : theme.colors.text + "68",
-                  fontFamily: "ZillaSlab",
-                  lineHeight: 18,
-                }}
-              >
-                {subtitle}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {rightElement ?? (
-          <Ionicons
-            name={rightIcon}
-            size={20}
-            color={
-              disabled
-                ? theme.dark
-                  ? "#666666"
-                  : "#999999"
-                : theme.colors.text + "40"
-            }
-          />
-        )}
-      </TouchableOpacity>
-    );
-  };
-
 return (
     <View style={{ paddingHorizontal: 0 }}>
       {/* Rebuild Search Index - DISABLED */}
@@ -516,6 +460,7 @@ return (
 
       {/* Delete Database File */}
       <SettingItem      
+        theme={theme}
         icon="trash-outline"
         title="Delete Sermons"
         subtitle="Remove downloaded sermon data"
@@ -525,6 +470,7 @@ return (
 
       {/* Reset All Settings */}
       <SettingItem      
+        theme={theme}
         icon="refresh-outline"
         title="Reset All Settings"
         subtitle="Reset preferences, bookmarks, highlights"
@@ -543,6 +489,7 @@ return (
 
       {/* Export Database */}
       <SettingItem      
+        theme={theme}
         icon="download-outline"
         title="Export Database"
         subtitle="Download sermons.db for bundling"
@@ -553,6 +500,7 @@ return (
 
       {/* About */}
       <SettingItem      
+        theme={theme}
         icon="help-circle-outline"
         title="About"
         subtitle="App information, privacy policy"
@@ -562,6 +510,7 @@ return (
 
       {/* Check for Updates */}
       <SettingItem      
+        theme={theme}
         icon="cloud-download-outline"
         title="Check for Updates"
         subtitle={
@@ -583,6 +532,7 @@ return (
 
       {/* Feedback */}
       <SettingItem      
+        theme={theme}
         icon="mail-outline"
         title="Send Feedback"
         subtitle="Help us improve the app"
@@ -592,6 +542,7 @@ return (
 
       {/* Rate App */}
       <SettingItem      
+        theme={theme}
         icon="star-outline"
         title="Rate App"
         subtitle="Rate us on the App Store"
@@ -603,5 +554,3 @@ return (
 };
 
 export default AppSettings;
-
-

@@ -193,45 +193,6 @@ export const SermonProvider = ({ children }: SermonProviderProps) => {
     [lastReadPositions],
   );
 
-  // Load last opened sermon
-  const loadLastOpenedSermon = useCallback(async () => {
-    try {
-      const storedLastSermon = await AsyncStorage.getItem(
-        STORAGE_KEYS.LAST_SERMON,
-      );
-      if (storedLastSermon && textSermons.length > 0) {
-        const lastSermonRef = JSON.parse(storedLastSermon);
-
-        // Find the full sermon object from our loaded sermons
-        const fullSermon = textSermons.find(
-          (sermon) => sermon.id === lastSermonRef.id,
-        );
-
-        if (fullSermon) {
-          console.log("Loading last opened sermon:", fullSermon.title);
-          setSelectedSermonWithPosition(fullSermon);
-          return true; // Successfully loaded last sermon
-        } else {
-          console.log("Last opened sermon not found, will load random sermon");
-        }
-      }
-      return false; // No last sermon found or failed to load
-    } catch (error) {
-      console.error("Failed to load last opened sermon:", error);
-      return false;
-    }
-  }, [textSermons]);
-
-  // Handle selecting a random sermon
-  const handleRandomSermons = useCallback(() => {
-    if (textSermons.length > 0) {
-      const randomIndex = Math.floor(Math.random() * textSermons.length);
-      const randomSermon = textSermons[randomIndex];
-      console.log("Loading random sermon:", randomSermon.title);
-      setSelectedSermonWithPosition(randomSermon);
-    }
-  }, [textSermons]);
-
   // Track recently opened sermons (max 20, deduped, newest first)
   const MAX_RECENTS = 20;
   const addToRecents = useCallback((sermon: Sermon) => {
@@ -266,7 +227,6 @@ export const SermonProvider = ({ children }: SermonProviderProps) => {
     async (sermon: Sermon | null) => {
       if (sermon) {
         try {
-          // If sermon doesn't have full content (sermon field), load it from database
           let fullSermon = sermon;
 
           if (!sermon.sermon) {
@@ -284,11 +244,8 @@ export const SermonProvider = ({ children }: SermonProviderProps) => {
             lastReadParagraph: getLastReadPosition(fullSermon.id),
           };
           setSelectedSermon(sermonWithPosition);
-
-          // Track in recents
           addToRecents(fullSermon);
 
-          // Save as last opened sermon (store only essential data)
           try {
             const sermonReference = {
               id: fullSermon.id,
@@ -305,7 +262,6 @@ export const SermonProvider = ({ children }: SermonProviderProps) => {
           }
         } catch (error) {
           console.error("Error in setSelectedSermonWithPosition:", error);
-          // Fallback: set sermon without full content
           setSelectedSermon(sermon);
         }
       } else {
@@ -314,6 +270,42 @@ export const SermonProvider = ({ children }: SermonProviderProps) => {
     },
     [getLastReadPosition, addToRecents],
   );
+
+  // Load last opened sermon
+  const loadLastOpenedSermon = useCallback(async () => {
+    try {
+      const storedLastSermon = await AsyncStorage.getItem(
+        STORAGE_KEYS.LAST_SERMON,
+      );
+      if (storedLastSermon && textSermons.length > 0) {
+        const lastSermonRef = JSON.parse(storedLastSermon);
+        const fullSermon = textSermons.find(
+          (sermon) => sermon.id === lastSermonRef.id,
+        );
+
+        if (fullSermon) {
+          console.log("Loading last opened sermon:", fullSermon.title);
+          setSelectedSermonWithPosition(fullSermon);
+          return true;
+        }
+        console.log("Last opened sermon not found, will load random sermon");
+      }
+      return false;
+    } catch (error) {
+      console.error("Failed to load last opened sermon:", error);
+      return false;
+    }
+  }, [setSelectedSermonWithPosition, textSermons]);
+
+  // Handle selecting a random sermon
+  const handleRandomSermons = useCallback(() => {
+    if (textSermons.length > 0) {
+      const randomIndex = Math.floor(Math.random() * textSermons.length);
+      const randomSermon = textSermons[randomIndex];
+      console.log("Loading random sermon:", randomSermon.title);
+      setSelectedSermonWithPosition(randomSermon);
+    }
+  }, [setSelectedSermonWithPosition, textSermons]);
 
   // Load sermons from SQLite database
   const loadSermons = useCallback(async () => {

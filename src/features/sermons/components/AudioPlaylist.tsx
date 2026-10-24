@@ -68,12 +68,28 @@ const AudioPlaylist = ({ visible, onClose, currentSermon, onSermonSelect }: Audi
     ],
   });
 
+  const loadSermons = useCallback(async () => {
+    try {
+      setLoading(true);
+      const audioSermons = await getSermonsByType("mp3");
+      setSermons(audioSermons);
+      setFilteredSermons(audioSermons);
+    } catch (error) {
+      console.error("Error loading audio sermons:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Load all MP3 sermons
   useEffect(() => {
     if (visible) {
-      loadSermons();
+      const loadTimer = setTimeout(() => {
+        void loadSermons();
+      }, 0);
+      return () => clearTimeout(loadTimer);
     }
-  }, [visible]);
+  }, [loadSermons, visible]);
 
   // Filter sermons based on search query with debounce
   useEffect(() => {
@@ -98,24 +114,6 @@ const AudioPlaylist = ({ visible, onClose, currentSermon, onSermonSelect }: Audi
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [searchQuery, sermons]);
-
-  const loadSermons = async () => {
-    try {
-      setLoading(true);
-      const audioSermons = await getSermonsByType("mp3");
-      setSermons(audioSermons);
-      setFilteredSermons(audioSermons);
-    } catch (error) {
-      console.error("Error loading audio sermons:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSermonPress = (sermon: import("../types").Sermon) => {
-    onSermonSelect(sermon);
-    onClose();
-  };
 
   const renderSermonItem = ({ item, index }: { item: import("../types").Sermon; index: number }) => {
     const isPlaying = currentSermon?.id === item.id;

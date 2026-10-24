@@ -115,7 +115,7 @@ export default function UpdateScreen() {
         tag_name?: string;
         name?: string;
         body?: string;
-        assets?: Array<{ name?: string; browser_download_url?: string }>;
+        assets?: { name?: string; browser_download_url?: string }[];
       };
       const currentVersion = normalizeVersion(Constants.expoConfig?.version);
       const latestVersion = normalizeVersion(latestRelease?.tag_name);

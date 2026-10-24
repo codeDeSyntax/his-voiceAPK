@@ -8,7 +8,6 @@ import {
   Dimensions,
   Animated,
   Easing,
-  Image,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import * as Audio from "expo-audio";
@@ -16,7 +15,6 @@ import { setAudioModeAsync } from "expo-audio";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppContext } from "../../../providers/SermonProvider";
 import { responsiveFontSize } from "../../../shared/utils/responsiveUtils";
-import { AudioSkeletonLoader } from "../../../shared/components/Loader";
 import { Asset } from "expo-asset";
 import type { AudioPlayerProps } from "../types";
 
@@ -62,14 +60,9 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
     ? "rgba(242,205,180,0.5)"
     : "rgba(93,50,17,0.5)";
   const accentColor = "#d57a3e";
-  const ringColor = isDark ? "rgba(213,122,62,0.12)" : "rgba(93,50,17,0.08)";
   const buttonBg = "rgba(255,255,255,0.92)";
   const buttonIcon = isDark ? "#2c2420" : "#5d3211";
   const sliderBg = isDark ? "rgba(213,122,62,0.2)" : "rgba(93,50,17,0.15)";
-
-  useEffect(() => {
-    setError(null);
-  }, [playableAudioUrl]);
 
   useEffect(() => {
     setAudioModeAsync({
@@ -84,6 +77,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
     downloadFirst: true,
   });
   const status = Audio.useAudioPlayerStatus(player);
+  const displayedError = status.error ? "Failed to load message" : error;
 
   // Ambient pulse and vinyl rotation animations for sleek audio player experience
   const pulseAnim = useState(() => new Animated.Value(1))[0];
@@ -128,10 +122,6 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
     }
   }, [status.playing, pulseAnim, rotateAnim]);
 
-  useEffect(() => {
-    if (status.error) setError("Failed to load message");
-  }, [status.error]);
-
   // Lock screen controls
   useEffect(() => {
     if (!player || !status.isLoaded || !sermonTitle) return;
@@ -163,7 +153,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
       }
     };
     activate();
-  }, [status.isLoaded, sermonTitle]);
+  }, [player, status.isLoaded, sermonTitle]);
 
   if (!playableAudioUrl) return <Text>No message available</Text>;
   if (!theme?.colors) return <Text>Theme not available</Text>;
@@ -213,8 +203,10 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
     const next = !looping;
     setLooping(next);
     try {
+      // Expo Audio exposes looping as a mutable native-player property.
+      // eslint-disable-next-line react-hooks/immutability
       player.loop = next;
-    } catch (e) {}
+    } catch {}
   };
 
   const toggleShuffle = () => setShuffling((s) => !s);
@@ -344,13 +336,13 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
         <Text style={[styles.timerText, { color: accentColor }]}>
           {formatTime(status.currentTime)}
         </Text>
-        {!status.isLoaded && !error && (
+        {!status.isLoaded && !displayedError && (
           <Text style={[styles.loadingHint, { color: mutedTextColor }]}>
             Loading audio…
           </Text>
         )}
-        {error && (
-          <Text style={[styles.errorText, { color: "#ff6b6b" }]}>{error}</Text>
+        {displayedError && (
+          <Text style={[styles.errorText, { color: "#ff6b6b" }]}>{displayedError}</Text>
         )}
 
         {/* Progress bar */}

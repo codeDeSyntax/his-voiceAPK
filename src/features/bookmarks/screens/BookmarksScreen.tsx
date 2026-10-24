@@ -11,7 +11,7 @@ import { useAppContext } from "../../../providers/SermonProvider";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { responsiveFontSize, spacing, horizontalScale, verticalScale } from "../../../shared/utils/responsiveUtils";
+import { responsiveFontSize, spacing } from "../../../shared/utils/responsiveUtils";
 import { GlassButton } from "../../../shared/components/GlassButton";
 import DraggableFloatingButton from "../../../shared/components/FloatButton";
 import type { Bookmark } from "../types";
@@ -143,7 +143,7 @@ const BookmarksScreen = () => {
           {/* Paragraph Excerpt Preview (if available) */}
           {snippet ? (
             <Text style={[styles.snippetText, { color: snippetColor }]} numberOfLines={3}>
-              "{snippet}"
+              &quot;{snippet}&quot;
             </Text>
           ) : (
             <Text style={[styles.dateSub, { color: faintText }]} numberOfLines={1}>

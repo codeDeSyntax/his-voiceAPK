@@ -36,20 +36,58 @@ const FONT_SIZE_OPTIONS = [
   { value: 32, label: "Maximum" },
 ];
 
+const DisplaySettingItem = ({
+  icon,
+  title,
+  subtitle,
+  children,
+  onPress,
+  theme,
+}: SettingsRowProps) => {
+  const [pressed, setPressed] = useState(false);
+  const rowDivider = theme.dark ? "rgba(242, 205, 180, 0.09)" : "rgba(93, 50, 17, 0.08)";
+  const rowPressedBg = theme.dark ? "rgba(255, 255, 255, 0.04)" : "rgba(93, 50, 17, 0.04)";
+  const iconBg = theme.dark ? "rgba(242, 205, 180, 0.10)" : "rgba(93, 50, 17, 0.08)";
+  const accent = theme.dark ? "#fcceab" : "#5d3211";
+  const RowComponent = onPress ? TouchableOpacity : View;
+
+  return (
+    <RowComponent
+      style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: rowDivider, backgroundColor: pressed ? rowPressedBg : "transparent" }}
+      onPress={onPress}
+      onPressIn={onPress ? () => setPressed(true) : undefined}
+      onPressOut={onPress ? () => setPressed(false) : undefined}
+      activeOpacity={onPress ? 0.9 : undefined}
+    >
+      <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: iconBg, marginRight: 14 }}>
+        <Ionicons name={icon} size={19} color={accent} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 16, fontWeight: "500", color: theme.colors.text, fontFamily: "ZillaSlab", marginBottom: subtitle ? 2 : 0 }}>{title}</Text>
+        {subtitle ? <Text style={{ fontSize: 13, color: `${theme.colors.text}68`, fontFamily: "ZillaSlab", lineHeight: 18 }}>{subtitle}</Text> : null}
+      </View>
+      {children}
+    </RowComponent>
+  );
+};
+
 // ─── Font Family Bottom Sheet ─────────────────────────────────────────────────
 const FontFamilySheet = ({ visible, onClose, fontFamily, setFontFamily, FONT_OPTIONS, theme }: FontFamilySheetProps) => {
   const slideAnim = useState(() => new Animated.Value(0))[0];
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    if (visible) {
-      setModalVisible(true);
-      Animated.spring(slideAnim, {
-        toValue: 1,
-        damping: 26,
-        stiffness: 320,
-        useNativeDriver: true,
-      }).start();
+    if (visible && !modalVisible) {
+      const openTimer = setTimeout(() => {
+        setModalVisible(true);
+        Animated.spring(slideAnim, {
+          toValue: 1,
+          damping: 26,
+          stiffness: 320,
+          useNativeDriver: true,
+        }).start();
+      }, 0);
+      return () => clearTimeout(openTimer);
     } else if (modalVisible) {
       Animated.timing(slideAnim, {
         toValue: 0,
@@ -221,18 +259,21 @@ const TextPreviewModal = ({ visible, onClose, fontFamily, fontSize, getCurrentFo
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    if (visible) {
-      setModalVisible(true);
-      panelAnim.setValue(0);
-      backdropAnim.setValue(0);
-      Animated.parallel([
-        Animated.timing(backdropAnim, {
-          toValue: 1, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
-        }),
-        Animated.spring(panelAnim, {
-          toValue: 1, damping: 24, stiffness: 300, useNativeDriver: true,
-        }),
-      ]).start();
+    if (visible && !modalVisible) {
+      const openTimer = setTimeout(() => {
+        setModalVisible(true);
+        panelAnim.setValue(0);
+        backdropAnim.setValue(0);
+        Animated.parallel([
+          Animated.timing(backdropAnim, {
+            toValue: 1, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
+          }),
+          Animated.spring(panelAnim, {
+            toValue: 1, damping: 24, stiffness: 300, useNativeDriver: true,
+          }),
+        ]).start();
+      }, 0);
+      return () => clearTimeout(openTimer);
     } else if (modalVisible) {
       Animated.parallel([
         Animated.timing(backdropAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
@@ -367,18 +408,21 @@ const FontSizeSheet = ({ visible, onClose, fontSize, selectFontSize, getFontSize
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    if (visible) {
-      setModalVisible(true);
-      panelAnim.setValue(0);
-      backdropAnim.setValue(0);
-      Animated.parallel([
-        Animated.timing(backdropAnim, {
-          toValue: 1, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
-        }),
-        Animated.spring(panelAnim, {
-          toValue: 1, damping: 24, stiffness: 300, useNativeDriver: true,
-        }),
-      ]).start();
+    if (visible && !modalVisible) {
+      const openTimer = setTimeout(() => {
+        setModalVisible(true);
+        panelAnim.setValue(0);
+        backdropAnim.setValue(0);
+        Animated.parallel([
+          Animated.timing(backdropAnim, {
+            toValue: 1, duration: 200, easing: Easing.out(Easing.ease), useNativeDriver: true,
+          }),
+          Animated.spring(panelAnim, {
+            toValue: 1, damping: 24, stiffness: 300, useNativeDriver: true,
+          }),
+        ]).start();
+      }, 0);
+      return () => clearTimeout(openTimer);
     } else if (modalVisible) {
       Animated.parallel([
         Animated.timing(backdropAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
@@ -574,74 +618,9 @@ const DisplaySettings = ({
     [fontSize, setFontSize],
   );
 
-  const SettingItem = ({ icon, title, subtitle, children, onPress, theme }: SettingsRowProps) => {
-    const [pressed, setPressed] = useState(false);
-    const RowComponent = onPress ? TouchableOpacity : View;
-
-    return (
-      <RowComponent
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingVertical: 14,
-          paddingHorizontal: 14,
-          borderBottomWidth: 1,
-          borderBottomColor: rowDivider,
-          backgroundColor: pressed ? rowPressedBg : "transparent",
-        }}
-        onPress={onPress}
-        onPressIn={onPress ? () => setPressed(true) : undefined}
-        onPressOut={onPress ? () => setPressed(false) : undefined}
-        activeOpacity={onPress ? 0.9 : undefined}
-      >
-        <View
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: iconBg,
-            marginRight: 14,
-          }}
-        >
-          <Ionicons name={icon} size={19} color={accent} />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "500",
-              color: theme.colors.text,
-              fontFamily: "ZillaSlab",
-              marginBottom: subtitle ? 2 : 0,
-            }}
-          >
-            {title}
-          </Text>
-          {subtitle && (
-            <Text
-              style={{
-                fontSize: 13,
-                color: theme.colors.text + "68",
-                fontFamily: "ZillaSlab",
-                lineHeight: 18,
-              }}
-            >
-              {subtitle}
-            </Text>
-          )}
-        </View>
-
-        {children}
-      </RowComponent>
-    );
-  };
-
 return (
     <View style={{ paddingHorizontal: 0 }}>
-      <SettingItem    
+      <DisplaySettingItem    
         icon="moon"
         title="Dark Mode"
         subtitle={`${isDarkMode ? "Enabled" : "Disabled"} - Easier on the eyes at night`}
@@ -669,9 +648,9 @@ return (
             testID="display-dark-mode-switch"
           />
         </View>
-      </SettingItem>
+      </DisplaySettingItem>
 
-      <SettingItem    
+      <DisplaySettingItem    
         icon="text-outline"
         title="Font Size"
         subtitle={`${fontSize}px · ${getFontSizeLabel(Number(fontSize))}`}
@@ -699,9 +678,9 @@ return (
             {fontSize}px
           </Text>
         </View>
-      </SettingItem>
+      </DisplaySettingItem>
 
-      <SettingItem    
+      <DisplaySettingItem    
         icon="text"
         title="Font Family"
         subtitle={`Current: ${getCurrentFontName()}`}
@@ -729,7 +708,7 @@ return (
             {getCurrentFontName()}
           </Text>
         </View>
-      </SettingItem>
+      </DisplaySettingItem>
 
       {/* Font Family Bottom Sheet */}
       <FontFamilySheet
@@ -785,7 +764,7 @@ return (
         </View>
       )}
 
-      <SettingItem    
+      <DisplaySettingItem    
         icon="eye"
         title="Text Preview"
         subtitle="See how your text will look"
@@ -797,7 +776,7 @@ return (
           size={18}
           color={theme.colors.text + "60"}
         />
-      </SettingItem>
+      </DisplaySettingItem>
 
       <TextPreviewModal
         visible={showPreview}
@@ -890,5 +869,3 @@ const styles = StyleSheet.create({
 });
 
 export default DisplaySettings;
-
-

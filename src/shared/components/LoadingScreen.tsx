@@ -1,10 +1,16 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import { Spinner } from "./Loader";
 
 const LoaderScreen = () => {
   return (
     <View style={styles.container}>
+      <Image
+        source={require("../../../assets/splashimg.png")}
+        resizeMode="contain"
+        style={styles.logo}
+        accessibilityLabel="His Voice"
+      />
       <Spinner compact size={88} />
     </View>
   );
@@ -17,7 +23,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  logo: {
+    width: 220,
+    height: 220,
+    marginBottom: 18,
+  },
 });
 
 export default LoaderScreen;
-

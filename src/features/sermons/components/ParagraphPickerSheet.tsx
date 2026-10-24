@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ParagraphPickerSheet
  *
  * Compact floating sheet with a horizontal paragraph-number scroller.

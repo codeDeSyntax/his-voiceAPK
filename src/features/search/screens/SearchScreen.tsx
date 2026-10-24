@@ -1,6 +1,5 @@
 import React, {
   useState,
-  useContext,
   useRef,
   useEffect,
   useMemo,
@@ -11,13 +10,11 @@ import {
   TextInput,
   Text,
   ScrollView,
-  StyleSheet,
   TouchableOpacity,
   Animated,
   Pressable,
   Keyboard,
   Image,
-  Dimensions,
   FlatList,
 } from "react-native";
 import { useAppContext } from "../../../providers/SermonProvider";
@@ -33,8 +30,6 @@ import DraggableFloatingButton from "../../../shared/components/FloatButton";
 import { searchSermonsWithFTS } from "../../sermons/data/sermonDB";
 import type { AppTheme } from "../../../shared/theme/types";
 import type { SermonSearchResult } from "../types";
-
-const CONTEXT_LENGTH = 30;
 
 const escapeRegex = (str: string): string => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -148,7 +143,7 @@ const SearchLoader = ({ theme }: { theme: AppTheme }) => {
       p2.stop();
       p3.stop();
     };
-  }, []);
+  }, [dot1, dot2, dot3]);
 
   const dotColor = theme.dark ? "#e6c3b8" : "#5d3211";
   const labelColor = theme.dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.22)";
@@ -245,13 +240,9 @@ const SearchActionButton = ({ theme, onPress, label = "Enter" }: { theme: AppThe
     </Animated.View>
   );
 };
-const EXPANDED_CONTEXT_LENGTH = 150;
-const POPUP_CONTEXT_LENGTH = 3000;
-
 const SermonSearch = () => {
   const {
     theme,
-    setSelectedSermon,
     searchPhrase,
     setSearchPhrase,
     searchResults,
@@ -267,35 +258,7 @@ const SermonSearch = () => {
   const fadeAnim = useState(() => new Animated.Value(0))[0];
 
   // Refs
-  const scrollViewRef = useRef<ScrollView | null>(null);
   const searchInputRef = useRef<React.ElementRef<typeof TextInput> | null>(null);
-
-  // Window dimensions for responsive sizing
-  const windowHeight = Dimensions.get("window").height;
-
-  const cleanText = (text: string): string => {
-    return (
-      text
-        // Remove multiple spaces
-        .replace(/\s+/g, " ")
-        // Remove multiple newlines, replace with single newline
-        .replace(/\n{2,}/g, "\n")
-        // Remove spaces at the beginning of lines
-        .replace(/^\s+/gm, "")
-        // Remove spaces at the end of lines
-        .replace(/\s+$/gm, "")
-        // Replace multiple newlines with single newline
-        .replace(/\n+/g, "\n")
-        // Remove indentation after newlines
-        .replace(/\n\s+/g, "\n")
-        // Remove any remaining extra whitespace
-        .replace(/\s{2,}/g, " ")
-        // Preserve paragraph breaks for better readability
-        .replace(/\.\s+([A-Z])/g, ".\n\n$1")
-        // Trim the final result
-        .trim()
-    );
-  };
 
   const handleSearch = async () => {
     if (searchPhrase.trim() === "") {
@@ -363,9 +326,9 @@ const SermonSearch = () => {
       }
       return newSet;
     });
-  }, []);
+  }, [setExpandedSearchResults]);
 
-  const handleSermonClick = (sermon: SermonSearchResult, paragraphIndex: number | null = null) => {
+  const handleSermonClick = useCallback((sermon: SermonSearchResult, paragraphIndex: number | null = null) => {
     // Navigate directly to CurrentSermon with only IDs - let CurrentSermon fetch the sermon
     if (sermon) {
       const targetParagraph =
@@ -388,7 +351,7 @@ const SermonSearch = () => {
       // Navigate - CurrentSermon will fetch the sermon by ID
       navigation.navigate({ pathname: "/reader", params: navParams });
     }
-  };
+  }, [navigation, searchPhrase]);
 
   const handleClearSearch = () => {
     setSearchPhrase("");
@@ -740,7 +703,7 @@ const SermonSearch = () => {
                 },
               ]}
             >
-              No sermons found for "{searchPhrase}"
+              No sermons found for &quot;{searchPhrase}&quot;
             </Text>
             <TouchableOpacity
               style={[

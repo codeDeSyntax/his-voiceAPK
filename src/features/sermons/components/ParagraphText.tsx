@@ -1,39 +1,19 @@
-import { useState } from "react";
-import React, { useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState , useEffect, useRef, useMemo, useCallback } from "react";
 import { Text, View, Animated } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { styles } from "../styles/reader";
 import { responsiveFontSize } from "../../../shared/utils/responsiveUtils";
 import { useAppContext } from "../../../providers/SermonProvider";
-import { parseEndnote, extractAllEndnotes } from "../../endnotes/utils/endnoteParser";
-import type { HighlightColor } from "../types";
-import type { ParagraphTextProps } from "../types";
+import { extractAllEndnotes } from "../../endnotes/utils/endnoteParser";
+import type { HighlightColor , ParagraphTextProps } from "../types";
 import type { AppTheme } from "../../../shared/theme/types";
 import type { ReaderSettings } from "../../settings/types";
 
-type ReaderTextProps = {
-  text: string;
-  theme: AppTheme;
-  settings: ReaderSettings;
-  key?: string;
-  searchPhrase?: string;
-  highlightColor?: HighlightColor | null;
-};
 type EndnoteTextProps = {
   parts: string[];
   theme: AppTheme;
   settings: ReaderSettings;
   searchPhrase: string;
-};
-
-// Memoized highlight colors - calculate once
-const HIGHLIGHT_COLORS = {
-  yellow: { light: "#B88808", dark: "#D4A830" }, // warm honey/gold
-  green: { light: "#4A7028", dark: "#88B060" }, // sage olive
-  brown: { light: "#8A4820", dark: "#C08050" }, // sienna copper
-  purple: { light: "#6A4870", dark: "#A87CA8" }, // dusty plum
-  pink: { light: "#904848", dark: "#C08080" }, // dusty rose
-  orange: { light: "#B85820", dark: "#D88040" }, // terracotta
 };
 
 // Map persisted settings values to runtime font keys loaded in App.js.
@@ -320,15 +300,18 @@ EndnoteText.displayName = "EndnoteText";
 // Memoized endnote with title component - handles title text between Endnote and William Marrion Branham with number styling and search highlighting
 const EndnoteWithTitleText = React.memo(
   ({ parts, theme, settings, searchPhrase }: EndnoteTextProps) => {
-    let isTitle = false; // Track if we're in the title section
-
     return (
       <>
         {parts.map((part, partIndex) => {
           const lowerPart = part.toLowerCase();
+          const previousParts = parts.slice(0, partIndex);
+          const isTitle =
+            previousParts.some((previousPart) => previousPart.toLowerCase() === "endnote") &&
+            !previousParts.some((previousPart) =>
+              /^william\s+(?:marrion\s+)?branham$/i.test(previousPart),
+            );
 
           if (lowerPart === "endnote") {
-            isTitle = true; // Start title section after Endnote
             return (
               <Text
                 key={`endnote-${partIndex}-${part.slice(0, 10)}`}
@@ -358,7 +341,6 @@ const EndnoteWithTitleText = React.memo(
                 {part}
               </Text>
             );
-            isTitle = false; // End title section
             return titleText;
           } else if (isTitle && part.trim()) {
             // This is title text between Endnote and William Marrion Branham
@@ -413,7 +395,7 @@ const BlinkingFinger = ({ onPress, color, fontSize }: { onPress: () => void; col
     );
     loop.start();
     return () => loop.stop();
-  }, []);
+  }, [opacity]);
   return (
     <Animated.Text
       onPress={onPress}
@@ -439,7 +421,7 @@ const ParagraphText = React.memo(
     onParagraphClick,
     onEndnoteClick,
   }: ParagraphTextProps) => {
-    const { highlights, readingFontsRevision } = useAppContext();
+    const { highlights } = useAppContext();
     const endnoteTapRef = useRef({ key: "", ts: 0 });
 
     // Check if this paragraph is highlighted - optimized with direct highlights access
@@ -490,13 +472,7 @@ const ParagraphText = React.memo(
       currentHighlight,
       settings?.fontFamily,
       settings?.fontSize,
-      readingFontsRevision,
     ]);
-
-    const paragraphNumberStyle = useMemo(
-      () => [styles.paragraphNumber, { color: theme.colors.text }],
-      [theme.colors.text],
-    );
 
     // Enhanced container style with
     //  selection mode - text color highlighting instead of background
@@ -550,7 +526,7 @@ const ParagraphText = React.memo(
       }
 
       return baseStyle;
-    }, [currentHighlight, theme.dark, theme.colors.hlight, isSelected]);
+    }, [currentHighlight, theme.dark, isSelected]);
 
     // Memoize text processing for endnotes and titles (search removed)
     const processedText = useMemo(() => {
@@ -683,7 +659,6 @@ const ParagraphText = React.memo(
         _clipboardBusy = true;
         try {
           const title = selectedSermon?.title ?? "Sermon";
-          const date = selectedSermon?.date ? ` · ${selectedSermon.date}` : "";
           const quotedContent = content
             .split("\n")
             .map((line) => ` ${line}`)
@@ -702,32 +677,6 @@ const ParagraphText = React.memo(
       });
       return () => subscription.remove();
     }, [paragraph, index, selectedSermon]);
-
-    // Render text content based on type
-    const renderTextContent = useCallback(() => {
-      switch (processedText.type) {
-        case "endnote_with_title":
-          return (
-            <EndnoteWithTitleText
-              parts={processedText.parts ?? []}
-              theme={theme}
-              settings={settings}
-              searchPhrase={searchPhrase}
-            />
-          );
-        case "endnote":
-          return (
-            <EndnoteText
-              parts={processedText.parts ?? []}
-              theme={theme}
-              settings={settings}
-              searchPhrase={searchPhrase}
-            />
-          );
-        default:
-          return processedText.text;
-      }
-    }, [processedText, theme, settings, searchPhrase]);
 
     const isLastRead = selectedSermon?.lastReadParagraph === index;
 

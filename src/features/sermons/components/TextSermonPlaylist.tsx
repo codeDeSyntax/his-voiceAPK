@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -24,7 +24,6 @@ const TextSermonPlaylist = ({
 }: TextSermonPlaylistProps) => {
   const { theme } = useAppContext();
   const [sermons, setSermons] = useState<Sermon[]>([]);
-  const [filteredSermons, setFilteredSermons] = useState<Sermon[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const searchRef = useRef<React.ElementRef<typeof TextInput> | null>(null);
@@ -36,12 +35,13 @@ const TextSermonPlaylist = ({
   useEffect(() => {
     if (!visible) return;
     let active = true;
-    setLoading(true);
+    Promise.resolve().then(() => {
+      if (active) setLoading(true);
+    });
     getSermonsByType("text")
       .then((items) => {
         if (!active) return;
         setSermons(items);
-        setFilteredSermons(items);
       })
       .catch((error) => console.error("Error loading text sermons:", error))
       .finally(() => {
@@ -52,18 +52,13 @@ const TextSermonPlaylist = ({
     };
   }, [visible]);
 
-  useEffect(() => {
+  const filteredSermons = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) {
-      setFilteredSermons(sermons);
-      return;
-    }
-    setFilteredSermons(
-      sermons.filter((sermon) =>
+    if (!normalized) return sermons;
+    return sermons.filter((sermon) =>
         [sermon.title, sermon.location, sermon.date, sermon.year]
           .filter(Boolean)
           .some((value) => value!.toLowerCase().includes(normalized)),
-      ),
     );
   }, [query, sermons]);
 
