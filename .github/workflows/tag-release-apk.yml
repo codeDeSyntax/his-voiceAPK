@@ -1,0 +1,65 @@
+name: Build And Release APK On Tag
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android APK (production)
+        id: eas_build
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_JSON=$(eas build --platform android --profile production --non-interactive --wait --json)
+          echo "$BUILD_JSON" > eas-build-result.json
+
+          ARTIFACT_URL=$(node -e "const fs=require('fs'); const raw=fs.readFileSync('eas-build-result.json','utf8'); const data=JSON.parse(raw); const build=Array.isArray(data)?data[0]:data; const url=build?.artifacts?.buildUrl || ''; if(!url){process.exit(2);} process.stdout.write(url);")
+
+          echo "artifact_url=$ARTIFACT_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download APK Artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          curl -L "${{ steps.eas_build.outputs.artifact_url }}" -o dist/his-voice.apk
+
+      - name: Publish GitHub Release With APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/his-voice.apk
+          fail_on_unmatched_files: true

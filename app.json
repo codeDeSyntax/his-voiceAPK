@@ -1,0 +1,90 @@
+{
+  "expo": {
+    "name": "His voice",
+    "slug": "his-voice",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "scheme": "hisvoice",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.boblambert.hisvoice",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2c221a"
+      },
+      "package": "com.boblambert.hisvoice",
+      "versionCode": 4
+    },
+    "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2c221a",
+          "image": "./assets/splashimg.png",
+          "dark": {
+            "image": "./assets/splashimg.png",
+            "backgroundColor": "#2c221a"
+          },
+          "imageWidth": 200
+        }
+      ],
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "buildReactNativeFromSource": false,
+          "useHermesV1": true,
+          "android": {
+            "usePrecompiledHeaders": true
+          },
+          "ios": {
+            "usePrecompiledModules": true
+          }
+        }
+      ],
+      "expo-asset",
+      "expo-sharing",
+      "expo-status-bar"
+    ],
+    "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/98a8ca1a-9cc8-4bd9-a298-1e494016c59c"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "98a8ca1a-9cc8-4bd9-a298-1e494016c59c"
+      },
+      "releaseConfig": {
+        "owner": "codeDeSyntax",
+        "repo": "his-voiceAPK",
+        "apkAssetPattern": ".apk"
+      }
+    },
+    "owner": "josiah-ok",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
