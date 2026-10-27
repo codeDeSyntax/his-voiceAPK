@@ -22,7 +22,10 @@
         "backgroundColor": "#2c221a"
       },
       "package": "com.boblambert.hisvoice",
-      "versionCode": 13
+      "versionCode": 13,
+      "permissions": [
+        "REQUEST_INSTALL_PACKAGES"
+      ]
     },
     "description": "Audio and transcribed versions of Prophet Lambert Lee sermons.",
     "plugins": [

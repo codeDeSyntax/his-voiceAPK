@@ -26,8 +26,8 @@ const RELEASE_CONFIG =
   Constants.expoConfig?.extra?.updates ||
   {};
 
-const GITHUB_OWNER = RELEASE_CONFIG.owner;
-const GITHUB_REPO = RELEASE_CONFIG.repo;
+const GITHUB_OWNER = RELEASE_CONFIG.owner || "codeDeSyntax";
+const GITHUB_REPO = RELEASE_CONFIG.repo || "his-voiceAPK";
 const APK_ASSET_PATTERN = RELEASE_CONFIG.apkAssetPattern || ".apk";
 const UPDATE_CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 const FOREGROUND_RECHECK_MIN_MS = 10 * 60 * 1000;
@@ -117,7 +117,9 @@ export default function UpdateScreen() {
         body?: string;
         assets?: { name?: string; browser_download_url?: string }[];
       };
-      const currentVersion = normalizeVersion(Constants.expoConfig?.version);
+      const currentVersion = normalizeVersion(
+        Constants.expoConfig?.version || Constants.nativeAppVersion || "3.0.7",
+      );
       const latestVersion = normalizeVersion(latestRelease?.tag_name);
 
       if (!latestVersion || compareSemver(latestVersion, currentVersion) <= 0) {
@@ -267,38 +269,51 @@ export default function UpdateScreen() {
           setIsDownloadingApk(true);
           setApkDownloadProgress(0);
 
-          const fileUri = `${LegacyFileSystem.documentDirectory}hisvoice-update.apk`;
+          try {
+            const fileUri = `${LegacyFileSystem.documentDirectory}hisvoice-update.apk`;
 
-          const downloadTask = LegacyFileSystem.createDownloadResumable(
-            releaseData.apkUrl,
-            fileUri,
-            {},
-            ({ totalBytesWritten, totalBytesExpectedToWrite }) => {
-              if (totalBytesExpectedToWrite > 0) {
-                const percent = Math.floor(
-                  (totalBytesWritten / totalBytesExpectedToWrite) * 100,
-                );
-                setApkDownloadProgress(percent);
-              }
-            },
-          );
-          downloadTaskRef.current = downloadTask;
-
-          const result = await downloadTask.downloadAsync();
-          setIsDownloadingApk(false);
-
-          if (result?.uri) {
-            const contentUri = await LegacyFileSystem.getContentUriAsync(
-              result.uri,
-            );
-            await IntentLauncher.startActivityAsync(
-              "android.intent.action.VIEW",
-              {
-                data: contentUri,
-                flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
-                type: "application/vnd.android.package-archive",
+            const downloadTask = LegacyFileSystem.createDownloadResumable(
+              releaseData.apkUrl,
+              fileUri,
+              {},
+              ({ totalBytesWritten, totalBytesExpectedToWrite }) => {
+                if (totalBytesExpectedToWrite > 0) {
+                  const percent = Math.floor(
+                    (totalBytesWritten / totalBytesExpectedToWrite) * 100,
+                  );
+                  setApkDownloadProgress(percent);
+                }
               },
             );
+            downloadTaskRef.current = downloadTask;
+
+            const result = await downloadTask.downloadAsync();
+            setIsDownloadingApk(false);
+
+            if (result?.uri) {
+              const contentUri = await LegacyFileSystem.getContentUriAsync(
+                result.uri,
+              );
+              // Flags: FLAG_GRANT_READ_URI_PERMISSION (1) | FLAG_ACTIVITY_NEW_TASK (268435456)
+              await IntentLauncher.startActivityAsync(
+                "android.intent.action.VIEW",
+                {
+                  data: contentUri,
+                  flags: 1 | 268435456,
+                  type: "application/vnd.android.package-archive",
+                },
+              );
+              dismissModal();
+              return;
+            }
+          } catch (installError) {
+            console.warn(
+              "Direct package installer launch failed, opening APK in browser:",
+              installError,
+            );
+            setIsDownloadingApk(false);
+            // Fallback: open download URL directly in browser / system downloader
+            await Linking.openURL(releaseData.apkUrl);
             dismissModal();
             return;
           }
@@ -334,6 +349,16 @@ export default function UpdateScreen() {
     }
   };
 
+  const handleBrowserDownload = async () => {
+    if (!releaseData?.apkUrl) return;
+    try {
+      await Linking.openURL(releaseData.apkUrl);
+      dismissModal();
+    } catch (err) {
+      console.error("Failed to open browser download link:", err);
+    }
+  };
+
   const isBusy = isApplyingOta || isOpeningApk || isDownloadingApk;
 
   const isApkUpdate = updateType === "apk";
@@ -358,7 +383,6 @@ export default function UpdateScreen() {
       animationType="fade"
       onRequestClose={dismissModal}
       statusBarTranslucent={true}
-      navigationBarTranslucent
     >
       <StatusBar barStyle="light-content" />
       <View style={styles.fullScreenContainer}>
@@ -414,6 +438,19 @@ export default function UpdateScreen() {
             />
             <Text style={styles.primaryButtonText}>{primaryText}</Text>
           </TouchableOpacity>
+
+          {isApkUpdate && releaseData?.apkUrl ? (
+            <TouchableOpacity
+              style={[styles.tertiaryButton, isBusy && { opacity: 0.5 }]}
+              onPress={handleBrowserDownload}
+              disabled={isBusy}
+            >
+              <MaterialIcons name="open-in-browser" size={20} color="#D4AF37" />
+              <Text style={styles.tertiaryButtonText}>
+                [ DOWNLOAD VIA BROWSER ]
+              </Text>
+            </TouchableOpacity>
+          ) : null}
 
           <TouchableOpacity
             style={[styles.secondaryButton, isBusy && { opacity: 0.4 }]}
@@ -530,6 +567,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     letterSpacing: 1,
+    fontFamily: "ZillaSlab-SemiBold",
+  },
+  tertiaryButton: {
+    backgroundColor: "rgba(212, 175, 55, 0.12)",
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(212, 175, 55, 0.4)",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tertiaryButtonText: {
+    color: "#D4AF37",
+    fontSize: 13,
+    fontWeight: "bold",
+    marginLeft: 8,
+    letterSpacing: 0.8,
     fontFamily: "ZillaSlab-SemiBold",
   },
   footer: {
