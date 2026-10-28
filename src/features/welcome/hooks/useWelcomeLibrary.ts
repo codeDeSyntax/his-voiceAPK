@@ -39,12 +39,26 @@ export const useWelcomeLibrary = () => {
       const refreshDatabaseState = async () => {
         // Returning to a running download must preserve its progress and errors.
         if (downloadControllerRef.current) return;
-        setIsChecking(true);
 
+        // 1. Instant local offline check: if DB already exists, enable "Open sermons" immediately
+        try {
+          const locallyExists = await databaseExists();
+          if (!isActive) return;
+          if (locallyExists) {
+            setDbExists(true);
+            setIsChecking(false);
+          } else {
+            setIsChecking(true);
+          }
+        } catch {
+          // Continue to status check
+        }
+
+        // 2. Check for release updates (with timeout)
         try {
           const status = await getDatabaseStatus();
           if (!isActive) return;
-          setDbExists(status.exists && !status.needsUpdate);
+          setDbExists(status.exists);
           setDbNeedsUpdate(status.needsUpdate);
         } catch {
           if (!isActive) return;

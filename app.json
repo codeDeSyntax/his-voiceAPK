@@ -19,10 +19,11 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2c221a"
+        "backgroundColor": "#221b17"
       },
       "package": "com.boblambert.hisvoice",
       "versionCode": 17,
+      "usesCleartextTraffic": true,
       "permissions": [
         "REQUEST_INSTALL_PACKAGES"
       ]
@@ -40,13 +41,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#2c221a",
-          "image": "./assets/splashimg.png",
+          "backgroundColor": "#faeed1",
+          "image": "./assets/splash-text-light.png",
           "dark": {
-            "image": "./assets/splashimg.png",
-            "backgroundColor": "#2c221a"
+            "image": "./assets/splash-text-dark.png",
+            "backgroundColor": "#221b17"
           },
-          "imageWidth": 200
+          "imageWidth": 240
         }
       ],
       "expo-sqlite",

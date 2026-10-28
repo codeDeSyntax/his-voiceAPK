@@ -106,6 +106,7 @@ const PlaySermon = () => {
         {/* Player */}
         {downloadLink ? (
           <AudioPlayer
+            key={downloadLink}
             audioUrl={downloadLink}
             sermonTitle={selectedSermon.title}
           />

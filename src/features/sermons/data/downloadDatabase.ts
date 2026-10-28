@@ -51,13 +51,33 @@ const getFallbackReleaseInfo = (): DatabaseReleaseInfo => ({
   isFallback: true,
 });
 
-export const getLatestDatabaseReleaseInfo = async (signal?: AbortSignal): Promise<DatabaseReleaseInfo> => {
+export const getLatestDatabaseReleaseInfo = async (
+  signal?: AbortSignal,
+  timeoutMs = 3500,
+): Promise<DatabaseReleaseInfo> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const abortHandler = () => {
+    clearTimeout(timer);
+    controller.abort();
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      clearTimeout(timer);
+      controller.abort();
+    } else {
+      signal.addEventListener("abort", abortHandler, { once: true });
+    }
+  }
+
   try {
     const response = await fetch(getLatestReleaseApiUrl(), {
       headers: {
         Accept: "application/vnd.github+json",
       },
-      signal,
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -82,15 +102,20 @@ export const getLatestDatabaseReleaseInfo = async (signal?: AbortSignal): Promis
       isFallback: false,
     };
   } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
+    if (signal?.aborted) {
       throw error;
     }
 
     console.warn(
-      "Could not resolve latest database release. Falling back to pinned database release.",
+      "Could not resolve latest database release within timeout. Falling back to pinned database release.",
       errorMessage(error),
     );
     return getFallbackReleaseInfo();
+  } finally {
+    clearTimeout(timer);
+    if (signal) {
+      signal.removeEventListener("abort", abortHandler);
+    }
   }
 };
 

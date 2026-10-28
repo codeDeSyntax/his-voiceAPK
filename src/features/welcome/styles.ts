@@ -50,4 +50,27 @@ export const welcomeStyles = StyleSheet.create({
   cancel: { minWidth: 62, minHeight: 44, justifyContent: "center", alignItems: "center", borderRadius: 10 },
   cancelLabel: { fontFamily: "ZillaSlab-SemiBold", fontSize: 13 },
   error: { fontFamily: "ZillaSlab", fontSize: 13, lineHeight: 19, marginBottom: 12 },
+  updateNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  updateNoticeText: { fontFamily: "ZillaSlab-SemiBold", fontSize: 13 },
+  secondaryAction: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    marginTop: 6,
+  },
+  secondaryActionText: {
+    fontFamily: "ZillaSlab-SemiBold",
+    fontSize: 14,
+    textDecorationLine: "underline",
+  },
 });

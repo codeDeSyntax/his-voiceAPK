@@ -26,10 +26,16 @@ const ICON_SIZE_SM = responsiveFontSize(18);
 const PLAY_BTN_SIZE = 68;
 
 const normalizeAudioUrl = (url: string): string => {
+  if (!url) return "";
+  let cleanUrl = url.trim();
+  // Ensure HTTPS to prevent Android cleartext blocking
+  cleanUrl = cleanUrl.replace(/^http:\/\//i, "https://");
   try {
-    return encodeURI(new URL(url).toString());
+    // Decode in case url already has %20 etc., then encode to prevent double-encoding (%2520)
+    const decoded = decodeURI(cleanUrl);
+    return encodeURI(decoded);
   } catch {
-    return encodeURI(url);
+    return encodeURI(cleanUrl);
   }
 };
 
@@ -73,11 +79,11 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
   }, []);
 
   const player = Audio.useAudioPlayer(playableAudioUrl, {
-    updateInterval: 500,
-    downloadFirst: true,
+    updateInterval: 250,
+    downloadFirst: false,
   });
   const status = Audio.useAudioPlayerStatus(player);
-  const displayedError = status.error ? "Failed to load message" : error;
+  const displayedError = status.error ? "Failed to load audio stream" : error;
 
   // Ambient pulse and vinyl rotation animations for sleek audio player experience
   const pulseAnim = useState(() => new Animated.Value(1))[0];
@@ -167,11 +173,16 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
 
   const togglePlayPause = () => {
     try {
+      if (displayedError) {
+        setError(null);
+        player.play();
+        return;
+      }
       if (status.playing) player.pause();
       else player.play();
     } catch (err) {
       console.error("Error toggling play/pause:", err);
-      setError("Failed to play message");
+      setError("Failed to play audio stream");
     }
   };
 
@@ -338,7 +349,12 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
         </Text>
         {!status.isLoaded && !displayedError && (
           <Text style={[styles.loadingHint, { color: mutedTextColor }]}>
-            Loading audio…
+            Loading audio stream…
+          </Text>
+        )}
+        {status.isLoaded && status.isBuffering && (
+          <Text style={[styles.loadingHint, { color: mutedTextColor }]}>
+            Buffering…
           </Text>
         )}
         {displayedError && (
@@ -398,7 +414,7 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
             },
           ]}
           onPress={togglePlayPause}
-          disabled={!status.isLoaded}
+          disabled={!status.isLoaded && !displayedError}
           activeOpacity={0.8}
         >
           {/* Glass sheen */}
@@ -409,7 +425,9 @@ const AudioPlayer = ({ audioUrl, sermonTitle }: AudioPlayerProps) => {
               { backgroundColor: "rgba(255,255,255,0.5)" },
             ]}
           />
-          {!status.isLoaded ? (
+          {displayedError ? (
+            <Ionicons name="refresh" size={ICON_SIZE_MD} color={buttonIcon} />
+          ) : !status.isLoaded || (status.isBuffering && !status.playing) ? (
             <ActivityIndicator size="small" color={buttonIcon} />
           ) : (
             <Ionicons
