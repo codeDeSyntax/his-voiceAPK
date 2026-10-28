@@ -2,7 +2,7 @@
   "expo": {
     "name": "His voice",
     "slug": "his-voice",
-    "version": "3.0.11",
+    "version": "3.0.12",
     "orientation": "portrait",
     "scheme": "hisvoice",
     "userInterfaceStyle": "automatic",
@@ -22,7 +22,7 @@
         "backgroundColor": "#2c221a"
       },
       "package": "com.boblambert.hisvoice",
-      "versionCode": 16,
+      "versionCode": 17,
       "permissions": [
         "REQUEST_INSTALL_PACKAGES"
       ]
