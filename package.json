@@ -1,6 +1,6 @@
 {
   "name": "hisvoice",
-  "version": "3.0.12",
+  "version": "3.0.13",
   "private": true,
   "main": "expo-router/entry",
   "engines": {
